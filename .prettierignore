@@ -1,0 +1,6 @@
+dist
+src-tauri/target
+src-tauri/gen
+pipeline/.venv
+data/graph.json
+package-lock.json
