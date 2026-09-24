@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { TIER_UNLOCK_FRACTION } from './config';
+import { COOLDOWN_MS, TIER_UNLOCK_FRACTION } from './config';
 import { startOfDay } from './core/clock';
 import { nodeHealth } from './core/health';
 import { buildQueue } from './core/queue';
 import { tierMap, tierProgress } from './core/tiers';
-import { cardId, DIRECTIONS, type Grade } from './core/scheduler';
+import { cardId, DIRECTIONS, Rating, type Grade } from './core/scheduler';
+import { nextPractice, nodeStrength } from './core/strength';
 import type { CardRow } from './db/repo';
 import { GRAPH_NAMES } from './graphs';
 import { useSprawl, type LevelUp } from './useSprawl';
@@ -25,6 +26,27 @@ export default function App() {
   const [showRoots, setShowRoots] = useState(true);
   const [inspectId, setInspectId] = useState<string>();
   const [levelUp, setLevelUp] = useState<LevelUp | null>(null);
+  /** Node id -> real time (ms) until which it is locked after a wrong answer. */
+  const [cooldowns, setCooldowns] = useState<Map<string, number>>(new Map());
+  const [notice, setNotice] = useState<string | null>(null);
+  const [, setSecond] = useState(0);
+
+  // Tick every second while something is cooling down (countdown rings), then expire.
+  useEffect(() => {
+    if (!cooldowns.size) return;
+    const t = setInterval(() => {
+      setSecond((s) => s + 1);
+      const live = [...cooldowns].filter(([, until]) => until > Date.now());
+      if (live.length < cooldowns.size) setCooldowns(new Map(live));
+    }, 1000);
+    return () => clearInterval(t);
+  }, [cooldowns]);
+
+  useEffect(() => {
+    if (!notice) return;
+    const t = setTimeout(() => setNotice(null), 5000);
+    return () => clearTimeout(t);
+  }, [notice]);
 
   useEffect(() => {
     if (!levelUp) return;
@@ -51,6 +73,17 @@ export default function App() {
     return m;
   }, [data, now]);
 
+  const cardsByNode = useMemo(() => {
+    const m = new Map<string, CardRow[]>();
+    for (const c of data?.cards ?? []) m.set(c.nodeId, [...(m.get(c.nodeId) ?? []), c]);
+    return m;
+  }, [data?.cards]);
+  const strength = useMemo(
+    () =>
+      new Map([...cardsByNode].map(([id, cs]) => [id, nodeStrength(cs.map((c) => c.card)).level])),
+    [cardsByNode],
+  );
+
   const tiers = useMemo(() => tierMap(data?.nodes ?? []), [data?.nodes]);
   const progress = useMemo(
     () => (data ? tierProgress(tiers, data.states, TIER_UNLOCK_FRACTION) : null),
@@ -58,8 +91,13 @@ export default function App() {
   );
 
   const queue = useMemo(
-    () => (data ? buildQueue({ cards: data.cards, states: data.states, now, lastCardId }) : []),
-    [data, now, lastCardId],
+    () =>
+      data
+        ? buildQueue({ cards: data.cards, states: data.states, now, lastCardId }).filter(
+            (c) => !cooldowns.has(c.nodeId),
+          )
+        : [],
+    [data, now, lastCardId, cooldowns],
   );
 
   if (error) return <div className="p-6 text-red-400">Failed to open database: {error}</div>;
@@ -82,11 +120,22 @@ export default function App() {
   const hs = [...health.values()].filter((h): h is number => h !== null);
   const avg = hs.length ? hs.reduce((a, b) => a + b, 0) / hs.length : null;
 
+  const wordOf = (id: string) => data.nodes.find((n) => n.id === id)?.it ?? id;
+
   const onRate = async (row: CardRow, grade: Grade) => {
     const lv = await review(row, grade);
     if (lv) setLevelUp(lv);
     setLastCardId(row.id);
     setTurn((t) => t + 1);
+    if (grade === Rating.Again) {
+      // Penalty: the word is locked for a minute, so you have to go elsewhere first.
+      setCooldowns((m) => new Map(m).set(row.nodeId, Date.now() + COOLDOWN_MS));
+      setNotice(
+        `Missed! ${wordOf(row.nodeId)} is locked for ${COOLDOWN_MS / 1000} s. Try another word.`,
+      );
+      setSession((s) => (s?.nodeId === row.nodeId ? null : s));
+      return;
+    }
     setSession((s) => {
       if (!s) return s;
       const rest = s.cardIds.filter((id) => id !== row.id);
@@ -97,10 +146,34 @@ export default function App() {
   const selectNode = (nodeId: string) => {
     if (inspect) return setInspectId(nodeId);
     if (!data.states.has(nodeId) || data.states.get(nodeId) === 'locked') return; // roots, hidden
+    const until = cooldowns.get(nodeId);
+    if (until && until > Date.now()) {
+      setNotice(`${wordOf(nodeId)} is still locked (${Math.ceil((until - Date.now()) / 1000)} s).`);
+      return;
+    }
+    const conquered = data.states.get(nodeId) === 'conquered';
+    const next = conquered
+      ? nextPractice(
+          (cardsByNode.get(nodeId) ?? []).map((c) => c.card),
+          now,
+        )
+      : null;
+    if (next) {
+      const days = (next.getTime() - now.getTime()) / 86_400_000;
+      const when =
+        days < 1 ? `${Math.max(1, Math.round(days * 24))} h` : `${Math.round(days)} days`;
+      setNotice(
+        `${wordOf(nodeId)} is holding (strength ${strength.get(nodeId) ?? 0}/5). ` +
+          `Strength only grows with time: come back in ~${when}.`,
+      );
+      return;
+    }
+    // Random first direction, so English -> Italian comes first half the time.
+    const dirs = Math.random() < 0.5 ? DIRECTIONS : [...DIRECTIONS].reverse();
     setSession({
       nodeId,
-      cardIds: DIRECTIONS.map((d) => cardId(nodeId, d)),
-      mode: data.states.get(nodeId) === 'conquered' ? 'practice' : 'conquer',
+      cardIds: dirs.map((d) => cardId(nodeId, d)),
+      mode: conquered ? 'practice' : 'conquer',
     });
     setTurn((t) => t + 1);
   };
@@ -171,6 +244,8 @@ export default function App() {
             data={data}
             health={health}
             activeId={inspect ? inspectId : current?.nodeId}
+            strength={strength}
+            cooldowns={cooldowns}
             inspect={inspect}
             showRoots={showRoots}
             onNodeClick={selectNode}
@@ -185,19 +260,26 @@ export default function App() {
               onSelect={setInspectId}
             />
           ) : (
-            <ReviewView
-              key={turn}
-              data={data}
-              current={current}
-              mode={mode}
-              dueCount={dueCount}
-              newToday={newToday}
-              onRate={onRate}
-              onCancel={() => {
-                setSession(null);
-                setTurn((t) => t + 1);
-              }}
-            />
+            <>
+              {notice && (
+                <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
+                  {notice}
+                </div>
+              )}
+              <ReviewView
+                key={turn}
+                data={data}
+                current={current}
+                mode={mode}
+                dueCount={dueCount}
+                newToday={newToday}
+                onRate={onRate}
+                onCancel={() => {
+                  setSession(null);
+                  setTurn((t) => t + 1);
+                }}
+              />
+            </>
           )}
           <DebugPanel
             offsetDays={data.offsetDays}

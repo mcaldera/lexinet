@@ -4,7 +4,9 @@ import ForceGraph2D, {
   type LinkObject,
   type NodeObject,
 } from 'react-force-graph-2d';
+import { COOLDOWN_MS } from '../config';
 import { edgeOpacity, healthBand } from '../core/health';
+import { MAX_STRENGTH } from '../core/strength';
 import type { AppData, Edge, RootHub, WordNode } from '../db/repo';
 import { useKeyboardCamera } from './useKeyboardCamera';
 import {
@@ -36,6 +38,10 @@ type Props = {
   health: Map<string, number | null>;
   /** Node of the card being reviewed, or the node selected in inspect mode. */
   activeId?: string;
+  /** Strength level 0-5 per word; stronger words are drawn bigger. */
+  strength: Map<string, number>;
+  /** Word id -> real time (ms) its wrong-answer lock ends. */
+  cooldowns: Map<string, number>;
   /** Show every word and edge (spoilers) for inspecting the network. */
   inspect: boolean;
   /** Draw shared roots as hub nodes (replaces word-to-word "shared root" links). */
@@ -47,6 +53,8 @@ export default function GraphView({
   data,
   health,
   activeId,
+  strength,
+  cooldowns,
   inspect,
   showRoots,
   onNodeClick,
@@ -158,8 +166,18 @@ export default function GraphView({
     const y = node.y ?? 0;
     const state = data.states.get(node.id);
     const shape: Shape = shapeOf(node.word.pos);
-    const r = 6;
+    const r = state === 'conquered' ? 5 + (strength.get(node.id) ?? 0) * 0.8 : 6;
     ctx.save();
+    const lockedUntil = cooldowns.get(node.id);
+    if (lockedUntil && lockedUntil > Date.now()) {
+      // Countdown ring for the wrong-answer lock.
+      const left = (lockedUntil - Date.now()) / COOLDOWN_MS;
+      ctx.beginPath();
+      ctx.arc(x, y, r + 3, -Math.PI / 2, -Math.PI / 2 + left * 2 * Math.PI);
+      ctx.strokeStyle = 'rgba(248, 113, 113, 0.95)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
     if (node.hub) {
       drawHub(ctx, node, x, y, scale, node.id === activeId);
       ctx.restore();
@@ -306,13 +324,23 @@ export default function GraphView({
             ].join(', ')}`;
           }
           const state = data.states.get(n.id);
+          const until = cooldowns.get(n.id);
+          if (until && until > Date.now()) {
+            return `${hidden(n.id) ? 'Unknown word' : n.word.it} · locked ${Math.ceil((until - Date.now()) / 1000)} s`;
+          }
           if (!inspect && state === 'frontier') {
             return `Unknown ${n.word.pos ?? 'word'}: click to conquer`;
           }
           const h = health.get(n.id);
           const pct = h != null ? ` · health ${Math.round(h * 100)}%` : '';
+          const lvl = strength.get(n.id) ?? 0;
+          const str =
+            state === 'conquered'
+              ? ` · strength ${'★'.repeat(lvl)}${'☆'.repeat(MAX_STRENGTH - lvl)}`
+              : '';
           const hint = inspect ? `${state} · tier ${n.word.tier ?? 1}` : 'click to practise';
-          return `${n.word.it} = ${n.word.en}${pct} · ${hint}`;
+
+          return `${n.word.it} = ${n.word.en}${pct}${str} · ${hint}`;
         }}
         linkColor={(l) => `rgba(${REASON_RGB[l.reason]}, ${linkAlpha(l)})`}
         linkWidth={(l) => 0.5 + l.weight * 2.5 + (touchesActive(l) ? 1 : 0)}

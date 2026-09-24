@@ -14,8 +14,8 @@ export type QueueInput<T extends QueueCard = QueueCard> = {
 };
 
 /**
- * The automatic queue: due review cards (weakest first), then learning cards,
- * then the unreviewed direction of nodes already started. Untouched frontier
+ * The automatic queue: due review cards (weakest first), then the unreviewed
+ * direction of nodes already started, then learning cards. Untouched frontier
  * nodes never appear; the user starts them by clicking the node.
  */
 export function buildQueue<T extends QueueCard>(input: QueueInput<T>): T[] {
@@ -38,7 +38,9 @@ export function buildQueue<T extends QueueCard>(input: QueueInput<T>): T[] {
   const touched = new Set(active.filter((c) => c.card.state !== State.New).map((c) => c.nodeId));
   const fresh = active.filter((c) => c.card.state === State.New && touched.has(c.nodeId));
 
-  const queue = [...reviews, ...learning, ...fresh];
+  // The second direction of a started word comes before relearning, so English ->
+  // Italian cards don't get stuck behind a stream of Italian -> English retries.
+  const queue = [...reviews, ...fresh, ...learning];
   if (input.lastCardId && queue.length > 1 && queue[0].id === input.lastCardId) {
     queue.push(queue.shift()!);
   }
