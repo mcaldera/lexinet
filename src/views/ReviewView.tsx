@@ -3,6 +3,7 @@ import { checkAnswer, type AnswerCheck } from '../core/answer';
 import { Rating, type Grade } from '../core/scheduler';
 import { NEW_NODES_PER_DAY } from '../config';
 import type { AppData, CardRow } from '../db/repo';
+import Etymology from './Etymology';
 
 const BUTTONS: { grade: Grade; label: string; key: string; cls: string }[] = [
   { grade: Rating.Again, label: 'Again', key: '1', cls: 'bg-red-600 hover:bg-red-500' },
@@ -172,22 +173,7 @@ export default function ReviewView(props: Props) {
                 </div>
                 <div className="mt-1 text-xl text-slate-100">{answer}</div>
               </div>
-              {(word.cognate || word.root) && (
-                <div className="mt-2 text-sm text-pink-300">
-                  🔗{' '}
-                  {word.cognate && (
-                    <>
-                      English cousin: <b>{word.cognate}</b>
-                    </>
-                  )}
-                  {word.cognate && word.root && ' · '}
-                  {word.root && (
-                    <>
-                      from <i>{word.root}</i>
-                    </>
-                  )}
-                </div>
-              )}
+              <Etymology word={word} />
               <div className="mt-3 grid grid-cols-4 gap-2">
                 {BUTTONS.map((b) => {
                   const suggested = b.grade === check.grade;

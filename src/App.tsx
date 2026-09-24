@@ -21,6 +21,7 @@ export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [turn, setTurn] = useState(0);
   const [inspect, setInspect] = useState(false);
+  const [showRoots, setShowRoots] = useState(true);
   const [inspectId, setInspectId] = useState<string>();
   const [levelUp, setLevelUp] = useState<LevelUp | null>(null);
 
@@ -94,7 +95,7 @@ export default function App() {
 
   const selectNode = (nodeId: string) => {
     if (inspect) return setInspectId(nodeId);
-    if (data.states.get(nodeId) === 'locked') return;
+    if (!data.states.has(nodeId) || data.states.get(nodeId) === 'locked') return; // roots, hidden
     setSession({
       nodeId,
       cardIds: DIRECTIONS.map((d) => cardId(nodeId, d)),
@@ -113,9 +114,20 @@ export default function App() {
         </span>
         {progress && <TierBadge p={progress} />}
         <button
+          onClick={() => setShowRoots((v) => !v)}
+          title="Show shared roots (e.g. Latin coquere) as hub nodes linked to their words"
+          className={`ml-auto rounded px-3 py-1 text-sm ${
+            showRoots
+              ? 'bg-pink-900/60 text-pink-200'
+              : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+          }`}
+        >
+          ⬢ Roots {showRoots ? 'on' : 'off'}
+        </button>
+        <button
           onClick={() => setInspect((v) => !v)}
           title="Show every word and link, including ones you haven't unlocked (spoilers)"
-          className={`ml-auto rounded px-3 py-1 text-sm ${
+          className={`rounded px-3 py-1 text-sm ${
             inspect ? 'bg-pink-700 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
           }`}
         >
@@ -140,6 +152,7 @@ export default function App() {
             health={health}
             activeId={inspect ? inspectId : current?.nodeId}
             inspect={inspect}
+            showRoots={showRoots}
             onNodeClick={selectNode}
           />
         </section>

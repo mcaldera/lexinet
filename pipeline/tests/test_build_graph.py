@@ -26,6 +26,9 @@ def df():
             "theme": ["animals", "animals", "comm", "comm", "comm", "animals"],
             "root": ["canis", "", "parabola", "parabola", "parabola", "cattus"],
             "cognate": ["canine", "", "parley", "", "parable", "cat"],
+            "root_lang": ["Latin", "", "Late Latin", "Late Latin", "Late Latin", "Late Latin"],
+            "root_meaning": ["dog", "", "speech", "speech", "speech", "cat"],
+            "cognate_note": [""] * 6,
             "tier": [""] * 6,
         }
     )
@@ -50,7 +53,9 @@ def test_load_words_fills_optional_columns_and_dedupes(tmp_path):
     p = tmp_path / "w.csv"
     p.write_text("Italian,English\nil cane,dog\nil cane,dog again\nil gatto,cat\n")
     df = bg.load_words(p)
-    assert list(df.columns) == ["italian", "english", "pos", "theme", "root", "cognate", "tier"]
+    assert list(df.columns) == [
+        "italian", "english", "pos", "theme", "root", "root_lang", "root_meaning", "cognate", "cognate_note", "tier"
+    ]
     assert len(df) == 2
 
 
@@ -162,3 +167,16 @@ def test_seed_is_forced_into_tier_one(df):
     graph = bg.build_graph(df, fake_embedder, seed="parlato", ranks={"cane": 1})
     seed = next(n for n in graph["nodes"] if n["id"] == graph["seed"])
     assert seed["tier"] == 1
+
+
+def test_shared_roots_become_hub_entries(df):
+    graph = bg.build_graph(df, fake_embedder)
+    assert graph["roots"] == [
+        {
+            "id": "root:parabola",
+            "root": "parabola",
+            "lang": "Late Latin",
+            "meaning": "speech",
+            "words": ["parlare", "parlato", "la-parola"],
+        }
+    ]

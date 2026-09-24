@@ -23,7 +23,11 @@ export type WordNode = {
   pos: string | null;
   theme: string | null;
   root?: string | null;
+  root_lang?: string | null;
+  root_meaning?: string | null;
   cognate?: string | null;
+  /** How the cognate connects, e.g. "com- 'with' + panis 'bread'". */
+  cognate_note?: string | null;
   /** 1 = most common words; higher tiers open as you progress. */
   tier?: number;
 };
@@ -35,6 +39,14 @@ export type Edge = {
   components?: Components;
   /** tree: needed to keep the graph connected; bonus: one of a word's top partners. */
   via?: 'tree' | 'bonus';
+};
+/** A root shared by 2+ words, drawn as a hub node linked to its descendants. */
+export type RootHub = {
+  id: string;
+  root: string;
+  lang: string | null;
+  meaning: string | null;
+  words: string[];
 };
 export type Candidate = {
   id: string;
@@ -54,6 +66,7 @@ export type Graph = {
   };
   nodes: WordNode[];
   edges: Edge[];
+  roots?: RootHub[];
   candidates?: Record<string, Candidate[]>;
 };
 export type CardRow = { id: string; nodeId: string; direction: Direction; card: Card };

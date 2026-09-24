@@ -20,7 +20,10 @@
       "pos": "noun",
       "theme": "animals",
       "root": "canis",
+      "root_lang": "Latin",
+      "root_meaning": "dog",
       "cognate": "canine",
+      "cognate_note": null,
       "tier": 3
     },
     {
@@ -30,7 +33,10 @@
       "pos": "noun",
       "theme": "animals",
       "root": "cattus",
+      "root_lang": "Late Latin",
+      "root_meaning": "cat",
       "cognate": "cat",
+      "cognate_note": null,
       "tier": 5
     },
     {
@@ -40,7 +46,10 @@
       "pos": "verb",
       "theme": "animals",
       "root": null,
+      "root_lang": null,
+      "root_meaning": null,
       "cognate": null,
+      "cognate_note": null,
       "tier": 6
     },
     {
@@ -50,7 +59,10 @@
       "pos": "noun",
       "theme": "animals",
       "root": "avis",
+      "root_lang": "Latin",
+      "root_meaning": "bird",
       "cognate": "avian",
+      "cognate_note": "uccello comes from aucellus, \"little bird\"",
       "tier": 5
     },
     {
@@ -60,7 +72,10 @@
       "pos": "verb",
       "theme": "animals",
       "root": "volare",
+      "root_lang": "Latin",
+      "root_meaning": "to fly",
       "cognate": "volatile",
+      "cognate_note": "originally \"flying\", then \"evaporating quickly\"",
       "tier": 5
     },
     {
@@ -70,7 +85,10 @@
       "pos": "noun",
       "theme": "animals",
       "root": "piscis",
+      "root_lang": "Latin",
+      "root_meaning": "fish",
       "cognate": "Pisces",
+      "cognate_note": "the zodiac sign of the fish",
       "tier": 5
     },
     {
@@ -79,8 +97,11 @@
       "en": "to swim",
       "pos": "verb",
       "theme": "animals",
-      "root": null,
+      "root": "natare",
+      "root_lang": "Latin",
+      "root_meaning": "to swim",
       "cognate": null,
+      "cognate_note": null,
       "tier": 6
     },
     {
@@ -90,7 +111,10 @@
       "pos": "noun",
       "theme": "animals",
       "root": "caballus",
+      "root_lang": "Latin",
+      "root_meaning": "horse, nag",
       "cognate": "cavalry",
+      "cognate_note": "soldiers on horseback",
       "tier": 4
     },
     {
@@ -100,7 +124,10 @@
       "pos": "noun",
       "theme": "animals",
       "root": null,
+      "root_lang": null,
+      "root_meaning": null,
       "cognate": null,
+      "cognate_note": null,
       "tier": 6
     },
     {
@@ -110,7 +137,10 @@
       "pos": "noun",
       "theme": "food",
       "root": "lac",
+      "root_lang": "Latin",
+      "root_meaning": "milk",
       "cognate": "lactose",
+      "cognate_note": "milk sugar",
       "tier": 5
     },
     {
@@ -120,7 +150,10 @@
       "pos": "noun",
       "theme": "food",
       "root": "forma",
+      "root_lang": "Latin",
+      "root_meaning": "form, mould",
       "cognate": "form",
+      "cognate_note": "cheese (formaticus) was pressed in a mould",
       "tier": 5
     },
     {
@@ -130,7 +163,10 @@
       "pos": "noun",
       "theme": "food",
       "root": "panis",
+      "root_lang": "Latin",
+      "root_meaning": "bread",
       "cognate": "companion",
+      "cognate_note": "com- \"with\" + panis \"bread\": someone you share bread with",
       "tier": 5
     },
     {
@@ -140,7 +176,10 @@
       "pos": "noun",
       "theme": "food",
       "root": "pasta",
+      "root_lang": "Late Latin",
+      "root_meaning": "dough, paste",
       "cognate": "paste",
+      "cognate_note": null,
       "tier": 6
     },
     {
@@ -150,7 +189,10 @@
       "pos": "verb",
       "theme": "food",
       "root": "manducare",
+      "root_lang": "Latin",
+      "root_meaning": "to chew, to munch",
       "cognate": "manger",
+      "cognate_note": "the trough animals eat from, via French manger \"to eat\"",
       "tier": 2
     },
     {
@@ -160,7 +202,10 @@
       "pos": "verb",
       "theme": "food",
       "root": "manducare",
-      "cognate": null,
+      "root_lang": "Latin",
+      "root_meaning": "to chew, to munch",
+      "cognate": "manger",
+      "cognate_note": "the trough animals eat from, via French manger \"to eat\"",
       "tier": 4
     },
     {
@@ -170,7 +215,10 @@
       "pos": "verb",
       "theme": "food",
       "root": "bibere",
+      "root_lang": "Latin",
+      "root_meaning": "to drink",
       "cognate": "imbibe",
+      "cognate_note": "in- \"in\" + bibere: to drink in",
       "tier": 2
     },
     {
@@ -180,7 +228,10 @@
       "pos": "noun",
       "theme": "food",
       "root": "aqua",
+      "root_lang": "Latin",
+      "root_meaning": "water",
       "cognate": "aquatic",
+      "cognate_note": null,
       "tier": 2
     },
     {
@@ -190,7 +241,10 @@
       "pos": "noun",
       "theme": "food",
       "root": "vinum",
+      "root_lang": "Latin",
+      "root_meaning": "wine",
       "cognate": "wine",
+      "cognate_note": "borrowed into Germanic very early; vine too",
       "tier": 4
     },
     {
@@ -199,8 +253,11 @@
       "en": "apple",
       "pos": "noun",
       "theme": "food",
-      "root": null,
-      "cognate": null,
+      "root": "malum",
+      "root_lang": "Latin",
+      "root_meaning": "apple",
+      "cognate": "melon",
+      "cognate_note": "Greek mēlopépōn, \"apple-gourd\"",
       "tier": 6
     },
     {
@@ -210,7 +267,10 @@
       "pos": "verb",
       "theme": "food",
       "root": "coquere",
+      "root_lang": "Latin",
+      "root_meaning": "to cook",
       "cognate": "cook",
+      "cognate_note": "Latin coquus \"cook\" was borrowed into Old English as cōc",
       "tier": 5
     },
     {
@@ -220,7 +280,10 @@
       "pos": "noun",
       "theme": "home",
       "root": "coquere",
+      "root_lang": "Latin",
+      "root_meaning": "to cook",
       "cognate": "kitchen",
+      "cognate_note": "Latin coquina \"kitchen\" became Old English cycene",
       "tier": 4
     },
     {
@@ -230,7 +293,10 @@
       "pos": "noun",
       "theme": "food",
       "root": "coquere",
+      "root_lang": "Latin",
+      "root_meaning": "to cook",
       "cognate": "cook",
+      "cognate_note": "Latin coquus \"cook\" was borrowed into Old English as cōc",
       "tier": 6
     },
     {
@@ -240,7 +306,10 @@
       "pos": "noun",
       "theme": "food",
       "root": "collatio",
+      "root_lang": "Latin",
+      "root_meaning": "a bringing together",
       "cognate": "collation",
+      "cognate_note": "a light meal; monks ate one during the evening readings (Collationes)",
       "tier": 4
     },
     {
@@ -250,7 +319,10 @@
       "pos": "noun",
       "theme": "food",
       "root": "cena",
+      "root_lang": "Latin",
+      "root_meaning": "dinner",
       "cognate": null,
+      "cognate_note": null,
       "tier": 2
     },
     {
@@ -260,7 +332,10 @@
       "pos": "verb",
       "theme": "food",
       "root": "cena",
+      "root_lang": "Latin",
+      "root_meaning": "dinner",
       "cognate": null,
+      "cognate_note": null,
       "tier": 6
     },
     {
@@ -270,7 +345,10 @@
       "pos": "noun",
       "theme": "home",
       "root": "casa",
+      "root_lang": "Latin",
+      "root_meaning": "hut, cottage",
       "cognate": "casino",
+      "cognate_note": "Italian for \"little house\", later a house for gambling",
       "tier": 1
     },
     {
@@ -280,7 +358,10 @@
       "pos": "noun",
       "theme": "home",
       "root": "porta",
+      "root_lang": "Latin",
+      "root_meaning": "gate",
       "cognate": "portal",
+      "cognate_note": null,
       "tier": 1
     },
     {
@@ -290,7 +371,10 @@
       "pos": "noun",
       "theme": "home",
       "root": "fenestra",
+      "root_lang": "Latin",
+      "root_meaning": "window",
       "cognate": "defenestrate",
+      "cognate_note": "de- \"out of\" + fenestra: to throw out of a window",
       "tier": 4
     },
     {
@@ -299,8 +383,11 @@
       "en": "bed",
       "pos": "noun",
       "theme": "home",
-      "root": null,
+      "root": "lectus",
+      "root_lang": "Latin",
+      "root_meaning": "bed",
       "cognate": null,
+      "cognate_note": null,
       "tier": 1
     },
     {
@@ -310,7 +397,10 @@
       "pos": "verb",
       "theme": "home",
       "root": "dormire",
+      "root_lang": "Latin",
+      "root_meaning": "to sleep",
       "cognate": "dormitory",
+      "cognate_note": "a room for sleeping",
       "tier": 3
     },
     {
@@ -320,7 +410,10 @@
       "pos": "noun",
       "theme": "home",
       "root": "somnus",
+      "root_lang": "Latin",
+      "root_meaning": "sleep",
       "cognate": "insomnia",
+      "cognate_note": "in- \"not\" + somnus: no sleep",
       "tier": 5
     },
     {
@@ -330,7 +423,10 @@
       "pos": "noun",
       "theme": "home",
       "root": "sedere",
+      "root_lang": "Latin",
+      "root_meaning": "to sit",
       "cognate": "sedentary",
+      "cognate_note": "spending a lot of time sitting",
       "tier": 5
     },
     {
@@ -340,7 +436,10 @@
       "pos": "noun",
       "theme": "home",
       "root": "tabula",
+      "root_lang": "Latin",
+      "root_meaning": "board, plank",
       "cognate": "table",
+      "cognate_note": null,
       "tier": 4
     },
     {
@@ -350,7 +449,10 @@
       "pos": "noun",
       "theme": "home",
       "root": "camera",
+      "root_lang": "Latin",
+      "root_meaning": "vaulted room",
       "cognate": "chamber",
+      "cognate_note": "also \"camera\", from camera obscura, \"dark room\"",
       "tier": 3
     },
     {
@@ -360,7 +462,10 @@
       "pos": "verb",
       "theme": "communication",
       "root": "parabola",
+      "root_lang": "Late Latin",
+      "root_meaning": "speech, parable",
       "cognate": "parley",
+      "cognate_note": "a talk between opponents, via French parler \"to speak\"",
       "tier": 1
     },
     {
@@ -370,7 +475,10 @@
       "pos": "verb",
       "theme": "communication",
       "root": "parabola",
-      "cognate": null,
+      "root_lang": "Late Latin",
+      "root_meaning": "speech, parable",
+      "cognate": "parley",
+      "cognate_note": "a talk between opponents, via French parler \"to speak\"",
       "tier": 2
     },
     {
@@ -380,7 +488,10 @@
       "pos": "noun",
       "theme": "communication",
       "root": "parabola",
+      "root_lang": "Late Latin",
+      "root_meaning": "speech, parable",
       "cognate": "parable",
+      "cognate_note": "a story that makes a comparison (Greek parabolḗ)",
       "tier": 2
     },
     {
@@ -390,7 +501,10 @@
       "pos": "verb",
       "theme": "communication",
       "root": "dicere",
+      "root_lang": "Latin",
+      "root_meaning": "to say",
       "cognate": "diction",
+      "cognate_note": "the way words are said",
       "tier": 1
     },
     {
@@ -400,7 +514,10 @@
       "pos": "verb",
       "theme": "communication",
       "root": "quaerere",
+      "root_lang": "Latin",
+      "root_meaning": "to seek, to ask",
       "cognate": "query",
+      "cognate_note": null,
       "tier": 3
     },
     {
@@ -410,7 +527,10 @@
       "pos": "noun",
       "theme": "communication",
       "root": "demandare",
+      "root_lang": "Latin",
+      "root_meaning": "to entrust",
       "cognate": "demand",
+      "cognate_note": "Italian shifted from \"entrust\" to \"ask\"",
       "tier": 2
     },
     {
@@ -420,7 +540,10 @@
       "pos": "verb",
       "theme": "communication",
       "root": "respondere",
+      "root_lang": "Latin",
+      "root_meaning": "to answer",
       "cognate": "respond",
+      "cognate_note": null,
       "tier": 4
     },
     {
@@ -430,7 +553,10 @@
       "pos": "noun",
       "theme": "communication",
       "root": "respondere",
+      "root_lang": "Latin",
+      "root_meaning": "to answer",
       "cognate": "response",
+      "cognate_note": null,
       "tier": 3
     },
     {
@@ -440,7 +566,10 @@
       "pos": "verb",
       "theme": "communication",
       "root": "scribere",
+      "root_lang": "Latin",
+      "root_meaning": "to write",
       "cognate": "scribe",
+      "cognate_note": "a person who writes by hand",
       "tier": 4
     },
     {
@@ -450,7 +579,10 @@
       "pos": "noun",
       "theme": "communication",
       "root": "littera",
+      "root_lang": "Latin",
+      "root_meaning": "letter of the alphabet",
       "cognate": "letter",
+      "cognate_note": null,
       "tier": 3
     },
     {
@@ -460,7 +592,10 @@
       "pos": "verb",
       "theme": "communication",
       "root": "legere",
+      "root_lang": "Latin",
+      "root_meaning": "to read, to gather",
       "cognate": "legible",
+      "cognate_note": "readable",
       "tier": 4
     },
     {
@@ -470,7 +605,10 @@
       "pos": "noun",
       "theme": "communication",
       "root": "liber",
+      "root_lang": "Latin",
+      "root_meaning": "book; originally the inner bark of a tree",
       "cognate": "library",
+      "cognate_note": null,
       "tier": 3
     },
     {
@@ -480,7 +618,10 @@
       "pos": "noun",
       "theme": "family",
       "root": "mater",
+      "root_lang": "Latin",
+      "root_meaning": "mother",
       "cognate": "maternal",
+      "cognate_note": null,
       "tier": 1
     },
     {
@@ -490,7 +631,10 @@
       "pos": "noun",
       "theme": "family",
       "root": "pater",
+      "root_lang": "Latin",
+      "root_meaning": "father",
       "cognate": "paternal",
+      "cognate_note": null,
       "tier": 1
     },
     {
@@ -500,7 +644,10 @@
       "pos": "noun",
       "theme": "family",
       "root": "frater",
+      "root_lang": "Latin",
+      "root_meaning": "brother",
       "cognate": "fraternal",
+      "cognate_note": null,
       "tier": 1
     },
     {
@@ -510,7 +657,10 @@
       "pos": "noun",
       "theme": "family",
       "root": "soror",
+      "root_lang": "Latin",
+      "root_meaning": "sister",
       "cognate": "sorority",
+      "cognate_note": null,
       "tier": 2
     },
     {
@@ -520,7 +670,10 @@
       "pos": "noun",
       "theme": "family",
       "root": "filius",
+      "root_lang": "Latin",
+      "root_meaning": "son",
       "cognate": "filial",
+      "cognate_note": "as befits a son or daughter",
       "tier": 1
     },
     {
@@ -530,7 +683,10 @@
       "pos": "noun",
       "theme": "family",
       "root": "filius",
+      "root_lang": "Latin",
+      "root_meaning": "son",
       "cognate": "filial",
+      "cognate_note": "as befits a son or daughter",
       "tier": 2
     },
     {
@@ -539,8 +695,11 @@
       "en": "grandfather",
       "pos": "noun",
       "theme": "family",
-      "root": null,
+      "root": "nonnus",
+      "root_lang": "Late Latin",
+      "root_meaning": "old man, monk",
       "cognate": null,
+      "cognate_note": null,
       "tier": 4
     },
     {
@@ -549,8 +708,11 @@
       "en": "grandmother",
       "pos": "noun",
       "theme": "family",
-      "root": "nonna",
+      "root": "nonnus",
+      "root_lang": "Late Latin",
+      "root_meaning": "old man, monk",
       "cognate": "nun",
+      "cognate_note": "Late Latin nonna, \"old woman\", came to mean \"nun\"",
       "tier": 3
     },
     {
@@ -560,7 +722,10 @@
       "pos": "noun",
       "theme": "family",
       "root": "familia",
+      "root_lang": "Latin",
+      "root_meaning": "household",
       "cognate": "family",
+      "cognate_note": null,
       "tier": 1
     },
     {
@@ -569,8 +734,11 @@
       "en": "head",
       "pos": "noun",
       "theme": "body",
-      "root": null,
-      "cognate": null,
+      "root": "testa",
+      "root_lang": "Latin",
+      "root_meaning": "clay pot, shell",
+      "cognate": "test",
+      "cognate_note": "a \"test\" was a clay pot for assaying metal; \"pot\" became slang for \"head\"",
       "tier": 1
     },
     {
@@ -580,7 +748,10 @@
       "pos": "noun",
       "theme": "body",
       "root": "manus",
+      "root_lang": "Latin",
+      "root_meaning": "hand",
       "cognate": "manual",
+      "cognate_note": "done by hand",
       "tier": 2
     },
     {
@@ -590,7 +761,10 @@
       "pos": "noun",
       "theme": "body",
       "root": "pes",
+      "root_lang": "Latin",
+      "root_meaning": "foot",
       "cognate": "pedal",
+      "cognate_note": "worked by the foot",
       "tier": 5
     },
     {
@@ -599,8 +773,11 @@
       "en": "to walk",
       "pos": "verb",
       "theme": "body",
-      "root": null,
+      "root": "camminus",
+      "root_lang": "Late Latin",
+      "root_meaning": "road, way (from Celtic)",
       "cognate": null,
+      "cognate_note": null,
       "tier": 5
     },
     {
@@ -610,7 +787,10 @@
       "pos": "noun",
       "theme": "body",
       "root": "oculus",
+      "root_lang": "Latin",
+      "root_meaning": "eye",
       "cognate": "ocular",
+      "cognate_note": null,
       "tier": 3
     },
     {
@@ -620,7 +800,10 @@
       "pos": "verb",
       "theme": "body",
       "root": "videre",
+      "root_lang": "Latin",
+      "root_meaning": "to see",
       "cognate": "video",
+      "cognate_note": "Latin for \"I see\"",
       "tier": 1
     },
     {
@@ -629,8 +812,11 @@
       "en": "to look at",
       "pos": "verb",
       "theme": "body",
-      "root": null,
-      "cognate": null,
+      "root": "wardōn",
+      "root_lang": "Frankish",
+      "root_meaning": "to watch over",
+      "cognate": "guard",
+      "cognate_note": "same Germanic root as English \"ward\"",
       "tier": 3
     },
     {
@@ -639,8 +825,11 @@
       "en": "ear",
       "pos": "noun",
       "theme": "body",
-      "root": null,
+      "root": "auris",
+      "root_lang": "Latin",
+      "root_meaning": "ear",
       "cognate": null,
+      "cognate_note": null,
       "tier": 6
     },
     {
@@ -650,7 +839,10 @@
       "pos": "verb",
       "theme": "body",
       "root": "sentire",
+      "root_lang": "Latin",
+      "root_meaning": "to feel, to perceive",
       "cognate": "sentiment",
+      "cognate_note": null,
       "tier": 2
     },
     {
@@ -659,8 +851,11 @@
       "en": "mouth",
       "pos": "noun",
       "theme": "body",
-      "root": null,
+      "root": "bucca",
+      "root_lang": "Latin",
+      "root_meaning": "cheek",
       "cognate": null,
+      "cognate_note": null,
       "tier": 3
     },
     {
@@ -670,7 +865,10 @@
       "pos": "noun",
       "theme": "weather",
       "root": "sol",
+      "root_lang": "Latin",
+      "root_meaning": "sun",
       "cognate": "solar",
+      "cognate_note": null,
       "tier": 3
     },
     {
@@ -680,7 +878,10 @@
       "pos": "noun",
       "theme": "weather",
       "root": "pluere",
+      "root_lang": "Latin",
+      "root_meaning": "to rain",
       "cognate": null,
+      "cognate_note": null,
       "tier": 5
     },
     {
@@ -690,7 +891,10 @@
       "pos": "verb",
       "theme": "weather",
       "root": "pluere",
+      "root_lang": "Latin",
+      "root_meaning": "to rain",
       "cognate": null,
+      "cognate_note": null,
       "tier": 6
     },
     {
@@ -700,7 +904,10 @@
       "pos": "noun",
       "theme": "weather",
       "root": "nix",
+      "root_lang": "Latin",
+      "root_meaning": "snow",
       "cognate": null,
+      "cognate_note": null,
       "tier": 5
     },
     {
@@ -710,7 +917,10 @@
       "pos": "verb",
       "theme": "weather",
       "root": "nix",
+      "root_lang": "Latin",
+      "root_meaning": "snow",
       "cognate": null,
+      "cognate_note": null,
       "tier": 6
     },
     {
@@ -720,7 +930,10 @@
       "pos": "noun",
       "theme": "weather",
       "root": "ventus",
+      "root_lang": "Latin",
+      "root_meaning": "wind",
       "cognate": "ventilate",
+      "cognate_note": "to let the wind through",
       "tier": 5
     },
     {
@@ -730,7 +943,10 @@
       "pos": "adj",
       "theme": "weather",
       "root": "frigidus",
+      "root_lang": "Latin",
+      "root_meaning": "cold",
       "cognate": "frigid",
+      "cognate_note": null,
       "tier": 3
     },
     {
@@ -740,7 +956,10 @@
       "pos": "adj",
       "theme": "weather",
       "root": "calidus",
+      "root_lang": "Latin",
+      "root_meaning": "warm, hot",
       "cognate": "cauldron",
+      "cognate_note": "a pot for heating (Late Latin caldaria)",
       "tier": 4
     },
     {
@@ -749,8 +968,11 @@
       "en": "train",
       "pos": "noun",
       "theme": "travel",
-      "root": null,
-      "cognate": null,
+      "root": "trahere",
+      "root_lang": "Latin",
+      "root_meaning": "to pull, to drag",
+      "cognate": "train",
+      "cognate_note": "via French traîner \"to drag\": carriages pulled along",
       "tier": 4
     },
     {
@@ -760,7 +982,10 @@
       "pos": "noun",
       "theme": "travel",
       "root": "statio",
+      "root_lang": "Latin",
+      "root_meaning": "a standing, a post",
       "cognate": "station",
+      "cognate_note": null,
       "tier": 4
     },
     {
@@ -769,8 +994,11 @@
       "en": "ticket",
       "pos": "noun",
       "theme": "travel",
-      "root": null,
-      "cognate": null,
+      "root": "bulla",
+      "root_lang": "Latin",
+      "root_meaning": "seal, bubble",
+      "cognate": "bill",
+      "cognate_note": "via French billet; a \"bill\" was a sealed document",
       "tier": 4
     },
     {
@@ -780,7 +1008,10 @@
       "pos": "verb",
       "theme": "travel",
       "root": "viaticum",
+      "root_lang": "Latin",
+      "root_meaning": "provisions for a journey (from via, \"road\")",
       "cognate": "voyage",
+      "cognate_note": "via French voyage",
       "tier": 6
     },
     {
@@ -790,7 +1021,10 @@
       "pos": "noun",
       "theme": "travel",
       "root": "viaticum",
+      "root_lang": "Latin",
+      "root_meaning": "provisions for a journey (from via, \"road\")",
       "cognate": "voyage",
+      "cognate_note": "via French voyage",
       "tier": 3
     },
     {
@@ -800,7 +1034,10 @@
       "pos": "noun",
       "theme": "travel",
       "root": "strata",
+      "root_lang": "Latin",
+      "root_meaning": "paved (road)",
       "cognate": "street",
+      "cognate_note": "Latin via strata, \"paved road\", became Old English strǣt",
       "tier": 2
     },
     {
@@ -810,7 +1047,10 @@
       "pos": "noun",
       "theme": "travel",
       "root": "machina",
+      "root_lang": "Latin",
+      "root_meaning": "device, machine",
       "cognate": "machine",
+      "cognate_note": null,
       "tier": 2
     },
     {
@@ -819,8 +1059,11 @@
       "en": "to drive",
       "pos": "verb",
       "theme": "travel",
-      "root": null,
-      "cognate": null,
+      "root": "wītan",
+      "root_lang": "Frankish",
+      "root_meaning": "to show the way",
+      "cognate": "guide",
+      "cognate_note": null,
       "tier": 5
     },
     {
@@ -830,7 +1073,10 @@
       "pos": "verb",
       "theme": "travel",
       "root": "arripare",
+      "root_lang": "Vulgar Latin",
+      "root_meaning": "to come ashore",
       "cognate": "arrive",
+      "cognate_note": "ad \"to\" + ripa \"shore\"",
       "tier": 3
     },
     {
@@ -840,7 +1086,10 @@
       "pos": "verb",
       "theme": "travel",
       "root": "partiri",
+      "root_lang": "Latin",
+      "root_meaning": "to divide, to share",
       "cognate": "depart",
+      "cognate_note": "to part from",
       "tier": 4
     },
     {
@@ -850,7 +1099,10 @@
       "pos": "noun",
       "theme": "time",
       "root": "diurnus",
+      "root_lang": "Latin",
+      "root_meaning": "daily (from dies, \"day\")",
       "cognate": "journal",
+      "cognate_note": "a daily record; a \"journey\" was a day's travel",
       "tier": 1
     },
     {
@@ -860,7 +1112,10 @@
       "pos": "noun",
       "theme": "time",
       "root": "nox",
+      "root_lang": "Latin",
+      "root_meaning": "night",
       "cognate": "nocturnal",
+      "cognate_note": null,
       "tier": 1
     },
     {
@@ -869,8 +1124,11 @@
       "en": "morning",
       "pos": "noun",
       "theme": "time",
-      "root": null,
-      "cognate": null,
+      "root": "matutinus",
+      "root_lang": "Latin",
+      "root_meaning": "of the morning",
+      "cognate": "matins",
+      "cognate_note": "early-morning prayers",
       "tier": 3
     },
     {
@@ -879,8 +1137,11 @@
       "en": "evening",
       "pos": "noun",
       "theme": "time",
-      "root": null,
+      "root": "serus",
+      "root_lang": "Latin",
+      "root_meaning": "late",
       "cognate": null,
+      "cognate_note": null,
       "tier": 2
     },
     {
@@ -889,8 +1150,11 @@
       "en": "today",
       "pos": "adv",
       "theme": "time",
-      "root": null,
+      "root": "hodie",
+      "root_lang": "Latin",
+      "root_meaning": "today (hoc die, \"on this day\")",
       "cognate": null,
+      "cognate_note": null,
       "tier": 1
     },
     {
@@ -899,8 +1163,11 @@
       "en": "tomorrow",
       "pos": "adv",
       "theme": "time",
-      "root": null,
+      "root": "mane",
+      "root_lang": "Latin",
+      "root_meaning": "morning (de mane, \"from the morning\")",
       "cognate": null,
+      "cognate_note": null,
       "tier": 1
     },
     {
@@ -909,8 +1176,11 @@
       "en": "yesterday",
       "pos": "adv",
       "theme": "time",
-      "root": null,
-      "cognate": null,
+      "root": "heri",
+      "root_lang": "Latin",
+      "root_meaning": "yesterday",
+      "cognate": "yesterday",
+      "cognate_note": "Latin heri and English yester- share a Proto-Indo-European root",
       "tier": 2
     },
     {
@@ -919,8 +1189,11 @@
       "en": "week",
       "pos": "noun",
       "theme": "time",
-      "root": null,
-      "cognate": null,
+      "root": "septimana",
+      "root_lang": "Late Latin",
+      "root_meaning": "week (from septem, \"seven\")",
+      "cognate": "September",
+      "cognate_note": "the 7th month of the old Roman year",
       "tier": 2
     }
   ],
@@ -2332,12 +2605,12 @@
     {
       "source": "il-nonno",
       "target": "la-nonna",
-      "weight": 0.886,
+      "weight": 1.0,
       "reason": "morphological",
       "components": {
         "semantic": 0.81,
         "morphological": 1.0,
-        "etymological": 0.0,
+        "etymological": 1.0,
         "thematic": 1.0
       },
       "via": "tree"
@@ -3238,6 +3511,110 @@
         "thematic": 1.0
       },
       "via": "bonus"
+    }
+  ],
+  "roots": [
+    {
+      "id": "root:manducare",
+      "root": "manducare",
+      "lang": "Latin",
+      "meaning": "to chew, to munch",
+      "words": [
+        "mangiare",
+        "mangiato"
+      ]
+    },
+    {
+      "id": "root:coquere",
+      "root": "coquere",
+      "lang": "Latin",
+      "meaning": "to cook",
+      "words": [
+        "cucinare",
+        "la-cucina",
+        "il-cuoco"
+      ]
+    },
+    {
+      "id": "root:cena",
+      "root": "cena",
+      "lang": "Latin",
+      "meaning": "dinner",
+      "words": [
+        "la-cena",
+        "cenare"
+      ]
+    },
+    {
+      "id": "root:parabola",
+      "root": "parabola",
+      "lang": "Late Latin",
+      "meaning": "speech, parable",
+      "words": [
+        "parlare",
+        "parlato",
+        "la-parola"
+      ]
+    },
+    {
+      "id": "root:respondere",
+      "root": "respondere",
+      "lang": "Latin",
+      "meaning": "to answer",
+      "words": [
+        "rispondere",
+        "la-risposta"
+      ]
+    },
+    {
+      "id": "root:filius",
+      "root": "filius",
+      "lang": "Latin",
+      "meaning": "son",
+      "words": [
+        "il-figlio",
+        "la-figlia"
+      ]
+    },
+    {
+      "id": "root:nonnus",
+      "root": "nonnus",
+      "lang": "Late Latin",
+      "meaning": "old man, monk",
+      "words": [
+        "il-nonno",
+        "la-nonna"
+      ]
+    },
+    {
+      "id": "root:pluere",
+      "root": "pluere",
+      "lang": "Latin",
+      "meaning": "to rain",
+      "words": [
+        "la-pioggia",
+        "piovere"
+      ]
+    },
+    {
+      "id": "root:nix",
+      "root": "nix",
+      "lang": "Latin",
+      "meaning": "snow",
+      "words": [
+        "la-neve",
+        "nevicare"
+      ]
+    },
+    {
+      "id": "root:viaticum",
+      "root": "viaticum",
+      "lang": "Latin",
+      "meaning": "provisions for a journey (from via, \"road\")",
+      "words": [
+        "viaggiare",
+        "il-viaggio"
+      ]
     }
   ],
   "candidates": {
@@ -8340,12 +8717,12 @@
     "il-nonno": [
       {
         "id": "la-nonna",
-        "weight": 0.886,
+        "weight": 1.0,
         "rank": 1,
         "components": {
           "semantic": 0.81,
           "morphological": 1.0,
-          "etymological": 0.0,
+          "etymological": 1.0,
           "thematic": 1.0
         },
         "linked": true
@@ -8438,12 +8815,12 @@
     "la-nonna": [
       {
         "id": "il-nonno",
-        "weight": 0.886,
+        "weight": 1.0,
         "rank": 1,
         "components": {
           "semantic": 0.81,
           "morphological": 1.0,
-          "etymological": 0.0,
+          "etymological": 1.0,
           "thematic": 1.0
         },
         "linked": true

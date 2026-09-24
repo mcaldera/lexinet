@@ -5,7 +5,7 @@ import ForceGraph2D, {
   type NodeObject,
 } from 'react-force-graph-2d';
 import { edgeOpacity, healthBand } from '../core/health';
-import type { AppData, Edge, WordNode } from '../db/repo';
+import type { AppData, Edge, RootHub, WordNode } from '../db/repo';
 import { useKeyboardCamera } from './useKeyboardCamera';
 import {
   isWeakBridge,
@@ -17,8 +17,10 @@ import {
   type Shape,
 } from './visuals';
 
-type GNode = { id: string; word: WordNode };
-type GLink = Edge;
+/** Word node, or a root hub (then `word` holds the root's name/meaning for labels). */
+type GNode = { id: string; word: WordNode; hub?: RootHub };
+/** `descends`: link from a root hub to one of its words. */
+type GLink = Edge & { descends?: boolean };
 type N = NodeObject<GNode>;
 type L = LinkObject<GNode, GLink>;
 
@@ -36,10 +38,19 @@ type Props = {
   activeId?: string;
   /** Show every word and edge (spoilers) for inspecting the network. */
   inspect: boolean;
+  /** Draw shared roots as hub nodes (replaces word-to-word "shared root" links). */
+  showRoots: boolean;
   onNodeClick: (id: string) => void;
 };
 
-export default function GraphView({ data, health, activeId, inspect, onNodeClick }: Props) {
+export default function GraphView({
+  data,
+  health,
+  activeId,
+  inspect,
+  showRoots,
+  onNodeClick,
+}: Props) {
   const wrap = useRef<HTMLDivElement>(null);
   const fg = useRef<ForceGraphMethods<N, L>>(undefined);
   const [size, setSize] = useState({ width: 800, height: 600 });
@@ -48,30 +59,54 @@ export default function GraphView({ data, health, activeId, inspect, onNodeClick
 
   // Keep node objects stable across renders so the layout doesn't restart.
   const nodeCache = useRef(new Map<string, N>());
-  const visibleKey = data.nodes
-    .filter((n) => inspect || data.states.get(n.id) !== 'locked')
-    .map((n) => n.id)
-    .join(',');
+  const hubs = useMemo(() => (showRoots ? (data.graph.roots ?? []) : []), [showRoots, data.graph]);
+  // A root appears once you've conquered one of its words (always in inspect mode).
+  const visibleKey = [
+    ...data.nodes.filter((n) => inspect || data.states.get(n.id) !== 'locked').map((n) => n.id),
+    ...hubs
+      .filter((h) => inspect || h.words.some((w) => data.states.get(w) === 'conquered'))
+      .map((h) => h.id),
+  ].join(',');
 
   const graphData = useMemo(() => {
     const visible = new Set(visibleKey.split(',').filter(Boolean));
-    const nodes = data.nodes
-      .filter((n) => visible.has(n.id))
-      .map((w) => {
-        let n = nodeCache.current.get(w.id);
-        if (!n) {
-          n = { id: w.id, word: w };
-          nodeCache.current.set(w.id, n);
-        }
-        n.word = w;
-        return n;
-      });
+    const node = (id: string, word: WordNode, hub?: RootHub) => {
+      let n = nodeCache.current.get(id);
+      if (!n) {
+        n = { id, word };
+        nodeCache.current.set(id, n);
+      }
+      n.word = word;
+      n.hub = hub;
+      return n;
+    };
+    const hubNodes = hubs
+      .filter((h) => visible.has(h.id))
+      .map((h) =>
+        node(h.id, { id: h.id, it: h.root, en: h.meaning ?? '', pos: null, theme: null }, h),
+      );
+    const nodes = [
+      ...data.nodes.filter((n) => visible.has(n.id)).map((w) => node(w.id, w)),
+      ...hubNodes,
+    ];
     const links: GLink[] = data.edges
       .filter((e) => visible.has(e.source) && visible.has(e.target))
+      .filter((e) => !(hubs.length && e.reason === 'etymological')) // the hub replaces these
       .map((e) => ({ ...e }));
+    for (const n of hubNodes) {
+      for (const w of n.hub!.words.filter((w) => visible.has(w))) {
+        links.push({
+          source: n.id,
+          target: w,
+          weight: 0.4,
+          reason: 'etymological',
+          descends: true,
+        });
+      }
+    }
     return { nodes, links };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visibleKey, data.edges]);
+  }, [visibleKey, data.edges, hubs]);
 
   useEffect(() => {
     const el = wrap.current;
@@ -89,7 +124,8 @@ export default function GraphView({ data, health, activeId, inspect, onNodeClick
   }, []);
 
   const endId = (x: unknown) => (typeof x === 'object' && x ? (x as N).id : (x as string));
-  const hidden = (id: string) => !inspect && data.states.get(id) !== 'conquered';
+  const isHub = (id: string) => id.startsWith('root:');
+  const hidden = (id: string) => !inspect && !isHub(id) && data.states.get(id) !== 'conquered';
   const touchesActive = (l: L) =>
     inspect && activeId !== undefined && [endId(l.source), endId(l.target)].includes(activeId);
 
@@ -100,6 +136,11 @@ export default function GraphView({ data, health, activeId, inspect, onNodeClick
     const shape: Shape = shapeOf(node.word.pos);
     const r = 6;
     ctx.save();
+    if (node.hub) {
+      drawHub(ctx, node, x, y, scale, node.id === activeId);
+      ctx.restore();
+      return;
+    }
     if (node.id === activeId) {
       ctx.beginPath();
       ctx.arc(x, y, r + 4, 0, 2 * Math.PI);
@@ -175,6 +216,14 @@ export default function GraphView({ data, health, activeId, inspect, onNodeClick
 
   const linkTooltip = (l: L) => {
     const [a, b] = [endId(l.source), endId(l.target)];
+    if (l.descends) {
+      const hub = hubs.find((h) => h.id === a);
+      const w = byId.get(b);
+      const word = hidden(b) ? 'This unknown word' : `<b>${w?.it}</b>`;
+      return `${word} descends from ${hub?.lang ?? ''} <i>${hub?.root}</i>${
+        hub?.meaning ? ` “${hub.meaning}”` : ''
+      }`;
+    }
     const wa = byId.get(a);
     const wb = byId.get(b);
     const color = `rgb(${REASON_RGB[l.reason]})`;
@@ -212,6 +261,14 @@ export default function GraphView({ data, health, activeId, inspect, onNodeClick
           ctx.fill();
         }}
         nodeLabel={(n) => {
+          if (n.hub) {
+            const known = n.hub.words.filter((w) => !hidden(w)).map((w) => byId.get(w)?.it);
+            const unknown = n.hub.words.length - known.length;
+            return `${n.hub.lang ?? ''} ${n.hub.root}${n.hub.meaning ? ` “${n.hub.meaning}”` : ''} → ${[
+              ...known,
+              ...(unknown ? [`${unknown} unknown`] : []),
+            ].join(', ')}`;
+          }
           const state = data.states.get(n.id);
           if (!inspect && state === 'frontier') {
             return `Unknown ${n.word.pos ?? 'word'}: click to conquer`;
@@ -223,7 +280,9 @@ export default function GraphView({ data, health, activeId, inspect, onNodeClick
         }}
         linkColor={(l) => `rgba(${REASON_RGB[l.reason]}, ${linkAlpha(l)})`}
         linkWidth={(l) => 0.5 + l.weight * 2.5 + (touchesActive(l) ? 1 : 0)}
-        linkLineDash={(l) => (isWeakBridge(l) ? [3, 3] : null)}
+        linkLineDash={(l) =>
+          isWeakBridge(l) || (l.descends && hidden(endId(l.target))) ? [3, 3] : null
+        }
         linkHoverPrecision={6}
         linkLabel={linkTooltip}
         onNodeClick={(n) => onNodeClick(n.id)}
@@ -261,6 +320,7 @@ function Legend() {
         <span>▲ verb</span>
         <span>◆ adjective</span>
         <span>■ adverb</span>
+        <span className="text-pink-300">⬢ shared root</span>
       </div>
       <div className="flex gap-3">
         {(['semantic', 'thematic', 'morphological', 'etymological'] as const).map((r) => (
@@ -279,4 +339,37 @@ function Legend() {
       </div>
     </div>
   );
+}
+
+function drawHub(
+  ctx: CanvasRenderingContext2D,
+  node: N,
+  x: number,
+  y: number,
+  scale: number,
+  active: boolean,
+) {
+  const r = 7;
+  ctx.beginPath();
+  for (let i = 0; i < 6; i++) {
+    const a = (Math.PI / 3) * i + Math.PI / 6;
+    ctx.lineTo(x + r * Math.cos(a), y + r * Math.sin(a));
+  }
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(244, 114, 182, 0.25)';
+  ctx.fill();
+  ctx.strokeStyle = active ? '#f8fafc' : 'rgba(244, 114, 182, 0.9)';
+  ctx.lineWidth = active ? 1.5 : 1;
+  ctx.stroke();
+  const fontSize = Math.max(3, 11 / scale);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.font = `italic ${fontSize}px serif`;
+  ctx.fillStyle = 'rgba(251, 207, 232, 0.95)';
+  ctx.fillText(node.word.it, x, y + r + 2);
+  if (node.word.en) {
+    ctx.font = `${fontSize * 0.8}px sans-serif`;
+    ctx.fillStyle = 'rgba(251, 207, 232, 0.6)';
+    ctx.fillText(`“${node.word.en}”`, x, y + r + 3 + fontSize);
+  }
 }

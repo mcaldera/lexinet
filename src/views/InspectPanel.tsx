@@ -1,4 +1,5 @@
 import type { AppData, Components, EdgeReason } from '../db/repo';
+import Etymology from './Etymology';
 import { isWeakBridge, REASON_LABEL, REASON_RGB, reasonText } from './visuals';
 
 type Props = {
@@ -37,6 +38,39 @@ export default function InspectPanel({ data, health, selectedId, onSelect }: Pro
   const params = graph.params;
   const byId = new Map(data.nodes.map((n) => [n.id, n]));
   const word = selectedId ? byId.get(selectedId) : undefined;
+  const hub = graph.roots?.find((r) => r.id === selectedId);
+
+  if (hub) {
+    return (
+      <div className="rounded-lg border border-pink-500/40 bg-slate-900 p-4 text-sm">
+        <div className="mb-2 text-xs uppercase tracking-wider text-pink-300/80">Shared root</div>
+        <div className="text-xl">
+          <i className="text-pink-200">{hub.root}</i>
+          {hub.meaning && <span className="text-slate-400"> “{hub.meaning}”</span>}
+        </div>
+        <div className="mb-3 text-xs text-slate-500">{hub.lang}</div>
+        <div className="mb-1 text-xs uppercase tracking-wider text-slate-400">
+          Descendants ({hub.words.length})
+        </div>
+        <ul className="space-y-1">
+          {hub.words.map((id) => {
+            const w = byId.get(id)!;
+            return (
+              <li key={id} className="flex justify-between gap-2">
+                <button className="hover:underline" onClick={() => onSelect(id)}>
+                  {w.it}
+                </button>
+                <span className="text-xs text-slate-400">
+                  {w.en}
+                  {w.cognate && ` · ≈ ${w.cognate}`}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    );
+  }
 
   if (!word) {
     const counts = data.edges.reduce<Record<string, number>>(
@@ -102,6 +136,9 @@ export default function InspectPanel({ data, health, selectedId, onSelect }: Pro
           .join(' · ')}
       </div>
 
+      <div className="-mt-1 mb-3">
+        <Etymology word={word} />
+      </div>
       <div className="mb-1 text-xs uppercase tracking-wider text-slate-400">
         Links ({links.length})
       </div>

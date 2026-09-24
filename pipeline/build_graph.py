@@ -54,7 +54,7 @@ EN_PREFIX_RE = re.compile(r"^(to|the|a|an)\s+", re.IGNORECASE)
 # Infinitive and past-participle endings, else a single final vowel.
 ENDING_RE = re.compile(r"(are|ere|ire|at[oaie]|ut[oaie]|it[oaie]|[aeiou])$")
 
-OPTIONAL_COLUMNS = ("pos", "theme", "root", "cognate", "tier")
+OPTIONAL_COLUMNS = ("pos", "theme", "root", "root_lang", "root_meaning", "cognate", "cognate_note", "tier")
 FREQUENCY_URL = "https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/it/it_50k.txt"
 FREQUENCY_PATH = Path.home() / ".cache" / "sprawl" / "it_50k.txt"
 MAX_TIERS = 10
@@ -354,6 +354,23 @@ def build_graph(
         }
         for i, r in enumerate(df.itertuples(index=False))
     ]
+    # Roots shared by 2+ words become hub nodes in the app ("descends from" links).
+    by_root: dict[str, list[int]] = {}
+    for i, r in enumerate(df["root"]):
+        if r:
+            by_root.setdefault(r.lower(), []).append(i)
+    roots = [
+        {
+            "id": f"root:{slug(df['root'][members[0]])}",
+            "root": df["root"][members[0]],
+            "lang": df["root_lang"][members[0]] or None,
+            "meaning": df["root_meaning"][members[0]] or None,
+            "words": [ids[i] for i in members],
+        }
+        for members in by_root.values()
+        if len(members) >= 2
+    ]
+
     return {
         "seed": ids[words.index(seed)],
         "params": {
@@ -365,6 +382,7 @@ def build_graph(
         },
         "nodes": nodes,
         "edges": edges,
+        "roots": roots,
         "candidates": candidates,
     }
 
@@ -408,7 +426,7 @@ def main(argv: list[str] | None = None) -> int:
     n, m = len(graph["nodes"]), len(graph["edges"])
     tiers = pd.Series([nd["tier"] for nd in graph["nodes"]]).value_counts().sort_index().to_dict()
     print(f"{n} nodes, {m} edges (avg degree {2 * m / n:.1f}) {reasons}, seed={seed_word!r} -> {args.out}")
-    print(f"tiers (tier: words): {tiers}")
+    print(f"tiers (tier: words): {tiers}; {len(graph['roots'])} shared roots")
     return 0
 
 
