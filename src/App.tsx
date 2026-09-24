@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { COOLDOWN_MS, INFLUENCE } from './config';
-import { FULL_NAME } from './core/fade';
-import { isHostile } from './core/influence';
+import { FULL_NAME, fadedName } from './core/fade';
+import { cohesion, isHostile, neighbourWeights, pressureBreakdown } from './core/influence';
 import { startOfDay } from './core/clock';
 import { nodeHealth } from './core/health';
 import { buildQueue } from './core/queue';
@@ -20,6 +20,7 @@ import ReviewView from './views/ReviewView';
 import RootQuiz from './views/RootQuiz';
 import VerbDrill from './views/VerbDrill';
 import WordInfo from './views/WordInfo';
+import NodeDetails from './views/NodeDetails';
 
 /** A node the user clicked: its cards are reviewed before the automatic queue. */
 type Session = { nodeId: string; cardIds: string[]; mode: 'conquer' | 'practice' };
@@ -38,6 +39,8 @@ export default function App() {
   const [cooldowns, setCooldowns] = useState<Map<string, number>>(new Map());
   const [notice, setNotice] = useState<string | null>(null);
   const [rootQuiz, setRootQuiz] = useState<string | null>(null);
+  /** Last word clicked or reached with the arrow keys: shown in the details panel. */
+  const [selectedId, setSelectedId] = useState<string>();
   /** A conquered word opened for viewing (it isn't due): meaning, etymology, tenses. */
   const [info, setInfo] = useState<{ nodeId: string; status: string } | null>(null);
   const [verbDrill, setVerbDrill] = useState<{
@@ -115,6 +118,23 @@ export default function App() {
     () => (data ? computeProgress(data.nodes, data.states, data.tenseCards, now) : null),
     [data, now],
   );
+  const weights = useMemo(() => neighbourWeights(data?.edges ?? []), [data?.edges]);
+  const hostileSet = useMemo(
+    () =>
+      new Set(
+        data
+          ? [...data.states]
+              .filter(
+                ([id, st]) =>
+                  isHostile(data.game.nodes.get(id), st, now.getTime(), INFLUENCE) ||
+                  (st === 'conquered' &&
+                    (data.game.nodes.get(id)?.control ?? 1) < INFLUENCE.rebelBelow),
+              )
+              .map(([id]) => id)
+          : [],
+      ),
+    [data, now],
+  );
   const verbLevels = useMemo(
     () => (data ? computeVerbLevels(data.nodes, data.tenseCards, now) : new Map<string, number>()),
     [data, now],
@@ -148,6 +168,35 @@ export default function App() {
       ? { nodeId: dueTense.nodeId, tense: dueTense.tense, kind: 'defend' as const }
       : null);
   const dueCount = queue.filter((c) => !session?.cardIds.includes(c.id)).length;
+
+  // Details panel: the word being worked on, else the last one selected.
+  const detailsId =
+    activeDrill?.nodeId ?? session?.nodeId ?? info?.nodeId ?? selectedId ?? current?.nodeId;
+  const detailsWord = data.nodes.find((n) => n.id === detailsId);
+  const nameOf = (id: string) => {
+    if (data.states.get(id) !== 'conquered') return '';
+    const w = data.nodes.find((n) => n.id === id);
+    return w ? fadedName(w.it, health.get(id) ?? null) : '';
+  };
+  const detailsInfluences = !detailsWord
+    ? []
+    : data.states.get(detailsWord.id) === 'conquered'
+      ? pressureBreakdown(
+          detailsWord.id,
+          data.game.nodes,
+          data.states,
+          weights,
+          verbLevels,
+          now.getTime(),
+          INFLUENCE,
+        )
+      : (weights.get(detailsWord.id) ?? [])
+          .filter((n) => data.states.get(n.id) === 'conquered')
+          .map((n) => ({
+            id: n.id,
+            kind: 'attack' as const,
+            perDay: -INFLUENCE.hostilePressure * n.weight,
+          }));
 
   const today = startOfDay(now).getTime();
   const newToday = [...data.firstReview.values()].filter(
@@ -188,6 +237,7 @@ export default function App() {
   const selectNode = (nodeId: string) => {
     if (inspect) return setInspectId(nodeId);
     setInfo(null);
+    setSelectedId(nodeId);
     const hub = data.graph.roots?.find((r) => r.id === nodeId);
     if (hub) {
       const until = cooldowns.get(nodeId);
@@ -332,18 +382,7 @@ export default function App() {
             strength={strength}
             verbLevels={verbLevels}
             control={new Map([...data.game.nodes].map(([id, g]) => [id, g.control]))}
-            hostile={
-              new Set(
-                [...data.states]
-                  .filter(
-                    ([id, st]) =>
-                      isHostile(data.game.nodes.get(id), st, now.getTime(), INFLUENCE) ||
-                      (st === 'conquered' &&
-                        (data.game.nodes.get(id)?.control ?? 1) < INFLUENCE.rebelBelow),
-                  )
-                  .map(([id]) => id),
-              )
-            }
+            hostile={hostileSet}
             nowMs={now.getTime()}
             graceUntil={
               new Map(
@@ -452,6 +491,32 @@ export default function App() {
                 />
               )}
             </>
+          )}
+          {!inspect && detailsWord && (
+            <NodeDetails
+              key={detailsWord.id}
+              word={detailsWord}
+              state={data.states.get(detailsWord.id) ?? 'locked'}
+              name={nameOf(detailsWord.id)}
+              health={health.get(detailsWord.id) ?? null}
+              control={data.game.nodes.get(detailsWord.id)?.control ?? 1}
+              influences={detailsInfluences}
+              nameOf={nameOf}
+              cohesion={cohesion(detailsWord.id, data.states, weights)}
+              hostile={hostileSet.has(detailsWord.id)}
+              graceHours={
+                ((data.game.nodes.get(detailsWord.id)?.since ?? now.getTime()) +
+                  INFLUENCE.hostileAfterHours * 3_600_000 -
+                  now.getTime()) /
+                3_600_000
+              }
+              showEtymology={
+                (health.get(detailsWord.id) ?? 1) >= FULL_NAME &&
+                session?.nodeId !== detailsWord.id &&
+                current?.nodeId !== detailsWord.id &&
+                info?.nodeId !== detailsWord.id
+              }
+            />
           )}
           <DebugPanel
             offsetDays={data.offsetDays}

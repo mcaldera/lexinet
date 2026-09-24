@@ -1,5 +1,13 @@
 import { INFLUENCE } from '../config';
-import { afterAnswer, isHostile, neighbourWeights, simulate, type Game } from './influence';
+import {
+  afterAnswer,
+  cohesion,
+  isHostile,
+  neighbourWeights,
+  pressureBreakdown,
+  simulate,
+  type Game,
+} from './influence';
 import type { NodeState } from './unlock';
 
 const H = 3_600_000;
@@ -119,4 +127,20 @@ test('answers: success restores, misses make hostile or cost control', () => {
     INFLUENCE,
   );
   expect(rev.nodes.get('c')!.since).toBe(t0);
+});
+
+test('breakdown names who attacks and who supports; cohesion measures the cluster', () => {
+  const game: Game = { simAt: t0, nodes: new Map([['c', { control: 0, since: t0 - 48 * H }]]) };
+  const states = st({ a: 'conquered', b: 'conquered', c: 'frontier' });
+  const parts = pressureBreakdown('b', game.nodes, states, nb, new Map(), t0, INFLUENCE);
+  expect(parts.map((p) => [p.id, p.kind])).toEqual([
+    ['a', 'support'],
+    ['c', 'attack'],
+  ]);
+  expect(parts[1].perDay).toBeCloseTo(-INFLUENCE.hostilePressure);
+  expect(cohesion('a', states, nb)).toEqual({ links: 1, cluster: 2 });
+  expect(cohesion('b', st({ a: 'frontier', b: 'conquered', c: 'frontier' }), nb)).toEqual({
+    links: 0,
+    cluster: 1,
+  });
 });

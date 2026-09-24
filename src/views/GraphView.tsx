@@ -104,6 +104,18 @@ export default function GraphView({
       .map((h) => h.id),
   ].join(',');
 
+  // Cohesion: summed strength of links to other conquered words (glow size).
+  const cohesionOf = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const e of data.edges) {
+      if (data.states.get(e.source) === 'conquered' && data.states.get(e.target) === 'conquered') {
+        m.set(e.source, (m.get(e.source) ?? 0) + e.weight);
+        m.set(e.target, (m.get(e.target) ?? 0) + e.weight);
+      }
+    }
+    return m;
+  }, [data.edges, data.states]);
+
   // Influence flows per link ("a|b" sorted): who attacks or supports whom.
   const flowKey = useMemo(() => {
     const out: string[] = [];
@@ -120,6 +132,8 @@ export default function GraphView({
     }
     return out.join(',');
   }, [data.edges, data.states, hostile, control]);
+  // Something moves on screen: keep redrawing (energy bands, arrows, breathing glow).
+  const animate = !inspect && (cohesionOf.size > 0 || flowKey !== '');
 
   const graphData = useMemo(() => {
     const visible = new Set(visibleKey.split(',').filter(Boolean));
@@ -382,6 +396,21 @@ export default function GraphView({
 
     const h = health.get(node.id) ?? 1;
     const band = healthBand(h);
+    const coh = cohesionOf.get(node.id) ?? 0;
+    if (coh > 0 && !inspect) {
+      // Embedded words glow: bigger and brighter the more strongly they are
+      // tied into conquered territory, breathing slowly.
+      const breath = 0.85 + 0.15 * Math.sin(Date.now() / 900 + x * 0.01);
+      const glow = r + 3 + Math.min(10, coh * 3);
+      const g = ctx.createRadialGradient(x, y, r * 0.8, x, y, glow);
+      const a = Math.min(0.45, 0.15 + coh * 0.12) * (control.get(node.id) ?? 1) * breath;
+      g.addColorStop(0, `rgba(52, 211, 153, ${a})`);
+      g.addColorStop(1, 'rgba(52, 211, 153, 0)');
+      ctx.beginPath();
+      ctx.arc(x, y, glow, 0, 2 * Math.PI);
+      ctx.fillStyle = g;
+      ctx.fill();
+    }
     if (hostile.has(node.id)) {
       // Rebelling: control collapsed, now pressuring its own neighbours.
       ctx.beginPath();
@@ -479,6 +508,32 @@ export default function GraphView({
       <div>strength ${Math.round(l.weight * 100)}%</div>${detail}${weak}`;
   };
 
+  /** A link between two conquered words: carries a moving band of light. */
+  const isEnergy = (l: L) =>
+    !inspect &&
+    !l.category &&
+    !l.descends &&
+    data.states.get(endId(l.source)) === 'conquered' &&
+    data.states.get(endId(l.target)) === 'conquered';
+
+  const drawEnergy = (ctx: CanvasRenderingContext2D, l: L) => {
+    const a = l.source as N;
+    const b = l.target as N;
+    if (a.x === undefined || b.x === undefined) return;
+    const strength = Math.min(control.get(a.id) ?? 1, control.get(b.id) ?? 1);
+    ctx.save();
+    ctx.setLineDash([3, 9]);
+    ctx.lineDashOffset = -Date.now() / 60; // flows along the link
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = `rgba(167, 243, 208, ${0.25 + 0.55 * strength * l.weight})`;
+    ctx.lineWidth = 0.6 + 2.5 * l.weight * strength;
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y!);
+    ctx.lineTo(b.x, b.y!);
+    ctx.stroke();
+    ctx.restore();
+  };
+
   return (
     <div ref={wrap} className="relative h-full w-full">
       <ForceGraph2D<GNode, GLink>
@@ -534,7 +589,11 @@ export default function GraphView({
               : ` · verb level ${vl}/${TENSES.length}${vl < TENSES.length ? ` (next: ${TENSES[vl]})` : ''}`;
           return `${n.word.it} = ${n.word.en}${pct}${str}${verb} · ${hint}`;
         }}
-        linkColor={(l) => `rgba(${REASON_RGB[l.reason]}, ${linkAlpha(l)})`}
+        linkColor={(l) =>
+          l.flow === 'attack'
+            ? `rgba(248, 113, 113, ${0.35 + 0.3 * Math.sin(Date.now() / 250)})` // pulsing threat
+            : `rgba(${REASON_RGB[l.reason]}, ${linkAlpha(l)})`
+        }
         // Strong links are much thicker (and carry more influence).
         linkWidth={(l) => 0.3 + 5 * l.weight ** 2 + (touchesActive(l) ? 1 : 0)}
         linkLineDash={(l) =>
@@ -543,15 +602,14 @@ export default function GraphView({
         linkHoverPrecision={6}
         linkVisibility={(l) => !l.category}
         // Keep animating while influence flows (particles); otherwise let the canvas idle.
-        autoPauseRedraw={!flowKey}
+        autoPauseRedraw={!animate}
         linkDirectionalParticles={(l) => (l.flow ? Math.max(1, Math.round(l.weight * 4)) : 0)}
         linkDirectionalParticleSpeed={(l) =>
           l.flow === 'attack' ? 0.004 + 0.01 * l.weight : 0.003 + 0.003 * l.weight
         }
-        linkDirectionalParticleWidth={(l) => (l.flow === 'attack' ? 3 : 2)}
-        linkDirectionalParticleColor={(l) =>
-          l.flow === 'attack' ? 'rgba(248, 113, 113, 0.95)' : 'rgba(110, 231, 183, 0.9)'
-        }
+        linkDirectionalParticleCanvasObject={(px, py, l, ctx) => drawChevron(ctx, px, py, l)}
+        linkCanvasObjectMode={(l) => (isEnergy(l) ? 'after' : undefined)}
+        linkCanvasObject={(l, ctx) => drawEnergy(ctx, l)}
         onRenderFramePre={(ctx, scale) => drawRegions(ctx, scale, livePoints())}
         linkLabel={linkTooltip}
         onNodeClick={(n) => {
@@ -606,8 +664,9 @@ function Legend() {
         <span className="text-amber-300">◎ verb level</span>
       </div>
       <div className="flex gap-3">
-        <span className="text-red-300">• → red: attack</span>
-        <span className="text-emerald-300">• → green: support</span>
+        <span className="text-red-300">› red: attack</span>
+        <span className="text-emerald-300">› green: support</span>
+        <span className="text-emerald-200">glow: cohesion</span>
         <span className="text-red-300">? red: hostile</span>
         <span className="text-amber-300">◔ time until hostile</span>
         <span className="text-pink-300">⬢ shared root</span>
@@ -722,5 +781,29 @@ function drawRegions(ctx: CanvasRenderingContext2D, scale: number, regions: Terr
     ctx.fillStyle = `rgba(${t.color}, ${alpha})`;
     ctx.fillText(t.name.toUpperCase(), cx, cy);
   }
+  ctx.restore();
+}
+
+/** A glowing chevron pointing along the link: the direction influence travels. */
+function drawChevron(ctx: CanvasRenderingContext2D, x: number, y: number, l: L) {
+  const a = l.source as N;
+  const b = l.target as N;
+  const angle = Math.atan2((b.y ?? 0) - (a.y ?? 0), (b.x ?? 0) - (a.x ?? 0));
+  const attack = l.flow === 'attack';
+  const size = (attack ? 3.2 : 2.4) + l.weight * 2;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+  ctx.shadowColor = attack ? 'rgba(248, 113, 113, 0.9)' : 'rgba(110, 231, 183, 0.9)';
+  ctx.shadowBlur = 6;
+  ctx.strokeStyle = attack ? 'rgba(254, 202, 202, 0.95)' : 'rgba(209, 250, 229, 0.95)';
+  ctx.lineWidth = attack ? 1.6 : 1.2;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.6, -size);
+  ctx.lineTo(size * 0.6, 0);
+  ctx.lineTo(-size * 0.6, size);
+  ctx.stroke();
   ctx.restore();
 }

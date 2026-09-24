@@ -43,7 +43,39 @@ export const isRebel = (
   rules: InfluenceRules,
 ) => state === 'conquered' && (g?.control ?? 1) < rules.rebelBelow;
 
-/** Net control change per day for a conquered word, and who causes it. */
+export type Influence = { id: string; kind: 'attack' | 'rebel' | 'support'; perDay: number };
+
+/** Each neighbour's effect on a conquered word's control, per day. */
+export function pressureBreakdown(
+  id: string,
+  game: Map<string, GameNode>,
+  states: Map<string, NodeState>,
+  neighbours: Map<string, { id: string; weight: number }[]>,
+  verbLevels: Map<string, number>,
+  t: number,
+  rules: InfluenceRules,
+): Influence[] {
+  const out: Influence[] = [];
+  for (const { id: n, weight } of neighbours.get(id) ?? []) {
+    const g = game.get(n);
+    const s = states.get(n);
+    if (isHostile(g, s, t, rules))
+      out.push({ id: n, kind: 'attack', perDay: -rules.hostilePressure * weight });
+    else if (isRebel(g, s, rules))
+      out.push({ id: n, kind: 'rebel', perDay: -rules.rebelPressure * weight });
+    else if (s === 'conquered') {
+      const bonus = 1 + rules.verbSupportBonus * (verbLevels.get(n) ?? 0);
+      out.push({
+        id: n,
+        kind: 'support',
+        perDay: rules.support * weight * (g?.control ?? 1) * bonus,
+      });
+    }
+  }
+  return out;
+}
+
+/** Net control change per day for a conquered word. */
 export function pressureOn(
   id: string,
   game: Map<string, GameNode>,
@@ -53,18 +85,36 @@ export function pressureOn(
   t: number,
   rules: InfluenceRules,
 ): number {
-  let rate = 0;
-  for (const { id: n, weight } of neighbours.get(id) ?? []) {
-    const g = game.get(n);
-    const s = states.get(n);
-    if (isHostile(g, s, t, rules)) rate -= rules.hostilePressure * weight;
-    else if (isRebel(g, s, rules)) rate -= rules.rebelPressure * weight;
-    else if (s === 'conquered') {
-      const bonus = 1 + rules.verbSupportBonus * (verbLevels.get(n) ?? 0);
-      rate += rules.support * weight * (g?.control ?? 1) * bonus;
+  return pressureBreakdown(id, game, states, neighbours, verbLevels, t, rules).reduce(
+    (a, b) => a + b.perDay,
+    0,
+  );
+}
+
+/**
+ * How firmly a conquered word is embedded: summed strength of its links to
+ * other conquered words (0 = isolated outpost), and the size of its conquered
+ * cluster (connected conquered words).
+ */
+export function cohesion(
+  id: string,
+  states: Map<string, NodeState>,
+  neighbours: Map<string, { id: string; weight: number }[]>,
+): { links: number; cluster: number } {
+  const links = (neighbours.get(id) ?? [])
+    .filter((n) => states.get(n.id) === 'conquered')
+    .reduce((a, n) => a + n.weight, 0);
+  const seen = new Set([id]);
+  const stack = [id];
+  while (stack.length) {
+    for (const n of neighbours.get(stack.pop()!) ?? []) {
+      if (!seen.has(n.id) && states.get(n.id) === 'conquered') {
+        seen.add(n.id);
+        stack.push(n.id);
+      }
     }
   }
-  return rate;
+  return { links, cluster: seen.size };
 }
 
 export function neighbourWeights(links: Link[]) {
