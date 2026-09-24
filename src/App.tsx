@@ -7,7 +7,7 @@ import { tierMap, tierProgress } from './core/tiers';
 import { cardId, DIRECTIONS, Rating, type Grade } from './core/scheduler';
 import { nextPractice, nodeStrength } from './core/strength';
 import type { CardRow } from './db/repo';
-import { GRAPH_NAMES } from './graphs';
+import { GRAPH_NAMES, graphLabel } from './graphs';
 import { useSprawl, type LevelUp } from './useSprawl';
 import DebugPanel from './views/DebugPanel';
 import GraphView from './views/GraphView';
@@ -203,7 +203,7 @@ export default function App() {
           {conquered}/{data.nodes.length} conquered · {frontier} frontier
           {avg !== null && ` · territory health ${Math.round(avg * 100)}%`}
         </span>
-        {progress && <TierBadge p={progress} />}
+        {progress && <TierBadge p={progress} names={data.graph.params?.tier_names} />}
         {GRAPH_NAMES.length > 1 && (
           <select
             value={graphName}
@@ -218,7 +218,7 @@ export default function App() {
           >
             {GRAPH_NAMES.map((n) => (
               <option key={n} value={n}>
-                {n === 'default' ? 'My words' : `${n} words`}
+                {graphLabel(n)}
               </option>
             ))}
           </select>
@@ -249,7 +249,8 @@ export default function App() {
           {levelUp && (
             <div className="absolute left-1/2 top-4 z-10 -translate-x-1/2 rounded-lg border border-amber-400/60 bg-amber-500/15 px-5 py-3 text-center shadow-lg backdrop-blur">
               <div className="text-lg font-semibold text-amber-300">
-                Tier {levelUp.tier} unlocked!
+                {data.graph.params?.tier_names?.[String(levelUp.tier)] ?? `Tier ${levelUp.tier}`}{' '}
+                unlocked!
               </div>
               <div className="text-sm text-amber-100/80">
                 {levelUp.revealed} new {levelUp.revealed === 1 ? 'word appeared' : 'words appeared'}{' '}
@@ -335,19 +336,27 @@ export default function App() {
   );
 }
 
-function TierBadge({ p }: { p: ReturnType<typeof tierProgress> }) {
+function TierBadge({
+  p,
+  names,
+}: {
+  p: ReturnType<typeof tierProgress>;
+  /** Display names per tier, e.g. CEFR levels. */
+  names?: Record<string, string>;
+}) {
+  const name = (t: number) => names?.[String(t)] ?? `tier ${t}`;
   const pct = p.needed ? Math.min(1, p.conquered / p.needed) : 1;
   return (
     <span
       className="flex items-center gap-2 text-sm text-slate-300"
       title={
         p.needed
-          ? `Conquer ${p.needed} words of tiers 1–${p.tier} to open tier ${p.tier + 1}`
+          ? `Conquer ${p.needed} words up to ${name(p.tier)} to open ${name(p.tier + 1)}`
           : 'All tiers open'
       }
     >
       <span className="font-semibold text-amber-300">
-        Tier {p.tier}/{p.maxTier}
+        {names ? `Level ${name(p.tier)}` : `Tier ${p.tier}/${p.maxTier}`}
       </span>
       {p.needed > 0 && (
         <>
@@ -358,7 +367,7 @@ function TierBadge({ p }: { p: ReturnType<typeof tierProgress> }) {
             />
           </span>
           <span className="text-xs text-slate-400">
-            {p.conquered}/{p.needed} to tier {p.tier + 1}
+            {p.conquered}/{p.needed} to {name(p.tier + 1)}
           </span>
         </>
       )}

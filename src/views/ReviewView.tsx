@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { checkAnswer, type AnswerCheck } from '../core/answer';
-import type { Grade } from '../core/scheduler';
+import { Rating, type Grade } from '../core/scheduler';
 import { NEW_NODES_PER_DAY } from '../config';
 import type { AppData, CardRow } from '../db/repo';
 import Etymology from './Etymology';
@@ -37,8 +37,25 @@ export default function ReviewView(props: Props) {
   const answer = word && (toItalian ? word.it : word.en);
 
   const submit = () => {
-    if (!answer || check) return;
-    setCheck(checkAnswer(typed, answer, toItalian ? 'it' : 'en'));
+    if (!answer || !word || check) return;
+    const result = checkAnswer(typed, answer, toItalian ? 'it' : 'en');
+    if (result.verdict === 'wrong' && toItalian) {
+      // Another word with the same English gloss is a valid answer too.
+      const same = data.nodes.find(
+        (n) =>
+          n.id !== word.id &&
+          n.en.trim().toLowerCase() === word.en.trim().toLowerCase() &&
+          checkAnswer(typed, n.it, 'it').verdict !== 'wrong',
+      );
+      if (same) {
+        return setCheck({
+          verdict: 'almost',
+          grade: Rating.Hard,
+          notes: [`${same.it} also means that; we wanted this one`],
+        });
+      }
+    }
+    setCheck(result);
   };
 
   const rate = async (grade: Grade) => {

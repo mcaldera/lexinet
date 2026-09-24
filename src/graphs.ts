@@ -8,6 +8,13 @@ const nameOf = (path: string) => path.match(/graph_?([^/]*)\.json$/)?.[1] || 'de
 
 export const GRAPH_NAMES = Object.keys(loaders).map(nameOf).sort();
 
+const LABELS: Record<string, string> = {
+  default: 'My words',
+  oic: 'Online Italian Club',
+  '1000': '1000 frequent words',
+};
+export const graphLabel = (name: string) => LABELS[name] ?? `${name} words`;
+
 export function currentGraphName(): string {
   const name = new URLSearchParams(window.location.search).get('graph') ?? 'default';
   return GRAPH_NAMES.includes(name) ? name : 'default';

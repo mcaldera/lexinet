@@ -54,7 +54,7 @@ def test_load_words_fills_optional_columns_and_dedupes(tmp_path):
     p.write_text("Italian,English\nil cane,dog\nil cane,dog again\nil gatto,cat\n")
     df = bg.load_words(p)
     assert list(df.columns) == [
-        "italian", "english", "pos", "theme", "root", "root_lang", "root_meaning", "cognate", "cognate_note", "tier"
+        "italian", "english", "pos", "theme", "root", "root_lang", "root_meaning", "cognate", "cognate_note", "tier", "level"
     ]
     assert len(df) == 2
 

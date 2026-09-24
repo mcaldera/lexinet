@@ -71,6 +71,7 @@ export type Graph = {
     bonus_k: number;
     bonus_threshold: number;
     tiers?: number;
+    tier_names?: Record<string, string>;
   };
   nodes: WordNode[];
   edges: Edge[];

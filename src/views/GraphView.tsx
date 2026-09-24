@@ -282,7 +282,7 @@ export default function GraphView({
   const linkAlpha = (l: L) => {
     if (touchesActive(l)) return 0.95;
     // Links between territories are long; keep them in the background.
-    const dim = crossRegion(l) && !l.descends ? 0.35 : 1;
+    const dim = crossRegion(l) || l.descends ? (inspect ? 0.12 : 0.35) : 1;
     if (inspect) return (activeId === undefined ? 0.8 : 0.15) * dim;
     const [a, b] = [endId(l.source), endId(l.target)];
     if (hidden(a) || hidden(b)) return 0.3 * dim;

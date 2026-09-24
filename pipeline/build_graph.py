@@ -57,7 +57,7 @@ EN_PREFIX_RE = re.compile(r"^(to|the|a|an)\s+", re.IGNORECASE)
 # Infinitive and past-participle endings, else a single final vowel.
 ENDING_RE = re.compile(r"(are|ere|ire|at[oaie]|ut[oaie]|it[oaie]|[aeiou])$")
 
-OPTIONAL_COLUMNS = ("pos", "theme", "root", "root_lang", "root_meaning", "cognate", "cognate_note", "tier")
+OPTIONAL_COLUMNS = ("pos", "theme", "root", "root_lang", "root_meaning", "cognate", "cognate_note", "tier", "level")
 FREQUENCY_URL = "https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/it/it_50k.txt"
 FREQUENCY_PATH = Path.home() / ".cache" / "sprawl" / "it_50k.txt"
 MAX_TIERS = 10
@@ -289,6 +289,7 @@ def build_graph(
     ranks: dict[str, int] | None = None,
     english: Callable[[str], list[str]] | None = None,
 ) -> dict:
+    df = df.assign(**{c: "" for c in OPTIONAL_COLUMNS if c not in df.columns})
     ids: list[str] = []
     for w in df["italian"]:
         base = slug(w) or "word"
@@ -396,7 +397,23 @@ def build_graph(
     G = nx.Graph()
     G.add_nodes_from(ids)
     G.add_edges_from((e["source"], e["target"], {"weight": e["weight"]}) for e in edges)
-    comms = layout.communities(G)
+    # Regions: the list's own themes when most words have one (curated lists),
+    # else communities of the link graph. Untagged words join the theme they
+    # are most strongly linked to on average.
+    theme_of = list(df["theme"])
+    if sum(bool(t) for t in theme_of) >= 0.5 * n:
+        members: dict[str, list[int]] = {}
+        for i, t in enumerate(theme_of):
+            if t:
+                members.setdefault(t, []).append(i)
+        for i, t in enumerate(theme_of):
+            if not t:
+                theme_of[i] = max(members, key=lambda m: float(np.mean(total[i, members[m]])))
+        names = sorted(set(theme_of), key=lambda t: -theme_of.count(t))
+        comms = [{ids[i] for i in range(n) if theme_of[i] == t} for t in names]
+    else:
+        comms = layout.communities(G)
+        names = []
     pos = layout.map_layout(G, comms)
     region_of = {v: k for k, c in enumerate(comms) for v in c}
     adjacency = nx.Graph()
@@ -410,7 +427,7 @@ def build_graph(
     regions = [
         {
             "id": k,
-            "name": layout.region_name([nd for nd in nodes if nd["region"] == k], G),
+            "name": names[k][:1].upper() + names[k][1:] if names else layout.region_name([nd for nd in nodes if nd["region"] == k], G),
             "color": colors[k],
             "words": sorted(c, key=ids.index),
         }
@@ -425,6 +442,11 @@ def build_graph(
             "bonus_k": bonus_k,
             "bonus_threshold": bonus_threshold,
             "tiers": max(tiers),
+            # Display names per tier, e.g. CEFR levels from a "level" column.
+            "tier_names": {
+                str(t): next((nd["level"] for nd in nodes if nd["tier"] == t and nd.get("level")), f"Tier {t}")
+                for t in sorted(set(tiers))
+            },
         },
         "nodes": nodes,
         "edges": edges,

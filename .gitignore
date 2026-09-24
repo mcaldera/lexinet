@@ -7,3 +7,7 @@ src-tauri/gen
 pipeline/.venv
 __pycache__
 .pytest_cache
+
+# Scraped from onlineitalianclub.com: their content, for personal study only
+data/words_oic.csv
+data/graph_oic.json
