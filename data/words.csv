@@ -1,92 +1,92 @@
-italian,english,pos,theme
-il cane,dog,noun,animals
-il gatto,cat,noun,animals
-abbaiare,to bark,verb,animals
-l'uccello,bird,noun,animals
-volare,to fly,verb,animals
-il pesce,fish,noun,animals
-nuotare,to swim,verb,animals
-il cavallo,horse,noun,animals
-la mucca,cow,noun,animals
-il latte,milk,noun,food
-il formaggio,cheese,noun,food
-il pane,bread,noun,food
-la pasta,pasta,noun,food
-mangiare,to eat,verb,food
-mangiato,eaten,verb,food
-bere,to drink,verb,food
-l'acqua,water,noun,food
-il vino,wine,noun,food
-la mela,apple,noun,food
-cucinare,to cook,verb,food
-la cucina,kitchen,noun,home
-il cuoco,cook,noun,food
-la colazione,breakfast,noun,food
-la cena,dinner,noun,food
-cenare,to have dinner,verb,food
-la casa,house,noun,home
-la porta,door,noun,home
-la finestra,window,noun,home
-il letto,bed,noun,home
-dormire,to sleep,verb,home
-il sonno,sleep,noun,home
-la sedia,chair,noun,home
-il tavolo,table,noun,home
-la camera,room,noun,home
-parlare,to speak,verb,communication
-parlato,spoken,verb,communication
-la parola,word,noun,communication
-dire,to say,verb,communication
-chiedere,to ask,verb,communication
-la domanda,question,noun,communication
-rispondere,to answer,verb,communication
-la risposta,answer,noun,communication
-scrivere,to write,verb,communication
-la lettera,letter,noun,communication
-leggere,to read,verb,communication
-il libro,book,noun,communication
-la madre,mother,noun,family
-il padre,father,noun,family
-il fratello,brother,noun,family
-la sorella,sister,noun,family
-il figlio,son,noun,family
-la figlia,daughter,noun,family
-il nonno,grandfather,noun,family
-la nonna,grandmother,noun,family
-la famiglia,family,noun,family
-la testa,head,noun,body
-la mano,hand,noun,body
-il piede,foot,noun,body
-camminare,to walk,verb,body
-l'occhio,eye,noun,body
-vedere,to see,verb,body
-guardare,to look at,verb,body
-l'orecchio,ear,noun,body
-sentire,to hear,verb,body
-la bocca,mouth,noun,body
-il sole,sun,noun,weather
-la pioggia,rain,noun,weather
-piovere,to rain,verb,weather
-la neve,snow,noun,weather
-nevicare,to snow,verb,weather
-il vento,wind,noun,weather
-freddo,cold,adj,weather
-caldo,hot,adj,weather
-il treno,train,noun,travel
-la stazione,station,noun,travel
-il biglietto,ticket,noun,travel
-viaggiare,to travel,verb,travel
-il viaggio,trip,noun,travel
-la strada,street,noun,travel
-la macchina,car,noun,travel
-guidare,to drive,verb,travel
-arrivare,to arrive,verb,travel
-partire,to leave,verb,travel
-il giorno,day,noun,time
-la notte,night,noun,time
-la mattina,morning,noun,time
-la sera,evening,noun,time
-oggi,today,adv,time
-domani,tomorrow,adv,time
-ieri,yesterday,adv,time
-la settimana,week,noun,time
+italian,english,pos,theme,root,cognate
+il cane,dog,noun,animals,canis,canine
+il gatto,cat,noun,animals,cattus,cat
+abbaiare,to bark,verb,animals,,
+l'uccello,bird,noun,animals,avis,avian
+volare,to fly,verb,animals,volare,volatile
+il pesce,fish,noun,animals,piscis,Pisces
+nuotare,to swim,verb,animals,,
+il cavallo,horse,noun,animals,caballus,cavalry
+la mucca,cow,noun,animals,,
+il latte,milk,noun,food,lac,lactose
+il formaggio,cheese,noun,food,forma,form
+il pane,bread,noun,food,panis,companion
+la pasta,pasta,noun,food,pasta,paste
+mangiare,to eat,verb,food,manducare,manger
+mangiato,eaten,verb,food,manducare,
+bere,to drink,verb,food,bibere,imbibe
+l'acqua,water,noun,food,aqua,aquatic
+il vino,wine,noun,food,vinum,wine
+la mela,apple,noun,food,,
+cucinare,to cook,verb,food,coquere,cook
+la cucina,kitchen,noun,home,coquere,kitchen
+il cuoco,cook,noun,food,coquere,cook
+la colazione,breakfast,noun,food,collatio,collation
+la cena,dinner,noun,food,cena,
+cenare,to have dinner,verb,food,cena,
+la casa,house,noun,home,casa,casino
+la porta,door,noun,home,porta,portal
+la finestra,window,noun,home,fenestra,defenestrate
+il letto,bed,noun,home,,
+dormire,to sleep,verb,home,dormire,dormitory
+il sonno,sleep,noun,home,somnus,insomnia
+la sedia,chair,noun,home,sedere,sedentary
+il tavolo,table,noun,home,tabula,table
+la camera,room,noun,home,camera,chamber
+parlare,to speak,verb,communication,parabola,parley
+parlato,spoken,verb,communication,parabola,
+la parola,word,noun,communication,parabola,parable
+dire,to say,verb,communication,dicere,diction
+chiedere,to ask,verb,communication,quaerere,query
+la domanda,question,noun,communication,demandare,demand
+rispondere,to answer,verb,communication,respondere,respond
+la risposta,answer,noun,communication,respondere,response
+scrivere,to write,verb,communication,scribere,scribe
+la lettera,letter,noun,communication,littera,letter
+leggere,to read,verb,communication,legere,legible
+il libro,book,noun,communication,liber,library
+la madre,mother,noun,family,mater,maternal
+il padre,father,noun,family,pater,paternal
+il fratello,brother,noun,family,frater,fraternal
+la sorella,sister,noun,family,soror,sorority
+il figlio,son,noun,family,filius,filial
+la figlia,daughter,noun,family,filius,filial
+il nonno,grandfather,noun,family,,
+la nonna,grandmother,noun,family,nonna,nun
+la famiglia,family,noun,family,familia,family
+la testa,head,noun,body,,
+la mano,hand,noun,body,manus,manual
+il piede,foot,noun,body,pes,pedal
+camminare,to walk,verb,body,,
+l'occhio,eye,noun,body,oculus,ocular
+vedere,to see,verb,body,videre,video
+guardare,to look at,verb,body,,
+l'orecchio,ear,noun,body,,
+sentire,to hear,verb,body,sentire,sentiment
+la bocca,mouth,noun,body,,
+il sole,sun,noun,weather,sol,solar
+la pioggia,rain,noun,weather,pluere,
+piovere,to rain,verb,weather,pluere,
+la neve,snow,noun,weather,nix,
+nevicare,to snow,verb,weather,nix,
+il vento,wind,noun,weather,ventus,ventilate
+freddo,cold,adj,weather,frigidus,frigid
+caldo,hot,adj,weather,calidus,cauldron
+il treno,train,noun,travel,,
+la stazione,station,noun,travel,statio,station
+il biglietto,ticket,noun,travel,,
+viaggiare,to travel,verb,travel,viaticum,voyage
+il viaggio,trip,noun,travel,viaticum,voyage
+la strada,street,noun,travel,strata,street
+la macchina,car,noun,travel,machina,machine
+guidare,to drive,verb,travel,,
+arrivare,to arrive,verb,travel,arripare,arrive
+partire,to leave,verb,travel,partiri,depart
+il giorno,day,noun,time,diurnus,journal
+la notte,night,noun,time,nox,nocturnal
+la mattina,morning,noun,time,,
+la sera,evening,noun,time,,
+oggi,today,adv,time,,
+domani,tomorrow,adv,time,,
+ieri,yesterday,adv,time,,
+la settimana,week,noun,time,,

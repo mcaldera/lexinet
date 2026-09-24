@@ -3,9 +3,20 @@
 Usage:
     python pipeline/build_graph.py data/words.csv -o data/graph.json [--seed "il cane"]
 
-Edge score = weighted sum of semantic (embedding cosine), morphological (shared
-stem of the Italian lemma) and thematic (same `theme`) similarity. A maximum
-spanning tree guarantees connectivity; top-k bonus edges per node add loops.
+Every pair of words gets a score, the weighted sum of four components (each 0..1):
+
+  semantic       meaning similarity: cosine of BAAI/bge-m3 embeddings of the English
+                 gloss ("to" / articles removed), rescaled so a median pair is 0 and
+                 the most similar pair is 1. The gloss is the disambiguated meaning;
+                 embedding the bare Italian word added noise (e.g. "dire").
+  morphological  same stem after stripping one ending (parlare/parlato)
+  etymological   same `root` column, e.g. Latin coquere (cucina/cuoco)
+  thematic       same `theme` column
+
+Edges: the maximum spanning tree (keeps the graph connected with the strongest
+possible links), plus each word's top-k partners scoring above a threshold (adds
+loops and clusters). Everything else stays unlinked on purpose: linking every
+same-theme pair would turn each theme into a clique.
 """
 
 from __future__ import annotations
@@ -22,14 +33,18 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
-DEFAULT_MODEL = "paraphrase-multilingual-MiniLM-L12-v2"
-WEIGHTS = {"semantic": 0.6, "morphological": 0.25, "thematic": 0.15}
+DEFAULT_MODEL = "BAAI/bge-m3"  # best separation of related/unrelated pairs in a small benchmark
+WEIGHTS = {"semantic": 0.6, "morphological": 0.25, "etymological": 0.25, "thematic": 0.15}
 MIN_STEM = 3  # shortest stem that counts as a morphological link
-STRONG_SEMANTIC = 0.6  # cosine above which meaning, not theme, explains an edge
+STRONG_SEMANTIC = 0.45  # rescaled similarity above which meaning, not theme, explains an edge
+CANDIDATES = 8  # strongest partners per word exported for the in-app inspector
 
 ARTICLE_RE = re.compile(r"^(il|lo|la|i|gli|le|un|uno|una)\s+|^(l'|un')", re.IGNORECASE)
+EN_PREFIX_RE = re.compile(r"^(to|the|a|an)\s+", re.IGNORECASE)
 # Infinitive and past-participle endings, else a single final vowel.
 ENDING_RE = re.compile(r"(are|ere|ire|at[oaie]|ut[oaie]|it[oaie]|[aeiou])$")
+
+OPTIONAL_COLUMNS = ("pos", "theme", "root", "cognate")
 
 Embedder = Callable[[list[str]], np.ndarray]
 
@@ -40,10 +55,10 @@ def load_words(path: str | Path) -> pd.DataFrame:
     missing = {"italian", "english"} - set(df.columns)
     if missing:
         raise ValueError(f"CSV is missing required columns: {sorted(missing)}")
-    for col in ("pos", "theme"):
+    for col in OPTIONAL_COLUMNS:
         if col not in df.columns:
             df[col] = ""
-    df = df[["italian", "english", "pos", "theme"]].apply(lambda s: s.str.strip())
+    df = df[["italian", "english", *OPTIONAL_COLUMNS]].apply(lambda s: s.str.strip())
     df = df[df["italian"] != ""]
     df = df.drop_duplicates(subset="italian", keep="first").reset_index(drop=True)
     if len(df) < 2:
@@ -80,11 +95,34 @@ def sentence_transformer_embedder(model_name: str = DEFAULT_MODEL) -> Embedder:
     return lambda texts: model.encode(texts, normalize_embeddings=True, show_progress_bar=False)
 
 
-def score_components(df: pd.DataFrame, embed: Embedder) -> dict[str, np.ndarray]:
-    texts = [f"{it} ({en})" for it, en in zip(df["italian"], df["english"])]
+def slug(word: str) -> str:
+    """Stable node id from the Italian word: "l'Uccello" -> "l-uccello"."""
+    word = unicodedata.normalize("NFKD", word.strip().lower())
+    word = "".join(ch for ch in word if not unicodedata.combining(ch))
+    return re.sub(r"[^a-z0-9]+", "-", word).strip("-")
+
+
+def cosine_matrix(embed: Embedder, texts: list[str]) -> np.ndarray:
     emb = np.asarray(embed(texts), dtype=float)
     emb = emb / np.linalg.norm(emb, axis=1, keepdims=True)
-    semantic = np.clip(emb @ emb.T, 0.0, 1.0)
+    return emb @ emb.T
+
+
+def rescale(sim: np.ndarray) -> np.ndarray:
+    """Map similarities so the median pair is 0 and the most similar pair is 1.
+
+    Raw cosines of single words sit in a narrow model-specific band; rescaling
+    makes weights and thresholds mean the same thing across models and lists.
+    """
+    off = sim[np.triu_indices(len(sim), 1)]
+    lo, hi = np.median(off), off.max()
+    return np.clip((sim - lo) / max(hi - lo, 1e-9), 0.0, 1.0)
+
+
+def score_components(df: pd.DataFrame, embed: Embedder) -> dict[str, np.ndarray]:
+    # Bare glosses: embedding "mangiare (to eat)" made every "to X" verb look alike.
+    en_core = [EN_PREFIX_RE.sub("", w.strip()) for w in df["english"]]
+    semantic = rescale(cosine_matrix(embed, en_core))
 
     words = df["italian"].tolist()
     n = len(words)
@@ -93,20 +131,31 @@ def score_components(df: pd.DataFrame, embed: Embedder) -> dict[str, np.ndarray]
         for j in range(i + 1, n):
             morph[i, j] = morph[j, i] = morph_similarity(words[i], words[j])
 
-    themes = df["theme"].to_numpy()
-    thematic = ((themes[:, None] == themes[None, :]) & (themes[:, None] != "")).astype(float)
+    def same(col: str) -> np.ndarray:
+        v = df[col].str.lower().to_numpy()
+        m = ((v[:, None] == v[None, :]) & (v[:, None] != "")).astype(float)
+        np.fill_diagonal(m, 0.0)
+        return m
 
-    return {"semantic": semantic, "morphological": morph, "thematic": thematic}
+    np.fill_diagonal(semantic, 0.0)
+    return {
+        "semantic": semantic,
+        "morphological": morph,
+        "etymological": same("root"),
+        "thematic": same("theme"),
+    }
 
 
-def edge_reason(semantic: float, morphological: float, thematic: float) -> str:
+def edge_reason(semantic: float, morphological: float, etymological: float, thematic: float) -> str:
     """Most informative explanation for an edge, shown to the user on hover.
 
-    A shared root is the most specific reason, then a strong meaning link, then a
-    shared theme. Semantic similarity is the fallback since it drives most scores.
+    Same stem is the most specific reason, then a shared (e.g. Latin) root, then
+    a strong meaning link, then a shared theme. Semantic is the fallback.
     """
     if morphological > 0:
         return "morphological"
+    if etymological > 0:
+        return "etymological"
     if semantic >= STRONG_SEMANTIC or thematic == 0:
         return "semantic"
     return "thematic"
@@ -115,38 +164,64 @@ def edge_reason(semantic: float, morphological: float, thematic: float) -> str:
 def build_graph(
     df: pd.DataFrame,
     embed: Embedder,
-    bonus_k: int = 2,
-    bonus_threshold: float = 0.45,
+    bonus_k: int = 3,
+    bonus_threshold: float = 0.25,
     seed: str | None = None,
 ) -> dict:
-    ids = [f"n{i + 1}" for i in range(len(df))]
+    ids: list[str] = []
+    for w in df["italian"]:
+        base = slug(w) or "word"
+        ids.append(base if base not in ids else f"{base}-{len(ids)}")
     comps = score_components(df, embed)
-    weighted = {k: WEIGHTS[k] * m for k, m in comps.items()}
-    total = sum(weighted.values())
+    total = sum(WEIGHTS[k] * m for k, m in comps.items())
 
     n = len(ids)
     complete = nx.Graph()
     for i in range(n):
         for j in range(i + 1, n):
             complete.add_edge(i, j, weight=float(total[i, j]))
-    tree = nx.maximum_spanning_tree(complete)
-    chosen = {tuple(sorted(e)) for e in tree.edges()}
+    tree = {tuple(sorted(e)) for e in nx.maximum_spanning_tree(complete).edges()}
+    chosen = set(tree)
 
+    ranked = [sorted((j for j in range(n) if j != i), key=lambda j: -total[i, j]) for i in range(n)]
     for i in range(n):
-        ranked = sorted((j for j in range(n) if j != i), key=lambda j: -total[i, j])
-        for j in ranked[:bonus_k]:
+        for j in ranked[i][:bonus_k]:
             if total[i, j] >= bonus_threshold:
                 chosen.add(tuple(sorted((i, j))))
+
+    def breakdown(i: int, j: int) -> dict:
+        return {k: round(float(m[i, j]), 3) for k, m in comps.items()}
+
+    def strength(i: int, j: int) -> float:
+        return round(min(1.0, float(total[i, j])), 3)
 
     edges = [
         {
             "source": ids[i],
             "target": ids[j],
-            "weight": round(float(total[i, j]), 4),
-            "reason": edge_reason(*(float(comps[k][i, j]) for k in ("semantic", "morphological", "thematic"))),
+            "weight": strength(i, j),
+            "reason": edge_reason(*(float(comps[k][i, j]) for k in WEIGHTS)),
+            "components": breakdown(i, j),
+            "via": "tree" if (i, j) in tree else "bonus",
         }
         for i, j in sorted(chosen)
     ]
+
+    # Each word's strongest partners, linked or not, so the app can show why
+    # two plausible words did not get an edge.
+    candidates = {
+        ids[i]: [
+            {
+                "id": ids[j],
+                "weight": strength(i, j),
+                "rank": r + 1,
+                "components": breakdown(i, j),
+                "linked": tuple(sorted((i, j))) in chosen,
+            }
+            for r, j in enumerate(ranked[i][:CANDIDATES])
+        ]
+        for i in range(n)
+    }
 
     words = df["italian"].tolist()
     if seed is None:
@@ -159,10 +234,21 @@ def build_graph(
         raise ValueError(f"Seed {seed!r} is not in the word list")
 
     nodes = [
-        {"id": ids[i], "it": r.italian, "en": r.english, "pos": r.pos or None, "theme": r.theme or None}
+        {
+            "id": ids[i],
+            "it": r.italian,
+            "en": r.english,
+            **{col: getattr(r, col) or None for col in OPTIONAL_COLUMNS},
+        }
         for i, r in enumerate(df.itertuples(index=False))
     ]
-    return {"seed": ids[words.index(seed)], "nodes": nodes, "edges": edges}
+    return {
+        "seed": ids[words.index(seed)],
+        "params": {"model": None, "weights": WEIGHTS, "bonus_k": bonus_k, "bonus_threshold": bonus_threshold},
+        "nodes": nodes,
+        "edges": edges,
+        "candidates": candidates,
+    }
 
 
 def validate_graph(graph: dict) -> None:
@@ -187,18 +273,20 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("-o", "--out", default="data/graph.json")
     p.add_argument("--seed", help="Italian word to start from (default: highest degree)")
     p.add_argument("--model", default=DEFAULT_MODEL)
-    p.add_argument("-k", "--bonus-k", type=int, default=2)
-    p.add_argument("-t", "--bonus-threshold", type=float, default=0.45)
+    p.add_argument("-k", "--bonus-k", type=int, default=3)
+    p.add_argument("-t", "--bonus-threshold", type=float, default=0.25)
     args = p.parse_args(argv)
 
     df = load_words(args.csv)
     graph = build_graph(df, sentence_transformer_embedder(args.model), args.bonus_k, args.bonus_threshold, args.seed)
+    graph["params"]["model"] = args.model
     validate_graph(graph)
     Path(args.out).write_text(json.dumps(graph, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
     reasons = pd.Series([e["reason"] for e in graph["edges"]]).value_counts().to_dict()
     seed_word = next(n["it"] for n in graph["nodes"] if n["id"] == graph["seed"])
-    print(f"{len(graph['nodes'])} nodes, {len(graph['edges'])} edges {reasons}, seed={seed_word!r} -> {args.out}")
+    n, m = len(graph["nodes"]), len(graph["edges"])
+    print(f"{n} nodes, {m} edges (avg degree {2 * m / n:.1f}) {reasons}, seed={seed_word!r} -> {args.out}")
     return 0
 
 

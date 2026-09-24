@@ -24,6 +24,8 @@ def df():
             "english": ["dog", "to bark", "to speak", "spoken", "word", "cat"],
             "pos": ["noun", "verb", "verb", "verb", "noun", "noun"],
             "theme": ["animals", "animals", "comm", "comm", "comm", "animals"],
+            "root": ["canis", "", "parabola", "parabola", "parabola", "cattus"],
+            "cognate": ["canine", "", "parley", "", "parable", "cat"],
         }
     )
 
@@ -47,7 +49,7 @@ def test_load_words_fills_optional_columns_and_dedupes(tmp_path):
     p = tmp_path / "w.csv"
     p.write_text("Italian,English\nil cane,dog\nil cane,dog again\nil gatto,cat\n")
     df = bg.load_words(p)
-    assert list(df.columns) == ["italian", "english", "pos", "theme"]
+    assert list(df.columns) == ["italian", "english", "pos", "theme", "root", "cognate"]
     assert len(df) == 2
 
 
@@ -63,14 +65,42 @@ def test_build_graph_is_connected_and_labelled(df):
     bg.validate_graph(graph)
     assert len(graph["nodes"]) == 6
     assert len(graph["edges"]) >= 5  # at least the spanning tree
+    assert [n["id"] for n in graph["nodes"]] == ["il-cane", "abbaiare", "parlare", "parlato", "la-parola", "il-gatto"]
     pairs = {(e["source"], e["target"]): e for e in graph["edges"]}
-    assert pairs[("n3", "n4")]["reason"] in {"morphological", "semantic", "thematic"}
+    assert pairs[("parlare", "parlato")]["reason"] == "morphological"
     assert all(0 <= e["weight"] <= 1 for e in graph["edges"])
+    assert set(graph["edges"][0]["components"]) == set(bg.WEIGHTS)
+    assert sum(e["via"] == "tree" for e in graph["edges"]) == 5
+    assert graph["nodes"][0]["cognate"] == "canine"
+
+
+def test_shared_root_is_an_etymological_component(df):
+    comps = bg.score_components(df, fake_embedder)
+    assert comps["etymological"][2, 4] == 1.0  # parlare / la parola: Latin parabola
+    assert comps["etymological"][0, 5] == 0.0
+    assert comps["etymological"][2, 2] == 0.0  # no self-links
+    assert bg.edge_reason(0.9, 0.0, 1.0, 1.0) == "etymological"
+
+
+def test_candidates_list_strongest_partners_with_link_flag(df):
+    graph = bg.build_graph(df, fake_embedder)
+    linked = {tuple(sorted((e["source"], e["target"]))) for e in graph["edges"]}
+    for nid, cands in graph["candidates"].items():
+        assert [c["rank"] for c in cands] == list(range(1, len(cands) + 1))
+        weights = [c["weight"] for c in cands]
+        assert weights == sorted(weights, reverse=True)
+        for c in cands:
+            assert c["linked"] == (tuple(sorted((nid, c["id"]))) in linked)
+
+
+def test_slug_ids_are_stable_and_ascii():
+    assert bg.slug("l'Uccello") == "l-uccello"
+    assert bg.slug("la città") == "la-citta"
 
 
 def test_seed_override(df):
     graph = bg.build_graph(df, fake_embedder, seed="il gatto")
-    assert graph["seed"] == "n6"
+    assert graph["seed"] == "il-gatto"
     with pytest.raises(ValueError):
         bg.build_graph(df, fake_embedder, seed="nope")
 
@@ -86,7 +116,7 @@ def test_validate_rejects_disconnected():
 
 
 def test_edge_reason_priority():
-    assert bg.edge_reason(0.9, 0.8, 1.0) == "morphological"
-    assert bg.edge_reason(0.7, 0.0, 1.0) == "semantic"
-    assert bg.edge_reason(0.4, 0.0, 1.0) == "thematic"
-    assert bg.edge_reason(0.4, 0.0, 0.0) == "semantic"
+    assert bg.edge_reason(0.9, 1.0, 1.0, 1.0) == "morphological"
+    assert bg.edge_reason(0.7, 0.0, 0.0, 1.0) == "semantic"
+    assert bg.edge_reason(0.4, 0.0, 0.0, 1.0) == "thematic"
+    assert bg.edge_reason(0.4, 0.0, 0.0, 0.0) == "semantic"
