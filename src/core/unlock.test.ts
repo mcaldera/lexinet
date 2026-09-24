@@ -1,5 +1,5 @@
 import { Rating } from './scheduler';
-import { applyChanges, initialStates, neighbourMap, unlockChanges } from './unlock';
+import { applyChanges, initialStates, neighbourMap, repairStates, unlockChanges } from './unlock';
 
 const edges = [
   { source: 'a', target: 'b' },
@@ -35,4 +35,17 @@ test('Again/Hard and non-frontier nodes cause no changes', () => {
   expect(unlockChanges('a', Rating.Again, s, nb)).toEqual([]);
   expect(unlockChanges('a', Rating.Hard, s, nb)).toEqual([]);
   expect(unlockChanges('b', Rating.Good, s, nb)).toEqual([]);
+});
+
+test('repair reveals locked neighbours of conquered nodes and restarts empty maps', () => {
+  const s = new Map([
+    ['a', 'conquered'],
+    ['b', 'locked'],
+    ['c', 'frontier'],
+    ['d', 'locked'],
+  ] as const);
+  expect(repairStates(s, nb, 'a')).toEqual([{ id: 'b', state: 'frontier' }]);
+  const fresh = initialStates(['a', 'b'], 'x');
+  fresh.set('a', 'locked');
+  expect(repairStates(fresh, nb, 'b')).toEqual([{ id: 'b', state: 'frontier' }]);
 });

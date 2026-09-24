@@ -7,6 +7,7 @@ import type { CardRow } from './db/repo';
 import { useSprawl } from './useSprawl';
 import DebugPanel from './views/DebugPanel';
 import GraphView from './views/GraphView';
+import InspectPanel from './views/InspectPanel';
 import ReviewView from './views/ReviewView';
 
 /** A node the user clicked: its cards are reviewed before the automatic queue. */
@@ -17,6 +18,8 @@ export default function App() {
   const [lastCardId, setLastCardId] = useState<string>();
   const [session, setSession] = useState<Session | null>(null);
   const [turn, setTurn] = useState(0);
+  const [inspect, setInspect] = useState(false);
+  const [inspectId, setInspectId] = useState<string>();
 
   const health = useMemo(() => {
     const m = new Map<string, number | null>();
@@ -74,6 +77,7 @@ export default function App() {
   };
 
   const selectNode = (nodeId: string) => {
+    if (inspect) return setInspectId(nodeId);
     if (data.states.get(nodeId) === 'locked') return;
     setSession({
       nodeId,
@@ -91,30 +95,49 @@ export default function App() {
           {conquered}/{data.nodes.length} conquered · {frontier} frontier
           {avg !== null && ` · territory health ${Math.round(avg * 100)}%`}
         </span>
+        <button
+          onClick={() => setInspect((v) => !v)}
+          title="Show every word and link, including ones you haven't unlocked (spoilers)"
+          className={`ml-auto rounded px-3 py-1 text-sm ${
+            inspect ? 'bg-pink-700 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+          }`}
+        >
+          {inspect ? 'Exit inspect' : 'Inspect network'}
+        </button>
       </header>
       <main className="flex min-h-0 flex-1">
         <section className="min-w-0 flex-1">
           <GraphView
             data={data}
             health={health}
-            activeId={current?.nodeId}
+            activeId={inspect ? inspectId : current?.nodeId}
+            inspect={inspect}
             onNodeClick={selectNode}
           />
         </section>
         <aside className="flex w-96 flex-col gap-4 overflow-y-auto border-l border-slate-800 p-4">
-          <ReviewView
-            key={turn}
-            data={data}
-            current={current}
-            mode={mode}
-            dueCount={dueCount}
-            newToday={newToday}
-            onRate={onRate}
-            onCancel={() => {
-              setSession(null);
-              setTurn((t) => t + 1);
-            }}
-          />
+          {inspect ? (
+            <InspectPanel
+              data={data}
+              health={health}
+              selectedId={inspectId}
+              onSelect={setInspectId}
+            />
+          ) : (
+            <ReviewView
+              key={turn}
+              data={data}
+              current={current}
+              mode={mode}
+              dueCount={dueCount}
+              newToday={newToday}
+              onRate={onRate}
+              onCancel={() => {
+                setSession(null);
+                setTurn((t) => t + 1);
+              }}
+            />
+          )}
           <DebugPanel
             offsetDays={data.offsetDays}
             now={now}

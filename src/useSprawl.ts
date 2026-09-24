@@ -9,14 +9,14 @@ import {
   migrate,
   resetAll,
   saveReview,
-  seedIfEmpty,
   setOffsetDays,
+  syncGraph,
   type AppData,
   type CardRow,
   type Graph,
 } from './db/repo';
 
-const graph = graphJson as Graph;
+const graph = graphJson as unknown as Graph;
 
 // Module-level so StrictMode's double effect doesn't open/seed twice.
 let dbPromise: Promise<SqlDb> | null = null;
@@ -24,7 +24,7 @@ function getDb(): Promise<SqlDb> {
   dbPromise ??= (async () => {
     const db = await openDb();
     await migrate(db);
-    await seedIfEmpty(db, graph, appNow(0));
+    await syncGraph(db, graph, appNow(0));
     return db;
   })();
   return dbPromise;
@@ -42,7 +42,7 @@ export function useSprawl() {
     getDb()
       .then(async (db) => {
         setDb(db);
-        const loaded = await loadAll(db);
+        const loaded = await loadAll(db, graph);
         offsetRef.current = loaded.offsetDays;
         setData(loaded);
       })
@@ -94,7 +94,7 @@ export function useSprawl() {
     if (!db) return;
     await resetAll(db, graph, appNow(0));
     offsetRef.current = 0;
-    setData(await loadAll(db));
+    setData(await loadAll(db, graph));
   }, [db]);
 
   return { data, now, error, review, timeTravel, reset };

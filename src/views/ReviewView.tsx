@@ -171,6 +171,22 @@ export default function ReviewView(props: Props) {
                 </div>
                 <div className="mt-1 text-xl text-slate-100">{answer}</div>
               </div>
+              {(word.cognate || word.root) && (
+                <div className="mt-2 text-sm text-pink-300">
+                  🔗{' '}
+                  {word.cognate && (
+                    <>
+                      English cousin: <b>{word.cognate}</b>
+                    </>
+                  )}
+                  {word.cognate && word.root && ' · '}
+                  {word.root && (
+                    <>
+                      from <i>{word.root}</i>
+                    </>
+                  )}
+                </div>
+              )}
               <div className="mt-3 grid grid-cols-4 gap-2">
                 {BUTTONS.map((b) => {
                   const suggested = b.grade === check.grade;

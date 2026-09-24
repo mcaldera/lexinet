@@ -7,7 +7,7 @@ Graph-based spaced-repetition trainer for Italian vocabulary. Words are nodes; l
 - Tauri 2 shell (minimal Rust, `src-tauri/`) + React 19 + TypeScript + Vite 5 + Tailwind 3
 - Graph: `react-force-graph-2d` · Scheduling: `ts-fsrs` 4.x · Tests: Vitest
 - Persistence: SQLite. In Tauri → `@tauri-apps/plugin-sql`; in a plain browser → `sql.js` persisted to localStorage (dev fallback, same schema/SQL)
-- Offline pipeline: Python (`pipeline/`, own venv at `pipeline/.venv`), never bundled into the app
+- Offline pipeline: Python (`pipeline/`, own venv at `pipeline/.venv`), never bundled into the app. Similarity model `BAAI/bge-m3` on English glosses (chosen by benchmark; see `build_graph.py` docstring)
 
 ## Commands
 
@@ -26,13 +26,14 @@ Node is 18 on the dev box: keep deps Node-18 compatible (Vite 5, Vitest 2, ts-fs
 - `src/db/`: `SqlDb` interface (execute/select), Tauri + sql.js adapters, schema, repository, seeding from `data/graph.json`
 - `src/views/`: GraphView, ReviewView, DebugPanel
 - `pipeline/`: `build_graph.py` + pytest tests
-- `data/`: `words.csv` (input), `graph.json` (pipeline output, imported by the app)
+- `data/`: `words.csv` (input: italian, english, pos, theme, root, cognate; last four optional), `graph.json` (pipeline output, imported by the app)
 - `docs/DOGFOOD_LOG.md`: daily usage notes
 
 ## Conventions
 
 - All time goes through `clock.ts` (`real now + debug_day_offset`); never call `new Date()` directly in logic.
 - Health is computed, never stored.
+- `graph.json` owns words and edges; SQLite owns progress only. On startup `syncGraph` adds new words/cards and repairs frontier states, so regenerating the graph keeps progress. Node ids are slugs of the Italian word: renaming a word loses its progress.
 - Review flow (changed from PROPOSAL §3 at the author's request): the user clicks a frontier node to conquer it (or a conquered one to practise); the automatic queue only holds due/learning cards. Answers are typed and checked by `core/answer.ts` (article/accent/small typo → Hard, exact → Good, else Again); the 4 FSRS buttons remain as an override. The 10 new-words/day limit is a soft counter only.
 - Rust stays a thin shell; logic lives in TS.
 - Commit after each milestone (M0–M6). Git remote: the author's **personal** GitHub, never the ProxygenTx org.

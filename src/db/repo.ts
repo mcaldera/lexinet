@@ -8,38 +8,72 @@ import {
   type Direction,
   type Grade,
 } from '../core/scheduler';
-import type { NodeState, StateChange } from '../core/unlock';
+import { neighbourMap, repairStates, type NodeState, type StateChange } from '../core/unlock';
 import { SCHEMA } from './schema';
 import type { SqlDb, SqlValue } from './types';
 
-export type EdgeReason = 'semantic' | 'morphological' | 'thematic';
+export type EdgeReason = 'semantic' | 'morphological' | 'etymological' | 'thematic';
+export type Components = Record<EdgeReason, number>;
 export type WordNode = {
   id: string;
   it: string;
   en: string;
   pos: string | null;
   theme: string | null;
+  root?: string | null;
+  cognate?: string | null;
 };
-export type Edge = { source: string; target: string; weight: number; reason: EdgeReason };
-export type Graph = { seed: string; nodes: WordNode[]; edges: Edge[] };
+export type Edge = {
+  source: string;
+  target: string;
+  weight: number;
+  reason: EdgeReason;
+  components?: Components;
+  /** tree: needed to keep the graph connected; bonus: one of a word's top partners. */
+  via?: 'tree' | 'bonus';
+};
+export type Candidate = {
+  id: string;
+  weight: number;
+  rank: number;
+  components: Components;
+  linked: boolean;
+};
+export type Graph = {
+  seed: string;
+  params?: { model: string | null; weights: Components; bonus_k: number; bonus_threshold: number };
+  nodes: WordNode[];
+  edges: Edge[];
+  candidates?: Record<string, Candidate[]>;
+};
 export type CardRow = { id: string; nodeId: string; direction: Direction; card: Card };
 
 export type AppData = {
+  graph: Graph;
   nodes: WordNode[];
   edges: Edge[];
   cards: CardRow[];
   states: Map<string, NodeState>;
-  /** Node id -> ISO time of its first review (for the daily new-node limit). */
+  /** Node id -> ISO time of its first review (for the daily new-node counter). */
   firstReview: Map<string, string>;
   offsetDays: number;
 };
 
-async function insertMany(db: SqlDb, table: string, cols: string[], rows: SqlValue[][]) {
+async function insertMany(
+  db: SqlDb,
+  table: string,
+  cols: string[],
+  rows: SqlValue[][],
+  conflict = '',
+) {
   const chunk = Math.floor(900 / cols.length); // stay under SQLite's variable limit
   for (let i = 0; i < rows.length; i += chunk) {
     const part = rows.slice(i, i + chunk);
     const ph = part.map(() => `(${cols.map(() => '?').join(',')})`).join(',');
-    await db.execute(`INSERT INTO ${table} (${cols.join(',')}) VALUES ${ph}`, part.flat());
+    await db.execute(
+      `INSERT ${conflict} INTO ${table} (${cols.join(',')}) VALUES ${ph}`,
+      part.flat(),
+    );
   }
 }
 
@@ -47,28 +81,18 @@ export async function migrate(db: SqlDb) {
   for (const stmt of SCHEMA) await db.execute(stmt);
 }
 
-/** Seed from graph.json on first run. Returns true if it seeded. */
-export async function seedIfEmpty(db: SqlDb, graph: Graph, now: Date): Promise<boolean> {
-  const [{ n }] = await db.select<{ n: number }>('SELECT COUNT(*) AS n FROM nodes');
-  if (n > 0) return false;
+/**
+ * Bring the DB in line with graph.json, keeping progress. graph.json owns words
+ * and edges; the DB owns node states, cards and the review log. New words start
+ * locked (or frontier if next to a conquered word); removed words are ignored.
+ */
+export async function syncGraph(db: SqlDb, graph: Graph, now: Date) {
   await insertMany(
     db,
     'nodes',
     ['id', 'it', 'en', 'pos', 'theme', 'state'],
-    graph.nodes.map((w) => [
-      w.id,
-      w.it,
-      w.en,
-      w.pos,
-      w.theme,
-      w.id === graph.seed ? 'frontier' : 'locked',
-    ]),
-  );
-  await insertMany(
-    db,
-    'edges',
-    ['source', 'target', 'weight', 'reason'],
-    graph.edges.map((e) => [e.source, e.target, e.weight, e.reason]),
+    graph.nodes.map((w) => [w.id, w.it, w.en, w.pos, w.theme, 'locked']),
+    'OR IGNORE',
   );
   const empty = serializeCard(newCard(now));
   await insertMany(
@@ -76,24 +100,40 @@ export async function seedIfEmpty(db: SqlDb, graph: Graph, now: Date): Promise<b
     'cards',
     ['id', 'node_id', 'direction', 'fsrs_json'],
     graph.nodes.flatMap((w) => DIRECTIONS.map((d) => [cardId(w.id, d), w.id, d, empty])),
+    'OR IGNORE',
   );
-  return true;
+  // Kept in the DB only so it can be inspected with sqlite tools.
+  await db.execute('DELETE FROM edges');
+  await insertMany(
+    db,
+    'edges',
+    ['source', 'target', 'weight', 'reason'],
+    graph.edges.map((e) => [e.source, e.target, e.weight, e.reason]),
+  );
+
+  const ids = new Set(graph.nodes.map((n) => n.id));
+  const rows = await db.select<{ id: string; state: NodeState }>('SELECT id, state FROM nodes');
+  const states = new Map(rows.filter((r) => ids.has(r.id)).map((r) => [r.id, r.state]));
+  for (const c of repairStates(states, neighbourMap(graph.edges), graph.seed)) {
+    await db.execute('UPDATE nodes SET state = ? WHERE id = ?', [c.state, c.id]);
+  }
 }
 
-export async function loadAll(db: SqlDb): Promise<AppData> {
-  const nodes = await db.select<WordNode & { state: NodeState; rowid: number }>(
-    'SELECT rowid, id, it, en, pos, theme, state FROM nodes ORDER BY rowid',
-  );
-  const edges = await db.select<Edge>('SELECT source, target, weight, reason FROM edges');
-  const cards = await db.select<{
-    id: string;
-    node_id: string;
-    direction: Direction;
-    fsrs_json: string;
-  }>(
-    `SELECT c.id, c.node_id, c.direction, c.fsrs_json FROM cards c
-     JOIN nodes n ON n.id = c.node_id ORDER BY n.rowid, c.direction DESC`,
-  );
+export async function loadAll(db: SqlDb, graph: Graph): Promise<AppData> {
+  const ids = new Set(graph.nodes.map((n) => n.id));
+  const order = new Map(graph.nodes.map((n, i) => [n.id, i]));
+  const nodeRows = await db.select<{ id: string; state: NodeState }>('SELECT id, state FROM nodes');
+  const cards = (
+    await db.select<{ id: string; node_id: string; direction: Direction; fsrs_json: string }>(
+      'SELECT id, node_id, direction, fsrs_json FROM cards',
+    )
+  )
+    .filter((c) => ids.has(c.node_id))
+    .sort(
+      (a, b) =>
+        order.get(a.node_id)! - order.get(b.node_id)! ||
+        DIRECTIONS.indexOf(a.direction) - DIRECTIONS.indexOf(b.direction),
+    );
   const first = await db.select<{ node_id: string; first: string }>(
     `SELECT c.node_id, MIN(r.reviewed_at) AS first FROM review_log r
      JOIN cards c ON c.id = r.card_id GROUP BY c.node_id`,
@@ -102,15 +142,16 @@ export async function loadAll(db: SqlDb): Promise<AppData> {
     "SELECT value FROM meta WHERE key = 'debug_day_offset'",
   );
   return {
-    nodes: nodes.map(({ id, it, en, pos, theme }) => ({ id, it, en, pos, theme })),
-    edges,
+    graph,
+    nodes: graph.nodes,
+    edges: graph.edges,
     cards: cards.map((c) => ({
       id: c.id,
       nodeId: c.node_id,
       direction: c.direction,
       card: deserializeCard(c.fsrs_json),
     })),
-    states: new Map(nodes.map((n) => [n.id, n.state])),
+    states: new Map(nodeRows.filter((n) => ids.has(n.id)).map((n) => [n.id, n.state])),
     firstReview: new Map(first.map((f) => [f.node_id, f.first])),
     offsetDays: meta.length ? Number(meta[0].value) : 0,
   };
@@ -142,10 +183,10 @@ export async function setOffsetDays(db: SqlDb, days: number) {
   );
 }
 
-/** Wipe all progress and reseed from the graph. */
+/** Wipe all progress and start again from the graph's seed. */
 export async function resetAll(db: SqlDb, graph: Graph, now: Date) {
   for (const t of ['review_log', 'cards', 'edges', 'nodes', 'meta']) {
     await db.execute(`DELETE FROM ${t}`);
   }
-  await seedIfEmpty(db, graph, now);
+  await syncGraph(db, graph, now);
 }

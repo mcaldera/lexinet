@@ -40,3 +40,24 @@ export function applyChanges(states: Map<string, NodeState>, changes: StateChang
   for (const c of changes) next.set(c.id, c.state);
   return next;
 }
+
+/**
+ * Fix states after the graph changed (words added/removed, new edges): locked
+ * nodes next to conquered ones become frontier, and an empty map restarts at the seed.
+ */
+export function repairStates(
+  states: Map<string, NodeState>,
+  neighbours: Map<string, string[]>,
+  seed: string,
+): StateChange[] {
+  const changes: StateChange[] = [];
+  for (const [id, state] of states) {
+    if (state !== 'locked') continue;
+    if ((neighbours.get(id) ?? []).some((n) => states.get(n) === 'conquered')) {
+      changes.push({ id, state: 'frontier' });
+    }
+  }
+  const started = [...states.values()].some((s) => s !== 'locked');
+  if (!started && states.has(seed)) changes.push({ id: seed, state: 'frontier' });
+  return changes;
+}
