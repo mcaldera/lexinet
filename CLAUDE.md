@@ -7,7 +7,7 @@ Graph-based spaced-repetition trainer for Italian vocabulary. Words are nodes; l
 - Tauri 2 shell (minimal Rust, `src-tauri/`) + React 19 + TypeScript + Vite 5 + Tailwind 3
 - Graph: `react-force-graph-2d` · Scheduling: `ts-fsrs` 4.x · Tests: Vitest
 - Persistence: SQLite. In Tauri → `@tauri-apps/plugin-sql`; in a plain browser → `sql.js` persisted to localStorage (dev fallback, same schema/SQL)
-- Offline pipeline: Python (`pipeline/`, own venv at `pipeline/.venv`), never bundled into the app. Similarity model `BAAI/bge-m3` on English glosses (chosen by benchmark; see `build_graph.py` docstring)
+- Offline pipeline: Python (`pipeline/`, own venv at `pipeline/.venv`), never bundled into the app. Meaning score from ConceptNet Numberbatch vectors of the English gloss (association, e.g. dog→bark; CC BY-SA 4.0, auto-downloaded to `~/.cache/sprawl/`). Sentence-embedding models (`--model BAAI/bge-m3`) only capture likeness and were worse in a labelled-pair benchmark
 
 ## Commands
 

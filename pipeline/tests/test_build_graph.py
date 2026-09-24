@@ -120,3 +120,14 @@ def test_edge_reason_priority():
     assert bg.edge_reason(0.7, 0.0, 0.0, 1.0) == "semantic"
     assert bg.edge_reason(0.4, 0.0, 0.0, 1.0) == "thematic"
     assert bg.edge_reason(0.4, 0.0, 0.0, 0.0) == "semantic"
+
+
+def test_numberbatch_embedder_uses_phrases_then_word_means(tmp_path):
+    import gzip
+
+    p = tmp_path / "nb.txt.gz"
+    with gzip.open(p, "wt", encoding="utf-8") as f:
+        f.write("4 2\ndog 1 0\nbark 0.9 0.1\nlook_at 0 1\nlook 0.5 0.5\n")
+    embed = bg.numberbatch_embedder(p)
+    out = embed(["dog", "look at", "bark loudly", "zzz"])
+    assert out.tolist() == [[1, 0], [0, 1], [0.9, 0.1], [0, 0]]

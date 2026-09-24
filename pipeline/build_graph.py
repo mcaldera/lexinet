@@ -5,10 +5,12 @@ Usage:
 
 Every pair of words gets a score, the weighted sum of four components (each 0..1):
 
-  semantic       meaning similarity: cosine of BAAI/bge-m3 embeddings of the English
-                 gloss ("to" / articles removed), rescaled so a median pair is 0 and
-                 the most similar pair is 1. The gloss is the disambiguated meaning;
-                 embedding the bare Italian word added noise (e.g. "dire").
+  semantic       meaning association: cosine of ConceptNet Numberbatch vectors of the
+                 English gloss ("to" / articles removed), rescaled so a median pair
+                 is 0 and the most associated pair is 1. Numberbatch captures
+                 association (dog -> bark, bird -> fly); sentence-embedding models
+                 like bge-m3 (still available via --model) only capture likeness
+                 (dog ~ cat) and scored dog/bark below an average pair.
   morphological  same stem after stripping one ending (parlare/parlato)
   etymological   same `root` column, e.g. Latin coquere (cucina/cuoco)
   thematic       same `theme` column
@@ -22,6 +24,7 @@ same-theme pair would turn each theme into a clique.
 from __future__ import annotations
 
 import argparse
+import gzip
 import json
 import re
 import sys
@@ -33,7 +36,9 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
-DEFAULT_MODEL = "BAAI/bge-m3"  # best separation of related/unrelated pairs in a small benchmark
+DEFAULT_MODEL = "numberbatch"  # or any sentence-transformers model id, e.g. BAAI/bge-m3
+NUMBERBATCH_URL = "https://conceptnet.s3.amazonaws.com/downloads/2019/numberbatch/numberbatch-en-19.08.txt.gz"
+NUMBERBATCH_PATH = Path.home() / ".cache" / "sprawl" / "numberbatch-en-19.08.txt.gz"
 WEIGHTS = {"semantic": 0.6, "morphological": 0.25, "etymological": 0.25, "thematic": 0.15}
 MIN_STEM = 3  # shortest stem that counts as a morphological link
 STRONG_SEMANTIC = 0.45  # rescaled similarity above which meaning, not theme, explains an edge
@@ -104,7 +109,7 @@ def slug(word: str) -> str:
 
 def cosine_matrix(embed: Embedder, texts: list[str]) -> np.ndarray:
     emb = np.asarray(embed(texts), dtype=float)
-    emb = emb / np.linalg.norm(emb, axis=1, keepdims=True)
+    emb = emb / np.maximum(np.linalg.norm(emb, axis=1, keepdims=True), 1e-12)
     return emb @ emb.T
 
 
@@ -117,6 +122,46 @@ def rescale(sim: np.ndarray) -> np.ndarray:
     off = sim[np.triu_indices(len(sim), 1)]
     lo, hi = np.median(off), off.max()
     return np.clip((sim - lo) / max(hi - lo, 1e-9), 0.0, 1.0)
+
+
+def numberbatch_embedder(path: Path = NUMBERBATCH_PATH) -> Embedder:
+    """ConceptNet Numberbatch (CC BY-SA 4.0) vectors; multi-word glosses use the
+    phrase vector if it exists ("look_at"), else the mean of the word vectors."""
+    if not path.exists():
+        import urllib.request
+
+        path.parent.mkdir(parents=True, exist_ok=True)
+        print(f"Downloading Numberbatch (~325 MB) to {path} ...", file=sys.stderr)
+        urllib.request.urlretrieve(NUMBERBATCH_URL, path)
+
+    def embed(texts: list[str]) -> np.ndarray:
+        keys = [t.lower().strip().replace(" ", "_") for t in texts]
+        need = set(keys) | {w for t in keys for w in t.split("_")}
+        vec: dict[str, np.ndarray] = {}
+        with gzip.open(path, "rt", encoding="utf-8") as f:
+            next(f)  # header: rows, dims
+            for line in f:
+                key = line[: line.index(" ")]
+                if key in need:
+                    vec[key] = np.array(line.split()[1:], dtype=float)
+        dims = len(next(iter(vec.values()))) if vec else 300
+        out = []
+        for text, key in zip(texts, keys):
+            parts = [vec[w] for w in key.split("_") if w in vec]
+            if key in vec:
+                out.append(vec[key])
+            elif parts:
+                out.append(np.mean(parts, axis=0))
+            else:
+                print(f"warning: no Numberbatch vector for {text!r}; its meaning score will be 0", file=sys.stderr)
+                out.append(np.zeros(dims))
+        return np.array(out)
+
+    return embed
+
+
+def make_embedder(model: str) -> Embedder:
+    return numberbatch_embedder() if model == "numberbatch" else sentence_transformer_embedder(model)
 
 
 def score_components(df: pd.DataFrame, embed: Embedder) -> dict[str, np.ndarray]:
@@ -278,7 +323,7 @@ def main(argv: list[str] | None = None) -> int:
     args = p.parse_args(argv)
 
     df = load_words(args.csv)
-    graph = build_graph(df, sentence_transformer_embedder(args.model), args.bonus_k, args.bonus_threshold, args.seed)
+    graph = build_graph(df, make_embedder(args.model), args.bonus_k, args.bonus_threshold, args.seed)
     graph["params"]["model"] = args.model
     validate_graph(graph)
     Path(args.out).write_text(json.dumps(graph, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
