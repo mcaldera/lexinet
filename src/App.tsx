@@ -6,6 +6,7 @@ import { buildQueue } from './core/queue';
 import { tierMap, tierProgress } from './core/tiers';
 import { cardId, DIRECTIONS, type Grade } from './core/scheduler';
 import type { CardRow } from './db/repo';
+import { GRAPH_NAMES } from './graphs';
 import { useSprawl, type LevelUp } from './useSprawl';
 import DebugPanel from './views/DebugPanel';
 import GraphView from './views/GraphView';
@@ -16,7 +17,7 @@ import ReviewView from './views/ReviewView';
 type Session = { nodeId: string; cardIds: string[]; mode: 'conquer' | 'practice' };
 
 export default function App() {
-  const { data, now, error, review, timeTravel, reset } = useSprawl();
+  const { data, now, error, review, timeTravel, reset, graphName } = useSprawl();
   const [lastCardId, setLastCardId] = useState<string>();
   const [session, setSession] = useState<Session | null>(null);
   const [turn, setTurn] = useState(0);
@@ -113,10 +114,29 @@ export default function App() {
           {avg !== null && ` · territory health ${Math.round(avg * 100)}%`}
         </span>
         {progress && <TierBadge p={progress} />}
+        {GRAPH_NAMES.length > 1 && (
+          <select
+            value={graphName}
+            onChange={(e) => {
+              const url = new URL(window.location.href);
+              if (e.target.value === 'default') url.searchParams.delete('graph');
+              else url.searchParams.set('graph', e.target.value);
+              window.location.href = url.toString();
+            }}
+            title="Word graph (each keeps its own progress)"
+            className="ml-auto rounded bg-slate-800 px-2 py-1 text-sm text-slate-300"
+          >
+            {GRAPH_NAMES.map((n) => (
+              <option key={n} value={n}>
+                {n === 'default' ? 'My words' : `${n} words`}
+              </option>
+            ))}
+          </select>
+        )}
         <button
           onClick={() => setShowRoots((v) => !v)}
           title="Show shared roots (e.g. Latin coquere) as hub nodes linked to their words"
-          className={`ml-auto rounded px-3 py-1 text-sm ${
+          className={`${GRAPH_NAMES.length > 1 ? '' : 'ml-auto'} rounded px-3 py-1 text-sm ${
             showRoots
               ? 'bg-pink-900/60 text-pink-200'
               : 'bg-slate-800 text-slate-300 hover:bg-slate-700'

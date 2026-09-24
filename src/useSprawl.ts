@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import graphJson from '../data/graph.json';
 import { appNow } from './core/clock';
 import { rate, type Grade } from './core/scheduler';
 import { tierAllows, tierMap, tierProgress } from './core/tiers';
 import { applyChanges, neighbourMap, repairStates, unlockChanges } from './core/unlock';
 import { TIER_UNLOCK_FRACTION } from './config';
 import { openDb, type SqlDb } from './db';
+import { currentGraphName, loadGraph } from './graphs';
 import {
   loadAll,
   migrate,
@@ -18,16 +18,17 @@ import {
   type Graph,
 } from './db/repo';
 
-const graph = graphJson as unknown as Graph;
+const graphName = currentGraphName();
 
 // Module-level so StrictMode's double effect doesn't open/seed twice.
-let dbPromise: Promise<SqlDb> | null = null;
-function getDb(): Promise<SqlDb> {
+let dbPromise: Promise<{ db: SqlDb; graph: Graph }> | null = null;
+function getDb() {
   dbPromise ??= (async () => {
-    const db = await openDb();
+    const graph = await loadGraph(graphName);
+    const db = await openDb(graphName);
     await migrate(db);
     await syncGraph(db, graph, appNow(0));
-    return db;
+    return { db, graph };
   })();
   return dbPromise;
 }
@@ -44,7 +45,7 @@ export function useSprawl() {
 
   useEffect(() => {
     getDb()
-      .then(async (db) => {
+      .then(async ({ db, graph }) => {
         setDb(db);
         const loaded = await loadAll(db, graph);
         offsetRef.current = loaded.offsetDays;
@@ -121,11 +122,11 @@ export function useSprawl() {
   );
 
   const reset = useCallback(async () => {
-    if (!db) return;
-    await resetAll(db, graph, appNow(0));
+    if (!db || !data) return;
+    await resetAll(db, data.graph, appNow(0));
     offsetRef.current = 0;
-    setData(await loadAll(db, graph));
-  }, [db]);
+    setData(await loadAll(db, data.graph));
+  }, [db, data]);
 
-  return { data, now, error, review, timeTravel, reset };
+  return { data, now, error, review, timeTravel, reset, graphName };
 }

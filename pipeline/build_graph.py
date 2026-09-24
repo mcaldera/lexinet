@@ -87,6 +87,12 @@ def lemma(word: str) -> str:
     return "".join(ch for ch in word if not unicodedata.combining(ch))
 
 
+def root_key(root: str) -> str:
+    """Grouping key for roots: "*Pānis" and "panis" are the same root."""
+    root = unicodedata.normalize("NFKD", root.strip().lower().lstrip("*"))
+    return "".join(ch for ch in root if not unicodedata.combining(ch))
+
+
 def stem(word: str) -> str:
     """Strip one inflectional ending: "parlato" -> "parl", "la cucina" -> "cucin"."""
     return ENDING_RE.sub("", lemma(word))
@@ -242,7 +248,7 @@ def score_components(df: pd.DataFrame, embed: Embedder) -> dict[str, np.ndarray]
             morph[i, j] = morph[j, i] = morph_similarity(words[i], words[j])
 
     def same(col: str) -> np.ndarray:
-        v = df[col].str.lower().to_numpy()
+        v = df[col].map(root_key if col == "root" else str.lower).to_numpy()
         m = ((v[:, None] == v[None, :]) & (v[:, None] != "")).astype(float)
         np.fill_diagonal(m, 0.0)
         return m
@@ -336,12 +342,15 @@ def build_graph(
         for i in range(n)
     }
 
-    if seed is None:  # best-connected tier-1 word
-        degree = np.zeros(n, dtype=int)
+    if seed is None:  # best-connected tier-1 word, preferring nouns (a concrete start)
+        degree = np.zeros(n, dtype=float)
         for i, j in chosen:
             if tiers[i] == 1 and tiers[j] == 1:
                 degree[i] += 1
                 degree[j] += 1
+        nouns = (df["pos"].str.lower() == "noun").to_numpy()
+        if (degree * nouns).max() > 0:
+            degree = degree * nouns
         seed = words[int(np.argmax(degree))]
 
     nodes = [
@@ -358,7 +367,7 @@ def build_graph(
     by_root: dict[str, list[int]] = {}
     for i, r in enumerate(df["root"]):
         if r:
-            by_root.setdefault(r.lower(), []).append(i)
+            by_root.setdefault(root_key(r), []).append(i)
     roots = [
         {
             "id": f"root:{slug(df['root'][members[0]])}",

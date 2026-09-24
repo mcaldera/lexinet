@@ -22,8 +22,6 @@ export class SqlJsDb implements SqlDb {
   }
 }
 
-const STORAGE_KEY = 'sprawl.db';
-
 function toBase64(bytes: Uint8Array): string {
   let s = '';
   for (let i = 0; i < bytes.length; i += 0x8000) {
@@ -37,7 +35,7 @@ function fromBase64(b64: string): Uint8Array {
 }
 
 /** Browser fallback: SQLite in memory, snapshotted to localStorage. */
-export async function openBrowserDb(): Promise<SqlDb> {
+export async function openBrowserDb(storageKey: string): Promise<SqlDb> {
   const [{ default: initSqlJs }, { default: wasmUrl }] = await Promise.all([
     import('sql.js'),
     import('sql.js/dist/sql-wasm.wasm?url'),
@@ -45,14 +43,14 @@ export async function openBrowserDb(): Promise<SqlDb> {
   const SQL: SqlJsStatic = await initSqlJs({ locateFile: () => wasmUrl });
   let saved: string | null = null;
   try {
-    saved = localStorage.getItem(STORAGE_KEY);
+    saved = localStorage.getItem(storageKey);
   } catch {
     // storage unavailable: run in memory only
   }
   const db = new SQL.Database(saved ? fromBase64(saved) : undefined);
   return new SqlJsDb(db, (bytes) => {
     try {
-      localStorage.setItem(STORAGE_KEY, toBase64(bytes));
+      localStorage.setItem(storageKey, toBase64(bytes));
     } catch {
       // ignore quota / privacy-mode errors
     }
