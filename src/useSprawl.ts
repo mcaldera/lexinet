@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { appNow } from './core/clock';
-import { newCard, rate, Rating, type Grade } from './core/scheduler';
+import { newCard, rate, Rating, State, type Grade } from './core/scheduler';
 import { tierAllows, tierMap } from './core/tiers';
 import { tenseCardId, type Tense, type TenseCard } from './core/verbs';
 import { computeProgress, verbLevels } from './progress';
@@ -114,15 +114,21 @@ export function useSprawl() {
         changes = [...changes, ...revealed];
         levelUp = { tier: after, revealed: revealed.length };
       }
-      const game = afterAnswer(
-        data.game,
-        row.nodeId,
-        data.states.get(row.nodeId),
-        grade !== Rating.Again,
-        changes,
-        at.getTime(),
-        INFLUENCE,
-      );
+      // First sight of a word (never reviewed): not knowing it is learning, so
+      // no hostility. Every later miss counts in the game.
+      const firstSight = row.card.state === State.New;
+      const game =
+        firstSight && grade === Rating.Again
+          ? data.game
+          : afterAnswer(
+              data.game,
+              row.nodeId,
+              data.states.get(row.nodeId),
+              grade !== Rating.Again,
+              changes,
+              at.getTime(),
+              INFLUENCE,
+            );
       await saveReview(db, row.id, card, grade, at, changes);
       await saveGame(db, game);
       setData((d) => {

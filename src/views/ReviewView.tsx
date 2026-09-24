@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { checkAnswer, type AnswerCheck } from '../core/answer';
-import { Rating, type Grade } from '../core/scheduler';
+import { Rating, State, type Grade } from '../core/scheduler';
 import { NEW_NODES_PER_DAY } from '../config';
 import type { AppData, CardRow } from '../db/repo';
 import Etymology from './Etymology';
@@ -32,6 +32,8 @@ export default function ReviewView(props: Props) {
   const input = useRef<HTMLInputElement>(null);
 
   const word = current && data.nodes.find((n) => n.id === current.nodeId);
+  // Never seen before: not knowing it is learning, not a miss (see App.onRate).
+  const firstSight = current?.card.state === State.New;
   const toItalian = current?.direction === 'en-it';
   const prompt = word && (toItalian ? word.en : word.it);
   const answer = word && (toItalian ? word.it : word.en);
@@ -158,7 +160,7 @@ export default function ReviewView(props: Props) {
                   onClick={() => answer && setCheck(checkAnswer('', answer, 'it'))}
                   className="rounded bg-slate-700 px-3 py-2 text-sm hover:bg-slate-600"
                 >
-                  I don't know
+                  {firstSight ? 'Show me' : "I don't know"}
                 </button>
               </div>
             </>
@@ -166,7 +168,11 @@ export default function ReviewView(props: Props) {
             <>
               <div className={`mt-3 rounded border px-3 py-2 ${VERDICT[check.verdict].cls}`}>
                 <div className="flex items-baseline justify-between">
-                  <span className="text-sm font-semibold">{VERDICT[check.verdict].text}</span>
+                  <span className="text-sm font-semibold">
+                    {firstSight && check.verdict === 'wrong'
+                      ? 'New word: remember it'
+                      : VERDICT[check.verdict].text}
+                  </span>
                   {check.notes.length > 0 && (
                     <span className="text-xs">{check.notes.join(' · ')}</span>
                   )}

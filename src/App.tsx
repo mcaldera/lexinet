@@ -8,7 +8,7 @@ import { buildQueue } from './core/queue';
 import type { TierProgress } from './core/tiers';
 import { nextDrill, TENSES, type Tense } from './core/verbs';
 import { computeProgress, verbLevels as computeVerbLevels } from './progress';
-import { cardId, DIRECTIONS, Rating, type Grade } from './core/scheduler';
+import { cardId, DIRECTIONS, Rating, State, type Grade } from './core/scheduler';
 import { nextPractice, nodeStrength } from './core/strength';
 import type { CardRow } from './db/repo';
 import { GRAPH_NAMES, graphLabel } from './graphs';
@@ -19,6 +19,7 @@ import InspectPanel from './views/InspectPanel';
 import ReviewView from './views/ReviewView';
 import RootQuiz from './views/RootQuiz';
 import VerbDrill from './views/VerbDrill';
+import WordInfo from './views/WordInfo';
 
 /** A node the user clicked: its cards are reviewed before the automatic queue. */
 type Session = { nodeId: string; cardIds: string[]; mode: 'conquer' | 'practice' };
@@ -37,6 +38,8 @@ export default function App() {
   const [cooldowns, setCooldowns] = useState<Map<string, number>>(new Map());
   const [notice, setNotice] = useState<string | null>(null);
   const [rootQuiz, setRootQuiz] = useState<string | null>(null);
+  /** A conquered word opened for viewing (it isn't due): meaning, etymology, tenses. */
+  const [info, setInfo] = useState<{ nodeId: string; status: string } | null>(null);
   const [verbDrill, setVerbDrill] = useState<{
     nodeId: string;
     tense: Tense;
@@ -141,7 +144,9 @@ export default function App() {
       : undefined;
   const activeDrill =
     verbDrill ??
-    (dueTense ? { nodeId: dueTense.nodeId, tense: dueTense.tense, kind: 'defend' as const } : null);
+    (dueTense && !info
+      ? { nodeId: dueTense.nodeId, tense: dueTense.tense, kind: 'defend' as const }
+      : null);
   const dueCount = queue.filter((c) => !session?.cardIds.includes(c.id)).length;
 
   const today = startOfDay(now).getTime();
@@ -163,10 +168,12 @@ export default function App() {
     setLastCardId(row.id);
     setTurn((t) => t + 1);
     if (grade === Rating.Again) {
-      // Penalty: the word is locked for a minute, so you have to go elsewhere first.
+      // Locked for a minute either way, so recalling it needs real memory.
       setCooldowns((m) => new Map(m).set(row.nodeId, Date.now() + COOLDOWN_MS));
       setNotice(
-        `Missed! ${wordOf(row.nodeId)} is locked for ${COOLDOWN_MS / 1000} s. Try another word.`,
+        row.card.state === State.New
+          ? `New word: ${wordOf(row.nodeId)}. Come back in ${COOLDOWN_MS / 1000} s to claim it from memory.`
+          : `Missed! ${wordOf(row.nodeId)} is locked for ${COOLDOWN_MS / 1000} s and turns against you.`,
       );
       setSession((s) => (s?.nodeId === row.nodeId ? null : s));
       return;
@@ -180,6 +187,7 @@ export default function App() {
 
   const selectNode = (nodeId: string) => {
     if (inspect) return setInspectId(nodeId);
+    setInfo(null);
     const hub = data.graph.roots?.find((r) => r.id === nodeId);
     if (hub) {
       const until = cooldowns.get(nodeId);
@@ -225,22 +233,23 @@ export default function App() {
       }
       if (drill.kind === 'wait') {
         const h = Math.max(1, Math.round((drill.until.getTime() - now.getTime()) / 3_600_000));
-        setNotice(
-          `${wordOf(nodeId)}: the ${drill.tense} opens in ~${h} h (one new tense per day).`,
-        );
+        setInfo({
+          nodeId,
+          status: `The ${drill.tense} opens in ~${h} h (one new tense per day).`,
+        });
         return;
       }
-      setNotice(`${wordOf(nodeId)} is fully conjugated: all ${TENSES.length} tenses!`);
+      setInfo({ nodeId, status: `Fully conjugated: all ${TENSES.length} tenses!` });
       return;
     }
     if (next) {
       const days = (next.getTime() - now.getTime()) / 86_400_000;
       const when =
         days < 1 ? `${Math.max(1, Math.round(days * 24))} h` : `${Math.round(days)} days`;
-      setNotice(
-        `${wordOf(nodeId)} is holding (strength ${strength.get(nodeId) ?? 0}/5). ` +
-          `Strength only grows with time: come back in ~${when}.`,
-      );
+      setInfo({
+        nodeId,
+        status: `Holding. Strength only grows with time: next review in ~${when}.`,
+      });
       return;
     }
     // Random first direction, so English -> Italian comes first half the time.
@@ -395,6 +404,18 @@ export default function App() {
                       );
                     }
                   }}
+                />
+              ) : info && !rootQuiz && data.nodes.some((n) => n.id === info.nodeId) ? (
+                <WordInfo
+                  key={info.nodeId}
+                  word={data.nodes.find((n) => n.id === info.nodeId)!}
+                  health={health.get(info.nodeId) ?? null}
+                  control={data.game.nodes.get(info.nodeId)?.control ?? 1}
+                  strength={strength.get(info.nodeId) ?? 0}
+                  status={info.status}
+                  verbLevel={verbLevels.get(info.nodeId)}
+                  tenseCards={data.tenseCards.filter((c) => c.nodeId === info.nodeId)}
+                  onClose={() => setInfo(null)}
                 />
               ) : rootQuiz && data.graph.roots?.some((r) => r.id === rootQuiz) ? (
                 <RootQuiz
