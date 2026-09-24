@@ -1,22 +1,15 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { checkAnswer, type AnswerCheck } from '../core/answer';
-import { Rating, type Grade } from '../core/scheduler';
+import type { Grade } from '../core/scheduler';
 import { NEW_NODES_PER_DAY } from '../config';
 import type { AppData, CardRow } from '../db/repo';
 import Etymology from './Etymology';
-
-const BUTTONS: { grade: Grade; label: string; key: string; cls: string }[] = [
-  { grade: Rating.Again, label: 'Again', key: '1', cls: 'bg-red-600 hover:bg-red-500' },
-  { grade: Rating.Hard, label: 'Hard', key: '2', cls: 'bg-amber-600 hover:bg-amber-500' },
-  { grade: Rating.Good, label: 'Good', key: '3', cls: 'bg-emerald-600 hover:bg-emerald-500' },
-  { grade: Rating.Easy, label: 'Easy', key: '4', cls: 'bg-sky-600 hover:bg-sky-500' },
-];
 
 const ACCENTS = ['à', 'è', 'é', 'ì', 'ò', 'ù'];
 
 const VERDICT = {
   correct: { text: 'Correct', cls: 'border-emerald-500/50 bg-emerald-500/10 text-emerald-300' },
-  almost: { text: 'Almost', cls: 'border-amber-500/50 bg-amber-500/10 text-amber-300' },
+  almost: { text: 'Accepted (almost)', cls: 'border-amber-500/50 bg-amber-500/10 text-amber-300' },
   wrong: { text: 'Not quite', cls: 'border-red-500/50 bg-red-500/10 text-red-300' },
 } as const;
 
@@ -58,16 +51,6 @@ export default function ReviewView(props: Props) {
     }
   };
 
-  useEffect(() => {
-    if (!check) return;
-    const onKey = (e: KeyboardEvent) => {
-      const b = BUTTONS.find((b) => b.key === e.key);
-      if (b) rate(b.grade);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  });
-
   const insert = (ch: string) => {
     const el = input.current;
     const at = el?.selectionStart ?? typed.length;
@@ -84,7 +67,7 @@ export default function ReviewView(props: Props) {
     <div className="rounded-lg border border-slate-800 bg-slate-900 p-4">
       <div className="mb-3 flex justify-between text-xs uppercase tracking-wider text-slate-400">
         <span>
-          {mode === 'conquer' ? 'Conquering' : mode === 'practice' ? 'Practising' : 'Review'}
+          {mode === 'conquer' ? 'Conquering' : mode === 'practice' ? 'Defending' : 'Review'}
         </span>
         <span>
           {dueCount} due ·{' '}
@@ -174,28 +157,18 @@ export default function ReviewView(props: Props) {
                 <div className="mt-1 text-xl text-slate-100">{answer}</div>
               </div>
               <Etymology word={word} />
-              <div className="mt-3 grid grid-cols-4 gap-2">
-                {BUTTONS.map((b) => {
-                  const suggested = b.grade === check.grade;
-                  return (
-                    <button
-                      key={b.label}
-                      autoFocus={suggested}
-                      disabled={busy}
-                      onClick={() => rate(b.grade)}
-                      className={`rounded px-2 py-2 text-sm font-medium text-white disabled:opacity-50 ${b.cls} ${
-                        suggested ? 'ring-2 ring-white' : 'opacity-60'
-                      }`}
-                    >
-                      {b.label}
-                      <span className="block text-[10px] opacity-70">{b.key}</span>
-                    </button>
-                  );
-                })}
-              </div>
-              <p className="mt-2 text-center text-xs text-slate-500">
-                Enter accepts the highlighted rating · 1–4 to override
-              </p>
+              <button
+                autoFocus
+                disabled={busy}
+                onClick={() => rate(check.grade)}
+                className={`mt-3 w-full rounded py-2 text-sm font-medium text-white disabled:opacity-50 ${
+                  check.verdict === 'wrong'
+                    ? 'bg-red-700 hover:bg-red-600'
+                    : 'bg-emerald-700 hover:bg-emerald-600'
+                }`}
+              >
+                Continue <span className="text-xs opacity-60">(enter)</span>
+              </button>
             </>
           )}
         </>

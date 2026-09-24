@@ -30,10 +30,10 @@ test('Good on a frontier node conquers it and reveals locked neighbours', () => 
   ]);
 });
 
-test('Again/Hard and non-frontier nodes cause no changes', () => {
+test('Again and non-frontier nodes cause no changes; a near miss (Hard) conquers', () => {
   const s = initialStates(['a', 'b', 'c', 'd'], 'a');
   expect(unlockChanges('a', Rating.Again, s, nb)).toEqual([]);
-  expect(unlockChanges('a', Rating.Hard, s, nb)).toEqual([]);
+  expect(unlockChanges('a', Rating.Hard, s, nb)[0]).toEqual({ id: 'a', state: 'conquered' });
   expect(unlockChanges('b', Rating.Good, s, nb)).toEqual([]);
 });
 

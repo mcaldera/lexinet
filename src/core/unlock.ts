@@ -21,7 +21,7 @@ const anyNode = () => true;
 
 /**
  * State changes caused by rating one of `nodeId`'s cards. A frontier node rated
- * Good or Easy is conquered, and its locked neighbours become frontier if
+ * Hard or better is conquered, and its locked neighbours become frontier if
  * `allowed` (e.g. their tier is open).
  */
 export function unlockChanges(
@@ -31,7 +31,8 @@ export function unlockChanges(
   neighbours: Map<string, string[]>,
   allowed: (id: string) => boolean = anyNode,
 ): StateChange[] {
-  if (states.get(nodeId) !== 'frontier' || grade < Rating.Good) return [];
+  // Anything but "Again" counts: near misses (typo, article) are graded Hard.
+  if (states.get(nodeId) !== 'frontier' || grade < Rating.Hard) return [];
   const changes: StateChange[] = [{ id: nodeId, state: 'conquered' }];
   for (const n of neighbours.get(nodeId) ?? []) {
     if (states.get(n) === 'locked' && allowed(n)) changes.push({ id: n, state: 'frontier' });

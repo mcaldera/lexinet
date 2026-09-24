@@ -5,6 +5,7 @@ import ForceGraph2D, {
   type NodeObject,
 } from 'react-force-graph-2d';
 import { COOLDOWN_MS } from '../config';
+import { fadedName, FULL_NAME } from '../core/fade';
 import { edgeOpacity, healthBand } from '../core/health';
 import { MAX_STRENGTH } from '../core/strength';
 import type { AppData, Edge, RootHub, WordNode } from '../db/repo';
@@ -160,6 +161,13 @@ export default function GraphView({
 
   const endId = (x: unknown) => (typeof x === 'object' && x ? (x as N).id : (x as string));
   const isHub = (id: string) => id.startsWith('root:');
+  /** A word's name as the player may see it: fading words lose letters (see core/fade). */
+  const shownName = (id: string) => {
+    const word = byId.get(id)?.it ?? '';
+    if (inspect) return word;
+    if (data.states.get(id) !== 'conquered') return '';
+    return fadedName(word, health.get(id) ?? null);
+  };
   const hidden = (id: string) => !inspect && !isHub(id) && data.states.get(id) !== 'conquered';
   const touchesActive = (l: L) =>
     inspect && activeId !== undefined && [endId(l.source), endId(l.target)].includes(activeId);
@@ -193,7 +201,7 @@ export default function GraphView({
       ctx.lineWidth = 1.5;
       ctx.stroke();
     }
-    const label = (alpha: number) => {
+    const label = (alpha: number, text = node.word.it) => {
       // Zoomed far out, word labels give way to region names.
       const fade = node.id === activeId ? 1 : Math.min(1, Math.max(0, (scale - 0.35) / 0.35));
       if (fade === 0) return;
@@ -203,7 +211,7 @@ export default function GraphView({
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
       ctx.fillStyle = `rgba(226, 232, 240, ${alpha})`;
-      ctx.fillText(node.word.it, x, y + r + 2.5);
+      ctx.fillText(text, x, y + r + 2.5);
     };
 
     if (state !== 'conquered') {
@@ -252,7 +260,17 @@ export default function GraphView({
       ctx.lineTo(x + 3.5, y - 2);
       ctx.stroke();
     }
-    label(Math.max(0.35, h));
+    const name = shownName(node.id);
+    if (name) {
+      label(Math.max(0.35, h), name);
+    } else {
+      // Faded out completely: the word must be recalled to see it again.
+      ctx.fillStyle = '#f8fafc';
+      ctx.font = 'bold 8px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('?', x, y + (shape === 'triangle' ? 2 : 0.5));
+    }
     ctx.restore();
   };
 
@@ -275,8 +293,7 @@ export default function GraphView({
     const [a, b] = [endId(l.source), endId(l.target)];
     if (l.descends) {
       const hub = hubs.find((h) => h.id === a);
-      const w = byId.get(b);
-      const word = hidden(b) ? 'This unknown word' : `<b>${w?.it}</b>`;
+      const word = hidden(b) || !shownName(b) ? 'This unknown word' : `<b>${shownName(b)}</b>`;
       return `${word} descends from ${hub?.lang ?? ''} <i>${hub?.root}</i>${
         hub?.meaning ? ` “${hub.meaning}”` : ''
       }`;
@@ -297,7 +314,7 @@ export default function GraphView({
     const weak = isWeakBridge(l)
       ? '<div style="opacity:.8">weak link: only here to connect two groups</div>'
       : '';
-    return `<b>${wa?.it} ↔ ${wb?.it}</b><div style="color:${color}">● ${reasonText(l, wa, wb)}</div>
+    return `<b>${shownName(a) || '?'} ↔ ${shownName(b) || '?'}</b><div style="color:${color}">● ${reasonText(l, wa, wb)}</div>
       <div>strength ${Math.round(l.weight * 100)}%</div>${detail}${weak}`;
   };
 
@@ -322,7 +339,7 @@ export default function GraphView({
             return `${n.hub.lang ?? ''} root ${n.hub.root}: click to unlock it and reveal its words`;
           }
           if (n.hub) {
-            const known = n.hub.words.filter((w) => !hidden(w)).map((w) => byId.get(w)?.it);
+            const known = n.hub.words.filter((w) => !hidden(w) && shownName(w)).map(shownName);
             const unknown = n.hub.words.length - known.length;
             return `${n.hub.lang ?? ''} ${n.hub.root}${n.hub.meaning ? ` “${n.hub.meaning}”` : ''} → ${[
               ...known,
@@ -339,6 +356,9 @@ export default function GraphView({
           }
           const h = health.get(n.id);
           const pct = h != null ? ` · health ${Math.round(h * 100)}%` : '';
+          if (!inspect && state === 'conquered' && h != null && h < FULL_NAME) {
+            return `Fading: ${shownName(n.id) || '?'}${pct} · click to defend`;
+          }
           const lvl = strength.get(n.id) ?? 0;
           const str =
             state === 'conquered'
@@ -406,7 +426,7 @@ function Legend() {
         </span>
       </div>
       <div className="text-slate-500">
-        WASD / arrows move · +/− zoom · F fit · Esc leaves the answer box
+        Arrows move (always) · WASD, +/− zoom, F fit outside the answer box (Esc leaves it)
       </div>
     </div>
   );

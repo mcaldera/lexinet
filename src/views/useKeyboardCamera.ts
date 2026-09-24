@@ -28,7 +28,15 @@ function isTyping(target: EventTarget | null) {
   );
 }
 
-/** WASD/arrows pan while held, +/- zoom, F fits; ignored while typing in a field. */
+/** Controls where arrow keys have their own meaning (dropdowns, multi-line text). */
+const ownsArrows = (target: EventTarget | null) =>
+  target instanceof HTMLSelectElement || target instanceof HTMLTextAreaElement;
+
+/**
+ * Arrows pan while held, even while typing an answer (a one-line answer box has
+ * no use for them, and it is focused most of the time). WASD, +/- and F only
+ * work outside text fields, where they aren't letters being typed.
+ */
 export function useKeyboardCamera(cam: RefObject<Camera | undefined>) {
   useEffect(() => {
     const held = new Set<string>();
@@ -57,8 +65,9 @@ export function useKeyboardCamera(cam: RefObject<Camera | undefined>) {
     };
 
     const down = (e: KeyboardEvent) => {
-      if (isTyping(e.target) || e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.ctrlKey || e.metaKey || e.altKey || ownsArrows(e.target)) return;
       const k = e.key.toLowerCase();
+      if (isTyping(e.target) && !k.startsWith('arrow')) return;
       const c = cam.current;
       if (k in DIRS) {
         e.preventDefault(); // arrows would otherwise scroll the sidebar
