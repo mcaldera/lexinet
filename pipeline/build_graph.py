@@ -287,6 +287,7 @@ def build_graph(
     bonus_threshold: float = 0.25,
     seed: str | None = None,
     ranks: dict[str, int] | None = None,
+    english: Callable[[str], list[str]] | None = None,
 ) -> dict:
     ids: list[str] = []
     for w in df["italian"]:
@@ -378,6 +379,14 @@ def build_graph(
             "lang": df["root_lang"][members[0]] or None,
             "meaning": df["root_meaning"][members[0]] or None,
             "words": [ids[i] for i in members],
+            # English words from the same root: the word list's own cognates first,
+            # then common English derivatives from Wiktionary (see english_roots.py).
+            "english": list(
+                dict.fromkeys(
+                    [df["cognate"][i] for i in members if df["cognate"][i]]
+                    + (english(df["root"][members[0]]) if english else [])
+                )
+            )[:6],
         }
         for members in by_root.values()
         if len(members) >= 2
@@ -449,11 +458,18 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--model", default=DEFAULT_MODEL)
     p.add_argument("-k", "--bonus-k", type=int, default=3)
     p.add_argument("-t", "--bonus-threshold", type=float, default=0.25)
+    p.add_argument("--no-english", action="store_true", help="skip English root examples (needs a ~500 MB download once)")
     args = p.parse_args(argv)
 
     df = load_words(args.csv)
+    english = None
+    if not args.no_english:
+        import english_roots
+
+        index, derived = english_roots.load_index(), english_roots.load_latin_derived()
+        english = lambda root: english_roots.english_for(root, index, derived)  # noqa: E731
     graph = build_graph(
-        df, make_embedder(args.model), args.bonus_k, args.bonus_threshold, args.seed, load_frequency_ranks()
+        df, make_embedder(args.model), args.bonus_k, args.bonus_threshold, args.seed, load_frequency_ranks(), english
     )
     graph["params"]["model"] = args.model
     validate_graph(graph)

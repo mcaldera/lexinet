@@ -1,4 +1,4 @@
-import { checkAnswer, editDistance } from './answer';
+import { checkAnswer, checkMeaning, editDistance } from './answer';
 import { Rating } from './scheduler';
 
 const it = (input: string, expected: string) => checkAnswer(input, expected, 'it');
@@ -47,4 +47,15 @@ test('short words must be exact; different words are wrong', () => {
   expect(en('cot', 'cat').verdict).toBe('wrong');
   expect(it('il gatto', 'il cane').verdict).toBe('wrong');
   expect(it('', 'il cane').grade).toBe(Rating.Again);
+});
+
+test('root meanings accept a matching content word', () => {
+  expect(checkMeaning('to cook', 'to cook').verdict).toBe('correct');
+  expect(checkMeaning('cook', 'to cook').verdict).toBe('correct');
+  expect(checkMeaning('journey', 'provisions for a journey (from via, "road")').verdict).toBe(
+    'correct',
+  );
+  expect(checkMeaning('speech', 'speech, parable').verdict).toBe('correct');
+  expect(checkMeaning('the sea', 'to cook').verdict).toBe('wrong');
+  expect(checkMeaning('for', 'provisions for a journey').verdict).toBe('wrong');
 });

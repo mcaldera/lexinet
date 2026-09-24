@@ -11,6 +11,7 @@ import {
   migrate,
   resetAll,
   saveReview,
+  saveRootUnlock,
   setOffsetDays,
   syncGraph,
   type AppData,
@@ -110,6 +111,24 @@ export function useSprawl() {
     [db, data, neighbours, tiers],
   );
 
+  /** Unlock a root hub: its words all become frontier (a shortcut across the map). */
+  const unlockRoot = useCallback(
+    async (hubId: string): Promise<number> => {
+      const hub = data?.graph.roots?.find((r) => r.id === hubId);
+      if (!db || !data || !hub) return 0;
+      const changes = hub.words
+        .filter((w) => data.states.get(w) === 'locked')
+        .map((id) => ({ id, state: 'frontier' as const }));
+      const unlocked = new Set(data.unlockedRoots).add(hubId);
+      await saveRootUnlock(db, unlocked, changes);
+      setData(
+        (d) => d && { ...d, unlockedRoots: unlocked, states: applyChanges(d.states, changes) },
+      );
+      return changes.length;
+    },
+    [db, data],
+  );
+
   const timeTravel = useCallback(
     async (days: number) => {
       if (!db) return;
@@ -128,5 +147,5 @@ export function useSprawl() {
     setData(await loadAll(db, data.graph));
   }, [db, data]);
 
-  return { data, now, error, review, timeTravel, reset, graphName };
+  return { data, now, error, review, unlockRoot, timeTravel, reset, graphName };
 }

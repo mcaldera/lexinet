@@ -6,6 +6,7 @@ import {
   migrate,
   resetAll,
   saveReview,
+  saveRootUnlock,
   setOffsetDays,
   syncGraph,
   type Graph,
@@ -101,4 +102,16 @@ test('the real graph.json syncs cleanly', async () => {
   const data = await loadAll(db, g);
   expect(data.cards.length).toBe(g.nodes.length * 2);
   expect([...data.states.values()].filter((s) => s === 'frontier')).toEqual(['frontier']);
+});
+
+test('unlocked roots and the words they reveal persist; reset clears them', async () => {
+  const db = await freshDb();
+  await syncGraph(db, graph, t0);
+  await saveRootUnlock(db, new Set(['root:canis']), [{ id: 'abbaiare', state: 'frontier' }]);
+  let data = await loadAll(db, graph);
+  expect([...data.unlockedRoots]).toEqual(['root:canis']);
+  expect(data.states.get('abbaiare')).toBe('frontier');
+  await resetAll(db, graph, t0);
+  data = await loadAll(db, graph);
+  expect(data.unlockedRoots.size).toBe(0);
 });

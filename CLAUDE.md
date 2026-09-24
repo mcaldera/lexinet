@@ -34,6 +34,7 @@ Node is 18 on the dev box: keep deps Node-18 compatible (Vite 5, Vitest 2, ts-fs
 - All time goes through `clock.ts` (`real now + debug_day_offset`); never call `new Date()` directly in logic.
 - Health is computed, never stored. So is the open tier (`core/tiers.ts`): tier k+1 opens when `TIER_UNLOCK_FRACTION` of tiers 1..k are conquered; closed-tier nodes stay locked and invisible. Tiers come from word frequency (pipeline) or a `tier` CSV column.
 - Strength (`core/strength.ts`) = FSRS stability level 0-5; conquered words can only be practised once a card is due (no cramming). A wrong answer ("Again") locks the word for `COOLDOWN_MS` (in-memory, real time).
+- Roots (`graph.roots`, 2+ words) start sealed; the player unlocks one by naming its meaning (`RootQuiz`, `checkMeaning`), which turns all its words frontier regardless of tier. English examples come from `pipeline/english_roots.py` (English Wiktionary, cached in `~/.cache/sprawl/`).
 - Map: words are pinned to pipeline positions (`pipeline/layout.py`); regions are drawn as territories in `GraphView` (`drawRegions`).
 - Keyboard: WASD/arrows pan, +/- zoom, F fit (`views/useKeyboardCamera.ts`); ignored while typing.
 - `graph.json` owns words and edges; SQLite owns progress only. On startup `syncGraph` adds new words/cards and repairs frontier states, so regenerating the graph keeps progress. Node ids are slugs of the Italian word: renaming a word loses its progress.

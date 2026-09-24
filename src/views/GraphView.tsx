@@ -40,6 +40,8 @@ type Props = {
   activeId?: string;
   /** Strength level 0-5 per word; stronger words are drawn bigger. */
   strength: Map<string, number>;
+  /** Root hubs unlocked by naming their meaning. */
+  unlockedRoots: Set<string>;
   /** Word id -> real time (ms) its wrong-answer lock ends. */
   cooldowns: Map<string, number>;
   /** Show every word and edge (spoilers) for inspecting the network. */
@@ -54,6 +56,7 @@ export default function GraphView({
   health,
   activeId,
   strength,
+  unlockedRoots,
   cooldowns,
   inspect,
   showRoots,
@@ -179,7 +182,7 @@ export default function GraphView({
       ctx.stroke();
     }
     if (node.hub) {
-      drawHub(ctx, node, x, y, scale, node.id === activeId);
+      drawHub(ctx, node, x, y, scale, node.id === activeId, inspect || unlockedRoots.has(node.id));
       ctx.restore();
       return;
     }
@@ -315,13 +318,16 @@ export default function GraphView({
           ctx.fill();
         }}
         nodeLabel={(n) => {
+          if (n.hub && !inspect && !unlockedRoots.has(n.id)) {
+            return `${n.hub.lang ?? ''} root ${n.hub.root}: click to unlock it and reveal its words`;
+          }
           if (n.hub) {
             const known = n.hub.words.filter((w) => !hidden(w)).map((w) => byId.get(w)?.it);
             const unknown = n.hub.words.length - known.length;
             return `${n.hub.lang ?? ''} ${n.hub.root}${n.hub.meaning ? ` “${n.hub.meaning}”` : ''} → ${[
               ...known,
               ...(unknown ? [`${unknown} unknown`] : []),
-            ].join(', ')}`;
+            ].join(', ')}${n.hub.english?.length ? ` · English: ${n.hub.english.join(', ')}` : ''}`;
           }
           const state = data.states.get(n.id);
           const until = cooldowns.get(n.id);
@@ -413,6 +419,7 @@ function drawHub(
   y: number,
   scale: number,
   active: boolean,
+  unlocked: boolean,
 ) {
   const r = 7;
   ctx.beginPath();
@@ -421,21 +428,27 @@ function drawHub(
     ctx.lineTo(x + r * Math.cos(a), y + r * Math.sin(a));
   }
   ctx.closePath();
-  ctx.fillStyle = 'rgba(244, 114, 182, 0.25)';
+  ctx.fillStyle = unlocked ? 'rgba(244, 114, 182, 0.45)' : 'rgba(244, 114, 182, 0.1)';
   ctx.fill();
+  if (!unlocked) ctx.setLineDash([2, 1.5]); // sealed: name its meaning to unlock
   ctx.strokeStyle = active ? '#f8fafc' : 'rgba(244, 114, 182, 0.9)';
   ctx.lineWidth = active ? 1.5 : 1;
   ctx.stroke();
+  ctx.setLineDash([]);
   const fontSize = Math.max(3, 11 / scale);
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
   ctx.font = `italic ${fontSize}px serif`;
   ctx.fillStyle = 'rgba(251, 207, 232, 0.95)';
-  ctx.fillText(node.word.it, x, y + r + 2);
-  if (node.word.en) {
-    ctx.font = `${fontSize * 0.8}px sans-serif`;
-    ctx.fillStyle = 'rgba(251, 207, 232, 0.6)';
-    ctx.fillText(`“${node.word.en}”`, x, y + r + 3 + fontSize);
+  ctx.fillText(unlocked ? node.word.it : `${node.word.it} ?`, x, y + r + 2);
+  if (!unlocked) return;
+  ctx.font = `${fontSize * 0.8}px sans-serif`;
+  ctx.fillStyle = 'rgba(251, 207, 232, 0.6)';
+  if (node.word.en) ctx.fillText(`“${node.word.en}”`, x, y + r + 3 + fontSize);
+  const english = node.hub?.english ?? [];
+  if (english.length) {
+    ctx.fillStyle = 'rgba(226, 232, 240, 0.55)';
+    ctx.fillText(`≈ ${english.slice(0, 3).join(' · ')}`, x, y + r + 4 + fontSize * 1.8);
   }
 }
 

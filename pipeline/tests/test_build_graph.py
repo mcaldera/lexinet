@@ -178,13 +178,19 @@ def test_shared_roots_become_hub_entries(df):
             "lang": "Late Latin",
             "meaning": "speech",
             "words": ["parlare", "parlato", "la-parola"],
+            "english": ["parley", "parable"],
         }
     ]
 
 
+def test_root_english_examples_merge_cognates_and_lookup(df):
+    graph = bg.build_graph(df, fake_embedder, english=lambda root: ["parable", "parole"])
+    assert graph["roots"][0]["english"] == ["parley", "parable", "parole"]
+
+
 def test_every_word_gets_map_position_and_region(df):
     graph = bg.build_graph(df, fake_embedder)
-    assert all(isinstance(n["x"], float) and isinstance(n["y"], float) for n in graph["nodes"])
+    assert all(np.isfinite([n["x"], n["y"]]).all() for n in graph["nodes"])
     in_regions = sorted(w for r in graph["regions"] for w in r["words"])
     assert in_regions == sorted(n["id"] for n in graph["nodes"])
     assert all(r["name"] for r in graph["regions"])

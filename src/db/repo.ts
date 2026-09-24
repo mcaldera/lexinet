@@ -53,6 +53,8 @@ export type RootHub = {
   lang: string | null;
   meaning: string | null;
   words: string[];
+  /** Common English words from the same root, e.g. cook, kitchen. */
+  english?: string[];
 };
 export type Candidate = {
   id: string;
@@ -87,6 +89,8 @@ export type AppData = {
   /** Node id -> ISO time of its first review (for the daily new-node counter). */
   firstReview: Map<string, string>;
   offsetDays: number;
+  /** Root hubs the player has unlocked by naming their meaning. */
+  unlockedRoots: Set<string>;
 };
 
 async function insertMany(
@@ -174,6 +178,9 @@ export async function loadAll(db: SqlDb, graph: Graph): Promise<AppData> {
   const meta = await db.select<{ value: string }>(
     "SELECT value FROM meta WHERE key = 'debug_day_offset'",
   );
+  const roots = await db.select<{ value: string }>(
+    "SELECT value FROM meta WHERE key = 'unlocked_roots'",
+  );
   return {
     graph,
     nodes: graph.nodes,
@@ -187,6 +194,7 @@ export async function loadAll(db: SqlDb, graph: Graph): Promise<AppData> {
     states: new Map(nodeRows.filter((n) => ids.has(n.id)).map((n) => [n.id, n.state])),
     firstReview: new Map(first.map((f) => [f.node_id, f.first])),
     offsetDays: meta.length ? Number(meta[0].value) : 0,
+    unlockedRoots: new Set(roots.length ? (JSON.parse(roots[0].value) as string[]) : []),
   };
 }
 
@@ -204,6 +212,17 @@ export async function saveReview(
     grade,
     reviewedAt.toISOString(),
   ]);
+  for (const c of changes) {
+    await db.execute('UPDATE nodes SET state = ? WHERE id = ?', [c.state, c.id]);
+  }
+}
+
+/** Mark a root as unlocked and reveal its words (state changes computed by the caller). */
+export async function saveRootUnlock(db: SqlDb, unlocked: Set<string>, changes: StateChange[]) {
+  await db.execute(
+    "INSERT INTO meta (key, value) VALUES ('unlocked_roots', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+    [JSON.stringify([...unlocked])],
+  );
   for (const c of changes) {
     await db.execute('UPDATE nodes SET state = ? WHERE id = ?', [c.state, c.id]);
   }

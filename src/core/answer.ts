@@ -99,3 +99,39 @@ export function checkAnswer(input: string, expected: string, lang: 'it' | 'en'):
   if (a === e) return result('correct');
   return lang === 'it' ? checkItalian(a, e) : checkEnglish(a, e);
 }
+
+const STOPWORDS = new Set([
+  'the',
+  'and',
+  'for',
+  'from',
+  'with',
+  'that',
+  'this',
+  'into',
+  'of',
+  'to',
+  'a',
+  'an',
+  'or',
+]);
+const keywords = (s: string) =>
+  normalize(s)
+    .replace(/[()"“”]/g, ' ')
+    .split(/[^a-z']+/)
+    .filter((w) => w.length >= 3 && !STOPWORDS.has(w));
+
+/**
+ * Looser check for a root's meaning ("provisions for a journey (from via, road)"):
+ * the usual English check, or sharing a content word with the meaning ("journey").
+ */
+export function checkMeaning(input: string, meaning: string): AnswerCheck {
+  const cleaned = meaning.replace(/\([^)]*\)/g, '').trim() || meaning;
+  const strict = checkAnswer(input, cleaned, 'en');
+  if (strict.verdict !== 'wrong') return strict;
+  const want = new Set(keywords(meaning));
+  const hit = keywords(input).some(
+    (w) => want.has(w) || [...want].some((m) => m.length >= 5 && editDistance(w, m) <= 1),
+  );
+  return hit ? result('correct', ['Close enough']) : strict;
+}

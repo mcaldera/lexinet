@@ -13,12 +13,13 @@ import DebugPanel from './views/DebugPanel';
 import GraphView from './views/GraphView';
 import InspectPanel from './views/InspectPanel';
 import ReviewView from './views/ReviewView';
+import RootQuiz from './views/RootQuiz';
 
 /** A node the user clicked: its cards are reviewed before the automatic queue. */
 type Session = { nodeId: string; cardIds: string[]; mode: 'conquer' | 'practice' };
 
 export default function App() {
-  const { data, now, error, review, timeTravel, reset, graphName } = useSprawl();
+  const { data, now, error, review, unlockRoot, timeTravel, reset, graphName } = useSprawl();
   const [lastCardId, setLastCardId] = useState<string>();
   const [session, setSession] = useState<Session | null>(null);
   const [turn, setTurn] = useState(0);
@@ -29,6 +30,7 @@ export default function App() {
   /** Node id -> real time (ms) until which it is locked after a wrong answer. */
   const [cooldowns, setCooldowns] = useState<Map<string, number>>(new Map());
   const [notice, setNotice] = useState<string | null>(null);
+  const [rootQuiz, setRootQuiz] = useState<string | null>(null);
   const [, setSecond] = useState(0);
 
   // Tick every second while something is cooling down (countdown rings), then expire.
@@ -145,6 +147,21 @@ export default function App() {
 
   const selectNode = (nodeId: string) => {
     if (inspect) return setInspectId(nodeId);
+    const hub = data.graph.roots?.find((r) => r.id === nodeId);
+    if (hub) {
+      const until = cooldowns.get(nodeId);
+      if (data.unlockedRoots.has(nodeId)) {
+        setNotice(
+          `${hub.root} = “${hub.meaning}”${hub.english?.length ? ` → ${hub.english.join(', ')}` : ''}`,
+        );
+      } else if (until && until > Date.now()) {
+        setNotice(`${hub.root} is still locked (${Math.ceil((until - Date.now()) / 1000)} s).`);
+      } else {
+        setSession(null);
+        setRootQuiz(nodeId);
+      }
+      return;
+    }
     if (!data.states.has(nodeId) || data.states.get(nodeId) === 'locked') return; // roots, hidden
     const until = cooldowns.get(nodeId);
     if (until && until > Date.now()) {
@@ -245,6 +262,7 @@ export default function App() {
             health={health}
             activeId={inspect ? inspectId : current?.nodeId}
             strength={strength}
+            unlockedRoots={data.unlockedRoots}
             cooldowns={cooldowns}
             inspect={inspect}
             showRoots={showRoots}
@@ -266,19 +284,40 @@ export default function App() {
                   {notice}
                 </div>
               )}
-              <ReviewView
-                key={turn}
-                data={data}
-                current={current}
-                mode={mode}
-                dueCount={dueCount}
-                newToday={newToday}
-                onRate={onRate}
-                onCancel={() => {
-                  setSession(null);
-                  setTurn((t) => t + 1);
-                }}
-              />
+              {rootQuiz && data.graph.roots?.some((r) => r.id === rootQuiz) ? (
+                <RootQuiz
+                  key={rootQuiz}
+                  data={data}
+                  hub={data.graph.roots.find((r) => r.id === rootQuiz)!}
+                  onCancel={() => setRootQuiz(null)}
+                  onDone={async (correct) => {
+                    const id = rootQuiz;
+                    setRootQuiz(null);
+                    if (correct) {
+                      const n = await unlockRoot(id);
+                      setNotice(
+                        `Root unlocked${n ? `: ${n} new ${n === 1 ? 'word' : 'words'} to conquer` : ''}.`,
+                      );
+                    } else {
+                      setCooldowns((m) => new Map(m).set(id, Date.now() + COOLDOWN_MS));
+                    }
+                  }}
+                />
+              ) : (
+                <ReviewView
+                  key={turn}
+                  data={data}
+                  current={current}
+                  mode={mode}
+                  dueCount={dueCount}
+                  newToday={newToday}
+                  onRate={onRate}
+                  onCancel={() => {
+                    setSession(null);
+                    setTurn((t) => t + 1);
+                  }}
+                />
+              )}
             </>
           )}
           <DebugPanel

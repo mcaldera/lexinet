@@ -49,6 +49,12 @@ export default function InspectPanel({ data, health, selectedId, onSelect }: Pro
           {hub.meaning && <span className="text-slate-400"> “{hub.meaning}”</span>}
         </div>
         <div className="mb-3 text-xs text-slate-500">{hub.lang}</div>
+        {!!hub.english?.length && (
+          <div className="mb-3 text-slate-300">
+            <span className="text-slate-500">English: </span>
+            {hub.english.join(', ')}
+          </div>
+        )}
         <div className="mb-1 text-xs uppercase tracking-wider text-slate-400">
           Descendants ({hub.words.length})
         </div>

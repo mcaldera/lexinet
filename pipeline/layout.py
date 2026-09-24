@@ -82,7 +82,12 @@ def map_layout(G: nx.Graph, comms: list[set[str]], seed: int = 0) -> dict[str, t
         else:
             # Kamada-Kawai spreads words evenly (no dense cores); fine for region sizes.
             init = nx.spring_layout(sub, weight="weight", seed=seed, iterations=50)
-            local = nx.kamada_kawai_layout(sub, pos=init) if nx.is_connected(sub) else init
+            local = init
+            if nx.is_connected(sub):
+                with np.errstate(divide="ignore", invalid="ignore"):
+                    kk = nx.kamada_kawai_layout(sub, pos=init)
+                if np.isfinite(np.array(list(kk.values()))).all():
+                    local = kk
         pts = np.array(list(local.values()))
         pts -= pts.mean(axis=0)
         scale = np.abs(pts).max() or 1.0
