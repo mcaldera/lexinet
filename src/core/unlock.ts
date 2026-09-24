@@ -17,20 +17,24 @@ export function neighbourMap(edges: { source: string; target: string }[]): Map<s
   return m;
 }
 
+const anyNode = () => true;
+
 /**
  * State changes caused by rating one of `nodeId`'s cards. A frontier node rated
- * Good or Easy is conquered, and its locked neighbours become frontier.
+ * Good or Easy is conquered, and its locked neighbours become frontier if
+ * `allowed` (e.g. their tier is open).
  */
 export function unlockChanges(
   nodeId: string,
   grade: Grade,
   states: Map<string, NodeState>,
   neighbours: Map<string, string[]>,
+  allowed: (id: string) => boolean = anyNode,
 ): StateChange[] {
   if (states.get(nodeId) !== 'frontier' || grade < Rating.Good) return [];
   const changes: StateChange[] = [{ id: nodeId, state: 'conquered' }];
   for (const n of neighbours.get(nodeId) ?? []) {
-    if (states.get(n) === 'locked') changes.push({ id: n, state: 'frontier' });
+    if (states.get(n) === 'locked' && allowed(n)) changes.push({ id: n, state: 'frontier' });
   }
   return changes;
 }
@@ -42,17 +46,19 @@ export function applyChanges(states: Map<string, NodeState>, changes: StateChang
 }
 
 /**
- * Fix states after the graph changed (words added/removed, new edges): locked
- * nodes next to conquered ones become frontier, and an empty map restarts at the seed.
+ * Reveal what should be visible: locked, `allowed` nodes next to conquered ones
+ * become frontier (after a graph change or a tier opening), and an empty map
+ * restarts at the seed.
  */
 export function repairStates(
   states: Map<string, NodeState>,
   neighbours: Map<string, string[]>,
   seed: string,
+  allowed: (id: string) => boolean = anyNode,
 ): StateChange[] {
   const changes: StateChange[] = [];
   for (const [id, state] of states) {
-    if (state !== 'locked') continue;
+    if (state !== 'locked' || !allowed(id)) continue;
     if ((neighbours.get(id) ?? []).some((n) => states.get(n) === 'conquered')) {
       changes.push({ id, state: 'frontier' });
     }

@@ -92,6 +92,7 @@ export default function InspectPanel({ data, health, selectedId, onSelect }: Pro
       </div>
       <div className="mb-3 text-xs text-slate-500">
         {[
+          `tier ${word.tier ?? 1}`,
           word.pos,
           word.theme && `theme ${word.theme}`,
           word.root && `root ${word.root}`,

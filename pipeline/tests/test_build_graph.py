@@ -26,6 +26,7 @@ def df():
             "theme": ["animals", "animals", "comm", "comm", "comm", "animals"],
             "root": ["canis", "", "parabola", "parabola", "parabola", "cattus"],
             "cognate": ["canine", "", "parley", "", "parable", "cat"],
+            "tier": [""] * 6,
         }
     )
 
@@ -49,7 +50,7 @@ def test_load_words_fills_optional_columns_and_dedupes(tmp_path):
     p = tmp_path / "w.csv"
     p.write_text("Italian,English\nil cane,dog\nil cane,dog again\nil gatto,cat\n")
     df = bg.load_words(p)
-    assert list(df.columns) == ["italian", "english", "pos", "theme", "root", "cognate"]
+    assert list(df.columns) == ["italian", "english", "pos", "theme", "root", "cognate", "tier"]
     assert len(df) == 2
 
 
@@ -131,3 +132,33 @@ def test_numberbatch_embedder_uses_phrases_then_word_means(tmp_path):
     embed = bg.numberbatch_embedder(p)
     out = embed(["dog", "look at", "bark loudly", "zzz"])
     assert out.tolist() == [[1, 0], [0, 1], [0.9, 0.1], [0, 0]]
+
+
+def test_tiers_follow_frequency_with_explicit_override(df):
+    ranks = {"cane": 1, "gatto": 2, "parlare": 3, "parola": 4, "abbaiare": 50}
+    assert bg.assign_tiers(df, ranks, n_tiers=3) == [1, 3, 2, 3, 2, 1]  # parlato unknown -> last
+    df2 = df.assign(tier=["1", "2", "2", "3", "3", "1"])
+    assert bg.assign_tiers(df2, ranks) == [1, 2, 2, 3, 3, 1]
+
+
+def test_tiered_tree_keeps_every_tier_prefix_connected():
+    import networkx as nx
+
+    rng = np.random.default_rng(0)
+    n = 30
+    total = rng.random((n, n))
+    total = (total + total.T) / 2
+    tiers = [1 + i % 3 for i in range(n)]
+    tree = bg.tiered_spanning_tree(total, tiers)
+    assert len(tree) == n - 1
+    for k in (1, 2, 3):
+        g = nx.Graph()
+        g.add_nodes_from(i for i in range(n) if tiers[i] <= k)
+        g.add_edges_from((i, j) for i, j in tree if tiers[i] <= k and tiers[j] <= k)
+        assert nx.is_connected(g)
+
+
+def test_seed_is_forced_into_tier_one(df):
+    graph = bg.build_graph(df, fake_embedder, seed="parlato", ranks={"cane": 1})
+    seed = next(n for n in graph["nodes"] if n["id"] == graph["seed"])
+    assert seed["tier"] == 1

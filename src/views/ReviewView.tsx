@@ -118,6 +118,7 @@ export default function ReviewView(props: Props) {
             readOnly={!!check}
             onChange={(e) => setTyped(e.target.value)}
             onKeyDown={(e) => {
+              if (e.key === 'Escape') return e.currentTarget.blur(); // frees WASD for the map
               if (e.key !== 'Enter') return;
               // Otherwise the same Enter also activates the rating button focused after checking.
               e.preventDefault();

@@ -49,3 +49,15 @@ test('repair reveals locked neighbours of conquered nodes and restarts empty map
   fresh.set('a', 'locked');
   expect(repairStates(fresh, nb, 'b')).toEqual([{ id: 'b', state: 'frontier' }]);
 });
+
+test('neighbours in closed tiers stay locked until repair runs with the tier open', () => {
+  const s = initialStates(['a', 'b', 'c', 'd'], 'a');
+  const onlyB = (id: string) => id !== 'c';
+  expect(unlockChanges('a', Rating.Good, s, nb, onlyB)).toEqual([
+    { id: 'a', state: 'conquered' },
+    { id: 'b', state: 'frontier' },
+  ]);
+  const s2 = applyChanges(s, unlockChanges('a', Rating.Good, s, nb, onlyB));
+  expect(repairStates(s2, nb, 'a', onlyB)).toEqual([]);
+  expect(repairStates(s2, nb, 'a')).toEqual([{ id: 'c', state: 'frontier' }]);
+});

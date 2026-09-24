@@ -8,7 +8,9 @@ import {
   type Direction,
   type Grade,
 } from '../core/scheduler';
+import { tierAllows, tierMap, tierProgress } from '../core/tiers';
 import { neighbourMap, repairStates, type NodeState, type StateChange } from '../core/unlock';
+import { TIER_UNLOCK_FRACTION } from '../config';
 import { SCHEMA } from './schema';
 import type { SqlDb, SqlValue } from './types';
 
@@ -22,6 +24,8 @@ export type WordNode = {
   theme: string | null;
   root?: string | null;
   cognate?: string | null;
+  /** 1 = most common words; higher tiers open as you progress. */
+  tier?: number;
 };
 export type Edge = {
   source: string;
@@ -41,7 +45,13 @@ export type Candidate = {
 };
 export type Graph = {
   seed: string;
-  params?: { model: string | null; weights: Components; bonus_k: number; bonus_threshold: number };
+  params?: {
+    model: string | null;
+    weights: Components;
+    bonus_k: number;
+    bonus_threshold: number;
+    tiers?: number;
+  };
   nodes: WordNode[];
   edges: Edge[];
   candidates?: Record<string, Candidate[]>;
@@ -114,7 +124,10 @@ export async function syncGraph(db: SqlDb, graph: Graph, now: Date) {
   const ids = new Set(graph.nodes.map((n) => n.id));
   const rows = await db.select<{ id: string; state: NodeState }>('SELECT id, state FROM nodes');
   const states = new Map(rows.filter((r) => ids.has(r.id)).map((r) => [r.id, r.state]));
-  for (const c of repairStates(states, neighbourMap(graph.edges), graph.seed)) {
+  const tiers = tierMap(graph.nodes);
+  const open = tierProgress(tiers, states, TIER_UNLOCK_FRACTION).tier;
+  const allowed = tierAllows(tiers, open);
+  for (const c of repairStates(states, neighbourMap(graph.edges), graph.seed, allowed)) {
     await db.execute('UPDATE nodes SET state = ? WHERE id = ?', [c.state, c.id]);
   }
 }

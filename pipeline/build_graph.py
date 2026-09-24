@@ -15,8 +15,13 @@ Every pair of words gets a score, the weighted sum of four components (each 0..1
   etymological   same `root` column, e.g. Latin coquere (cucina/cuoco)
   thematic       same `theme` column
 
-Edges: the maximum spanning tree (keeps the graph connected with the strongest
-possible links), plus each word's top-k partners scoring above a threshold (adds
+Tiers: words are ranked by corpus frequency (OpenSubtitles list) and split into
+up to 10 tiers of equal size; tier 1 = most common. A `tier` column overrides this.
+The app only reveals tier k+1 once most of tiers 1..k are conquered.
+
+Edges: a tier-respecting maximum spanning tree (Kruskal over edges ordered by the
+higher tier of their two ends, then strength, so tiers 1..k are always connected
+on their own), plus each word's top-k partners scoring above a threshold (adds
 loops and clusters). Everything else stays unlinked on purpose: linking every
 same-theme pair would turn each theme into a clique.
 """
@@ -49,7 +54,11 @@ EN_PREFIX_RE = re.compile(r"^(to|the|a|an)\s+", re.IGNORECASE)
 # Infinitive and past-participle endings, else a single final vowel.
 ENDING_RE = re.compile(r"(are|ere|ire|at[oaie]|ut[oaie]|it[oaie]|[aeiou])$")
 
-OPTIONAL_COLUMNS = ("pos", "theme", "root", "cognate")
+OPTIONAL_COLUMNS = ("pos", "theme", "root", "cognate", "tier")
+FREQUENCY_URL = "https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/it/it_50k.txt"
+FREQUENCY_PATH = Path.home() / ".cache" / "sprawl" / "it_50k.txt"
+MAX_TIERS = 10
+MIN_TIER_SIZE = 15
 
 Embedder = Callable[[list[str]], np.ndarray]
 
@@ -164,6 +173,62 @@ def make_embedder(model: str) -> Embedder:
     return numberbatch_embedder() if model == "numberbatch" else sentence_transformer_embedder(model)
 
 
+def load_frequency_ranks(path: Path = FREQUENCY_PATH) -> dict[str, int]:
+    """Word -> rank (1 = most frequent) from a "word count" per line list."""
+    if not path.exists():
+        import urllib.request
+
+        path.parent.mkdir(parents=True, exist_ok=True)
+        urllib.request.urlretrieve(FREQUENCY_URL, path)
+    ranks: dict[str, int] = {}
+    with open(path, encoding="utf-8") as f:
+        for i, line in enumerate(f, 1):
+            word = line.split(" ", 1)[0].strip().lower()
+            ranks.setdefault(word, i)
+    return ranks
+
+
+def assign_tiers(df: pd.DataFrame, ranks: dict[str, int], n_tiers: int | None = None) -> list[int]:
+    """Tier per word: explicit `tier` column wins, else frequency rank split into equal groups."""
+    explicit = [int(t) if str(t).strip().isdigit() else None for t in df["tier"]]
+    if all(t is not None for t in explicit):
+        return explicit  # type: ignore[return-value]
+    n = len(df)
+    n_tiers = n_tiers or max(1, min(MAX_TIERS, n // MIN_TIER_SIZE))
+    key = [ranks.get(ARTICLE_RE.sub("", w.strip().lower()), 10**9) for w in df["italian"]]
+    order = sorted(range(n), key=lambda i: (key[i], i))  # unknown words last, CSV order breaks ties
+    size = -(-n // n_tiers)  # ceil
+    tiers = [0] * n
+    for pos, i in enumerate(order):
+        tiers[i] = explicit[i] or pos // size + 1
+    return tiers
+
+
+def tiered_spanning_tree(total: np.ndarray, tiers: list[int]) -> set[tuple[int, int]]:
+    """Maximum spanning tree in which the words of tiers 1..k are connected among
+    themselves for every k (Kruskal, edges ordered by higher tier, then strength)."""
+    n = len(tiers)
+    parent = list(range(n))
+
+    def find(x: int) -> int:
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    pairs = [(i, j) for i in range(n) for j in range(i + 1, n)]
+    pairs.sort(key=lambda p: (max(tiers[p[0]], tiers[p[1]]), -total[p]))
+    tree: set[tuple[int, int]] = set()
+    for i, j in pairs:
+        ri, rj = find(i), find(j)
+        if ri != rj:
+            parent[ri] = rj
+            tree.add((i, j))
+            if len(tree) == n - 1:
+                break
+    return tree
+
+
 def score_components(df: pd.DataFrame, embed: Embedder) -> dict[str, np.ndarray]:
     # Bare glosses: embedding "mangiare (to eat)" made every "to X" verb look alike.
     en_core = [EN_PREFIX_RE.sub("", w.strip()) for w in df["english"]]
@@ -212,6 +277,7 @@ def build_graph(
     bonus_k: int = 3,
     bonus_threshold: float = 0.25,
     seed: str | None = None,
+    ranks: dict[str, int] | None = None,
 ) -> dict:
     ids: list[str] = []
     for w in df["italian"]:
@@ -221,11 +287,13 @@ def build_graph(
     total = sum(WEIGHTS[k] * m for k, m in comps.items())
 
     n = len(ids)
-    complete = nx.Graph()
-    for i in range(n):
-        for j in range(i + 1, n):
-            complete.add_edge(i, j, weight=float(total[i, j]))
-    tree = {tuple(sorted(e)) for e in nx.maximum_spanning_tree(complete).edges()}
+    words = df["italian"].tolist()
+    if seed is not None and seed not in words:
+        raise ValueError(f"Seed {seed!r} is not in the word list")
+    tiers = assign_tiers(df, ranks or {})
+    if seed is not None:
+        tiers[words.index(seed)] = 1  # the start must be visible from the beginning
+    tree = tiered_spanning_tree(total, tiers)
     chosen = set(tree)
 
     ranked = [sorted((j for j in range(n) if j != i), key=lambda j: -total[i, j]) for i in range(n)]
@@ -268,15 +336,13 @@ def build_graph(
         for i in range(n)
     }
 
-    words = df["italian"].tolist()
-    if seed is None:
+    if seed is None:  # best-connected tier-1 word
         degree = np.zeros(n, dtype=int)
         for i, j in chosen:
-            degree[i] += 1
-            degree[j] += 1
+            if tiers[i] == 1 and tiers[j] == 1:
+                degree[i] += 1
+                degree[j] += 1
         seed = words[int(np.argmax(degree))]
-    elif seed not in words:
-        raise ValueError(f"Seed {seed!r} is not in the word list")
 
     nodes = [
         {
@@ -284,12 +350,19 @@ def build_graph(
             "it": r.italian,
             "en": r.english,
             **{col: getattr(r, col) or None for col in OPTIONAL_COLUMNS},
+            "tier": tiers[i],
         }
         for i, r in enumerate(df.itertuples(index=False))
     ]
     return {
         "seed": ids[words.index(seed)],
-        "params": {"model": None, "weights": WEIGHTS, "bonus_k": bonus_k, "bonus_threshold": bonus_threshold},
+        "params": {
+            "model": None,
+            "weights": WEIGHTS,
+            "bonus_k": bonus_k,
+            "bonus_threshold": bonus_threshold,
+            "tiers": max(tiers),
+        },
         "nodes": nodes,
         "edges": edges,
         "candidates": candidates,
@@ -323,7 +396,9 @@ def main(argv: list[str] | None = None) -> int:
     args = p.parse_args(argv)
 
     df = load_words(args.csv)
-    graph = build_graph(df, make_embedder(args.model), args.bonus_k, args.bonus_threshold, args.seed)
+    graph = build_graph(
+        df, make_embedder(args.model), args.bonus_k, args.bonus_threshold, args.seed, load_frequency_ranks()
+    )
     graph["params"]["model"] = args.model
     validate_graph(graph)
     Path(args.out).write_text(json.dumps(graph, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -331,7 +406,9 @@ def main(argv: list[str] | None = None) -> int:
     reasons = pd.Series([e["reason"] for e in graph["edges"]]).value_counts().to_dict()
     seed_word = next(n["it"] for n in graph["nodes"] if n["id"] == graph["seed"])
     n, m = len(graph["nodes"]), len(graph["edges"])
+    tiers = pd.Series([nd["tier"] for nd in graph["nodes"]]).value_counts().sort_index().to_dict()
     print(f"{n} nodes, {m} edges (avg degree {2 * m / n:.1f}) {reasons}, seed={seed_word!r} -> {args.out}")
+    print(f"tiers (tier: words): {tiers}")
     return 0
 
 

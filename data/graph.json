@@ -1,5 +1,5 @@
 {
-  "seed": "viaggiare",
+  "seed": "il-padre",
   "params": {
     "model": "numberbatch",
     "weights": {
@@ -9,7 +9,8 @@
       "thematic": 0.15
     },
     "bonus_k": 3,
-    "bonus_threshold": 0.25
+    "bonus_threshold": 0.25,
+    "tiers": 6
   },
   "nodes": [
     {
@@ -19,7 +20,8 @@
       "pos": "noun",
       "theme": "animals",
       "root": "canis",
-      "cognate": "canine"
+      "cognate": "canine",
+      "tier": 3
     },
     {
       "id": "il-gatto",
@@ -28,7 +30,8 @@
       "pos": "noun",
       "theme": "animals",
       "root": "cattus",
-      "cognate": "cat"
+      "cognate": "cat",
+      "tier": 5
     },
     {
       "id": "abbaiare",
@@ -37,7 +40,8 @@
       "pos": "verb",
       "theme": "animals",
       "root": null,
-      "cognate": null
+      "cognate": null,
+      "tier": 6
     },
     {
       "id": "l-uccello",
@@ -46,7 +50,8 @@
       "pos": "noun",
       "theme": "animals",
       "root": "avis",
-      "cognate": "avian"
+      "cognate": "avian",
+      "tier": 5
     },
     {
       "id": "volare",
@@ -55,7 +60,8 @@
       "pos": "verb",
       "theme": "animals",
       "root": "volare",
-      "cognate": "volatile"
+      "cognate": "volatile",
+      "tier": 5
     },
     {
       "id": "il-pesce",
@@ -64,7 +70,8 @@
       "pos": "noun",
       "theme": "animals",
       "root": "piscis",
-      "cognate": "Pisces"
+      "cognate": "Pisces",
+      "tier": 5
     },
     {
       "id": "nuotare",
@@ -73,7 +80,8 @@
       "pos": "verb",
       "theme": "animals",
       "root": null,
-      "cognate": null
+      "cognate": null,
+      "tier": 6
     },
     {
       "id": "il-cavallo",
@@ -82,7 +90,8 @@
       "pos": "noun",
       "theme": "animals",
       "root": "caballus",
-      "cognate": "cavalry"
+      "cognate": "cavalry",
+      "tier": 4
     },
     {
       "id": "la-mucca",
@@ -91,7 +100,8 @@
       "pos": "noun",
       "theme": "animals",
       "root": null,
-      "cognate": null
+      "cognate": null,
+      "tier": 6
     },
     {
       "id": "il-latte",
@@ -100,7 +110,8 @@
       "pos": "noun",
       "theme": "food",
       "root": "lac",
-      "cognate": "lactose"
+      "cognate": "lactose",
+      "tier": 5
     },
     {
       "id": "il-formaggio",
@@ -109,7 +120,8 @@
       "pos": "noun",
       "theme": "food",
       "root": "forma",
-      "cognate": "form"
+      "cognate": "form",
+      "tier": 5
     },
     {
       "id": "il-pane",
@@ -118,7 +130,8 @@
       "pos": "noun",
       "theme": "food",
       "root": "panis",
-      "cognate": "companion"
+      "cognate": "companion",
+      "tier": 5
     },
     {
       "id": "la-pasta",
@@ -127,7 +140,8 @@
       "pos": "noun",
       "theme": "food",
       "root": "pasta",
-      "cognate": "paste"
+      "cognate": "paste",
+      "tier": 6
     },
     {
       "id": "mangiare",
@@ -136,7 +150,8 @@
       "pos": "verb",
       "theme": "food",
       "root": "manducare",
-      "cognate": "manger"
+      "cognate": "manger",
+      "tier": 2
     },
     {
       "id": "mangiato",
@@ -145,7 +160,8 @@
       "pos": "verb",
       "theme": "food",
       "root": "manducare",
-      "cognate": null
+      "cognate": null,
+      "tier": 4
     },
     {
       "id": "bere",
@@ -154,7 +170,8 @@
       "pos": "verb",
       "theme": "food",
       "root": "bibere",
-      "cognate": "imbibe"
+      "cognate": "imbibe",
+      "tier": 2
     },
     {
       "id": "l-acqua",
@@ -163,7 +180,8 @@
       "pos": "noun",
       "theme": "food",
       "root": "aqua",
-      "cognate": "aquatic"
+      "cognate": "aquatic",
+      "tier": 2
     },
     {
       "id": "il-vino",
@@ -172,7 +190,8 @@
       "pos": "noun",
       "theme": "food",
       "root": "vinum",
-      "cognate": "wine"
+      "cognate": "wine",
+      "tier": 4
     },
     {
       "id": "la-mela",
@@ -181,7 +200,8 @@
       "pos": "noun",
       "theme": "food",
       "root": null,
-      "cognate": null
+      "cognate": null,
+      "tier": 6
     },
     {
       "id": "cucinare",
@@ -190,7 +210,8 @@
       "pos": "verb",
       "theme": "food",
       "root": "coquere",
-      "cognate": "cook"
+      "cognate": "cook",
+      "tier": 5
     },
     {
       "id": "la-cucina",
@@ -199,7 +220,8 @@
       "pos": "noun",
       "theme": "home",
       "root": "coquere",
-      "cognate": "kitchen"
+      "cognate": "kitchen",
+      "tier": 4
     },
     {
       "id": "il-cuoco",
@@ -208,7 +230,8 @@
       "pos": "noun",
       "theme": "food",
       "root": "coquere",
-      "cognate": "cook"
+      "cognate": "cook",
+      "tier": 6
     },
     {
       "id": "la-colazione",
@@ -217,7 +240,8 @@
       "pos": "noun",
       "theme": "food",
       "root": "collatio",
-      "cognate": "collation"
+      "cognate": "collation",
+      "tier": 4
     },
     {
       "id": "la-cena",
@@ -226,7 +250,8 @@
       "pos": "noun",
       "theme": "food",
       "root": "cena",
-      "cognate": null
+      "cognate": null,
+      "tier": 2
     },
     {
       "id": "cenare",
@@ -235,7 +260,8 @@
       "pos": "verb",
       "theme": "food",
       "root": "cena",
-      "cognate": null
+      "cognate": null,
+      "tier": 6
     },
     {
       "id": "la-casa",
@@ -244,7 +270,8 @@
       "pos": "noun",
       "theme": "home",
       "root": "casa",
-      "cognate": "casino"
+      "cognate": "casino",
+      "tier": 1
     },
     {
       "id": "la-porta",
@@ -253,7 +280,8 @@
       "pos": "noun",
       "theme": "home",
       "root": "porta",
-      "cognate": "portal"
+      "cognate": "portal",
+      "tier": 1
     },
     {
       "id": "la-finestra",
@@ -262,7 +290,8 @@
       "pos": "noun",
       "theme": "home",
       "root": "fenestra",
-      "cognate": "defenestrate"
+      "cognate": "defenestrate",
+      "tier": 4
     },
     {
       "id": "il-letto",
@@ -271,7 +300,8 @@
       "pos": "noun",
       "theme": "home",
       "root": null,
-      "cognate": null
+      "cognate": null,
+      "tier": 1
     },
     {
       "id": "dormire",
@@ -280,7 +310,8 @@
       "pos": "verb",
       "theme": "home",
       "root": "dormire",
-      "cognate": "dormitory"
+      "cognate": "dormitory",
+      "tier": 3
     },
     {
       "id": "il-sonno",
@@ -289,7 +320,8 @@
       "pos": "noun",
       "theme": "home",
       "root": "somnus",
-      "cognate": "insomnia"
+      "cognate": "insomnia",
+      "tier": 5
     },
     {
       "id": "la-sedia",
@@ -298,7 +330,8 @@
       "pos": "noun",
       "theme": "home",
       "root": "sedere",
-      "cognate": "sedentary"
+      "cognate": "sedentary",
+      "tier": 5
     },
     {
       "id": "il-tavolo",
@@ -307,7 +340,8 @@
       "pos": "noun",
       "theme": "home",
       "root": "tabula",
-      "cognate": "table"
+      "cognate": "table",
+      "tier": 4
     },
     {
       "id": "la-camera",
@@ -316,7 +350,8 @@
       "pos": "noun",
       "theme": "home",
       "root": "camera",
-      "cognate": "chamber"
+      "cognate": "chamber",
+      "tier": 3
     },
     {
       "id": "parlare",
@@ -325,7 +360,8 @@
       "pos": "verb",
       "theme": "communication",
       "root": "parabola",
-      "cognate": "parley"
+      "cognate": "parley",
+      "tier": 1
     },
     {
       "id": "parlato",
@@ -334,7 +370,8 @@
       "pos": "verb",
       "theme": "communication",
       "root": "parabola",
-      "cognate": null
+      "cognate": null,
+      "tier": 2
     },
     {
       "id": "la-parola",
@@ -343,7 +380,8 @@
       "pos": "noun",
       "theme": "communication",
       "root": "parabola",
-      "cognate": "parable"
+      "cognate": "parable",
+      "tier": 2
     },
     {
       "id": "dire",
@@ -352,7 +390,8 @@
       "pos": "verb",
       "theme": "communication",
       "root": "dicere",
-      "cognate": "diction"
+      "cognate": "diction",
+      "tier": 1
     },
     {
       "id": "chiedere",
@@ -361,7 +400,8 @@
       "pos": "verb",
       "theme": "communication",
       "root": "quaerere",
-      "cognate": "query"
+      "cognate": "query",
+      "tier": 3
     },
     {
       "id": "la-domanda",
@@ -370,7 +410,8 @@
       "pos": "noun",
       "theme": "communication",
       "root": "demandare",
-      "cognate": "demand"
+      "cognate": "demand",
+      "tier": 2
     },
     {
       "id": "rispondere",
@@ -379,7 +420,8 @@
       "pos": "verb",
       "theme": "communication",
       "root": "respondere",
-      "cognate": "respond"
+      "cognate": "respond",
+      "tier": 4
     },
     {
       "id": "la-risposta",
@@ -388,7 +430,8 @@
       "pos": "noun",
       "theme": "communication",
       "root": "respondere",
-      "cognate": "response"
+      "cognate": "response",
+      "tier": 3
     },
     {
       "id": "scrivere",
@@ -397,7 +440,8 @@
       "pos": "verb",
       "theme": "communication",
       "root": "scribere",
-      "cognate": "scribe"
+      "cognate": "scribe",
+      "tier": 4
     },
     {
       "id": "la-lettera",
@@ -406,7 +450,8 @@
       "pos": "noun",
       "theme": "communication",
       "root": "littera",
-      "cognate": "letter"
+      "cognate": "letter",
+      "tier": 3
     },
     {
       "id": "leggere",
@@ -415,7 +460,8 @@
       "pos": "verb",
       "theme": "communication",
       "root": "legere",
-      "cognate": "legible"
+      "cognate": "legible",
+      "tier": 4
     },
     {
       "id": "il-libro",
@@ -424,7 +470,8 @@
       "pos": "noun",
       "theme": "communication",
       "root": "liber",
-      "cognate": "library"
+      "cognate": "library",
+      "tier": 3
     },
     {
       "id": "la-madre",
@@ -433,7 +480,8 @@
       "pos": "noun",
       "theme": "family",
       "root": "mater",
-      "cognate": "maternal"
+      "cognate": "maternal",
+      "tier": 1
     },
     {
       "id": "il-padre",
@@ -442,7 +490,8 @@
       "pos": "noun",
       "theme": "family",
       "root": "pater",
-      "cognate": "paternal"
+      "cognate": "paternal",
+      "tier": 1
     },
     {
       "id": "il-fratello",
@@ -451,7 +500,8 @@
       "pos": "noun",
       "theme": "family",
       "root": "frater",
-      "cognate": "fraternal"
+      "cognate": "fraternal",
+      "tier": 1
     },
     {
       "id": "la-sorella",
@@ -460,7 +510,8 @@
       "pos": "noun",
       "theme": "family",
       "root": "soror",
-      "cognate": "sorority"
+      "cognate": "sorority",
+      "tier": 2
     },
     {
       "id": "il-figlio",
@@ -469,7 +520,8 @@
       "pos": "noun",
       "theme": "family",
       "root": "filius",
-      "cognate": "filial"
+      "cognate": "filial",
+      "tier": 1
     },
     {
       "id": "la-figlia",
@@ -478,7 +530,8 @@
       "pos": "noun",
       "theme": "family",
       "root": "filius",
-      "cognate": "filial"
+      "cognate": "filial",
+      "tier": 2
     },
     {
       "id": "il-nonno",
@@ -487,7 +540,8 @@
       "pos": "noun",
       "theme": "family",
       "root": null,
-      "cognate": null
+      "cognate": null,
+      "tier": 4
     },
     {
       "id": "la-nonna",
@@ -496,7 +550,8 @@
       "pos": "noun",
       "theme": "family",
       "root": "nonna",
-      "cognate": "nun"
+      "cognate": "nun",
+      "tier": 3
     },
     {
       "id": "la-famiglia",
@@ -505,7 +560,8 @@
       "pos": "noun",
       "theme": "family",
       "root": "familia",
-      "cognate": "family"
+      "cognate": "family",
+      "tier": 1
     },
     {
       "id": "la-testa",
@@ -514,7 +570,8 @@
       "pos": "noun",
       "theme": "body",
       "root": null,
-      "cognate": null
+      "cognate": null,
+      "tier": 1
     },
     {
       "id": "la-mano",
@@ -523,7 +580,8 @@
       "pos": "noun",
       "theme": "body",
       "root": "manus",
-      "cognate": "manual"
+      "cognate": "manual",
+      "tier": 2
     },
     {
       "id": "il-piede",
@@ -532,7 +590,8 @@
       "pos": "noun",
       "theme": "body",
       "root": "pes",
-      "cognate": "pedal"
+      "cognate": "pedal",
+      "tier": 5
     },
     {
       "id": "camminare",
@@ -541,7 +600,8 @@
       "pos": "verb",
       "theme": "body",
       "root": null,
-      "cognate": null
+      "cognate": null,
+      "tier": 5
     },
     {
       "id": "l-occhio",
@@ -550,7 +610,8 @@
       "pos": "noun",
       "theme": "body",
       "root": "oculus",
-      "cognate": "ocular"
+      "cognate": "ocular",
+      "tier": 3
     },
     {
       "id": "vedere",
@@ -559,7 +620,8 @@
       "pos": "verb",
       "theme": "body",
       "root": "videre",
-      "cognate": "video"
+      "cognate": "video",
+      "tier": 1
     },
     {
       "id": "guardare",
@@ -568,7 +630,8 @@
       "pos": "verb",
       "theme": "body",
       "root": null,
-      "cognate": null
+      "cognate": null,
+      "tier": 3
     },
     {
       "id": "l-orecchio",
@@ -577,7 +640,8 @@
       "pos": "noun",
       "theme": "body",
       "root": null,
-      "cognate": null
+      "cognate": null,
+      "tier": 6
     },
     {
       "id": "sentire",
@@ -586,7 +650,8 @@
       "pos": "verb",
       "theme": "body",
       "root": "sentire",
-      "cognate": "sentiment"
+      "cognate": "sentiment",
+      "tier": 2
     },
     {
       "id": "la-bocca",
@@ -595,7 +660,8 @@
       "pos": "noun",
       "theme": "body",
       "root": null,
-      "cognate": null
+      "cognate": null,
+      "tier": 3
     },
     {
       "id": "il-sole",
@@ -604,7 +670,8 @@
       "pos": "noun",
       "theme": "weather",
       "root": "sol",
-      "cognate": "solar"
+      "cognate": "solar",
+      "tier": 3
     },
     {
       "id": "la-pioggia",
@@ -613,7 +680,8 @@
       "pos": "noun",
       "theme": "weather",
       "root": "pluere",
-      "cognate": null
+      "cognate": null,
+      "tier": 5
     },
     {
       "id": "piovere",
@@ -622,7 +690,8 @@
       "pos": "verb",
       "theme": "weather",
       "root": "pluere",
-      "cognate": null
+      "cognate": null,
+      "tier": 6
     },
     {
       "id": "la-neve",
@@ -631,7 +700,8 @@
       "pos": "noun",
       "theme": "weather",
       "root": "nix",
-      "cognate": null
+      "cognate": null,
+      "tier": 5
     },
     {
       "id": "nevicare",
@@ -640,7 +710,8 @@
       "pos": "verb",
       "theme": "weather",
       "root": "nix",
-      "cognate": null
+      "cognate": null,
+      "tier": 6
     },
     {
       "id": "il-vento",
@@ -649,7 +720,8 @@
       "pos": "noun",
       "theme": "weather",
       "root": "ventus",
-      "cognate": "ventilate"
+      "cognate": "ventilate",
+      "tier": 5
     },
     {
       "id": "freddo",
@@ -658,7 +730,8 @@
       "pos": "adj",
       "theme": "weather",
       "root": "frigidus",
-      "cognate": "frigid"
+      "cognate": "frigid",
+      "tier": 3
     },
     {
       "id": "caldo",
@@ -667,7 +740,8 @@
       "pos": "adj",
       "theme": "weather",
       "root": "calidus",
-      "cognate": "cauldron"
+      "cognate": "cauldron",
+      "tier": 4
     },
     {
       "id": "il-treno",
@@ -676,7 +750,8 @@
       "pos": "noun",
       "theme": "travel",
       "root": null,
-      "cognate": null
+      "cognate": null,
+      "tier": 4
     },
     {
       "id": "la-stazione",
@@ -685,7 +760,8 @@
       "pos": "noun",
       "theme": "travel",
       "root": "statio",
-      "cognate": "station"
+      "cognate": "station",
+      "tier": 4
     },
     {
       "id": "il-biglietto",
@@ -694,7 +770,8 @@
       "pos": "noun",
       "theme": "travel",
       "root": null,
-      "cognate": null
+      "cognate": null,
+      "tier": 4
     },
     {
       "id": "viaggiare",
@@ -703,7 +780,8 @@
       "pos": "verb",
       "theme": "travel",
       "root": "viaticum",
-      "cognate": "voyage"
+      "cognate": "voyage",
+      "tier": 6
     },
     {
       "id": "il-viaggio",
@@ -712,7 +790,8 @@
       "pos": "noun",
       "theme": "travel",
       "root": "viaticum",
-      "cognate": "voyage"
+      "cognate": "voyage",
+      "tier": 3
     },
     {
       "id": "la-strada",
@@ -721,7 +800,8 @@
       "pos": "noun",
       "theme": "travel",
       "root": "strata",
-      "cognate": "street"
+      "cognate": "street",
+      "tier": 2
     },
     {
       "id": "la-macchina",
@@ -730,7 +810,8 @@
       "pos": "noun",
       "theme": "travel",
       "root": "machina",
-      "cognate": "machine"
+      "cognate": "machine",
+      "tier": 2
     },
     {
       "id": "guidare",
@@ -739,7 +820,8 @@
       "pos": "verb",
       "theme": "travel",
       "root": null,
-      "cognate": null
+      "cognate": null,
+      "tier": 5
     },
     {
       "id": "arrivare",
@@ -748,7 +830,8 @@
       "pos": "verb",
       "theme": "travel",
       "root": "arripare",
-      "cognate": "arrive"
+      "cognate": "arrive",
+      "tier": 3
     },
     {
       "id": "partire",
@@ -757,7 +840,8 @@
       "pos": "verb",
       "theme": "travel",
       "root": "partiri",
-      "cognate": "depart"
+      "cognate": "depart",
+      "tier": 4
     },
     {
       "id": "il-giorno",
@@ -766,7 +850,8 @@
       "pos": "noun",
       "theme": "time",
       "root": "diurnus",
-      "cognate": "journal"
+      "cognate": "journal",
+      "tier": 1
     },
     {
       "id": "la-notte",
@@ -775,7 +860,8 @@
       "pos": "noun",
       "theme": "time",
       "root": "nox",
-      "cognate": "nocturnal"
+      "cognate": "nocturnal",
+      "tier": 1
     },
     {
       "id": "la-mattina",
@@ -784,7 +870,8 @@
       "pos": "noun",
       "theme": "time",
       "root": null,
-      "cognate": null
+      "cognate": null,
+      "tier": 3
     },
     {
       "id": "la-sera",
@@ -793,7 +880,8 @@
       "pos": "noun",
       "theme": "time",
       "root": null,
-      "cognate": null
+      "cognate": null,
+      "tier": 2
     },
     {
       "id": "oggi",
@@ -802,7 +890,8 @@
       "pos": "adv",
       "theme": "time",
       "root": null,
-      "cognate": null
+      "cognate": null,
+      "tier": 1
     },
     {
       "id": "domani",
@@ -811,7 +900,8 @@
       "pos": "adv",
       "theme": "time",
       "root": null,
-      "cognate": null
+      "cognate": null,
+      "tier": 1
     },
     {
       "id": "ieri",
@@ -820,7 +910,8 @@
       "pos": "adv",
       "theme": "time",
       "root": null,
-      "cognate": null
+      "cognate": null,
+      "tier": 2
     },
     {
       "id": "la-settimana",
@@ -829,7 +920,8 @@
       "pos": "noun",
       "theme": "time",
       "root": null,
-      "cognate": null
+      "cognate": null,
+      "tier": 2
     }
   ],
   "edges": [
@@ -884,6 +976,19 @@
         "thematic": 1.0
       },
       "via": "bonus"
+    },
+    {
+      "source": "il-cane",
+      "target": "la-casa",
+      "weight": 0.072,
+      "reason": "semantic",
+      "components": {
+        "semantic": 0.12,
+        "morphological": 0.0,
+        "etymological": 0.0,
+        "thematic": 0.0
+      },
+      "via": "tree"
     },
     {
       "source": "il-gatto",
@@ -948,7 +1053,7 @@
         "etymological": 0.0,
         "thematic": 1.0
       },
-      "via": "bonus"
+      "via": "tree"
     },
     {
       "source": "volare",
@@ -974,20 +1079,7 @@
         "etymological": 0.0,
         "thematic": 1.0
       },
-      "via": "tree"
-    },
-    {
-      "source": "volare",
-      "target": "viaggiare",
-      "weight": 0.206,
-      "reason": "semantic",
-      "components": {
-        "semantic": 0.343,
-        "morphological": 0.0,
-        "etymological": 0.0,
-        "thematic": 0.0
-      },
-      "via": "tree"
+      "via": "bonus"
     },
     {
       "source": "il-pesce",
@@ -1026,7 +1118,7 @@
         "etymological": 0.0,
         "thematic": 0.0
       },
-      "via": "tree"
+      "via": "bonus"
     },
     {
       "source": "il-latte",
@@ -1169,7 +1261,7 @@
         "etymological": 0.0,
         "thematic": 1.0
       },
-      "via": "tree"
+      "via": "bonus"
     },
     {
       "source": "la-pasta",
@@ -1234,7 +1326,7 @@
         "etymological": 0.0,
         "thematic": 1.0
       },
-      "via": "bonus"
+      "via": "tree"
     },
     {
       "source": "mangiare",
@@ -1247,7 +1339,7 @@
         "etymological": 0.0,
         "thematic": 1.0
       },
-      "via": "tree"
+      "via": "bonus"
     },
     {
       "source": "mangiato",
@@ -1313,19 +1405,6 @@
         "thematic": 1.0
       },
       "via": "bonus"
-    },
-    {
-      "source": "l-acqua",
-      "target": "la-pioggia",
-      "weight": 0.202,
-      "reason": "semantic",
-      "components": {
-        "semantic": 0.337,
-        "morphological": 0.0,
-        "etymological": 0.0,
-        "thematic": 0.0
-      },
-      "via": "tree"
     },
     {
       "source": "il-vino",
@@ -1507,7 +1586,20 @@
         "etymological": 0.0,
         "thematic": 1.0
       },
-      "via": "bonus"
+      "via": "tree"
+    },
+    {
+      "source": "la-casa",
+      "target": "il-letto",
+      "weight": 0.295,
+      "reason": "thematic",
+      "components": {
+        "semantic": 0.241,
+        "morphological": 0.0,
+        "etymological": 0.0,
+        "thematic": 1.0
+      },
+      "via": "tree"
     },
     {
       "source": "la-casa",
@@ -1529,6 +1621,19 @@
       "reason": "semantic",
       "components": {
         "semantic": 0.287,
+        "morphological": 0.0,
+        "etymological": 0.0,
+        "thematic": 0.0
+      },
+      "via": "tree"
+    },
+    {
+      "source": "la-casa",
+      "target": "la-strada",
+      "weight": 0.136,
+      "reason": "semantic",
+      "components": {
+        "semantic": 0.226,
         "morphological": 0.0,
         "etymological": 0.0,
         "thematic": 0.0
@@ -1559,7 +1664,7 @@
         "etymological": 0.0,
         "thematic": 1.0
       },
-      "via": "tree"
+      "via": "bonus"
     },
     {
       "source": "la-finestra",
@@ -1623,6 +1728,19 @@
         "morphological": 0.0,
         "etymological": 0.0,
         "thematic": 1.0
+      },
+      "via": "bonus"
+    },
+    {
+      "source": "il-letto",
+      "target": "la-notte",
+      "weight": 0.148,
+      "reason": "semantic",
+      "components": {
+        "semantic": 0.247,
+        "morphological": 0.0,
+        "etymological": 0.0,
+        "thematic": 0.0
       },
       "via": "tree"
     },
@@ -1728,7 +1846,7 @@
         "etymological": 0.0,
         "thematic": 0.0
       },
-      "via": "tree"
+      "via": "bonus"
     },
     {
       "source": "parlato",
@@ -1793,6 +1911,19 @@
         "etymological": 0.0,
         "thematic": 1.0
       },
+      "via": "bonus"
+    },
+    {
+      "source": "dire",
+      "target": "la-domanda",
+      "weight": 0.294,
+      "reason": "thematic",
+      "components": {
+        "semantic": 0.24,
+        "morphological": 0.0,
+        "etymological": 0.0,
+        "thematic": 1.0
+      },
       "via": "tree"
     },
     {
@@ -1807,6 +1938,19 @@
         "thematic": 1.0
       },
       "via": "bonus"
+    },
+    {
+      "source": "dire",
+      "target": "vedere",
+      "weight": 0.154,
+      "reason": "semantic",
+      "components": {
+        "semantic": 0.257,
+        "morphological": 0.0,
+        "etymological": 0.0,
+        "thematic": 0.0
+      },
+      "via": "tree"
     },
     {
       "source": "chiedere",
@@ -1858,7 +2002,7 @@
         "etymological": 0.0,
         "thematic": 1.0
       },
-      "via": "tree"
+      "via": "bonus"
     },
     {
       "source": "la-domanda",
@@ -1871,7 +2015,7 @@
         "etymological": 0.0,
         "thematic": 1.0
       },
-      "via": "bonus"
+      "via": "tree"
     },
     {
       "source": "rispondere",
@@ -1897,7 +2041,7 @@
         "etymological": 0.0,
         "thematic": 1.0
       },
-      "via": "tree"
+      "via": "bonus"
     },
     {
       "source": "scrivere",
@@ -1937,6 +2081,19 @@
         "thematic": 1.0
       },
       "via": "bonus"
+    },
+    {
+      "source": "la-lettera",
+      "target": "il-libro",
+      "weight": 0.237,
+      "reason": "thematic",
+      "components": {
+        "semantic": 0.145,
+        "morphological": 0.0,
+        "etymological": 0.0,
+        "thematic": 1.0
+      },
+      "via": "tree"
     },
     {
       "source": "leggere",
@@ -2014,7 +2171,7 @@
         "etymological": 0.0,
         "thematic": 1.0
       },
-      "via": "bonus"
+      "via": "tree"
     },
     {
       "source": "la-madre",
@@ -2079,7 +2236,7 @@
         "etymological": 0.0,
         "thematic": 1.0
       },
-      "via": "tree"
+      "via": "bonus"
     },
     {
       "source": "il-padre",
@@ -2131,7 +2288,7 @@
         "etymological": 0.0,
         "thematic": 1.0
       },
-      "via": "bonus"
+      "via": "tree"
     },
     {
       "source": "la-sorella",
@@ -2144,7 +2301,7 @@
         "etymological": 0.0,
         "thematic": 1.0
       },
-      "via": "tree"
+      "via": "bonus"
     },
     {
       "source": "il-figlio",
@@ -2196,7 +2353,20 @@
         "etymological": 0.0,
         "thematic": 1.0
       },
-      "via": "bonus"
+      "via": "tree"
+    },
+    {
+      "source": "la-testa",
+      "target": "vedere",
+      "weight": 0.15,
+      "reason": "thematic",
+      "components": {
+        "semantic": 0.0,
+        "morphological": 0.0,
+        "etymological": 0.0,
+        "thematic": 1.0
+      },
+      "via": "tree"
     },
     {
       "source": "la-testa",
@@ -2209,7 +2379,7 @@
         "etymological": 0.0,
         "thematic": 1.0
       },
-      "via": "tree"
+      "via": "bonus"
     },
     {
       "source": "la-testa",
@@ -2248,7 +2418,7 @@
         "etymological": 0.0,
         "thematic": 1.0
       },
-      "via": "tree"
+      "via": "bonus"
     },
     {
       "source": "il-piede",
@@ -2264,19 +2434,6 @@
       "via": "tree"
     },
     {
-      "source": "camminare",
-      "target": "guidare",
-      "weight": 0.208,
-      "reason": "semantic",
-      "components": {
-        "semantic": 0.346,
-        "morphological": 0.0,
-        "etymological": 0.0,
-        "thematic": 0.0
-      },
-      "via": "tree"
-    },
-    {
       "source": "l-occhio",
       "target": "guardare",
       "weight": 0.313,
@@ -2287,7 +2444,7 @@
         "etymological": 0.0,
         "thematic": 1.0
       },
-      "via": "bonus"
+      "via": "tree"
     },
     {
       "source": "l-occhio",
@@ -2313,7 +2470,7 @@
         "etymological": 0.0,
         "thematic": 1.0
       },
-      "via": "bonus"
+      "via": "tree"
     },
     {
       "source": "vedere",
@@ -2342,6 +2499,19 @@
       "via": "tree"
     },
     {
+      "source": "vedere",
+      "target": "domani",
+      "weight": 0.089,
+      "reason": "semantic",
+      "components": {
+        "semantic": 0.148,
+        "morphological": 0.0,
+        "etymological": 0.0,
+        "thematic": 0.0
+      },
+      "via": "tree"
+    },
+    {
       "source": "l-orecchio",
       "target": "sentire",
       "weight": 0.373,
@@ -2352,7 +2522,7 @@
         "etymological": 0.0,
         "thematic": 1.0
       },
-      "via": "tree"
+      "via": "bonus"
     },
     {
       "source": "l-orecchio",
@@ -2365,7 +2535,7 @@
         "etymological": 0.0,
         "thematic": 1.0
       },
-      "via": "tree"
+      "via": "bonus"
     },
     {
       "source": "il-sole",
@@ -2404,6 +2574,19 @@
         "etymological": 0.0,
         "thematic": 1.0
       },
+      "via": "bonus"
+    },
+    {
+      "source": "il-sole",
+      "target": "freddo",
+      "weight": 0.246,
+      "reason": "thematic",
+      "components": {
+        "semantic": 0.16,
+        "morphological": 0.0,
+        "etymological": 0.0,
+        "thematic": 1.0
+      },
       "via": "tree"
     },
     {
@@ -2418,6 +2601,19 @@
         "thematic": 1.0
       },
       "via": "bonus"
+    },
+    {
+      "source": "il-sole",
+      "target": "la-mattina",
+      "weight": 0.15,
+      "reason": "semantic",
+      "components": {
+        "semantic": 0.25,
+        "morphological": 0.0,
+        "etymological": 0.0,
+        "thematic": 0.0
+      },
+      "via": "tree"
     },
     {
       "source": "la-pioggia",
@@ -2612,7 +2808,7 @@
         "etymological": 0.0,
         "thematic": 1.0
       },
-      "via": "tree"
+      "via": "bonus"
     },
     {
       "source": "il-treno",
@@ -2651,7 +2847,7 @@
         "etymological": 0.0,
         "thematic": 1.0
       },
-      "via": "tree"
+      "via": "bonus"
     },
     {
       "source": "il-biglietto",
@@ -2664,7 +2860,7 @@
         "etymological": 0.0,
         "thematic": 1.0
       },
-      "via": "bonus"
+      "via": "tree"
     },
     {
       "source": "viaggiare",
@@ -2729,6 +2925,19 @@
         "etymological": 0.0,
         "thematic": 1.0
       },
+      "via": "bonus"
+    },
+    {
+      "source": "il-viaggio",
+      "target": "la-macchina",
+      "weight": 0.215,
+      "reason": "thematic",
+      "components": {
+        "semantic": 0.108,
+        "morphological": 0.0,
+        "etymological": 0.0,
+        "thematic": 1.0
+      },
       "via": "tree"
     },
     {
@@ -2742,7 +2951,7 @@
         "etymological": 0.0,
         "thematic": 1.0
       },
-      "via": "tree"
+      "via": "bonus"
     },
     {
       "source": "il-viaggio",
@@ -2755,7 +2964,7 @@
         "etymological": 0.0,
         "thematic": 1.0
       },
-      "via": "bonus"
+      "via": "tree"
     },
     {
       "source": "il-viaggio",
@@ -2769,6 +2978,19 @@
         "thematic": 1.0
       },
       "via": "bonus"
+    },
+    {
+      "source": "la-strada",
+      "target": "la-macchina",
+      "weight": 0.246,
+      "reason": "thematic",
+      "components": {
+        "semantic": 0.16,
+        "morphological": 0.0,
+        "etymological": 0.0,
+        "thematic": 1.0
+      },
+      "via": "tree"
     },
     {
       "source": "la-strada",
@@ -2820,7 +3042,7 @@
         "etymological": 0.0,
         "thematic": 1.0
       },
-      "via": "bonus"
+      "via": "tree"
     },
     {
       "source": "il-giorno",
@@ -2833,7 +3055,7 @@
         "etymological": 0.0,
         "thematic": 1.0
       },
-      "via": "tree"
+      "via": "bonus"
     },
     {
       "source": "il-giorno",
@@ -2847,6 +3069,19 @@
         "thematic": 1.0
       },
       "via": "bonus"
+    },
+    {
+      "source": "il-giorno",
+      "target": "oggi",
+      "weight": 0.455,
+      "reason": "semantic",
+      "components": {
+        "semantic": 0.508,
+        "morphological": 0.0,
+        "etymological": 0.0,
+        "thematic": 1.0
+      },
+      "via": "tree"
     },
     {
       "source": "il-giorno",
@@ -2924,7 +3159,7 @@
         "etymological": 0.0,
         "thematic": 1.0
       },
-      "via": "tree"
+      "via": "bonus"
     },
     {
       "source": "la-mattina",
@@ -3445,7 +3680,7 @@
           "etymological": 0.0,
           "thematic": 0.0
         },
-        "linked": true
+        "linked": false
       },
       {
         "id": "il-viaggio",
@@ -4645,7 +4880,7 @@
           "etymological": 0.0,
           "thematic": 0.0
         },
-        "linked": true
+        "linked": false
       },
       {
         "id": "piovere",
@@ -5503,7 +5738,7 @@
           "etymological": 0.0,
           "thematic": 1.0
         },
-        "linked": false
+        "linked": true
       },
       {
         "id": "la-finestra",
@@ -5833,7 +6068,7 @@
           "etymological": 0.0,
           "thematic": 1.0
         },
-        "linked": false
+        "linked": true
       },
       {
         "id": "la-finestra",
@@ -6727,7 +6962,7 @@
           "etymological": 0.0,
           "thematic": 1.0
         },
-        "linked": false
+        "linked": true
       }
     ],
     "chiedere": [
@@ -6875,7 +7110,7 @@
           "etymological": 0.0,
           "thematic": 1.0
         },
-        "linked": false
+        "linked": true
       },
       {
         "id": "parlare",
@@ -7291,7 +7526,7 @@
           "etymological": 0.0,
           "thematic": 1.0
         },
-        "linked": false
+        "linked": true
       },
       {
         "id": "parlato",
@@ -7451,7 +7686,7 @@
           "etymological": 0.0,
           "thematic": 1.0
         },
-        "linked": false
+        "linked": true
       },
       {
         "id": "la-parola",
@@ -8713,7 +8948,7 @@
           "etymological": 0.0,
           "thematic": 0.0
         },
-        "linked": true
+        "linked": false
       },
       {
         "id": "vedere",
@@ -8957,7 +9192,7 @@
           "etymological": 0.0,
           "thematic": 0.0
         },
-        "linked": false
+        "linked": true
       },
       {
         "id": "la-mano",
@@ -8981,7 +9216,7 @@
           "etymological": 0.0,
           "thematic": 1.0
         },
-        "linked": false
+        "linked": true
       }
     ],
     "guardare": [
@@ -9435,7 +9670,7 @@
           "etymological": 0.0,
           "thematic": 1.0
         },
-        "linked": false
+        "linked": true
       },
       {
         "id": "la-neve",
@@ -9471,7 +9706,7 @@
           "etymological": 0.0,
           "thematic": 0.0
         },
-        "linked": false
+        "linked": true
       }
     ],
     "la-pioggia": [
@@ -9569,7 +9804,7 @@
           "etymological": 0.0,
           "thematic": 0.0
         },
-        "linked": true
+        "linked": false
       }
     ],
     "piovere": [
@@ -10047,7 +10282,7 @@
           "etymological": 0.0,
           "thematic": 1.0
         },
-        "linked": false
+        "linked": true
       },
       {
         "id": "l-acqua",
@@ -10549,7 +10784,7 @@
           "etymological": 0.0,
           "thematic": 0.0
         },
-        "linked": true
+        "linked": false
       }
     ],
     "il-viaggio": [
@@ -10635,7 +10870,7 @@
           "etymological": 0.0,
           "thematic": 1.0
         },
-        "linked": false
+        "linked": true
       },
       {
         "id": "camminare",
@@ -10685,7 +10920,7 @@
           "etymological": 0.0,
           "thematic": 1.0
         },
-        "linked": false
+        "linked": true
       },
       {
         "id": "il-treno",
@@ -10795,7 +11030,7 @@
           "etymological": 0.0,
           "thematic": 1.0
         },
-        "linked": false
+        "linked": true
       },
       {
         "id": "la-stazione",
@@ -10819,7 +11054,7 @@
           "etymological": 0.0,
           "thematic": 1.0
         },
-        "linked": false
+        "linked": true
       },
       {
         "id": "il-biglietto",
@@ -10917,7 +11152,7 @@
           "etymological": 0.0,
           "thematic": 0.0
         },
-        "linked": true
+        "linked": false
       },
       {
         "id": "il-treno",
@@ -11199,7 +11434,7 @@
           "etymological": 0.0,
           "thematic": 1.0
         },
-        "linked": false
+        "linked": true
       },
       {
         "id": "ieri",
@@ -11579,7 +11814,7 @@
           "etymological": 0.0,
           "thematic": 1.0
         },
-        "linked": false
+        "linked": true
       },
       {
         "id": "la-settimana",

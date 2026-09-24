@@ -6,6 +6,7 @@ import ForceGraph2D, {
 } from 'react-force-graph-2d';
 import { edgeOpacity, healthBand } from '../core/health';
 import type { AppData, Edge, WordNode } from '../db/repo';
+import { useKeyboardCamera } from './useKeyboardCamera';
 import {
   isWeakBridge,
   REASON_LABEL,
@@ -42,6 +43,7 @@ export default function GraphView({ data, health, activeId, inspect, onNodeClick
   const wrap = useRef<HTMLDivElement>(null);
   const fg = useRef<ForceGraphMethods<N, L>>(undefined);
   const [size, setSize] = useState({ width: 800, height: 600 });
+  useKeyboardCamera(fg);
   const byId = useMemo(() => new Map(data.nodes.map((n) => [n.id, n])), [data.nodes]);
 
   // Keep node objects stable across renders so the layout doesn't restart.
@@ -216,7 +218,7 @@ export default function GraphView({ data, health, activeId, inspect, onNodeClick
           }
           const h = health.get(n.id);
           const pct = h != null ? ` · health ${Math.round(h * 100)}%` : '';
-          const hint = inspect ? state : 'click to practise';
+          const hint = inspect ? `${state} · tier ${n.word.tier ?? 1}` : 'click to practise';
           return `${n.word.it} = ${n.word.en}${pct} · ${hint}`;
         }}
         linkColor={(l) => `rgba(${REASON_RGB[l.reason]}, ${linkAlpha(l)})`}
@@ -271,6 +273,9 @@ function Legend() {
           {line('148, 163, 184', true)}
           weak bridge
         </span>
+      </div>
+      <div className="text-slate-500">
+        WASD / arrows move · +/− zoom · F fit · Esc leaves the answer box
       </div>
     </div>
   );

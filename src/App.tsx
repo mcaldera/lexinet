@@ -1,10 +1,12 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { TIER_UNLOCK_FRACTION } from './config';
 import { startOfDay } from './core/clock';
 import { nodeHealth } from './core/health';
 import { buildQueue } from './core/queue';
+import { tierMap, tierProgress } from './core/tiers';
 import { cardId, DIRECTIONS, type Grade } from './core/scheduler';
 import type { CardRow } from './db/repo';
-import { useSprawl } from './useSprawl';
+import { useSprawl, type LevelUp } from './useSprawl';
 import DebugPanel from './views/DebugPanel';
 import GraphView from './views/GraphView';
 import InspectPanel from './views/InspectPanel';
@@ -20,6 +22,13 @@ export default function App() {
   const [turn, setTurn] = useState(0);
   const [inspect, setInspect] = useState(false);
   const [inspectId, setInspectId] = useState<string>();
+  const [levelUp, setLevelUp] = useState<LevelUp | null>(null);
+
+  useEffect(() => {
+    if (!levelUp) return;
+    const t = setTimeout(() => setLevelUp(null), 6000);
+    return () => clearTimeout(t);
+  }, [levelUp]);
 
   const health = useMemo(() => {
     const m = new Map<string, number | null>();
@@ -39,6 +48,12 @@ export default function App() {
     }
     return m;
   }, [data, now]);
+
+  const tiers = useMemo(() => tierMap(data?.nodes ?? []), [data?.nodes]);
+  const progress = useMemo(
+    () => (data ? tierProgress(tiers, data.states, TIER_UNLOCK_FRACTION) : null),
+    [tiers, data],
+  );
 
   const queue = useMemo(
     () => (data ? buildQueue({ cards: data.cards, states: data.states, now, lastCardId }) : []),
@@ -66,7 +81,8 @@ export default function App() {
   const avg = hs.length ? hs.reduce((a, b) => a + b, 0) / hs.length : null;
 
   const onRate = async (row: CardRow, grade: Grade) => {
-    await review(row, grade);
+    const lv = await review(row, grade);
+    if (lv) setLevelUp(lv);
     setLastCardId(row.id);
     setTurn((t) => t + 1);
     setSession((s) => {
@@ -95,6 +111,7 @@ export default function App() {
           {conquered}/{data.nodes.length} conquered · {frontier} frontier
           {avg !== null && ` · territory health ${Math.round(avg * 100)}%`}
         </span>
+        {progress && <TierBadge p={progress} />}
         <button
           onClick={() => setInspect((v) => !v)}
           title="Show every word and link, including ones you haven't unlocked (spoilers)"
@@ -106,7 +123,18 @@ export default function App() {
         </button>
       </header>
       <main className="flex min-h-0 flex-1">
-        <section className="min-w-0 flex-1">
+        <section className="relative min-w-0 flex-1">
+          {levelUp && (
+            <div className="absolute left-1/2 top-4 z-10 -translate-x-1/2 rounded-lg border border-amber-400/60 bg-amber-500/15 px-5 py-3 text-center shadow-lg backdrop-blur">
+              <div className="text-lg font-semibold text-amber-300">
+                Tier {levelUp.tier} unlocked!
+              </div>
+              <div className="text-sm text-amber-100/80">
+                {levelUp.revealed} new {levelUp.revealed === 1 ? 'word appeared' : 'words appeared'}{' '}
+                at the edge of your territory
+              </div>
+            </div>
+          )}
           <GraphView
             data={data}
             health={health}
@@ -150,5 +178,36 @@ export default function App() {
         </aside>
       </main>
     </div>
+  );
+}
+
+function TierBadge({ p }: { p: ReturnType<typeof tierProgress> }) {
+  const pct = p.needed ? Math.min(1, p.conquered / p.needed) : 1;
+  return (
+    <span
+      className="flex items-center gap-2 text-sm text-slate-300"
+      title={
+        p.needed
+          ? `Conquer ${p.needed} words of tiers 1–${p.tier} to open tier ${p.tier + 1}`
+          : 'All tiers open'
+      }
+    >
+      <span className="font-semibold text-amber-300">
+        Tier {p.tier}/{p.maxTier}
+      </span>
+      {p.needed > 0 && (
+        <>
+          <span className="inline-block h-1.5 w-24 overflow-hidden rounded bg-slate-800">
+            <span
+              className="block h-full bg-amber-400"
+              style={{ width: `${Math.round(pct * 100)}%` }}
+            />
+          </span>
+          <span className="text-xs text-slate-400">
+            {p.conquered}/{p.needed} to tier {p.tier + 1}
+          </span>
+        </>
+      )}
+    </span>
   );
 }

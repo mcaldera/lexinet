@@ -2,7 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import graphJson from '../data/graph.json';
 import { appNow } from './core/clock';
 import { rate, type Grade } from './core/scheduler';
-import { applyChanges, neighbourMap, unlockChanges } from './core/unlock';
+import { tierAllows, tierMap, tierProgress } from './core/tiers';
+import { applyChanges, neighbourMap, repairStates, unlockChanges } from './core/unlock';
+import { TIER_UNLOCK_FRACTION } from './config';
 import { openDb, type SqlDb } from './db';
 import {
   loadAll,
@@ -30,6 +32,8 @@ function getDb(): Promise<SqlDb> {
   return dbPromise;
 }
 
+export type LevelUp = { tier: number; revealed: number };
+
 export function useSprawl() {
   const [db, setDb] = useState<SqlDb | null>(null);
   const [data, setData] = useState<AppData | null>(null);
@@ -56,13 +60,38 @@ export function useSprawl() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const now = useMemo(() => appNow(offsetDays), [offsetDays, tick, data]);
   const neighbours = useMemo(() => neighbourMap(data?.edges ?? []), [data?.edges]);
+  const tiers = useMemo(() => tierMap(data?.nodes ?? []), [data?.nodes]);
 
   const review = useCallback(
-    async (row: CardRow, grade: Grade) => {
-      if (!db || !data) return;
+    /** Returns the newly opened tier and how many words it revealed, if any. */
+    async (row: CardRow, grade: Grade): Promise<LevelUp | null> => {
+      if (!db || !data) return null;
       const at = appNow(data.offsetDays);
       const card = rate(row.card, grade, at);
-      const changes = unlockChanges(row.nodeId, grade, data.states, neighbours);
+      const before = tierProgress(tiers, data.states, TIER_UNLOCK_FRACTION).tier;
+      let changes = unlockChanges(
+        row.nodeId,
+        grade,
+        data.states,
+        neighbours,
+        tierAllows(tiers, before),
+      );
+      const after = tierProgress(
+        tiers,
+        applyChanges(data.states, changes),
+        TIER_UNLOCK_FRACTION,
+      ).tier;
+      let levelUp: LevelUp | null = null;
+      if (after > before) {
+        const revealed = repairStates(
+          applyChanges(data.states, changes),
+          neighbours,
+          data.graph.seed,
+          tierAllows(tiers, after),
+        );
+        changes = [...changes, ...revealed];
+        levelUp = { tier: after, revealed: revealed.length };
+      }
       await saveReview(db, row.id, card, grade, at, changes);
       setData((d) => {
         if (!d) return d;
@@ -75,8 +104,9 @@ export function useSprawl() {
           firstReview,
         };
       });
+      return levelUp;
     },
-    [db, data, neighbours],
+    [db, data, neighbours, tiers],
   );
 
   const timeTravel = useCallback(
