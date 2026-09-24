@@ -22,7 +22,7 @@ Node is 18 on the dev box: keep deps Node-18 compatible (Vite 5, Vitest 2, ts-fs
 
 ## Layout
 
-- `src/core/`: pure TS logic (scheduler, unlock, clock, health, queue). No DB/React imports. Must have unit tests before use in UI.
+- `src/core/`: pure TS logic (scheduler, unlock, clock, health, queue, answer). No DB/React imports. Must have unit tests before use in UI.
 - `src/db/`: `SqlDb` interface (execute/select), Tauri + sql.js adapters, schema, repository, seeding from `data/graph.json`
 - `src/views/`: GraphView, ReviewView, DebugPanel
 - `pipeline/`: `build_graph.py` + pytest tests
@@ -33,6 +33,7 @@ Node is 18 on the dev box: keep deps Node-18 compatible (Vite 5, Vitest 2, ts-fs
 
 - All time goes through `clock.ts` (`real now + debug_day_offset`); never call `new Date()` directly in logic.
 - Health is computed, never stored.
+- Review flow (changed from PROPOSAL §3 at the author's request): the user clicks a frontier node to conquer it (or a conquered one to practise); the automatic queue only holds due/learning cards. Answers are typed and checked by `core/answer.ts` (article/accent/small typo → Hard, exact → Good, else Again); the 4 FSRS buttons remain as an override. The 10 new-words/day limit is a soft counter only.
 - Rust stays a thin shell; logic lives in TS.
 - Commit after each milestone (M0–M6). Git remote: the author's **personal** GitHub, never the ProxygenTx org.
 

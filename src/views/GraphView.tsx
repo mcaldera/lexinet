@@ -25,9 +25,15 @@ const REASON_TEXT: Record<EdgeReason, string> = {
   thematic: 'same theme',
 };
 
-type Props = { data: AppData; health: Map<string, number | null> };
+type Props = {
+  data: AppData;
+  health: Map<string, number | null>;
+  /** Node of the card being reviewed; drawn with a ring. */
+  activeId?: string;
+  onNodeClick: (id: string) => void;
+};
 
-export default function GraphView({ data, health }: Props) {
+export default function GraphView({ data, health, activeId, onNodeClick }: Props) {
   const wrap = useRef<HTMLDivElement>(null);
   const fg = useRef<ForceGraphMethods<N, L>>(undefined);
   const [size, setSize] = useState({ width: 800, height: 600 });
@@ -82,6 +88,13 @@ export default function GraphView({ data, health }: Props) {
     const state = data.states.get(node.id);
     const r = 6;
     ctx.save();
+    if (node.id === activeId) {
+      ctx.beginPath();
+      ctx.arc(x, y, r + 3, 0, 2 * Math.PI);
+      ctx.strokeStyle = '#f8fafc';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
     if (state === 'frontier') {
       ctx.beginPath();
       ctx.arc(x, y, r, 0, 2 * Math.PI);
@@ -159,9 +172,10 @@ export default function GraphView({ data, health }: Props) {
           ctx.fill();
         }}
         nodeLabel={(n) => {
-          if (data.states.get(n.id) === 'frontier') return 'Unknown word: review it to conquer';
+          if (data.states.get(n.id) === 'frontier') return 'Unknown word: click to conquer';
           const h = health.get(n.id);
-          return `${n.word.it} = ${n.word.en}${h != null ? ` · health ${Math.round(h * 100)}%` : ''}`;
+          const pct = h != null ? ` · health ${Math.round(h * 100)}%` : '';
+          return `${n.word.it} = ${n.word.en}${pct} · click to practise`;
         }}
         linkColor={(l) => `rgba(148, 163, 184, ${linkAlpha(l)})`}
         linkWidth={(l) => 0.5 + l.weight * 2}
@@ -175,6 +189,8 @@ export default function GraphView({ data, health }: Props) {
             l.reason === 'thematic' && theme ? `same theme (${theme})` : REASON_TEXT[l.reason];
           return hidden ? why : `${nodeWord(a)} ↔ ${nodeWord(b)}: ${why}`;
         }}
+        onNodeClick={(n) => onNodeClick(n.id)}
+        maxZoom={4}
         cooldownTicks={200}
         onEngineStop={() => fg.current?.zoomToFit(400, 60)}
       />

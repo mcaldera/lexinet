@@ -11,26 +11,22 @@ const qc = (nodeId: string, dir: Direction, card = newCard(t0)): QueueCard => ({
 });
 const states = (o: Record<string, NodeState>) => new Map(Object.entries(o));
 
-test('locked nodes never appear; new frontier nodes are capped per day', () => {
+test('untouched frontier and locked nodes never appear in the automatic queue', () => {
   const cards = ['a', 'b', 'c'].flatMap((n) => [qc(n, 'it-en'), qc(n, 'en-it')]);
   const q = buildQueue({
     cards,
-    states: states({ a: 'frontier', b: 'frontier', c: 'locked' }),
+    states: states({ a: 'frontier', b: 'conquered', c: 'locked' }),
     now: t0,
-    newNodesToday: 0,
-    newPerDay: 1,
   });
-  expect(q.map((c) => c.id)).toEqual(['a:it-en', 'a:en-it']);
+  expect(q).toEqual([]);
 });
 
-test('touched nodes keep their new cards even when the budget is spent', () => {
+test('the unreviewed direction of a started node stays in the queue', () => {
   const cards = [qc('a', 'it-en', rate(newCard(t0), Rating.Easy, t0)), qc('a', 'en-it')];
   const q = buildQueue({
     cards,
     states: states({ a: 'conquered' }),
     now: t0,
-    newNodesToday: 5,
-    newPerDay: 5,
   });
   expect(q.map((c) => c.id)).toEqual(['a:en-it']);
 });
@@ -49,21 +45,27 @@ test('due reviews come first, weakest first', () => {
     cards: [qc('s', 'it-en', strong), qc('n', 'it-en'), qc('w', 'it-en', weak)],
     states: states({ s: 'conquered', w: 'conquered', n: 'frontier' }),
     now: t0,
-    newNodesToday: 0,
-    newPerDay: 10,
   });
-  expect(q.map((c) => c.id)).toEqual(['w:it-en', 's:it-en', 'n:it-en']);
+  expect(q.map((c) => c.id)).toEqual(['w:it-en', 's:it-en']);
 });
 
 test('a card failed just now is included but not shown twice in a row', () => {
   const failed = rate(newCard(t0), Rating.Again, t0);
   const q = buildQueue({
-    cards: [qc('a', 'it-en', failed), qc('b', 'it-en')],
-    states: states({ a: 'frontier', b: 'frontier' }),
-    now: t0,
-    newNodesToday: 0,
-    newPerDay: 10,
+    cards: [qc('a', 'it-en', failed), qc('a', 'en-it')],
+    states: states({ a: 'frontier' }),
+    now: new Date(t0.getTime() + 5 * 60_000),
     lastCardId: 'a:it-en',
   });
-  expect(q.map((c) => c.id)).toEqual(['b:it-en', 'a:it-en']);
+  expect(q.map((c) => c.id)).toEqual(['a:en-it', 'a:it-en']);
+});
+
+test('learning cards wait until they are actually due', () => {
+  const learning = rate(newCard(t0), Rating.Good, t0); // due again in minutes
+  const q = buildQueue({
+    cards: [qc('a', 'it-en', learning)],
+    states: states({ a: 'conquered' }),
+    now: t0,
+  });
+  expect(q).toEqual([]);
 });
