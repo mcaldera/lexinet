@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { COOLDOWN_MS } from './config';
+import { COOLDOWN_MS, INFLUENCE } from './config';
+import { FULL_NAME } from './core/fade';
+import { isHostile } from './core/influence';
 import { startOfDay } from './core/clock';
 import { nodeHealth } from './core/health';
 import { buildQueue } from './core/queue';
@@ -22,7 +24,7 @@ import VerbDrill from './views/VerbDrill';
 type Session = { nodeId: string; cardIds: string[]; mode: 'conquer' | 'practice' };
 
 export default function App() {
-  const { data, now, error, review, reviewTense, unlockRoot, timeTravel, reset, graphName } =
+  const { data, now, error, lost, review, reviewTense, unlockRoot, timeTravel, reset, graphName } =
     useSprawl();
   const [lastCardId, setLastCardId] = useState<string>();
   const [session, setSession] = useState<Session | null>(null);
@@ -54,6 +56,13 @@ export default function App() {
   }, [cooldowns]);
 
   useEffect(() => {
+    if (!lost || !data) return;
+    const names = lost.ids.map((id) => data.nodes.find((n) => n.id === id)?.it ?? id);
+    setNotice(`Lost to hostile pressure: ${names.join(', ')}. Win them back!`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lost]);
+
+  useEffect(() => {
     if (!notice) return;
     const t = setTimeout(() => setNotice(null), 5000);
     return () => clearTimeout(t);
@@ -74,9 +83,13 @@ export default function App() {
       m.set(
         id,
         data.states.get(id) === 'conquered'
-          ? nodeHealth(
-              cards.map((c) => c.card),
-              now,
+          ? // Displayed health: memory, but no more than the word's control.
+            Math.min(
+              nodeHealth(
+                cards.map((c) => c.card),
+                now,
+              ) ?? 1,
+              data.game.nodes.get(id)?.control ?? 1,
             )
           : null,
       );
@@ -189,12 +202,15 @@ export default function App() {
       return;
     }
     const conquered = data.states.get(nodeId) === 'conquered';
-    const next = conquered
-      ? nextPractice(
-          (cardsByNode.get(nodeId) ?? []).map((c) => c.card),
-          now,
-        )
-      : null;
+    // Under pressure (health below 90%), a word can always be defended.
+    const threatened = conquered && (health.get(nodeId) ?? 1) < FULL_NAME;
+    const next =
+      conquered && !threatened
+        ? nextPractice(
+            (cardsByNode.get(nodeId) ?? []).map((c) => c.card),
+            now,
+          )
+        : null;
     const node = data.nodes.find((n) => n.id === nodeId);
     if (next && node?.conjugations) {
       // Verbs level up tense by tense once the word itself is solid.
@@ -306,6 +322,27 @@ export default function App() {
             activeId={inspect ? inspectId : (activeDrill?.nodeId ?? current?.nodeId)}
             strength={strength}
             verbLevels={verbLevels}
+            control={new Map([...data.game.nodes].map(([id, g]) => [id, g.control]))}
+            hostile={
+              new Set(
+                [...data.states]
+                  .filter(
+                    ([id, st]) =>
+                      isHostile(data.game.nodes.get(id), st, now.getTime(), INFLUENCE) ||
+                      (st === 'conquered' &&
+                        (data.game.nodes.get(id)?.control ?? 1) < INFLUENCE.rebelBelow),
+                  )
+                  .map(([id]) => id),
+              )
+            }
+            nowMs={now.getTime()}
+            graceUntil={
+              new Map(
+                [...data.game.nodes]
+                  .filter(([id, g]) => data.states.get(id) === 'frontier' && g.since !== undefined)
+                  .map(([id, g]) => [id, g.since! + INFLUENCE.hostileAfterHours * 3_600_000]),
+              )
+            }
             unlockedRoots={data.unlockedRoots}
             cooldowns={cooldowns}
             inspect={inspect}

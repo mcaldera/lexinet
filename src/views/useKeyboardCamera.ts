@@ -1,4 +1,4 @@
-import { useEffect, type RefObject } from 'react';
+import { useEffect, useRef, type RefObject } from 'react';
 
 type Camera = {
   centerAt(): { x: number; y: number };
@@ -9,14 +9,11 @@ type Camera = {
 };
 
 const PAN_PX_PER_SEC = 500;
-const DIRS: Record<string, [number, number]> = {
-  w: [0, -1],
+const PAN: Record<string, [number, number]> = { w: [0, -1], s: [0, 1], a: [-1, 0], d: [1, 0] };
+const ARROWS: Record<string, [number, number]> = {
   arrowup: [0, -1],
-  s: [0, 1],
   arrowdown: [0, 1],
-  a: [-1, 0],
   arrowleft: [-1, 0],
-  d: [1, 0],
   arrowright: [1, 0],
 };
 
@@ -32,12 +29,22 @@ function isTyping(target: EventTarget | null) {
 const ownsArrows = (target: EventTarget | null) =>
   target instanceof HTMLSelectElement || target instanceof HTMLTextAreaElement;
 
+type Options = {
+  /** Arrow keys: move the node cursor in a direction (x right, y down). */
+  onArrow: (dx: number, dy: number) => void;
+  /** Enter / Space outside text fields: open the node under the cursor. */
+  onSelect: () => void;
+};
+
 /**
- * Arrows pan while held, even while typing an answer (a one-line answer box has
- * no use for them, and it is focused most of the time). WASD, +/- and F only
- * work outside text fields, where they aren't letters being typed.
+ * Keyboard map controls. Arrows move the node cursor to a linked word and select
+ * it (even while typing an answer: a one-line box has no use for them).
+ * WASD pan while held, +/- zoom, F fits — only outside text fields.
  */
-export function useKeyboardCamera(cam: RefObject<Camera | undefined>) {
+export function useKeyboardCamera(cam: RefObject<Camera | undefined>, options: Options) {
+  const opts = useRef(options);
+  opts.current = options;
+
   useEffect(() => {
     const held = new Set<string>();
     let frame = 0;
@@ -55,8 +62,8 @@ export function useKeyboardCamera(cam: RefObject<Camera | undefined>) {
       let dx = 0;
       let dy = 0;
       for (const k of held) {
-        dx += DIRS[k][0];
-        dy += DIRS[k][1];
+        dx += PAN[k][0];
+        dy += PAN[k][1];
       }
       const step = (PAN_PX_PER_SEC * dt) / c.zoom(); // screen speed independent of zoom
       const { x, y } = c.centerAt();
@@ -67,10 +74,17 @@ export function useKeyboardCamera(cam: RefObject<Camera | undefined>) {
     const down = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey || e.altKey || ownsArrows(e.target)) return;
       const k = e.key.toLowerCase();
-      if (isTyping(e.target) && !k.startsWith('arrow')) return;
-      const c = cam.current;
-      if (k in DIRS) {
+      if (k in ARROWS) {
         e.preventDefault(); // arrows would otherwise scroll the sidebar
+        opts.current.onArrow(...ARROWS[k]);
+        return;
+      }
+      if (isTyping(e.target)) return;
+      const c = cam.current;
+      if ((k === 'enter' || k === ' ') && !(e.target instanceof HTMLButtonElement)) {
+        e.preventDefault();
+        opts.current.onSelect();
+      } else if (k in PAN) {
         held.add(k);
         if (!frame) frame = requestAnimationFrame(tick);
       } else if (c && (k === '+' || k === '=')) {
@@ -94,4 +108,33 @@ export function useKeyboardCamera(cam: RefObject<Camera | undefined>) {
       cancelAnimationFrame(frame);
     };
   }, [cam]);
+}
+
+/**
+ * The node to move to from `from` in direction (dx, dy): prefer linked
+ * neighbours within 70° of the direction, else the nearest visible node within
+ * 45°. Scores favour straight-ahead over near.
+ */
+export function stepCursor(
+  from: { x: number; y: number },
+  dx: number,
+  dy: number,
+  neighbours: { id: string; x: number; y: number }[],
+  others: { id: string; x: number; y: number }[],
+): string | undefined {
+  const pick = (cands: { id: string; x: number; y: number }[], maxDeg: number) => {
+    let best: { id: string; score: number } | undefined;
+    for (const c of cands) {
+      const vx = c.x - from.x;
+      const vy = c.y - from.y;
+      const dist = Math.hypot(vx, vy);
+      if (dist < 1e-6) continue;
+      const angle = (Math.acos((vx * dx + vy * dy) / dist) * 180) / Math.PI;
+      if (angle > maxDeg) continue;
+      const score = angle / maxDeg + dist / 400;
+      if (!best || score < best.score) best = { id: c.id, score };
+    }
+    return best?.id;
+  };
+  return pick(neighbours, 70) ?? pick(others, 45);
 }

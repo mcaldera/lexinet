@@ -10,6 +10,7 @@ import {
 } from '../core/scheduler';
 import { tierAllows, tierMap } from '../core/tiers';
 import type { Tense, TenseCard } from '../core/verbs';
+import type { Game, GameNode } from '../core/influence';
 import { neighbourMap, repairStates, type NodeState, type StateChange } from '../core/unlock';
 import { computeProgress } from '../progress';
 import { SCHEMA } from './schema';
@@ -97,6 +98,8 @@ export type AppData = {
   offsetDays: number;
   /** Root hubs the player has unlocked by naming their meaning. */
   unlockedRoots: Set<string>;
+  /** Influence game: control per conquered word, hostility of frontier words. */
+  game: Game;
 };
 
 async function insertMany(
@@ -202,6 +205,7 @@ export async function loadAll(db: SqlDb, graph: Graph): Promise<AppData> {
   const roots = await db.select<{ value: string }>(
     "SELECT value FROM meta WHERE key = 'unlocked_roots'",
   );
+  const gameRow = await db.select<{ value: string }>("SELECT value FROM meta WHERE key = 'game'");
   return {
     graph,
     nodes: graph.nodes,
@@ -217,6 +221,7 @@ export async function loadAll(db: SqlDb, graph: Graph): Promise<AppData> {
     firstReview: new Map(first.map((f) => [f.node_id, f.first])),
     offsetDays: meta.length ? Number(meta[0].value) : 0,
     unlockedRoots: new Set(roots.length ? (JSON.parse(roots[0].value) as string[]) : []),
+    game: parseGame(gameRow[0]?.value),
   };
 }
 
@@ -234,6 +239,23 @@ export async function saveReview(
     grade,
     reviewedAt.toISOString(),
   ]);
+  for (const c of changes) {
+    await db.execute('UPDATE nodes SET state = ? WHERE id = ?', [c.state, c.id]);
+  }
+}
+
+function parseGame(json: string | undefined): Game {
+  if (!json) return { simAt: 0, nodes: new Map() };
+  const raw = JSON.parse(json) as { simAt: number; nodes: Record<string, GameNode> };
+  return { simAt: raw.simAt, nodes: new Map(Object.entries(raw.nodes)) };
+}
+
+/** Persist the influence game (one JSON value: a single write, cheap for sql.js). */
+export async function saveGame(db: SqlDb, game: Game, changes: StateChange[] = []) {
+  await db.execute(
+    "INSERT INTO meta (key, value) VALUES ('game', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+    [JSON.stringify({ simAt: game.simAt, nodes: Object.fromEntries(game.nodes) })],
+  );
   for (const c of changes) {
     await db.execute('UPDATE nodes SET state = ? WHERE id = ?', [c.state, c.id]);
   }

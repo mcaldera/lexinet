@@ -4,13 +4,13 @@ import ForceGraph2D, {
   type LinkObject,
   type NodeObject,
 } from 'react-force-graph-2d';
-import { COOLDOWN_MS } from '../config';
+import { COOLDOWN_MS, INFLUENCE } from '../config';
 import { fadedName, FULL_NAME } from '../core/fade';
 import { edgeOpacity, healthBand } from '../core/health';
 import { MAX_STRENGTH } from '../core/strength';
 import { TENSES } from '../core/verbs';
 import type { AppData, Edge, RootHub, WordNode } from '../db/repo';
-import { useKeyboardCamera } from './useKeyboardCamera';
+import { stepCursor, useKeyboardCamera } from './useKeyboardCamera';
 import {
   isWeakBridge,
   REASON_LABEL,
@@ -23,8 +23,12 @@ import {
 
 /** Word node, or a root hub (then `word` holds the root's name/meaning for labels). */
 type GNode = { id: string; word: WordNode; hub?: RootHub };
-/** `descends`: link from a root hub to one of its words. */
-type GLink = Edge & { descends?: boolean };
+/**
+ * `descends`: link from a root hub to one of its words. `category`: invisible
+ * spring pulling discovered words of the same category together. `flow`:
+ * influence travelling source -> target (drawn as moving particles).
+ */
+type GLink = Edge & { descends?: boolean; category?: boolean; flow?: 'attack' | 'support' };
 type N = NodeObject<GNode>;
 type L = LinkObject<GNode, GLink>;
 
@@ -48,6 +52,14 @@ type Props = {
   unlockedRoots: Set<string>;
   /** Word id -> real time (ms) its wrong-answer lock ends. */
   cooldowns: Map<string, number>;
+  /** Influence game: control (0..1) of conquered words. */
+  control: Map<string, number>;
+  /** Hostile frontier words and rebelling conquered words. */
+  hostile: Set<string>;
+  /** Frontier word -> app time (ms) its grace period ends and it turns hostile. */
+  graceUntil: Map<string, number>;
+  /** Current app time (ms). */
+  nowMs: number;
   /** Show every word and edge (spoilers) for inspecting the network. */
   inspect: boolean;
   /** Draw shared roots as hub nodes (replaces word-to-word "shared root" links). */
@@ -63,6 +75,10 @@ export default function GraphView({
   verbLevels,
   unlockedRoots,
   cooldowns,
+  control,
+  hostile,
+  graceUntil,
+  nowMs,
   inspect,
   showRoots,
   onNodeClick,
@@ -70,7 +86,11 @@ export default function GraphView({
   const wrap = useRef<HTMLDivElement>(null);
   const fg = useRef<ForceGraphMethods<N, L>>(undefined);
   const [size, setSize] = useState({ width: 800, height: 600 });
-  useKeyboardCamera(fg);
+  /** Keyboard cursor: arrows move it along links, Enter/Space opens it. */
+  const [cursorId, setCursorId] = useState<string | undefined>(activeId ?? data.graph.seed);
+  useEffect(() => {
+    if (activeId) setCursorId(activeId);
+  }, [activeId]);
   const byId = useMemo(() => new Map(data.nodes.map((n) => [n.id, n])), [data.nodes]);
 
   // Keep node objects stable across renders so the layout doesn't restart.
@@ -84,23 +104,48 @@ export default function GraphView({
       .map((h) => h.id),
   ].join(',');
 
+  // Influence flows per link ("a|b" sorted): who attacks or supports whom.
+  const flowKey = useMemo(() => {
+    const out: string[] = [];
+    for (const e of data.edges) {
+      const [a, b] = [e.source, e.target];
+      const [sa, sb] = [data.states.get(a), data.states.get(b)];
+      if (hostile.has(a) && sb === 'conquered' && !hostile.has(b)) out.push(`${a}>${b}:attack`);
+      else if (hostile.has(b) && sa === 'conquered' && !hostile.has(a))
+        out.push(`${b}>${a}:attack`);
+      else if (sa === 'conquered' && sb === 'conquered' && !hostile.has(a) && !hostile.has(b)) {
+        const [ca, cb] = [control.get(a) ?? 1, control.get(b) ?? 1];
+        if (ca < 0.99 || cb < 0.99) out.push(ca < cb ? `${b}>${a}:support` : `${a}>${b}:support`);
+      }
+    }
+    return out.join(',');
+  }, [data.edges, data.states, hostile, control]);
+
   const graphData = useMemo(() => {
     const visible = new Set(visibleKey.split(',').filter(Boolean));
+    const flows = new Map(
+      flowKey
+        .split(',')
+        .filter(Boolean)
+        .map((f) => {
+          const [pair, kind] = f.split(':');
+          const [from, to] = pair.split('>');
+          return [[from, to].sort().join('|'), { from, to, kind: kind as 'attack' | 'support' }];
+        }),
+    );
+    const linkedTo = (id: string) =>
+      data.edges.flatMap((e) => (e.source === id ? [e.target] : e.target === id ? [e.source] : []));
     const node = (id: string, word: WordNode, hub?: RootHub) => {
       let n = nodeCache.current.get(id);
       if (!n) {
         n = { id, word };
-        if (word.x !== undefined && word.y !== undefined) {
-          // Pinned to the pipeline's map: the geography never moves.
-          n.x = n.fx = word.x;
-          n.y = n.fy = word.y;
-        } else if (hub) {
-          // Roots sit just below the centre of their words.
-          const pts = hub.words.map((w) => byId.get(w)).filter((w) => w?.x !== undefined);
-          if (pts.length) {
-            n.x = n.fx = pts.reduce((a, w) => a + w!.x!, 0) / pts.length;
-            n.y = n.fy = pts.reduce((a, w) => a + w!.y!, 0) / pts.length + 18;
-          }
+        // Organic layout: a newly revealed word appears next to a visible word it
+        // links to (usually the one that revealed it), then settles by physics.
+        const anchors = hub ? hub.words : linkedTo(id);
+        const anchor = anchors.map((a) => nodeCache.current.get(a)).find((a) => a?.x !== undefined);
+        if (anchor) {
+          n.x = anchor.x! + (Math.random() - 0.5) * 40;
+          n.y = anchor.y! + (Math.random() - 0.5) * 40;
         }
         nodeCache.current.set(id, n);
       }
@@ -120,7 +165,29 @@ export default function GraphView({
     const links: GLink[] = data.edges
       .filter((e) => visible.has(e.source) && visible.has(e.target))
       .filter((e) => !(hubs.length && e.reason === 'etymological')) // the hub replaces these
-      .map((e) => ({ ...e }));
+      .map((e) => {
+        const f = flows.get([e.source, e.target].sort().join('|'));
+        // Particles run source -> target, so orient the link along the flow.
+        return f ? { ...e, source: f.from, target: f.to, flow: f.kind } : { ...e };
+      });
+    // Discovered words of the same category attract each other (invisible
+    // springs): categories gather into territories as you explore them.
+    for (const r of data.graph.regions ?? []) {
+      const members = r.words.filter((w) => visible.has(w));
+      members.forEach((w, i) => {
+        for (const j of [i - 1, i - 3]) {
+          if (j >= 0) {
+            links.push({
+              source: members[j],
+              target: w,
+              weight: 0.2,
+              reason: 'thematic',
+              category: true,
+            });
+          }
+        }
+      });
+    }
     for (const n of hubNodes) {
       for (const w of n.hub!.words.filter((w) => visible.has(w))) {
         links.push({
@@ -134,7 +201,39 @@ export default function GraphView({
     }
     return { nodes, links };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visibleKey, data.edges, hubs]);
+  }, [visibleKey, data.edges, hubs, flowKey]);
+
+  useKeyboardCamera(fg, {
+    onArrow: (dx, dy) => {
+      const pos = (id: string) => nodeCache.current.get(id);
+      const visible = graphData.nodes.filter((n) => n.x !== undefined);
+      const from = (cursorId && pos(cursorId)) || visible[0];
+      if (!from) return;
+      if (!cursorId || !pos(cursorId)) return setCursorId(from.id);
+      const linked = new Set(
+        graphData.links
+          .filter((l) => !l.category)
+          .flatMap((l) => {
+            const [a, b] = [endId(l.source), endId(l.target)];
+            return a === from.id ? [b] : b === from.id ? [a] : [];
+          }),
+      );
+      const pts = visible.map((n) => ({ id: n.id, x: n.x!, y: n.y! }));
+      const next = stepCursor(
+        { x: from.x!, y: from.y! },
+        dx,
+        dy,
+        pts.filter((p) => linked.has(p.id)),
+        pts.filter((p) => p.id !== from.id),
+      );
+      if (!next) return;
+      setCursorId(next);
+      const n = pos(next)!;
+      fg.current?.centerAt(n.x, n.y, 250);
+      onNodeClick(next); // moving the cursor selects the word, like a click
+    },
+    onSelect: () => cursorId && onNodeClick(cursorId),
+  });
 
   useEffect(() => {
     const el = wrap.current;
@@ -147,21 +246,32 @@ export default function GraphView({
   }, []);
 
   useEffect(() => {
-    fg.current?.d3Force('link')?.distance(50);
-    fg.current?.d3Force('charge')?.strength(-120);
+    // Strong links pull words close; category springs are longer and softer.
+    fg.current
+      ?.d3Force('link')
+      ?.distance((l: L) => (l.category ? 55 : 25 + (1 - l.weight) * 60))
+      .strength((l: L) => (l.category ? 0.08 : 0.15 + l.weight * 0.6));
+    fg.current?.d3Force('charge')?.strength(-90);
   }, []);
 
   // Territories: every visible word of a region, named once you've conquered one of them.
+  // Points are read from the live node objects at draw time, so dragged words take
+  // their territory with them.
   const regionsToDraw = (data.graph.regions ?? []).flatMap((r) => {
-    const pts = r.words
-      .filter((w) => inspect || (data.states.get(w) ?? 'locked') !== 'locked')
-      .map((w) => byId.get(w))
-      .filter((w): w is WordNode => w?.x !== undefined && w?.y !== undefined)
-      .map((w) => [w.x!, w.y!] as const);
-    if (!pts.length) return [];
+    const ids = r.words.filter((w) => inspect || (data.states.get(w) ?? 'locked') !== 'locked');
+    if (!ids.length) return [];
     const named = inspect || r.words.some((w) => data.states.get(w) === 'conquered');
-    return [{ name: named ? r.name : '', color: REGION_RGB[r.color % REGION_RGB.length], pts }];
+    return [{ name: named ? r.name : '', color: REGION_RGB[r.color % REGION_RGB.length], ids }];
   });
+  const livePoints = () =>
+    regionsToDraw.map((t) => ({
+      ...t,
+      pts: t.ids
+        .map((id) => nodeCache.current.get(id))
+        .filter((n): n is N => n?.x !== undefined && n?.y !== undefined)
+        .map((n) => [n.x!, n.y!] as const),
+    }));
+  const fitted = useRef(false);
 
   const endId = (x: unknown) => (typeof x === 'object' && x ? (x as N).id : (x as string));
   const isHub = (id: string) => id.startsWith('root:');
@@ -193,6 +303,15 @@ export default function GraphView({
       ctx.lineWidth = 2;
       ctx.stroke();
     }
+    if (node.id === cursorId && node.id !== activeId) {
+      ctx.beginPath();
+      ctx.arc(x, y, r + 5, 0, 2 * Math.PI);
+      ctx.setLineDash([2, 2]);
+      ctx.strokeStyle = 'rgba(251, 191, 36, 0.95)';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
     if (node.hub) {
       drawHub(ctx, node, x, y, scale, node.id === activeId, inspect || unlockedRoots.has(node.id));
       ctx.restore();
@@ -219,14 +338,35 @@ export default function GraphView({
     };
 
     if (state !== 'conquered') {
+      const angry = hostile.has(node.id);
       shapePath(ctx, shape, x, y, r);
-      ctx.fillStyle = state === 'locked' ? 'rgba(100, 116, 139, 0.7)' : 'rgba(71, 85, 105, 0.6)';
+      ctx.fillStyle =
+        state === 'locked'
+          ? 'rgba(100, 116, 139, 0.7)'
+          : angry
+            ? 'rgba(185, 28, 28, 0.6)' // hostile: attacking its conquered neighbours
+            : 'rgba(71, 85, 105, 0.6)';
       ctx.fill();
       ctx.setLineDash([2, 2]);
       ctx.strokeStyle =
-        state === 'locked' ? 'rgba(100, 116, 139, 0.6)' : 'rgba(148, 163, 184, 0.8)';
+        state === 'locked'
+          ? 'rgba(100, 116, 139, 0.6)'
+          : angry
+            ? 'rgba(252, 165, 165, 0.95)'
+            : 'rgba(148, 163, 184, 0.8)';
       ctx.lineWidth = 1;
       ctx.stroke();
+      ctx.setLineDash([]);
+      const grace = graceUntil.get(node.id);
+      if (state === 'frontier' && !angry && grace && !inspect) {
+        // Grace period left before this word turns hostile.
+        const left = Math.max(0, (grace - nowMs) / (INFLUENCE.hostileAfterHours * 3_600_000));
+        ctx.beginPath();
+        ctx.arc(x, y, r + 2.5, -Math.PI / 2, -Math.PI / 2 + left * 2 * Math.PI);
+        ctx.strokeStyle = 'rgba(251, 191, 36, 0.8)';
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+      }
       if (inspect) {
         label(state === 'locked' ? 0.6 : 0.8);
       } else {
@@ -242,6 +382,14 @@ export default function GraphView({
 
     const h = health.get(node.id) ?? 1;
     const band = healthBand(h);
+    if (hostile.has(node.id)) {
+      // Rebelling: control collapsed, now pressuring its own neighbours.
+      ctx.beginPath();
+      ctx.arc(x, y, r + 3.5, 0, 2 * Math.PI);
+      ctx.strokeStyle = 'rgba(239, 68, 68, 0.9)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
     // One gold ring per tense mastered: verbs are the strongholds of a territory.
     const vl = verbLevels.get(node.id) ?? 0;
     for (let i = 0; i < vl; i++) {
@@ -387,17 +535,43 @@ export default function GraphView({
           return `${n.word.it} = ${n.word.en}${pct}${str}${verb} · ${hint}`;
         }}
         linkColor={(l) => `rgba(${REASON_RGB[l.reason]}, ${linkAlpha(l)})`}
-        linkWidth={(l) => 0.5 + l.weight * 2.5 + (touchesActive(l) ? 1 : 0)}
+        // Strong links are much thicker (and carry more influence).
+        linkWidth={(l) => 0.3 + 5 * l.weight ** 2 + (touchesActive(l) ? 1 : 0)}
         linkLineDash={(l) =>
           isWeakBridge(l) || (l.descends && hidden(endId(l.target))) ? [3, 3] : null
         }
         linkHoverPrecision={6}
-        onRenderFramePre={(ctx, scale) => drawRegions(ctx, scale, regionsToDraw)}
+        linkVisibility={(l) => !l.category}
+        // Keep animating while influence flows (particles); otherwise let the canvas idle.
+        autoPauseRedraw={!flowKey}
+        linkDirectionalParticles={(l) => (l.flow ? Math.max(1, Math.round(l.weight * 4)) : 0)}
+        linkDirectionalParticleSpeed={(l) =>
+          l.flow === 'attack' ? 0.004 + 0.01 * l.weight : 0.003 + 0.003 * l.weight
+        }
+        linkDirectionalParticleWidth={(l) => (l.flow === 'attack' ? 3 : 2)}
+        linkDirectionalParticleColor={(l) =>
+          l.flow === 'attack' ? 'rgba(248, 113, 113, 0.95)' : 'rgba(110, 231, 183, 0.9)'
+        }
+        onRenderFramePre={(ctx, scale) => drawRegions(ctx, scale, livePoints())}
         linkLabel={linkTooltip}
-        onNodeClick={(n) => onNodeClick(n.id)}
+        onNodeClick={(n) => {
+          setCursorId(n.id);
+          onNodeClick(n.id);
+        }}
         maxZoom={4}
+        minZoom={0.15}
+        onNodeDragEnd={(n) => {
+          // Keep a dragged word where it was dropped (the map stays pinned).
+          n.fx = n.x;
+          n.fy = n.y;
+        }}
         cooldownTicks={200}
-        onEngineStop={() => fg.current?.zoomToFit(400, 60)}
+        onEngineStop={() => {
+          // Fit once on load; afterwards the camera is yours (F refits).
+          if (fitted.current) return;
+          fitted.current = true;
+          fg.current?.zoomToFit(400, 60);
+        }}
       />
       <Legend />
     </div>
@@ -430,6 +604,12 @@ function Legend() {
         <span>◆ adjective</span>
         <span>■ adverb</span>
         <span className="text-amber-300">◎ verb level</span>
+      </div>
+      <div className="flex gap-3">
+        <span className="text-red-300">• → red: attack</span>
+        <span className="text-emerald-300">• → green: support</span>
+        <span className="text-red-300">? red: hostile</span>
+        <span className="text-amber-300">◔ time until hostile</span>
         <span className="text-pink-300">⬢ shared root</span>
       </div>
       <div className="flex gap-3">
@@ -445,7 +625,8 @@ function Legend() {
         </span>
       </div>
       <div className="text-slate-500">
-        Arrows move (always) · WASD, +/− zoom, F fit outside the answer box (Esc leaves it)
+        ↑↓←→ move between words · Enter opens · WASD pan · +/− zoom · F fit (Esc leaves the answer
+        box)
       </div>
     </div>
   );
@@ -518,6 +699,7 @@ function drawRegions(ctx: CanvasRenderingContext2D, scale: number, regions: Terr
   const border = 1.5 / scale;
   ctx.save();
   for (const t of regions) {
+    if (!t.pts.length) continue;
     union(TERRITORY_RADIUS + border, t.pts);
     ctx.fillStyle = `rgba(${t.color}, 0.45)`;
     ctx.fill();
@@ -532,7 +714,7 @@ function drawRegions(ctx: CanvasRenderingContext2D, scale: number, regions: Terr
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   for (const t of regions) {
-    if (!t.name) continue;
+    if (!t.name || !t.pts.length) continue;
     const cx = t.pts.reduce((a, p) => a + p[0], 0) / t.pts.length;
     const cy = t.pts.reduce((a, p) => a + p[1], 0) / t.pts.length;
     const px = Math.min(24, Math.max(12, 8 + 2.5 * Math.sqrt(t.pts.length))); // screen pixels
