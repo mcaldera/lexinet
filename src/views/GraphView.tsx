@@ -8,6 +8,7 @@ import { COOLDOWN_MS } from '../config';
 import { fadedName, FULL_NAME } from '../core/fade';
 import { edgeOpacity, healthBand } from '../core/health';
 import { MAX_STRENGTH } from '../core/strength';
+import { TENSES } from '../core/verbs';
 import type { AppData, Edge, RootHub, WordNode } from '../db/repo';
 import { useKeyboardCamera } from './useKeyboardCamera';
 import {
@@ -41,6 +42,8 @@ type Props = {
   activeId?: string;
   /** Strength level 0-5 per word; stronger words are drawn bigger. */
   strength: Map<string, number>;
+  /** Verb level (tenses mastered) per conjugable verb; drawn as gold rings. */
+  verbLevels: Map<string, number>;
   /** Root hubs unlocked by naming their meaning. */
   unlockedRoots: Set<string>;
   /** Word id -> real time (ms) its wrong-answer lock ends. */
@@ -57,6 +60,7 @@ export default function GraphView({
   health,
   activeId,
   strength,
+  verbLevels,
   unlockedRoots,
   cooldowns,
   inspect,
@@ -238,6 +242,15 @@ export default function GraphView({
 
     const h = health.get(node.id) ?? 1;
     const band = healthBand(h);
+    // One gold ring per tense mastered: verbs are the strongholds of a territory.
+    const vl = verbLevels.get(node.id) ?? 0;
+    for (let i = 0; i < vl; i++) {
+      ctx.beginPath();
+      ctx.arc(x, y, r + 2.5 + i * 1.8, 0, 2 * Math.PI);
+      ctx.strokeStyle = `rgba(251, 191, 36, ${0.9 - i * 0.1})`;
+      ctx.lineWidth = 0.9;
+      ctx.stroke();
+    }
     shapePath(ctx, shape, x, y, r);
     ctx.fillStyle = BAND_COLOR[band];
     ctx.fill();
@@ -366,7 +379,12 @@ export default function GraphView({
               : '';
           const hint = inspect ? `${state} · tier ${n.word.tier ?? 1}` : 'click to practise';
 
-          return `${n.word.it} = ${n.word.en}${pct}${str} · ${hint}`;
+          const vl = verbLevels.get(n.id);
+          const verb =
+            vl === undefined
+              ? ''
+              : ` · verb level ${vl}/${TENSES.length}${vl < TENSES.length ? ` (next: ${TENSES[vl]})` : ''}`;
+          return `${n.word.it} = ${n.word.en}${pct}${str}${verb} · ${hint}`;
         }}
         linkColor={(l) => `rgba(${REASON_RGB[l.reason]}, ${linkAlpha(l)})`}
         linkWidth={(l) => 0.5 + l.weight * 2.5 + (touchesActive(l) ? 1 : 0)}
@@ -411,6 +429,7 @@ function Legend() {
         <span>▲ verb</span>
         <span>◆ adjective</span>
         <span>■ adverb</span>
+        <span className="text-amber-300">◎ verb level</span>
         <span className="text-pink-300">⬢ shared root</span>
       </div>
       <div className="flex gap-3">

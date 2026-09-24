@@ -194,3 +194,11 @@ def test_every_word_gets_map_position_and_region(df):
     in_regions = sorted(w for r in graph["regions"] for w in r["words"])
     assert in_regions == sorted(n["id"] for n in graph["nodes"])
     assert all(r["name"] for r in graph["regions"])
+
+
+def test_verbs_get_conjugation_tables(df):
+    table = {"presente": ["parlo", "parli", "parla", "parliamo", "parlate", "parlano"]}
+    graph = bg.build_graph(df, fake_embedder, conjugate=lambda v: table if v == "parlare" else None)
+    by_id = {n["id"]: n for n in graph["nodes"]}
+    assert by_id["parlare"]["conjugations"] == table
+    assert "conjugations" not in by_id["il-cane"]

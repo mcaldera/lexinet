@@ -288,6 +288,7 @@ def build_graph(
     seed: str | None = None,
     ranks: dict[str, int] | None = None,
     english: Callable[[str], list[str]] | None = None,
+    conjugate: Callable[[str], dict[str, list[str]] | None] | None = None,
 ) -> dict:
     df = df.assign(**{c: "" for c in OPTIONAL_COLUMNS if c not in df.columns})
     ids: list[str] = []
@@ -393,6 +394,14 @@ def build_graph(
         if len(members) >= 2
     ]
 
+    # Verbs get conjugation tables: each tense is a level to earn (see conjugate.py).
+    if conjugate:
+        for node in nodes:
+            if (node.get("pos") or "") == "verb" and " " not in node["it"]:
+                table = conjugate(node["it"])
+                if table:
+                    node["conjugations"] = table
+
     # Fixed map: communities become named, coloured territories (see layout.py).
     G = nx.Graph()
     G.add_nodes_from(ids)
@@ -446,7 +455,9 @@ def build_graph(
             "tier_names": {
                 str(t): next((nd["level"] for nd in nodes if nd["tier"] == t and nd.get("level")), f"Tier {t}")
                 for t in sorted(set(tiers))
-            },
+            }
+            if any(nd.get("level") for nd in nodes)
+            else None,
         },
         "nodes": nodes,
         "edges": edges,
@@ -481,6 +492,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("-k", "--bonus-k", type=int, default=3)
     p.add_argument("-t", "--bonus-threshold", type=float, default=0.25)
     p.add_argument("--no-english", action="store_true", help="skip English root examples (needs a ~500 MB download once)")
+    p.add_argument("--no-conjugations", action="store_true", help="skip verb conjugation tables")
     args = p.parse_args(argv)
 
     df = load_words(args.csv)
@@ -490,8 +502,21 @@ def main(argv: list[str] | None = None) -> int:
 
         index, derived = english_roots.load_index(), english_roots.load_latin_derived()
         english = lambda root: english_roots.english_for(root, index, derived)  # noqa: E731
+    conjugate = None
+    if not args.no_conjugations:
+        import conjugate as cj
+
+        verbs = cj.load_verbs(cj.CACHE / "kaikki.org-dictionary-Italian.jsonl.gz")
+        conjugate = lambda v: cj.conjugations(verbs[v], v) if v in verbs else None  # noqa: E731
     graph = build_graph(
-        df, make_embedder(args.model), args.bonus_k, args.bonus_threshold, args.seed, load_frequency_ranks(), english
+        df,
+        make_embedder(args.model),
+        args.bonus_k,
+        args.bonus_threshold,
+        args.seed,
+        load_frequency_ranks(),
+        english,
+        conjugate,
     )
     graph["params"]["model"] = args.model
     validate_graph(graph)
@@ -502,7 +527,8 @@ def main(argv: list[str] | None = None) -> int:
     n, m = len(graph["nodes"]), len(graph["edges"])
     tiers = pd.Series([nd["tier"] for nd in graph["nodes"]]).value_counts().sort_index().to_dict()
     print(f"{n} nodes, {m} edges (avg degree {2 * m / n:.1f}) {reasons}, seed={seed_word!r} -> {args.out}")
-    print(f"tiers (tier: words): {tiers}; {len(graph['roots'])} shared roots")
+    verbs = sum(1 for nd in graph["nodes"] if nd.get("conjugations"))
+    print(f"tiers (tier: words): {tiers}; {len(graph['roots'])} shared roots; {verbs} verbs with conjugations")
     print(f"{len(graph['regions'])} regions: {', '.join(r['name'] for r in graph['regions'])}")
     return 0
 

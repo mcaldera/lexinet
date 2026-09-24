@@ -8,9 +8,10 @@ import {
   type Direction,
   type Grade,
 } from '../core/scheduler';
-import { tierAllows, tierMap, tierProgress } from '../core/tiers';
+import { tierAllows, tierMap } from '../core/tiers';
+import type { Tense, TenseCard } from '../core/verbs';
 import { neighbourMap, repairStates, type NodeState, type StateChange } from '../core/unlock';
-import { TIER_UNLOCK_FRACTION } from '../config';
+import { computeProgress } from '../progress';
 import { SCHEMA } from './schema';
 import type { SqlDb, SqlValue } from './types';
 
@@ -34,6 +35,8 @@ export type WordNode = {
   x?: number;
   y?: number;
   region?: number;
+  /** Verbs only: six persons per tense (see pipeline/conjugate.py). */
+  conjugations?: Record<string, string[]>;
 };
 /** A territory on the map: a community of closely linked words. */
 export type Region = { id: number; name: string; color: number; words: string[] };
@@ -71,7 +74,7 @@ export type Graph = {
     bonus_k: number;
     bonus_threshold: number;
     tiers?: number;
-    tier_names?: Record<string, string>;
+    tier_names?: Record<string, string> | null;
   };
   nodes: WordNode[];
   edges: Edge[];
@@ -86,6 +89,8 @@ export type AppData = {
   nodes: WordNode[];
   edges: Edge[];
   cards: CardRow[];
+  /** Verb tense drills, one FSRS card per learned tense. */
+  tenseCards: TenseCard[];
   states: Map<string, NodeState>;
   /** Node id -> ISO time of its first review (for the daily new-node counter). */
   firstReview: Map<string, string>;
@@ -150,27 +155,42 @@ export async function syncGraph(db: SqlDb, graph: Graph, now: Date) {
   const rows = await db.select<{ id: string; state: NodeState }>('SELECT id, state FROM nodes');
   const states = new Map(rows.filter((r) => ids.has(r.id)).map((r) => [r.id, r.state]));
   const tiers = tierMap(graph.nodes);
-  const open = tierProgress(tiers, states, TIER_UNLOCK_FRACTION).tier;
+  const tenseRows = await db.select<{
+    id: string;
+    node_id: string;
+    direction: string;
+    fsrs_json: string;
+  }>("SELECT id, node_id, direction, fsrs_json FROM cards WHERE direction LIKE 'tense:%'");
+  const open = computeProgress(graph.nodes, states, tenseRows.map(toTenseCard), now).tier;
   const allowed = tierAllows(tiers, open);
   for (const c of repairStates(states, neighbourMap(graph.edges), graph.seed, allowed)) {
     await db.execute('UPDATE nodes SET state = ? WHERE id = ?', [c.state, c.id]);
   }
 }
 
+type CardDbRow = { id: string; node_id: string; direction: string; fsrs_json: string };
+
+const toTenseCard = (c: CardDbRow): TenseCard => ({
+  id: c.id,
+  nodeId: c.node_id,
+  tense: c.direction.slice('tense:'.length) as Tense,
+  card: deserializeCard(c.fsrs_json),
+});
+
 export async function loadAll(db: SqlDb, graph: Graph): Promise<AppData> {
   const ids = new Set(graph.nodes.map((n) => n.id));
   const order = new Map(graph.nodes.map((n, i) => [n.id, i]));
   const nodeRows = await db.select<{ id: string; state: NodeState }>('SELECT id, state FROM nodes');
-  const cards = (
-    await db.select<{ id: string; node_id: string; direction: Direction; fsrs_json: string }>(
-      'SELECT id, node_id, direction, fsrs_json FROM cards',
-    )
-  )
-    .filter((c) => ids.has(c.node_id))
+  const all = (
+    await db.select<CardDbRow>('SELECT id, node_id, direction, fsrs_json FROM cards')
+  ).filter((c) => ids.has(c.node_id));
+  const tenseCards = all.filter((c) => c.direction.startsWith('tense:')).map(toTenseCard);
+  const cards = all
+    .filter((c) => !c.direction.startsWith('tense:'))
     .sort(
       (a, b) =>
         order.get(a.node_id)! - order.get(b.node_id)! ||
-        DIRECTIONS.indexOf(a.direction) - DIRECTIONS.indexOf(b.direction),
+        DIRECTIONS.indexOf(a.direction as Direction) - DIRECTIONS.indexOf(b.direction as Direction),
     );
   const first = await db.select<{ node_id: string; first: string }>(
     `SELECT c.node_id, MIN(r.reviewed_at) AS first FROM review_log r
@@ -189,9 +209,10 @@ export async function loadAll(db: SqlDb, graph: Graph): Promise<AppData> {
     cards: cards.map((c) => ({
       id: c.id,
       nodeId: c.node_id,
-      direction: c.direction,
+      direction: c.direction as Direction,
       card: deserializeCard(c.fsrs_json),
     })),
+    tenseCards,
     states: new Map(nodeRows.filter((n) => ids.has(n.id)).map((n) => [n.id, n.state])),
     firstReview: new Map(first.map((f) => [f.node_id, f.first])),
     offsetDays: meta.length ? Number(meta[0].value) : 0,
@@ -224,6 +245,28 @@ export async function saveRootUnlock(db: SqlDb, unlocked: Set<string>, changes: 
     "INSERT INTO meta (key, value) VALUES ('unlocked_roots', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
     [JSON.stringify([...unlocked])],
   );
+  for (const c of changes) {
+    await db.execute('UPDATE nodes SET state = ? WHERE id = ?', [c.state, c.id]);
+  }
+}
+
+/** Save a tense drill result (creating the tense card on first success). */
+export async function saveTenseReview(
+  db: SqlDb,
+  tc: TenseCard,
+  grade: Grade,
+  reviewedAt: Date,
+  changes: StateChange[] = [],
+) {
+  await db.execute(
+    'INSERT OR REPLACE INTO cards (id, node_id, direction, fsrs_json) VALUES (?, ?, ?, ?)',
+    [tc.id, tc.nodeId, `tense:${tc.tense}`, serializeCard(tc.card)],
+  );
+  await db.execute('INSERT INTO review_log (card_id, rating, reviewed_at) VALUES (?, ?, ?)', [
+    tc.id,
+    grade,
+    reviewedAt.toISOString(),
+  ]);
   for (const c of changes) {
     await db.execute('UPDATE nodes SET state = ? WHERE id = ?', [c.state, c.id]);
   }

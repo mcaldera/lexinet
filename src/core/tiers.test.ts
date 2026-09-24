@@ -16,7 +16,7 @@ const states = (conquered: string[]) =>
   );
 
 test('tier 2 opens at 75% of tier 1', () => {
-  expect(tierProgress(tiers, states(['a', 'b']), 0.75)).toEqual({
+  expect(tierProgress(tiers, states(['a', 'b']), 0.75)).toMatchObject({
     tier: 1,
     maxTier: 3,
     conquered: 2,
@@ -27,12 +27,45 @@ test('tier 2 opens at 75% of tier 1', () => {
 
 test('progress counts all open tiers and stops at the top', () => {
   const p = tierProgress(tiers, states(['a', 'b', 'c', 'e']), 0.75);
-  expect(p).toEqual({ tier: 2, maxTier: 3, conquered: 4, needed: 5 });
+  expect(p).toMatchObject({ tier: 2, maxTier: 3, conquered: 4, needed: 5 });
   const top = tierProgress(tiers, states(['a', 'b', 'c', 'd', 'e', 'f']), 0.75);
-  expect(top).toEqual({ tier: 3, maxTier: 3, conquered: 6, needed: 0 });
+  expect(top).toMatchObject({ tier: 3, maxTier: 3, conquered: 6, needed: 0 });
 });
 
 test('tierAllows gates by tier; unknown ids count as tier 1', () => {
   const allow = tierAllows(tiers, 2);
   expect(['a', 'e', 'g', 'zzz'].map(allow)).toEqual([true, true, false, true]);
+});
+
+test('verbs gate tiers: tier 2 needs verbs at level 1, capped by verbs available', () => {
+  const done = states(['a', 'b', 'c', 'd']);
+  const gate = (levels: [string, number][]) => ({
+    levels: new Map(levels),
+    perTier: 2,
+    maxLevel: 6,
+  });
+  // a and b are verbs of tier 1; only one has learned presente -> stuck at tier 1.
+  const stuck = tierProgress(
+    tiers,
+    done,
+    0.75,
+    gate([
+      ['a', 1],
+      ['b', 0],
+    ]),
+  );
+  expect(stuck).toMatchObject({ tier: 1, verbsHave: 1, verbsNeed: 2, verbLevel: 1 });
+  expect(
+    tierProgress(
+      tiers,
+      done,
+      0.75,
+      gate([
+        ['a', 1],
+        ['b', 1],
+      ]),
+    ).tier,
+  ).toBe(2);
+  // Only one verb exists in tier 1: requirement shrinks to 1.
+  expect(tierProgress(tiers, done, 0.75, gate([['a', 1]])).tier).toBe(2);
 });

@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { COOLDOWN_MS, TIER_UNLOCK_FRACTION } from './config';
+import { COOLDOWN_MS } from './config';
 import { startOfDay } from './core/clock';
 import { nodeHealth } from './core/health';
 import { buildQueue } from './core/queue';
-import { tierMap, tierProgress } from './core/tiers';
+import type { TierProgress } from './core/tiers';
+import { nextDrill, TENSES, type Tense } from './core/verbs';
+import { computeProgress, verbLevels as computeVerbLevels } from './progress';
 import { cardId, DIRECTIONS, Rating, type Grade } from './core/scheduler';
 import { nextPractice, nodeStrength } from './core/strength';
 import type { CardRow } from './db/repo';
@@ -14,12 +16,14 @@ import GraphView from './views/GraphView';
 import InspectPanel from './views/InspectPanel';
 import ReviewView from './views/ReviewView';
 import RootQuiz from './views/RootQuiz';
+import VerbDrill from './views/VerbDrill';
 
 /** A node the user clicked: its cards are reviewed before the automatic queue. */
 type Session = { nodeId: string; cardIds: string[]; mode: 'conquer' | 'practice' };
 
 export default function App() {
-  const { data, now, error, review, unlockRoot, timeTravel, reset, graphName } = useSprawl();
+  const { data, now, error, review, reviewTense, unlockRoot, timeTravel, reset, graphName } =
+    useSprawl();
   const [lastCardId, setLastCardId] = useState<string>();
   const [session, setSession] = useState<Session | null>(null);
   const [turn, setTurn] = useState(0);
@@ -31,6 +35,11 @@ export default function App() {
   const [cooldowns, setCooldowns] = useState<Map<string, number>>(new Map());
   const [notice, setNotice] = useState<string | null>(null);
   const [rootQuiz, setRootQuiz] = useState<string | null>(null);
+  const [verbDrill, setVerbDrill] = useState<{
+    nodeId: string;
+    tense: Tense;
+    kind: 'learn' | 'defend';
+  } | null>(null);
   const [, setSecond] = useState(0);
 
   // Tick every second while something is cooling down (countdown rings), then expire.
@@ -86,10 +95,13 @@ export default function App() {
     [cardsByNode],
   );
 
-  const tiers = useMemo(() => tierMap(data?.nodes ?? []), [data?.nodes]);
   const progress = useMemo(
-    () => (data ? tierProgress(tiers, data.states, TIER_UNLOCK_FRACTION) : null),
-    [tiers, data],
+    () => (data ? computeProgress(data.nodes, data.states, data.tenseCards, now) : null),
+    [data, now],
+  );
+  const verbLevels = useMemo(
+    () => (data ? computeVerbLevels(data.nodes, data.tenseCards, now) : new Map<string, number>()),
+    [data, now],
   );
 
   const queue = useMemo(
@@ -109,6 +121,14 @@ export default function App() {
     ? data.cards.find((c) => c.id === session.cardIds[0])
     : queue[0];
   const mode = session?.mode ?? 'due';
+  // Due tense drills defend automatically once no word card is waiting.
+  const dueTense =
+    !session && !current
+      ? data.tenseCards.find((c) => c.card.due <= now && !cooldowns.has(c.nodeId))
+      : undefined;
+  const activeDrill =
+    verbDrill ??
+    (dueTense ? { nodeId: dueTense.nodeId, tense: dueTense.tense, kind: 'defend' as const } : null);
   const dueCount = queue.filter((c) => !session?.cardIds.includes(c.id)).length;
 
   const today = startOfDay(now).getTime();
@@ -175,6 +195,28 @@ export default function App() {
           now,
         )
       : null;
+    const node = data.nodes.find((n) => n.id === nodeId);
+    if (next && node?.conjugations) {
+      // Verbs level up tense by tense once the word itself is solid.
+      const drill = nextDrill(
+        data.tenseCards.filter((c) => c.nodeId === nodeId),
+        now,
+      );
+      if (drill.kind === 'learn' || drill.kind === 'defend') {
+        setSession(null);
+        setVerbDrill({ nodeId, tense: drill.tense, kind: drill.kind });
+        return;
+      }
+      if (drill.kind === 'wait') {
+        const h = Math.max(1, Math.round((drill.until.getTime() - now.getTime()) / 3_600_000));
+        setNotice(
+          `${wordOf(nodeId)}: the ${drill.tense} opens in ~${h} h (one new tense per day).`,
+        );
+        return;
+      }
+      setNotice(`${wordOf(nodeId)} is fully conjugated: all ${TENSES.length} tenses!`);
+      return;
+    }
     if (next) {
       const days = (next.getTime() - now.getTime()) / 86_400_000;
       const when =
@@ -197,7 +239,7 @@ export default function App() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex items-baseline gap-6 border-b border-slate-800 px-4 py-2">
+      <header className="flex items-baseline gap-6 whitespace-nowrap border-b border-slate-800 px-4 py-2">
         <h1 className="text-lg font-semibold tracking-wide text-emerald-400">Sprawl</h1>
         <span className="text-sm text-slate-400">
           {conquered}/{data.nodes.length} conquered · {frontier} frontier
@@ -261,8 +303,9 @@ export default function App() {
           <GraphView
             data={data}
             health={health}
-            activeId={inspect ? inspectId : current?.nodeId}
+            activeId={inspect ? inspectId : (activeDrill?.nodeId ?? current?.nodeId)}
             strength={strength}
+            verbLevels={verbLevels}
             unlockedRoots={data.unlockedRoots}
             cooldowns={cooldowns}
             inspect={inspect}
@@ -285,7 +328,38 @@ export default function App() {
                   {notice}
                 </div>
               )}
-              {rootQuiz && data.graph.roots?.some((r) => r.id === rootQuiz) ? (
+              {activeDrill && !rootQuiz ? (
+                <VerbDrill
+                  key={`${activeDrill.nodeId}:${activeDrill.tense}:${turn}`}
+                  word={data.nodes.find((n) => n.id === activeDrill.nodeId)!}
+                  tense={activeDrill.tense}
+                  kind={activeDrill.kind}
+                  onCancel={() => {
+                    setVerbDrill(null);
+                    if (!verbDrill)
+                      setCooldowns((m) =>
+                        new Map(m).set(activeDrill.nodeId, Date.now() + COOLDOWN_MS),
+                      );
+                  }}
+                  onDone={async (grade) => {
+                    const { nodeId, tense, kind } = activeDrill;
+                    setVerbDrill(null);
+                    setTurn((t) => t + 1);
+                    const lv = await reviewTense(nodeId, tense, grade);
+                    if (lv) setLevelUp(lv);
+                    if (grade === Rating.Again) {
+                      setCooldowns((m) => new Map(m).set(nodeId, Date.now() + COOLDOWN_MS));
+                      setNotice(
+                        `Missed a form: ${wordOf(nodeId)} is locked for ${COOLDOWN_MS / 1000} s.`,
+                      );
+                    } else if (kind === 'learn') {
+                      setNotice(
+                        `${wordOf(nodeId)} reached verb level ${TENSES.indexOf(tense) + 1}: ${tense}!`,
+                      );
+                    }
+                  }}
+                />
+              ) : rootQuiz && data.graph.roots?.some((r) => r.id === rootQuiz) ? (
                 <RootQuiz
                   key={rootQuiz}
                   data={data}
@@ -340,9 +414,9 @@ function TierBadge({
   p,
   names,
 }: {
-  p: ReturnType<typeof tierProgress>;
+  p: TierProgress;
   /** Display names per tier, e.g. CEFR levels. */
-  names?: Record<string, string>;
+  names?: Record<string, string> | null;
 }) {
   const name = (t: number) => names?.[String(t)] ?? `tier ${t}`;
   const pct = p.needed ? Math.min(1, p.conquered / p.needed) : 1;
@@ -351,7 +425,9 @@ function TierBadge({
       className="flex items-center gap-2 text-sm text-slate-300"
       title={
         p.needed
-          ? `Conquer ${p.needed} words up to ${name(p.tier)} to open ${name(p.tier + 1)}`
+          ? `Conquer ${p.needed} words up to ${name(p.tier)}` +
+            (p.verbsNeed ? ` and level ${p.verbsNeed} verbs to ${TENSES[p.verbLevel - 1]}` : '') +
+            ` to open ${name(p.tier + 1)}`
           : 'All tiers open'
       }
     >
@@ -367,7 +443,10 @@ function TierBadge({
             />
           </span>
           <span className="text-xs text-slate-400">
-            {p.conquered}/{p.needed} to {name(p.tier + 1)}
+            {p.conquered}/{p.needed} words
+            {p.verbsNeed > 0 &&
+              ` · verbs ${p.verbsHave}/${p.verbsNeed} at ${TENSES[p.verbLevel - 1]}`}{' '}
+            to {name(p.tier + 1)}
           </span>
         </>
       )}

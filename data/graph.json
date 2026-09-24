@@ -11,14 +11,7 @@
     "bonus_k": 3,
     "bonus_threshold": 0.25,
     "tiers": 6,
-    "tier_names": {
-      "1": "Tier 1",
-      "2": "Tier 2",
-      "3": "Tier 3",
-      "4": "Tier 4",
-      "5": "Tier 5",
-      "6": "Tier 6"
-    }
+    "tier_names": null
   },
   "nodes": [
     {
@@ -34,8 +27,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": -211.6,
-      "y": 222.6,
+      "x": 125.4,
+      "y": 375.5,
       "region": 6
     },
     {
@@ -51,8 +44,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -200.3,
-      "y": 276.2,
+      "x": 70.8,
+      "y": 373.3,
       "region": 6
     },
     {
@@ -68,8 +61,58 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": -175.6,
-      "y": 254.7,
+      "conjugations": {
+        "presente": [
+          "abbaio",
+          "abbai",
+          "abbaia",
+          "abbaiamo",
+          "abbaiate",
+          "abbaiano"
+        ],
+        "passato prossimo": [
+          "ho abbaiato",
+          "hai abbaiato",
+          "ha abbaiato",
+          "abbiamo abbaiato",
+          "avete abbaiato",
+          "hanno abbaiato"
+        ],
+        "imperfetto": [
+          "abbaiavo",
+          "abbaiavi",
+          "abbaiava",
+          "abbaiavamo",
+          "abbaiavate",
+          "abbaiavano"
+        ],
+        "futuro": [
+          "abbaierò",
+          "abbaierai",
+          "abbaierà",
+          "abbaieremo",
+          "abbaierete",
+          "abbaieranno"
+        ],
+        "condizionale": [
+          "abbaierei",
+          "abbaieresti",
+          "abbaierebbe",
+          "abbaieremmo",
+          "abbaiereste",
+          "abbaierebbero"
+        ],
+        "congiuntivo": [
+          "abbai",
+          "abbai",
+          "abbai",
+          "abbaiamo",
+          "abbaiate",
+          "abbaino"
+        ]
+      },
+      "x": 87.9,
+      "y": 345.5,
       "region": 6
     },
     {
@@ -85,8 +128,8 @@
       "cognate_note": "uccello comes from aucellus, \"little bird\"",
       "tier": 5,
       "level": null,
-      "x": -199.4,
-      "y": 307.5,
+      "x": 39.9,
+      "y": 377.5,
       "region": 6
     },
     {
@@ -102,8 +145,58 @@
       "cognate_note": "originally \"flying\", then \"evaporating quickly\"",
       "tier": 5,
       "level": null,
-      "x": -211.0,
-      "y": 345.3,
+      "conjugations": {
+        "presente": [
+          "volo",
+          "voli",
+          "vola",
+          "voliamo",
+          "volate",
+          "volano"
+        ],
+        "passato prossimo": [
+          "ho volato",
+          "hai volato",
+          "ha volato",
+          "abbiamo volato",
+          "avete volato",
+          "hanno volato"
+        ],
+        "imperfetto": [
+          "volavo",
+          "volavi",
+          "volava",
+          "volavamo",
+          "volavate",
+          "volavano"
+        ],
+        "futuro": [
+          "volerò",
+          "volerai",
+          "volerà",
+          "voleremo",
+          "volerete",
+          "voleranno"
+        ],
+        "condizionale": [
+          "volerei",
+          "voleresti",
+          "volerebbe",
+          "voleremmo",
+          "volereste",
+          "volerebbero"
+        ],
+        "congiuntivo": [
+          "voli",
+          "voli",
+          "voli",
+          "voliamo",
+          "voliate",
+          "volino"
+        ]
+      },
+      "x": 1.9,
+      "y": 367.5,
       "region": 6
     },
     {
@@ -119,8 +212,8 @@
       "cognate_note": "the zodiac sign of the fish",
       "tier": 5,
       "level": null,
-      "x": -187.6,
-      "y": 333.3,
+      "x": 14.7,
+      "y": 390.4,
       "region": 6
     },
     {
@@ -136,8 +229,58 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": -194.6,
-      "y": 368.9,
+      "conjugations": {
+        "presente": [
+          "nuoto",
+          "nuoti",
+          "nuota",
+          "nuotiamo",
+          "nuotate",
+          "nuotano"
+        ],
+        "passato prossimo": [
+          "ho nuotato",
+          "hai nuotato",
+          "ha nuotato",
+          "abbiamo nuotato",
+          "avete nuotato",
+          "hanno nuotato"
+        ],
+        "imperfetto": [
+          "nuotavo",
+          "nuotavi",
+          "nuotava",
+          "nuotavamo",
+          "nuotavate",
+          "nuotavano"
+        ],
+        "futuro": [
+          "nuoterò",
+          "nuoterai",
+          "nuoterà",
+          "nuoteremo",
+          "nuoterete",
+          "nuoteranno"
+        ],
+        "condizionale": [
+          "nuoterei",
+          "nuoteresti",
+          "nuoterebbe",
+          "nuoteremmo",
+          "nuotereste",
+          "nuoterebbero"
+        ],
+        "congiuntivo": [
+          "nuoti",
+          "nuoti",
+          "nuoti",
+          "nuotiamo",
+          "nuotiate",
+          "nuotino"
+        ]
+      },
+      "x": -21.0,
+      "y": 384.7,
       "region": 6
     },
     {
@@ -153,8 +296,8 @@
       "cognate_note": "soldiers on horseback",
       "tier": 4,
       "level": null,
-      "x": -223.7,
-      "y": 256.9,
+      "x": 93.7,
+      "y": 393.1,
       "region": 6
     },
     {
@@ -170,8 +313,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": -239.1,
-      "y": 212.3,
+      "x": 140.0,
+      "y": 400.9,
       "region": 6
     },
     {
@@ -187,8 +330,8 @@
       "cognate_note": "milk sugar",
       "tier": 5,
       "level": null,
-      "x": -189.4,
-      "y": 43.6,
+      "x": -86.2,
+      "y": 110.4,
       "region": 0
     },
     {
@@ -204,8 +347,8 @@
       "cognate_note": "cheese (formaticus) was pressed in a mould",
       "tier": 5,
       "level": null,
-      "x": -201.5,
-      "y": 0.0,
+      "x": -64.2,
+      "y": 150.1,
       "region": 0
     },
     {
@@ -221,8 +364,8 @@
       "cognate_note": "com- \"with\" + panis \"bread\": someone you share bread with",
       "tier": 5,
       "level": null,
-      "x": -214.1,
-      "y": 20.4,
+      "x": -56.7,
+      "y": 127.3,
       "region": 0
     },
     {
@@ -238,8 +381,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": -248.1,
-      "y": 4.9,
+      "x": -19.9,
+      "y": 134.4,
       "region": 0
     },
     {
@@ -255,8 +398,58 @@
       "cognate_note": "the trough animals eat from, via French manger \"to eat\"",
       "tier": 2,
       "level": null,
-      "x": -117.5,
-      "y": 26.3,
+      "conjugations": {
+        "presente": [
+          "mangio",
+          "mangi",
+          "mangia",
+          "mangiamo",
+          "mangiate",
+          "mangiano"
+        ],
+        "passato prossimo": [
+          "ho mangiato",
+          "hai mangiato",
+          "ha mangiato",
+          "abbiamo mangiato",
+          "avete mangiato",
+          "hanno mangiato"
+        ],
+        "imperfetto": [
+          "mangiavo",
+          "mangiavi",
+          "mangiava",
+          "mangiavamo",
+          "mangiavate",
+          "mangiavano"
+        ],
+        "futuro": [
+          "mangerò",
+          "mangerai",
+          "mangerà",
+          "mangeremo",
+          "mangerete",
+          "mangeranno"
+        ],
+        "condizionale": [
+          "mangerei",
+          "mangeresti",
+          "mangerebbe",
+          "mangeremmo",
+          "mangereste",
+          "mangerebbero"
+        ],
+        "congiuntivo": [
+          "mangi",
+          "mangi",
+          "mangi",
+          "mangiamo",
+          "mangiate",
+          "mangino"
+        ]
+      },
+      "x": -152.2,
+      "y": 144.0,
       "region": 0
     },
     {
@@ -272,8 +465,8 @@
       "cognate_note": "the trough animals eat from, via French manger \"to eat\"",
       "tier": 4,
       "level": null,
-      "x": -181.1,
-      "y": -25.7,
+      "x": -78.1,
+      "y": 180.0,
       "region": 0
     },
     {
@@ -289,8 +482,58 @@
       "cognate_note": "in- \"in\" + bibere: to drink in",
       "tier": 2,
       "level": null,
-      "x": -150.4,
-      "y": 51.2,
+      "conjugations": {
+        "presente": [
+          "bevo",
+          "bevi",
+          "beve",
+          "beviamo",
+          "bevete",
+          "bevono"
+        ],
+        "passato prossimo": [
+          "ho bevuto",
+          "hai bevuto",
+          "ha bevuto",
+          "abbiamo bevuto",
+          "avete bevuto",
+          "hanno bevuto"
+        ],
+        "imperfetto": [
+          "bevevo",
+          "bevevi",
+          "beveva",
+          "bevevamo",
+          "bevevate",
+          "bevevano"
+        ],
+        "futuro": [
+          "berrò",
+          "berrai",
+          "berrà",
+          "berremo",
+          "berrete",
+          "berranno"
+        ],
+        "condizionale": [
+          "berrei",
+          "berresti",
+          "berrebbe",
+          "berremmo",
+          "berreste",
+          "berrebbero"
+        ],
+        "congiuntivo": [
+          "beva",
+          "beva",
+          "beva",
+          "beviamo",
+          "beviate",
+          "bevano"
+        ]
+      },
+      "x": -126.0,
+      "y": 112.0,
       "region": 0
     },
     {
@@ -306,8 +549,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": -168.1,
-      "y": 34.4,
+      "x": -104.9,
+      "y": 124.3,
       "region": 0
     },
     {
@@ -323,8 +566,8 @@
       "cognate_note": "borrowed into Germanic very early; vine too",
       "tier": 4,
       "level": null,
-      "x": -168.7,
-      "y": 10.6,
+      "x": -98.6,
+      "y": 147.4,
       "region": 0
     },
     {
@@ -340,8 +583,8 @@
       "cognate_note": "Greek mēlopépōn, \"apple-gourd\"",
       "tier": 6,
       "level": null,
-      "x": -202.7,
-      "y": -26.8,
+      "x": -56.8,
+      "y": 175.9,
       "region": 0
     },
     {
@@ -357,8 +600,58 @@
       "cognate_note": "Latin coquus \"cook\" was borrowed into Old English as cōc",
       "tier": 5,
       "level": null,
-      "x": -274.0,
-      "y": -22.2,
+      "conjugations": {
+        "presente": [
+          "cucino",
+          "cucini",
+          "cucina",
+          "cuciniamo",
+          "cucinate",
+          "cucinano"
+        ],
+        "passato prossimo": [
+          "ho cucinato",
+          "hai cucinato",
+          "ha cucinato",
+          "abbiamo cucinato",
+          "avete cucinato",
+          "hanno cucinato"
+        ],
+        "imperfetto": [
+          "cucinavo",
+          "cucinavi",
+          "cucinava",
+          "cucinavamo",
+          "cucinavate",
+          "cucinavano"
+        ],
+        "futuro": [
+          "cucinerò",
+          "cucinerai",
+          "cucinerà",
+          "cucineremo",
+          "cucinerete",
+          "cucineranno"
+        ],
+        "condizionale": [
+          "cucinerei",
+          "cucineresti",
+          "cucinerebbe",
+          "cucineremmo",
+          "cucinereste",
+          "cucinerebbero"
+        ],
+        "congiuntivo": [
+          "cucini",
+          "cucini",
+          "cucini",
+          "cuciniamo",
+          "cuciniate",
+          "cucinino"
+        ]
+      },
+      "x": 11.7,
+      "y": 154.9,
       "region": 0
     },
     {
@@ -374,9 +667,9 @@
       "cognate_note": "Latin coquina \"kitchen\" became Old English cycene",
       "tier": 4,
       "level": null,
-      "x": 38.4,
-      "y": 226.8,
-      "region": 2
+      "x": 208.9,
+      "y": 25.0,
+      "region": 3
     },
     {
       "id": "il-cuoco",
@@ -391,8 +684,8 @@
       "cognate_note": "Latin coquus \"cook\" was borrowed into Old English as cōc",
       "tier": 6,
       "level": null,
-      "x": -276.5,
-      "y": 30.0,
+      "x": 1.9,
+      "y": 103.3,
       "region": 0
     },
     {
@@ -408,8 +701,8 @@
       "cognate_note": "a light meal; monks ate one during the evening readings (Collationes)",
       "tier": 4,
       "level": null,
-      "x": -99.3,
-      "y": -4.9,
+      "x": -162.7,
+      "y": 178.7,
       "region": 0
     },
     {
@@ -425,8 +718,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": -147.4,
-      "y": -7.1,
+      "x": -115.3,
+      "y": 169.6,
       "region": 0
     },
     {
@@ -442,8 +735,58 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": -74.4,
-      "y": 21.8,
+      "conjugations": {
+        "presente": [
+          "ceno",
+          "ceni",
+          "cena",
+          "ceniamo",
+          "cenate",
+          "cenano"
+        ],
+        "passato prossimo": [
+          "ho cenato",
+          "hai cenato",
+          "ha cenato",
+          "abbiamo cenato",
+          "avete cenato",
+          "hanno cenato"
+        ],
+        "imperfetto": [
+          "cenavo",
+          "cenavi",
+          "cenava",
+          "cenavamo",
+          "cenavate",
+          "cenavano"
+        ],
+        "futuro": [
+          "cenerò",
+          "cenerai",
+          "cenerà",
+          "ceneremo",
+          "cenerete",
+          "ceneranno"
+        ],
+        "condizionale": [
+          "cenerei",
+          "ceneresti",
+          "cenerebbe",
+          "ceneremmo",
+          "cenereste",
+          "cenerebbero"
+        ],
+        "congiuntivo": [
+          "ceni",
+          "ceni",
+          "ceni",
+          "ceniamo",
+          "ceniate",
+          "cenino"
+        ]
+      },
+      "x": -193.3,
+      "y": 158.4,
       "region": 0
     },
     {
@@ -459,9 +802,9 @@
       "cognate_note": "Italian for \"little house\", later a house for gambling",
       "tier": 1,
       "level": null,
-      "x": 69.1,
-      "y": 188.8,
-      "region": 2
+      "x": 164.6,
+      "y": 48.1,
+      "region": 3
     },
     {
       "id": "la-porta",
@@ -476,9 +819,9 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 67.1,
-      "y": 220.6,
-      "region": 2
+      "x": 179.4,
+      "y": 19.1,
+      "region": 3
     },
     {
       "id": "la-finestra",
@@ -493,9 +836,9 @@
       "cognate_note": "de- \"out of\" + fenestra: to throw out of a window",
       "tier": 4,
       "level": null,
-      "x": 13.6,
-      "y": 229.6,
-      "region": 2
+      "x": 233.2,
+      "y": 32.4,
+      "region": 3
     },
     {
       "id": "il-letto",
@@ -510,9 +853,9 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 57.0,
-      "y": 156.0,
-      "region": 2
+      "x": 162.6,
+      "y": 83.8,
+      "region": 3
     },
     {
       "id": "dormire",
@@ -527,9 +870,59 @@
       "cognate_note": "a room for sleeping",
       "tier": 3,
       "level": null,
-      "x": 52.1,
-      "y": 92.9,
-      "region": 2
+      "conjugations": {
+        "presente": [
+          "dormo",
+          "dormi",
+          "dorme",
+          "dormiamo",
+          "dormite",
+          "dormono"
+        ],
+        "passato prossimo": [
+          "ho dormito",
+          "hai dormito",
+          "ha dormito",
+          "abbiamo dormito",
+          "avete dormito",
+          "hanno dormito"
+        ],
+        "imperfetto": [
+          "dormivo",
+          "dormivi",
+          "dormiva",
+          "dormivamo",
+          "dormivate",
+          "dormivano"
+        ],
+        "futuro": [
+          "dormirò",
+          "dormirai",
+          "dormirà",
+          "dormiremo",
+          "dormirete",
+          "dormiranno"
+        ],
+        "condizionale": [
+          "dormirei",
+          "dormiresti",
+          "dormirebbe",
+          "dormiremmo",
+          "dormireste",
+          "dormirebbero"
+        ],
+        "congiuntivo": [
+          "dorma",
+          "dorma",
+          "dorma",
+          "dormiamo",
+          "dormiate",
+          "dormano"
+        ]
+      },
+      "x": 97.3,
+      "y": 88.1,
+      "region": 3
     },
     {
       "id": "il-sonno",
@@ -544,9 +937,9 @@
       "cognate_note": "in- \"not\" + somnus: no sleep",
       "tier": 5,
       "level": null,
-      "x": 114.0,
-      "y": 126.8,
-      "region": 2
+      "x": 141.7,
+      "y": 145.0,
+      "region": 3
     },
     {
       "id": "la-sedia",
@@ -561,9 +954,9 @@
       "cognate_note": "spending a lot of time sitting",
       "tier": 5,
       "level": null,
-      "x": 13.9,
-      "y": 161.0,
-      "region": 2
+      "x": 205.1,
+      "y": 96.7,
+      "region": 3
     },
     {
       "id": "il-tavolo",
@@ -578,9 +971,9 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": -10.9,
-      "y": 202.1,
-      "region": 2
+      "x": 245.1,
+      "y": 68.2,
+      "region": 3
     },
     {
       "id": "la-camera",
@@ -595,9 +988,9 @@
       "cognate_note": "also \"camera\", from camera obscura, \"dark room\"",
       "tier": 3,
       "level": null,
-      "x": 28.1,
-      "y": 193.9,
-      "region": 2
+      "x": 205.1,
+      "y": 60.0,
+      "region": 3
     },
     {
       "id": "parlare",
@@ -612,8 +1005,58 @@
       "cognate_note": "a talk between opponents, via French parler \"to speak\"",
       "tier": 1,
       "level": null,
-      "x": 176.6,
-      "y": -623.6,
+      "conjugations": {
+        "presente": [
+          "parlo",
+          "parli",
+          "parla",
+          "parliamo",
+          "parlate",
+          "parlano"
+        ],
+        "passato prossimo": [
+          "ho parlato",
+          "hai parlato",
+          "ha parlato",
+          "abbiamo parlato",
+          "avete parlato",
+          "hanno parlato"
+        ],
+        "imperfetto": [
+          "parlavo",
+          "parlavi",
+          "parlava",
+          "parlavamo",
+          "parlavate",
+          "parlavano"
+        ],
+        "futuro": [
+          "parlerò",
+          "parlerai",
+          "parlerà",
+          "parleremo",
+          "parlerete",
+          "parleranno"
+        ],
+        "condizionale": [
+          "parlerei",
+          "parleresti",
+          "parlerebbe",
+          "parleremmo",
+          "parlereste",
+          "parlerebbero"
+        ],
+        "congiuntivo": [
+          "parli",
+          "parli",
+          "parli",
+          "parliamo",
+          "parliate",
+          "parlino"
+        ]
+      },
+      "x": -284.5,
+      "y": -583.6,
       "region": 1
     },
     {
@@ -629,8 +1072,8 @@
       "cognate_note": "a talk between opponents, via French parler \"to speak\"",
       "tier": 2,
       "level": null,
-      "x": 201.9,
-      "y": -602.8,
+      "x": -277.4,
+      "y": -553.6,
       "region": 1
     },
     {
@@ -646,8 +1089,8 @@
       "cognate_note": "a story that makes a comparison (Greek parabolḗ)",
       "tier": 2,
       "level": null,
-      "x": 211.8,
-      "y": -559.5,
+      "x": -294.0,
+      "y": -513.8,
       "region": 1
     },
     {
@@ -663,8 +1106,58 @@
       "cognate_note": "the way words are said",
       "tier": 1,
       "level": null,
-      "x": 171.6,
-      "y": -565.0,
+      "conjugations": {
+        "presente": [
+          "dico",
+          "dici",
+          "dice",
+          "diciamo",
+          "dite",
+          "dicono"
+        ],
+        "passato prossimo": [
+          "ho detto",
+          "hai detto",
+          "ha detto",
+          "abbiamo detto",
+          "avete detto",
+          "hanno detto"
+        ],
+        "imperfetto": [
+          "dicevo",
+          "dicevi",
+          "diceva",
+          "dicevamo",
+          "dicevate",
+          "dicevano"
+        ],
+        "futuro": [
+          "dirò",
+          "dirai",
+          "dirà",
+          "diremo",
+          "direte",
+          "diranno"
+        ],
+        "condizionale": [
+          "direi",
+          "diresti",
+          "direbbe",
+          "diremmo",
+          "direste",
+          "direbbero"
+        ],
+        "congiuntivo": [
+          "dica",
+          "dica",
+          "dica",
+          "diciamo",
+          "diciate",
+          "dicano"
+        ]
+      },
+      "x": -322.5,
+      "y": -541.8,
       "region": 1
     },
     {
@@ -680,8 +1173,58 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": 118.8,
-      "y": -549.9,
+      "conjugations": {
+        "presente": [
+          "chiedo",
+          "chiedi",
+          "chiede",
+          "chiediamo",
+          "chiedete",
+          "chiedono"
+        ],
+        "passato prossimo": [
+          "ho chiesto",
+          "hai chiesto",
+          "ha chiesto",
+          "abbiamo chiesto",
+          "avete chiesto",
+          "hanno chiesto"
+        ],
+        "imperfetto": [
+          "chiedevo",
+          "chiedevi",
+          "chiedeva",
+          "chiedevamo",
+          "chiedevate",
+          "chiedevano"
+        ],
+        "futuro": [
+          "chiederò",
+          "chiederai",
+          "chiederà",
+          "chiederemo",
+          "chiederete",
+          "chiederanno"
+        ],
+        "condizionale": [
+          "chiederei",
+          "chiederesti",
+          "chiederebbe",
+          "chiederemmo",
+          "chiedereste",
+          "chiederebbero"
+        ],
+        "congiuntivo": [
+          "chieda",
+          "chieda",
+          "chieda",
+          "chiediamo",
+          "chiediate",
+          "chiedano"
+        ]
+      },
+      "x": -357.8,
+      "y": -580.5,
       "region": 1
     },
     {
@@ -697,8 +1240,8 @@
       "cognate_note": "Italian shifted from \"entrust\" to \"ask\"",
       "tier": 2,
       "level": null,
-      "x": 138.8,
-      "y": -576.1,
+      "x": -356.6,
+      "y": -550.2,
       "region": 1
     },
     {
@@ -714,8 +1257,58 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 75.5,
-      "y": -520.8,
+      "conjugations": {
+        "presente": [
+          "rispondo",
+          "rispondi",
+          "risponde",
+          "rispondiamo",
+          "rispondete",
+          "rispondono"
+        ],
+        "passato prossimo": [
+          "ho risposto",
+          "hai risposto",
+          "ha risposto",
+          "abbiamo risposto",
+          "avete risposto",
+          "hanno risposto"
+        ],
+        "imperfetto": [
+          "rispondevo",
+          "rispondevi",
+          "rispondeva",
+          "rispondevamo",
+          "rispondevate",
+          "rispondevano"
+        ],
+        "futuro": [
+          "risponderò",
+          "risponderai",
+          "risponderà",
+          "risponderemo",
+          "risponderete",
+          "risponderanno"
+        ],
+        "condizionale": [
+          "risponderei",
+          "risponderesti",
+          "risponderebbe",
+          "risponderemmo",
+          "rispondereste",
+          "risponderebbero"
+        ],
+        "congiuntivo": [
+          "risponda",
+          "risponda",
+          "risponda",
+          "rispondiamo",
+          "rispondiate",
+          "rispondano"
+        ]
+      },
+      "x": -419.2,
+      "y": -572.5,
       "region": 1
     },
     {
@@ -731,8 +1324,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": 75.0,
-      "y": -595.9,
+      "x": -370.4,
+      "y": -629.5,
       "region": 1
     },
     {
@@ -748,8 +1341,58 @@
       "cognate_note": "a person who writes by hand",
       "tier": 4,
       "level": null,
-      "x": 251.5,
-      "y": -503.4,
+      "conjugations": {
+        "presente": [
+          "scrivo",
+          "scrivi",
+          "scrive",
+          "scriviamo",
+          "scrivete",
+          "scrivono"
+        ],
+        "passato prossimo": [
+          "ho scritto",
+          "hai scritto",
+          "ha scritto",
+          "abbiamo scritto",
+          "avete scritto",
+          "hanno scritto"
+        ],
+        "imperfetto": [
+          "scrivevo",
+          "scrivevi",
+          "scriveva",
+          "scrivevamo",
+          "scrivevate",
+          "scrivevano"
+        ],
+        "futuro": [
+          "scriverò",
+          "scriverai",
+          "scriverà",
+          "scriveremo",
+          "scriverete",
+          "scriveranno"
+        ],
+        "condizionale": [
+          "scriverei",
+          "scriveresti",
+          "scriverebbe",
+          "scriveremmo",
+          "scrivereste",
+          "scriverebbero"
+        ],
+        "congiuntivo": [
+          "scriva",
+          "scriva",
+          "scriva",
+          "scriviamo",
+          "scriviate",
+          "scrivano"
+        ]
+      },
+      "x": -296.0,
+      "y": -446.3,
       "region": 1
     },
     {
@@ -765,8 +1408,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": 216.6,
-      "y": -519.0,
+      "x": -313.7,
+      "y": -479.0,
       "region": 1
     },
     {
@@ -782,8 +1425,58 @@
       "cognate_note": "readable",
       "tier": 4,
       "level": null,
-      "x": 187.0,
-      "y": -527.8,
+      "conjugations": {
+        "presente": [
+          "leggo",
+          "leggi",
+          "legge",
+          "leggiamo",
+          "leggete",
+          "leggono"
+        ],
+        "passato prossimo": [
+          "ho letto",
+          "hai letto",
+          "ha letto",
+          "abbiamo letto",
+          "avete letto",
+          "hanno letto"
+        ],
+        "imperfetto": [
+          "leggevo",
+          "leggevi",
+          "leggeva",
+          "leggevamo",
+          "leggevate",
+          "leggevano"
+        ],
+        "futuro": [
+          "leggerò",
+          "leggerai",
+          "leggerà",
+          "leggeremo",
+          "leggerete",
+          "leggeranno"
+        ],
+        "condizionale": [
+          "leggerei",
+          "leggeresti",
+          "leggerebbe",
+          "leggeremmo",
+          "leggereste",
+          "leggerebbero"
+        ],
+        "congiuntivo": [
+          "legga",
+          "legga",
+          "legga",
+          "leggiamo",
+          "leggiate",
+          "leggano"
+        ]
+      },
+      "x": -331.8,
+      "y": -503.0,
       "region": 1
     },
     {
@@ -799,8 +1492,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": 217.5,
-      "y": -491.2,
+      "x": -329.7,
+      "y": -456.8,
       "region": 1
     },
     {
@@ -816,8 +1509,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 322.2,
-      "y": 250.7,
+      "x": 350.7,
+      "y": 313.5,
       "region": 5
     },
     {
@@ -833,8 +1526,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 277.3,
-      "y": 308.2,
+      "x": 292.0,
+      "y": 269.9,
       "region": 5
     },
     {
@@ -850,8 +1543,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 213.1,
-      "y": 285.3,
+      "x": 231.4,
+      "y": 306.1,
       "region": 5
     },
     {
@@ -867,8 +1560,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": 274.6,
-      "y": 200.4,
+      "x": 318.5,
+      "y": 378.0,
       "region": 5
     },
     {
@@ -884,8 +1577,8 @@
       "cognate_note": "as befits a son or daughter",
       "tier": 1,
       "level": null,
-      "x": 216.2,
-      "y": 344.6,
+      "x": 221.7,
+      "y": 244.0,
       "region": 5
     },
     {
@@ -901,8 +1594,8 @@
       "cognate_note": "as befits a son or daughter",
       "tier": 2,
       "level": null,
-      "x": 253.0,
-      "y": 241.8,
+      "x": 280.7,
+      "y": 345.7,
       "region": 5
     },
     {
@@ -918,8 +1611,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 363.7,
-      "y": 284.5,
+      "x": 342.8,
+      "y": 230.7,
       "region": 5
     },
     {
@@ -935,8 +1628,8 @@
       "cognate_note": "Late Latin nonna, \"old woman\", came to mean \"nun\"",
       "tier": 3,
       "level": null,
-      "x": 325.3,
-      "y": 340.6,
+      "x": 374.6,
+      "y": 260.5,
       "region": 5
     },
     {
@@ -952,8 +1645,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 285.6,
-      "y": 268.1,
+      "x": 307.2,
+      "y": 311.5,
       "region": 5
     },
     {
@@ -969,9 +1662,9 @@
       "cognate_note": "a \"test\" was a clay pot for assaying metal; \"pot\" became slang for \"head\"",
       "tier": 1,
       "level": null,
-      "x": 25.0,
-      "y": -324.2,
-      "region": 4
+      "x": -226.8,
+      "y": -274.9,
+      "region": 2
     },
     {
       "id": "la-mano",
@@ -986,9 +1679,9 @@
       "cognate_note": "done by hand",
       "tier": 2,
       "level": null,
-      "x": 60.1,
-      "y": -339.6,
-      "region": 4
+      "x": -251.1,
+      "y": -288.8,
+      "region": 2
     },
     {
       "id": "il-piede",
@@ -1003,9 +1696,9 @@
       "cognate_note": "worked by the foot",
       "tier": 5,
       "level": null,
-      "x": 90.8,
-      "y": -371.2,
-      "region": 4
+      "x": -282.9,
+      "y": -293.2,
+      "region": 2
     },
     {
       "id": "camminare",
@@ -1020,9 +1713,59 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": 122.7,
-      "y": -402.7,
-      "region": 4
+      "conjugations": {
+        "presente": [
+          "cammino",
+          "cammini",
+          "cammina",
+          "camminiamo",
+          "camminate",
+          "camminano"
+        ],
+        "passato prossimo": [
+          "ho camminato",
+          "hai camminato",
+          "ha camminato",
+          "abbiamo camminato",
+          "avete camminato",
+          "hanno camminato"
+        ],
+        "imperfetto": [
+          "camminavo",
+          "camminavi",
+          "camminava",
+          "camminavamo",
+          "camminavate",
+          "camminavano"
+        ],
+        "futuro": [
+          "camminerò",
+          "camminerai",
+          "camminerà",
+          "cammineremo",
+          "camminerete",
+          "cammineranno"
+        ],
+        "condizionale": [
+          "camminerei",
+          "cammineresti",
+          "camminerebbe",
+          "cammineremmo",
+          "camminereste",
+          "camminerebbero"
+        ],
+        "congiuntivo": [
+          "cammini",
+          "cammini",
+          "cammini",
+          "camminiamo",
+          "camminiate",
+          "camminino"
+        ]
+      },
+      "x": -315.1,
+      "y": -298.3,
+      "region": 2
     },
     {
       "id": "l-occhio",
@@ -1037,9 +1780,9 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": 48.4,
-      "y": -257.6,
-      "region": 4
+      "x": -197.9,
+      "y": -317.4,
+      "region": 2
     },
     {
       "id": "vedere",
@@ -1054,9 +1797,59 @@
       "cognate_note": "Latin for \"I see\"",
       "tier": 1,
       "level": null,
-      "x": 4.4,
-      "y": -325.5,
-      "region": 4
+      "conjugations": {
+        "presente": [
+          "vedo",
+          "vedi",
+          "vede",
+          "vediamo",
+          "vedete",
+          "vedono"
+        ],
+        "passato prossimo": [
+          "ho visto",
+          "hai visto",
+          "ha visto",
+          "abbiamo visto",
+          "avete visto",
+          "hanno visto"
+        ],
+        "imperfetto": [
+          "vedevo",
+          "vedevi",
+          "vedeva",
+          "vedevamo",
+          "vedevate",
+          "vedevano"
+        ],
+        "futuro": [
+          "vedrò",
+          "vedrai",
+          "vedrà",
+          "vedremo",
+          "vedrete",
+          "vedranno"
+        ],
+        "condizionale": [
+          "vedrei",
+          "vedresti",
+          "vedrebbe",
+          "vedremmo",
+          "vedreste",
+          "vedrebbero"
+        ],
+        "congiuntivo": [
+          "veda",
+          "veda",
+          "veda",
+          "vediamo",
+          "vediate",
+          "vedano"
+        ]
+      },
+      "x": -218.7,
+      "y": -262.3,
+      "region": 2
     },
     {
       "id": "guardare",
@@ -1071,9 +1864,59 @@
       "cognate_note": "same Germanic root as English \"ward\"",
       "tier": 3,
       "level": null,
-      "x": 6.1,
-      "y": -250.7,
-      "region": 4
+      "conjugations": {
+        "presente": [
+          "guardo",
+          "guardi",
+          "guarda",
+          "guardiamo",
+          "guardate",
+          "guardano"
+        ],
+        "passato prossimo": [
+          "ho guardato",
+          "hai guardato",
+          "ha guardato",
+          "abbiamo guardato",
+          "avete guardato",
+          "hanno guardato"
+        ],
+        "imperfetto": [
+          "guardavo",
+          "guardavi",
+          "guardava",
+          "guardavamo",
+          "guardavate",
+          "guardavano"
+        ],
+        "futuro": [
+          "guarderò",
+          "guarderai",
+          "guarderà",
+          "guarderemo",
+          "guarderete",
+          "guarderanno"
+        ],
+        "condizionale": [
+          "guarderei",
+          "guarderesti",
+          "guarderebbe",
+          "guarderemmo",
+          "guardereste",
+          "guarderebbero"
+        ],
+        "congiuntivo": [
+          "guardi",
+          "guardi",
+          "guardi",
+          "guardiamo",
+          "guardiate",
+          "guardino"
+        ]
+      },
+      "x": -175.6,
+      "y": -295.6,
+      "region": 2
     },
     {
       "id": "l-orecchio",
@@ -1088,9 +1931,9 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": -3.4,
-      "y": -292.0,
-      "region": 4
+      "x": -195.7,
+      "y": -272.2,
+      "region": 2
     },
     {
       "id": "sentire",
@@ -1105,9 +1948,59 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": -48.3,
-      "y": -322.0,
-      "region": 4
+      "conjugations": {
+        "presente": [
+          "sento",
+          "senti",
+          "sente",
+          "sentiamo",
+          "sentite",
+          "sentono"
+        ],
+        "passato prossimo": [
+          "ho sentito",
+          "hai sentito",
+          "ha sentito",
+          "abbiamo sentito",
+          "avete sentito",
+          "hanno sentito"
+        ],
+        "imperfetto": [
+          "sentivo",
+          "sentivi",
+          "sentiva",
+          "sentivamo",
+          "sentivate",
+          "sentivano"
+        ],
+        "futuro": [
+          "sentirò",
+          "sentirai",
+          "sentirà",
+          "sentiremo",
+          "sentirete",
+          "sentiranno"
+        ],
+        "condizionale": [
+          "sentirei",
+          "sentiresti",
+          "sentirebbe",
+          "sentiremmo",
+          "sentireste",
+          "sentirebbero"
+        ],
+        "congiuntivo": [
+          "senta",
+          "senta",
+          "senta",
+          "sentiamo",
+          "sentiate",
+          "sentano"
+        ]
+      },
+      "x": -193.8,
+      "y": -232.9,
+      "region": 2
     },
     {
       "id": "la-bocca",
@@ -1122,9 +2015,9 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": 52.0,
-      "y": -299.7,
-      "region": 4
+      "x": -224.1,
+      "y": -301.3,
+      "region": 2
     },
     {
       "id": "il-sole",
@@ -1139,9 +2032,9 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": -239.8,
-      "y": -267.4,
-      "region": 7
+      "x": -317.1,
+      "y": 38.3,
+      "region": 8
     },
     {
       "id": "la-pioggia",
@@ -1156,9 +2049,9 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -277.8,
-      "y": -273.4,
-      "region": 7
+      "x": -366.8,
+      "y": 25.2,
+      "region": 8
     },
     {
       "id": "piovere",
@@ -1173,9 +2066,59 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": -193.6,
-      "y": -292.5,
-      "region": 7
+      "conjugations": {
+        "presente": [
+          "piovo",
+          "piovi",
+          "piove",
+          "pioviamo",
+          "piovete",
+          "piovono"
+        ],
+        "passato prossimo": [
+          "sono piovuto",
+          "sei piovuto",
+          "è piovuto",
+          "siamo piovuti",
+          "siete piovuti",
+          "sono piovuti"
+        ],
+        "imperfetto": [
+          "piovevo",
+          "piovevi",
+          "pioveva",
+          "piovevamo",
+          "piovevate",
+          "piovevano"
+        ],
+        "futuro": [
+          "pioverò",
+          "pioverai",
+          "pioverà",
+          "pioveremo",
+          "pioverete",
+          "pioveranno"
+        ],
+        "condizionale": [
+          "pioverei",
+          "pioveresti",
+          "pioverebbe",
+          "pioveremmo",
+          "piovereste",
+          "pioverebbero"
+        ],
+        "congiuntivo": [
+          "piova",
+          "piova",
+          "piova",
+          "pioviamo",
+          "pioviate",
+          "piovano"
+        ]
+      },
+      "x": -264.2,
+      "y": 5.4,
+      "region": 8
     },
     {
       "id": "la-neve",
@@ -1190,9 +2133,9 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -155.0,
-      "y": -243.0,
-      "region": 7
+      "x": -287.4,
+      "y": -67.5,
+      "region": 8
     },
     {
       "id": "nevicare",
@@ -1207,9 +2150,59 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": -239.4,
-      "y": -181.0,
-      "region": 7
+      "conjugations": {
+        "presente": [
+          "-",
+          "-",
+          "nevica",
+          "-",
+          "-",
+          "nevicano"
+        ],
+        "passato prossimo": [
+          "sono nevicato",
+          "sei nevicato",
+          "è nevicato",
+          "siamo nevicati",
+          "siete nevicati",
+          "sono nevicati"
+        ],
+        "imperfetto": [
+          "-",
+          "-",
+          "nevicava",
+          "-",
+          "-",
+          "nevicavano"
+        ],
+        "futuro": [
+          "-",
+          "-",
+          "nevicherà",
+          "-",
+          "-",
+          "nevicheranno"
+        ],
+        "condizionale": [
+          "-",
+          "-",
+          "nevicherebbe",
+          "-",
+          "-",
+          "nevicherebbero"
+        ],
+        "congiuntivo": [
+          "-",
+          "-",
+          "nevichi",
+          "-",
+          "-",
+          "nevichino"
+        ]
+      },
+      "x": -375.2,
+      "y": -58.1,
+      "region": 8
     },
     {
       "id": "il-vento",
@@ -1224,9 +2217,9 @@
       "cognate_note": "to let the wind through",
       "tier": 5,
       "level": null,
-      "x": -248.3,
-      "y": -332.4,
-      "region": 7
+      "x": -280.9,
+      "y": 81.1,
+      "region": 8
     },
     {
       "id": "freddo",
@@ -1241,9 +2234,9 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": -214.9,
-      "y": -227.3,
-      "region": 7
+      "x": -328.0,
+      "y": -12.5,
+      "region": 8
     },
     {
       "id": "caldo",
@@ -1258,9 +2251,9 @@
       "cognate_note": "a pot for heating (Late Latin caldaria)",
       "tier": 4,
       "level": null,
-      "x": -293.6,
-      "y": -237.8,
-      "region": 7
+      "x": -368.9,
+      "y": 70.7,
+      "region": 8
     },
     {
       "id": "il-treno",
@@ -1275,9 +2268,9 @@
       "cognate_note": "via French traîner \"to drag\": carriages pulled along",
       "tier": 4,
       "level": null,
-      "x": 0.9,
-      "y": 381.7,
-      "region": 3
+      "x": 451.5,
+      "y": -81.5,
+      "region": 4
     },
     {
       "id": "la-stazione",
@@ -1292,9 +2285,9 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 91.2,
-      "y": 380.0,
-      "region": 3
+      "x": 362.4,
+      "y": -113.1,
+      "region": 4
     },
     {
       "id": "il-biglietto",
@@ -1309,9 +2302,9 @@
       "cognate_note": "via French billet; a \"bill\" was a sealed document",
       "tier": 4,
       "level": null,
-      "x": -48.8,
-      "y": 395.4,
-      "region": 3
+      "x": 496.4,
+      "y": -51.7,
+      "region": 4
     },
     {
       "id": "viaggiare",
@@ -1326,9 +2319,59 @@
       "cognate_note": "via French voyage",
       "tier": 6,
       "level": null,
-      "x": -22.0,
-      "y": 442.0,
-      "region": 3
+      "conjugations": {
+        "presente": [
+          "viaggio",
+          "viaggi",
+          "viaggia",
+          "viaggiamo",
+          "viaggiate",
+          "viaggiano"
+        ],
+        "passato prossimo": [
+          "ho viaggiato",
+          "hai viaggiato",
+          "ha viaggiato",
+          "abbiamo viaggiato",
+          "avete viaggiato",
+          "hanno viaggiato"
+        ],
+        "imperfetto": [
+          "viaggiavo",
+          "viaggiavi",
+          "viaggiava",
+          "viaggiavamo",
+          "viaggiavate",
+          "viaggiavano"
+        ],
+        "futuro": [
+          "viaggerò",
+          "viaggerai",
+          "viaggerà",
+          "viaggeremo",
+          "viaggerete",
+          "viaggeranno"
+        ],
+        "condizionale": [
+          "viaggerei",
+          "viaggeresti",
+          "viaggerebbe",
+          "viaggeremmo",
+          "viaggereste",
+          "viaggerebbero"
+        ],
+        "congiuntivo": [
+          "viaggi",
+          "viaggi",
+          "viaggi",
+          "viaggiamo",
+          "viaggiate",
+          "viaggino"
+        ]
+      },
+      "x": 453.3,
+      "y": -13.9,
+      "region": 4
     },
     {
       "id": "il-viaggio",
@@ -1343,9 +2386,9 @@
       "cognate_note": "via French voyage",
       "tier": 3,
       "level": null,
-      "x": -12.4,
-      "y": 466.1,
-      "region": 3
+      "x": 437.6,
+      "y": 6.1,
+      "region": 4
     },
     {
       "id": "la-strada",
@@ -1360,9 +2403,9 @@
       "cognate_note": "Latin via strata, \"paved road\", became Old English strǣt",
       "tier": 2,
       "level": null,
-      "x": 72.8,
-      "y": 435.2,
-      "region": 3
+      "x": 362.4,
+      "y": -52.3,
+      "region": 4
     },
     {
       "id": "la-macchina",
@@ -1377,9 +2420,9 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": 20.7,
-      "y": 432.3,
-      "region": 3
+      "x": 415.1,
+      "y": -38.2,
+      "region": 4
     },
     {
       "id": "guidare",
@@ -1394,9 +2437,59 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": 44.0,
-      "y": 477.8,
-      "region": 3
+      "conjugations": {
+        "presente": [
+          "guido",
+          "guidi",
+          "guida",
+          "guidiamo",
+          "guidate",
+          "guidano"
+        ],
+        "passato prossimo": [
+          "ho guidato",
+          "hai guidato",
+          "ha guidato",
+          "abbiamo guidato",
+          "avete guidato",
+          "hanno guidato"
+        ],
+        "imperfetto": [
+          "guidavo",
+          "guidavi",
+          "guidava",
+          "guidavamo",
+          "guidavate",
+          "guidavano"
+        ],
+        "futuro": [
+          "guiderò",
+          "guiderai",
+          "guiderà",
+          "guideremo",
+          "guiderete",
+          "guideranno"
+        ],
+        "condizionale": [
+          "guiderei",
+          "guideresti",
+          "guiderebbe",
+          "guideremmo",
+          "guidereste",
+          "guiderebbero"
+        ],
+        "congiuntivo": [
+          "guidi",
+          "guidi",
+          "guidi",
+          "guidiamo",
+          "guidiate",
+          "guidino"
+        ]
+      },
+      "x": 377.1,
+      "y": -0.3,
+      "region": 4
     },
     {
       "id": "arrivare",
@@ -1411,9 +2504,59 @@
       "cognate_note": "ad \"to\" + ripa \"shore\"",
       "tier": 3,
       "level": null,
-      "x": -70.9,
-      "y": 468.2,
-      "region": 3
+      "conjugations": {
+        "presente": [
+          "arrivo",
+          "arrivi",
+          "arriva",
+          "arriviamo",
+          "arrivate",
+          "arrivano"
+        ],
+        "passato prossimo": [
+          "sono arrivato",
+          "sei arrivato",
+          "è arrivato",
+          "siamo arrivati",
+          "siete arrivati",
+          "sono arrivati"
+        ],
+        "imperfetto": [
+          "arrivavo",
+          "arrivavi",
+          "arrivava",
+          "arrivavamo",
+          "arrivavate",
+          "arrivavano"
+        ],
+        "futuro": [
+          "arriverò",
+          "arriverai",
+          "arriverà",
+          "arriveremo",
+          "arriverete",
+          "arriveranno"
+        ],
+        "condizionale": [
+          "arriverei",
+          "arriveresti",
+          "arriverebbe",
+          "arriveremmo",
+          "arrivereste",
+          "arriverebbero"
+        ],
+        "congiuntivo": [
+          "arrivi",
+          "arrivi",
+          "arrivi",
+          "arriviamo",
+          "arriviate",
+          "arrivino"
+        ]
+      },
+      "x": 444.2,
+      "y": 55.7,
+      "region": 4
     },
     {
       "id": "partire",
@@ -1428,9 +2571,59 @@
       "cognate_note": "to part from",
       "tier": 4,
       "level": null,
-      "x": -33.5,
-      "y": 508.4,
-      "region": 3
+      "conjugations": {
+        "presente": [
+          "parto",
+          "parti",
+          "parte",
+          "partiamo",
+          "partite",
+          "partono"
+        ],
+        "passato prossimo": [
+          "sono partito",
+          "sei partito",
+          "è partito",
+          "siamo partiti",
+          "siete partiti",
+          "sono partiti"
+        ],
+        "imperfetto": [
+          "partivo",
+          "partivi",
+          "partiva",
+          "partivamo",
+          "partivate",
+          "partivano"
+        ],
+        "futuro": [
+          "partirò",
+          "partirai",
+          "partirà",
+          "partiremo",
+          "partirete",
+          "partiranno"
+        ],
+        "condizionale": [
+          "partirei",
+          "partiresti",
+          "partirebbe",
+          "partiremmo",
+          "partireste",
+          "partirebbero"
+        ],
+        "congiuntivo": [
+          "parta",
+          "parta",
+          "parta",
+          "partiamo",
+          "partiate",
+          "partano"
+        ]
+      },
+      "x": 492.7,
+      "y": 28.3,
+      "region": 4
     },
     {
       "id": "il-giorno",
@@ -1445,9 +2638,9 @@
       "cognate_note": "a daily record; a \"journey\" was a day's travel",
       "tier": 1,
       "level": null,
-      "x": 50.3,
-      "y": -85.7,
-      "region": 8
+      "x": -57.2,
+      "y": -93.1,
+      "region": 7
     },
     {
       "id": "la-notte",
@@ -1462,9 +2655,9 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 48.9,
-      "y": -127.6,
-      "region": 8
+      "x": -14.8,
+      "y": -55.4,
+      "region": 7
     },
     {
       "id": "la-mattina",
@@ -1479,9 +2672,9 @@
       "cognate_note": "early-morning prayers",
       "tier": 3,
       "level": null,
-      "x": 83.9,
-      "y": -64.3,
-      "region": 8
+      "x": -24.8,
+      "y": -123.4,
+      "region": 7
     },
     {
       "id": "la-sera",
@@ -1496,9 +2689,9 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": 4.3,
-      "y": -67.6,
-      "region": 8
+      "x": -88.4,
+      "y": -56.0,
+      "region": 7
     },
     {
       "id": "oggi",
@@ -1513,9 +2706,9 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 111.7,
-      "y": -101.8,
-      "region": 8
+      "x": -73.3,
+      "y": -151.7,
+      "region": 7
     },
     {
       "id": "domani",
@@ -1530,9 +2723,9 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 155.6,
-      "y": -70.3,
-      "region": 8
+      "x": -42.5,
+      "y": -200.1,
+      "region": 7
     },
     {
       "id": "ieri",
@@ -1547,9 +2740,9 @@
       "cognate_note": "Latin heri and English yester- share a Proto-Indo-European root",
       "tier": 2,
       "level": null,
-      "x": 126.2,
-      "y": -26.2,
-      "region": 8
+      "x": 7.5,
+      "y": -175.6,
+      "region": 7
     },
     {
       "id": "la-settimana",
@@ -1564,9 +2757,9 @@
       "cognate_note": "the 7th month of the old Roman year",
       "tier": 2,
       "level": null,
-      "x": 75.4,
-      "y": -16.9,
-      "region": 8
+      "x": 24.4,
+      "y": -123.3,
+      "region": 7
     }
   ],
   "edges": [
@@ -4062,6 +5255,23 @@
     },
     {
       "id": 2,
+      "name": "Body",
+      "color": 0,
+      "words": [
+        "la-testa",
+        "la-mano",
+        "il-piede",
+        "camminare",
+        "l-occhio",
+        "vedere",
+        "guardare",
+        "l-orecchio",
+        "sentire",
+        "la-bocca"
+      ]
+    },
+    {
+      "id": 3,
       "name": "Home",
       "color": 0,
       "words": [
@@ -4078,7 +5288,7 @@
       ]
     },
     {
-      "id": 3,
+      "id": 4,
       "name": "Travel",
       "color": 1,
       "words": [
@@ -4092,23 +5302,6 @@
         "guidare",
         "arrivare",
         "partire"
-      ]
-    },
-    {
-      "id": 4,
-      "name": "Body",
-      "color": 0,
-      "words": [
-        "la-testa",
-        "la-mano",
-        "il-piede",
-        "camminare",
-        "l-occhio",
-        "vedere",
-        "guardare",
-        "l-orecchio",
-        "sentire",
-        "la-bocca"
       ]
     },
     {
@@ -4145,21 +5338,6 @@
     },
     {
       "id": 7,
-      "name": "Weather",
-      "color": 0,
-      "words": [
-        "il-sole",
-        "la-pioggia",
-        "piovere",
-        "la-neve",
-        "nevicare",
-        "il-vento",
-        "freddo",
-        "caldo"
-      ]
-    },
-    {
-      "id": 8,
       "name": "Time",
       "color": 1,
       "words": [
@@ -4171,6 +5349,21 @@
         "domani",
         "ieri",
         "la-settimana"
+      ]
+    },
+    {
+      "id": 8,
+      "name": "Weather",
+      "color": 0,
+      "words": [
+        "il-sole",
+        "la-pioggia",
+        "piovere",
+        "la-neve",
+        "nevicare",
+        "il-vento",
+        "freddo",
+        "caldo"
       ]
     }
   ],

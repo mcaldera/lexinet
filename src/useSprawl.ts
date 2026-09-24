@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { appNow } from './core/clock';
-import { rate, type Grade } from './core/scheduler';
-import { tierAllows, tierMap, tierProgress } from './core/tiers';
+import { newCard, rate, Rating, type Grade } from './core/scheduler';
+import { tierAllows, tierMap } from './core/tiers';
+import { tenseCardId, type Tense, type TenseCard } from './core/verbs';
+import { computeProgress } from './progress';
 import { applyChanges, neighbourMap, repairStates, unlockChanges } from './core/unlock';
-import { TIER_UNLOCK_FRACTION } from './config';
 import { openDb, type SqlDb } from './db';
 import { currentGraphName, loadGraph } from './graphs';
 import {
@@ -12,6 +13,7 @@ import {
   resetAll,
   saveReview,
   saveRootUnlock,
+  saveTenseReview,
   setOffsetDays,
   syncGraph,
   type AppData,
@@ -70,7 +72,7 @@ export function useSprawl() {
       if (!db || !data) return null;
       const at = appNow(data.offsetDays);
       const card = rate(row.card, grade, at);
-      const before = tierProgress(tiers, data.states, TIER_UNLOCK_FRACTION).tier;
+      const before = computeProgress(data.nodes, data.states, data.tenseCards, at).tier;
       let changes = unlockChanges(
         row.nodeId,
         grade,
@@ -78,10 +80,11 @@ export function useSprawl() {
         neighbours,
         tierAllows(tiers, before),
       );
-      const after = tierProgress(
-        tiers,
+      const after = computeProgress(
+        data.nodes,
         applyChanges(data.states, changes),
-        TIER_UNLOCK_FRACTION,
+        data.tenseCards,
+        at,
       ).tier;
       let levelUp: LevelUp | null = null;
       if (after > before) {
@@ -106,6 +109,39 @@ export function useSprawl() {
           firstReview,
         };
       });
+      return levelUp;
+    },
+    [db, data, neighbours, tiers],
+  );
+
+  /**
+   * Record a tense drill. A first success creates the tense card (the verb gains
+   * a level); failing an unlearned tense records nothing. May open the next tier.
+   */
+  const reviewTense = useCallback(
+    async (nodeId: string, tense: Tense, grade: Grade): Promise<LevelUp | null> => {
+      if (!db || !data) return null;
+      const at = appNow(data.offsetDays);
+      const id = tenseCardId(nodeId, tense);
+      const existing = data.tenseCards.find((c) => c.id === id);
+      if (!existing && grade === Rating.Again) return null;
+      const tc: TenseCard = {
+        id,
+        nodeId,
+        tense,
+        card: rate(existing?.card ?? newCard(at), grade, at),
+      };
+      const tenseCards = [...data.tenseCards.filter((c) => c.id !== id), tc];
+      const before = computeProgress(data.nodes, data.states, data.tenseCards, at).tier;
+      const after = computeProgress(data.nodes, data.states, tenseCards, at).tier;
+      let changes: ReturnType<typeof repairStates> = [];
+      let levelUp: LevelUp | null = null;
+      if (after > before) {
+        changes = repairStates(data.states, neighbours, data.graph.seed, tierAllows(tiers, after));
+        levelUp = { tier: after, revealed: changes.length };
+      }
+      await saveTenseReview(db, tc, grade, at, changes);
+      setData((d) => d && { ...d, tenseCards, states: applyChanges(d.states, changes) });
       return levelUp;
     },
     [db, data, neighbours, tiers],
@@ -147,5 +183,5 @@ export function useSprawl() {
     setData(await loadAll(db, data.graph));
   }, [db, data]);
 
-  return { data, now, error, review, unlockRoot, timeTravel, reset, graphName };
+  return { data, now, error, review, reviewTense, unlockRoot, timeTravel, reset, graphName };
 }

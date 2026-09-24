@@ -6,3 +6,6 @@ export const TIER_UNLOCK_FRACTION = 0.8;
 
 /** After a wrong answer ("Again") the word is locked for this long. */
 export const COOLDOWN_MS = 60_000;
+
+/** Verbs (at the matching verb level) needed to open each next tier. */
+export const VERBS_PER_TIER = 3;

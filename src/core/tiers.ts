@@ -8,16 +8,25 @@ export type TierProgress = {
   conquered: number;
   /** Conquered words needed in tiers 1..tier to open the next tier (0 at max tier). */
   needed: number;
+  /** Verbs at `verbLevel` or higher, and how many the next tier requires. */
+  verbsHave: number;
+  verbsNeed: number;
+  verbLevel: number;
 };
 
+/** Verb requirement: `perTier` verbs of the open tiers at verb level >= tier. */
+export type VerbGate = { levels: Map<string, number>; perTier: number; maxLevel: number };
+
 /**
- * Tier k+1 opens once `fraction` of the words in tiers 1..k are conquered.
- * Derived from node states, so it never needs storing.
+ * Tier k+1 opens once `fraction` of the words in tiers 1..k are conquered and,
+ * if verbs are given, enough of their verbs have reached level k (presente for
+ * tier 2, passato prossimo for tier 3, ...). Derived from state, never stored.
  */
 export function tierProgress(
   tiers: Map<string, number>,
   states: Map<string, NodeState>,
   fraction: number,
+  verbs?: VerbGate,
 ): TierProgress {
   const maxTier = Math.max(1, ...tiers.values());
   let tier = 1;
@@ -30,8 +39,13 @@ export function tierProgress(
       if (states.get(id) === 'conquered') conquered++;
     }
     const needed = Math.ceil(total * fraction);
-    if (tier >= maxTier) return { tier, maxTier, conquered, needed: 0 };
-    if (conquered < needed) return { tier, maxTier, conquered, needed };
+    const verbLevel = Math.min(tier, verbs?.maxLevel ?? 0);
+    const pool = verbs ? [...verbs.levels].filter(([id]) => (tiers.get(id) ?? 1) <= tier) : [];
+    const verbsNeed = verbs ? Math.min(verbs.perTier, pool.length) : 0;
+    const verbsHave = pool.filter(([, lvl]) => lvl >= verbLevel).length;
+    const base = { tier, maxTier, conquered, verbsHave, verbsNeed, verbLevel };
+    if (tier >= maxTier) return { ...base, needed: 0, verbsNeed: 0 };
+    if (conquered < needed || verbsHave < verbsNeed) return { ...base, needed };
     tier++;
   }
 }
