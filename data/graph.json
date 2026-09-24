@@ -1,0 +1,1310 @@
+{
+  "seed": "n14",
+  "nodes": [
+    {
+      "id": "n1",
+      "it": "il cane",
+      "en": "dog",
+      "pos": "noun",
+      "theme": "animals"
+    },
+    {
+      "id": "n2",
+      "it": "il gatto",
+      "en": "cat",
+      "pos": "noun",
+      "theme": "animals"
+    },
+    {
+      "id": "n3",
+      "it": "abbaiare",
+      "en": "to bark",
+      "pos": "verb",
+      "theme": "animals"
+    },
+    {
+      "id": "n4",
+      "it": "l'uccello",
+      "en": "bird",
+      "pos": "noun",
+      "theme": "animals"
+    },
+    {
+      "id": "n5",
+      "it": "volare",
+      "en": "to fly",
+      "pos": "verb",
+      "theme": "animals"
+    },
+    {
+      "id": "n6",
+      "it": "il pesce",
+      "en": "fish",
+      "pos": "noun",
+      "theme": "animals"
+    },
+    {
+      "id": "n7",
+      "it": "nuotare",
+      "en": "to swim",
+      "pos": "verb",
+      "theme": "animals"
+    },
+    {
+      "id": "n8",
+      "it": "il cavallo",
+      "en": "horse",
+      "pos": "noun",
+      "theme": "animals"
+    },
+    {
+      "id": "n9",
+      "it": "la mucca",
+      "en": "cow",
+      "pos": "noun",
+      "theme": "animals"
+    },
+    {
+      "id": "n10",
+      "it": "il latte",
+      "en": "milk",
+      "pos": "noun",
+      "theme": "food"
+    },
+    {
+      "id": "n11",
+      "it": "il formaggio",
+      "en": "cheese",
+      "pos": "noun",
+      "theme": "food"
+    },
+    {
+      "id": "n12",
+      "it": "il pane",
+      "en": "bread",
+      "pos": "noun",
+      "theme": "food"
+    },
+    {
+      "id": "n13",
+      "it": "la pasta",
+      "en": "pasta",
+      "pos": "noun",
+      "theme": "food"
+    },
+    {
+      "id": "n14",
+      "it": "mangiare",
+      "en": "to eat",
+      "pos": "verb",
+      "theme": "food"
+    },
+    {
+      "id": "n15",
+      "it": "mangiato",
+      "en": "eaten",
+      "pos": "verb",
+      "theme": "food"
+    },
+    {
+      "id": "n16",
+      "it": "bere",
+      "en": "to drink",
+      "pos": "verb",
+      "theme": "food"
+    },
+    {
+      "id": "n17",
+      "it": "l'acqua",
+      "en": "water",
+      "pos": "noun",
+      "theme": "food"
+    },
+    {
+      "id": "n18",
+      "it": "il vino",
+      "en": "wine",
+      "pos": "noun",
+      "theme": "food"
+    },
+    {
+      "id": "n19",
+      "it": "la mela",
+      "en": "apple",
+      "pos": "noun",
+      "theme": "food"
+    },
+    {
+      "id": "n20",
+      "it": "cucinare",
+      "en": "to cook",
+      "pos": "verb",
+      "theme": "food"
+    },
+    {
+      "id": "n21",
+      "it": "la cucina",
+      "en": "kitchen",
+      "pos": "noun",
+      "theme": "home"
+    },
+    {
+      "id": "n22",
+      "it": "il cuoco",
+      "en": "cook",
+      "pos": "noun",
+      "theme": "food"
+    },
+    {
+      "id": "n23",
+      "it": "la colazione",
+      "en": "breakfast",
+      "pos": "noun",
+      "theme": "food"
+    },
+    {
+      "id": "n24",
+      "it": "la cena",
+      "en": "dinner",
+      "pos": "noun",
+      "theme": "food"
+    },
+    {
+      "id": "n25",
+      "it": "cenare",
+      "en": "to have dinner",
+      "pos": "verb",
+      "theme": "food"
+    },
+    {
+      "id": "n26",
+      "it": "la casa",
+      "en": "house",
+      "pos": "noun",
+      "theme": "home"
+    },
+    {
+      "id": "n27",
+      "it": "la porta",
+      "en": "door",
+      "pos": "noun",
+      "theme": "home"
+    },
+    {
+      "id": "n28",
+      "it": "la finestra",
+      "en": "window",
+      "pos": "noun",
+      "theme": "home"
+    },
+    {
+      "id": "n29",
+      "it": "il letto",
+      "en": "bed",
+      "pos": "noun",
+      "theme": "home"
+    },
+    {
+      "id": "n30",
+      "it": "dormire",
+      "en": "to sleep",
+      "pos": "verb",
+      "theme": "home"
+    },
+    {
+      "id": "n31",
+      "it": "il sonno",
+      "en": "sleep",
+      "pos": "noun",
+      "theme": "home"
+    },
+    {
+      "id": "n32",
+      "it": "la sedia",
+      "en": "chair",
+      "pos": "noun",
+      "theme": "home"
+    },
+    {
+      "id": "n33",
+      "it": "il tavolo",
+      "en": "table",
+      "pos": "noun",
+      "theme": "home"
+    },
+    {
+      "id": "n34",
+      "it": "la camera",
+      "en": "room",
+      "pos": "noun",
+      "theme": "home"
+    },
+    {
+      "id": "n35",
+      "it": "parlare",
+      "en": "to speak",
+      "pos": "verb",
+      "theme": "communication"
+    },
+    {
+      "id": "n36",
+      "it": "parlato",
+      "en": "spoken",
+      "pos": "verb",
+      "theme": "communication"
+    },
+    {
+      "id": "n37",
+      "it": "la parola",
+      "en": "word",
+      "pos": "noun",
+      "theme": "communication"
+    },
+    {
+      "id": "n38",
+      "it": "dire",
+      "en": "to say",
+      "pos": "verb",
+      "theme": "communication"
+    },
+    {
+      "id": "n39",
+      "it": "chiedere",
+      "en": "to ask",
+      "pos": "verb",
+      "theme": "communication"
+    },
+    {
+      "id": "n40",
+      "it": "la domanda",
+      "en": "question",
+      "pos": "noun",
+      "theme": "communication"
+    },
+    {
+      "id": "n41",
+      "it": "rispondere",
+      "en": "to answer",
+      "pos": "verb",
+      "theme": "communication"
+    },
+    {
+      "id": "n42",
+      "it": "la risposta",
+      "en": "answer",
+      "pos": "noun",
+      "theme": "communication"
+    },
+    {
+      "id": "n43",
+      "it": "scrivere",
+      "en": "to write",
+      "pos": "verb",
+      "theme": "communication"
+    },
+    {
+      "id": "n44",
+      "it": "la lettera",
+      "en": "letter",
+      "pos": "noun",
+      "theme": "communication"
+    },
+    {
+      "id": "n45",
+      "it": "leggere",
+      "en": "to read",
+      "pos": "verb",
+      "theme": "communication"
+    },
+    {
+      "id": "n46",
+      "it": "il libro",
+      "en": "book",
+      "pos": "noun",
+      "theme": "communication"
+    },
+    {
+      "id": "n47",
+      "it": "la madre",
+      "en": "mother",
+      "pos": "noun",
+      "theme": "family"
+    },
+    {
+      "id": "n48",
+      "it": "il padre",
+      "en": "father",
+      "pos": "noun",
+      "theme": "family"
+    },
+    {
+      "id": "n49",
+      "it": "il fratello",
+      "en": "brother",
+      "pos": "noun",
+      "theme": "family"
+    },
+    {
+      "id": "n50",
+      "it": "la sorella",
+      "en": "sister",
+      "pos": "noun",
+      "theme": "family"
+    },
+    {
+      "id": "n51",
+      "it": "il figlio",
+      "en": "son",
+      "pos": "noun",
+      "theme": "family"
+    },
+    {
+      "id": "n52",
+      "it": "la figlia",
+      "en": "daughter",
+      "pos": "noun",
+      "theme": "family"
+    },
+    {
+      "id": "n53",
+      "it": "il nonno",
+      "en": "grandfather",
+      "pos": "noun",
+      "theme": "family"
+    },
+    {
+      "id": "n54",
+      "it": "la nonna",
+      "en": "grandmother",
+      "pos": "noun",
+      "theme": "family"
+    },
+    {
+      "id": "n55",
+      "it": "la famiglia",
+      "en": "family",
+      "pos": "noun",
+      "theme": "family"
+    },
+    {
+      "id": "n56",
+      "it": "la testa",
+      "en": "head",
+      "pos": "noun",
+      "theme": "body"
+    },
+    {
+      "id": "n57",
+      "it": "la mano",
+      "en": "hand",
+      "pos": "noun",
+      "theme": "body"
+    },
+    {
+      "id": "n58",
+      "it": "il piede",
+      "en": "foot",
+      "pos": "noun",
+      "theme": "body"
+    },
+    {
+      "id": "n59",
+      "it": "camminare",
+      "en": "to walk",
+      "pos": "verb",
+      "theme": "body"
+    },
+    {
+      "id": "n60",
+      "it": "l'occhio",
+      "en": "eye",
+      "pos": "noun",
+      "theme": "body"
+    },
+    {
+      "id": "n61",
+      "it": "vedere",
+      "en": "to see",
+      "pos": "verb",
+      "theme": "body"
+    },
+    {
+      "id": "n62",
+      "it": "guardare",
+      "en": "to look at",
+      "pos": "verb",
+      "theme": "body"
+    },
+    {
+      "id": "n63",
+      "it": "l'orecchio",
+      "en": "ear",
+      "pos": "noun",
+      "theme": "body"
+    },
+    {
+      "id": "n64",
+      "it": "sentire",
+      "en": "to hear",
+      "pos": "verb",
+      "theme": "body"
+    },
+    {
+      "id": "n65",
+      "it": "la bocca",
+      "en": "mouth",
+      "pos": "noun",
+      "theme": "body"
+    },
+    {
+      "id": "n66",
+      "it": "il sole",
+      "en": "sun",
+      "pos": "noun",
+      "theme": "weather"
+    },
+    {
+      "id": "n67",
+      "it": "la pioggia",
+      "en": "rain",
+      "pos": "noun",
+      "theme": "weather"
+    },
+    {
+      "id": "n68",
+      "it": "piovere",
+      "en": "to rain",
+      "pos": "verb",
+      "theme": "weather"
+    },
+    {
+      "id": "n69",
+      "it": "la neve",
+      "en": "snow",
+      "pos": "noun",
+      "theme": "weather"
+    },
+    {
+      "id": "n70",
+      "it": "nevicare",
+      "en": "to snow",
+      "pos": "verb",
+      "theme": "weather"
+    },
+    {
+      "id": "n71",
+      "it": "il vento",
+      "en": "wind",
+      "pos": "noun",
+      "theme": "weather"
+    },
+    {
+      "id": "n72",
+      "it": "freddo",
+      "en": "cold",
+      "pos": "adj",
+      "theme": "weather"
+    },
+    {
+      "id": "n73",
+      "it": "caldo",
+      "en": "hot",
+      "pos": "adj",
+      "theme": "weather"
+    },
+    {
+      "id": "n74",
+      "it": "il treno",
+      "en": "train",
+      "pos": "noun",
+      "theme": "travel"
+    },
+    {
+      "id": "n75",
+      "it": "la stazione",
+      "en": "station",
+      "pos": "noun",
+      "theme": "travel"
+    },
+    {
+      "id": "n76",
+      "it": "il biglietto",
+      "en": "ticket",
+      "pos": "noun",
+      "theme": "travel"
+    },
+    {
+      "id": "n77",
+      "it": "viaggiare",
+      "en": "to travel",
+      "pos": "verb",
+      "theme": "travel"
+    },
+    {
+      "id": "n78",
+      "it": "il viaggio",
+      "en": "trip",
+      "pos": "noun",
+      "theme": "travel"
+    },
+    {
+      "id": "n79",
+      "it": "la strada",
+      "en": "street",
+      "pos": "noun",
+      "theme": "travel"
+    },
+    {
+      "id": "n80",
+      "it": "la macchina",
+      "en": "car",
+      "pos": "noun",
+      "theme": "travel"
+    },
+    {
+      "id": "n81",
+      "it": "guidare",
+      "en": "to drive",
+      "pos": "verb",
+      "theme": "travel"
+    },
+    {
+      "id": "n82",
+      "it": "arrivare",
+      "en": "to arrive",
+      "pos": "verb",
+      "theme": "travel"
+    },
+    {
+      "id": "n83",
+      "it": "partire",
+      "en": "to leave",
+      "pos": "verb",
+      "theme": "travel"
+    },
+    {
+      "id": "n84",
+      "it": "il giorno",
+      "en": "day",
+      "pos": "noun",
+      "theme": "time"
+    },
+    {
+      "id": "n85",
+      "it": "la notte",
+      "en": "night",
+      "pos": "noun",
+      "theme": "time"
+    },
+    {
+      "id": "n86",
+      "it": "la mattina",
+      "en": "morning",
+      "pos": "noun",
+      "theme": "time"
+    },
+    {
+      "id": "n87",
+      "it": "la sera",
+      "en": "evening",
+      "pos": "noun",
+      "theme": "time"
+    },
+    {
+      "id": "n88",
+      "it": "oggi",
+      "en": "today",
+      "pos": "adv",
+      "theme": "time"
+    },
+    {
+      "id": "n89",
+      "it": "domani",
+      "en": "tomorrow",
+      "pos": "adv",
+      "theme": "time"
+    },
+    {
+      "id": "n90",
+      "it": "ieri",
+      "en": "yesterday",
+      "pos": "adv",
+      "theme": "time"
+    },
+    {
+      "id": "n91",
+      "it": "la settimana",
+      "en": "week",
+      "pos": "noun",
+      "theme": "time"
+    }
+  ],
+  "edges": [
+    {
+      "source": "n1",
+      "target": "n3",
+      "weight": 0.4377,
+      "reason": "thematic"
+    },
+    {
+      "source": "n1",
+      "target": "n9",
+      "weight": 0.4199,
+      "reason": "thematic"
+    },
+    {
+      "source": "n2",
+      "target": "n3",
+      "weight": 0.4038,
+      "reason": "thematic"
+    },
+    {
+      "source": "n3",
+      "target": "n4",
+      "weight": 0.4595,
+      "reason": "thematic"
+    },
+    {
+      "source": "n3",
+      "target": "n64",
+      "weight": 0.3858,
+      "reason": "semantic"
+    },
+    {
+      "source": "n4",
+      "target": "n5",
+      "weight": 0.4276,
+      "reason": "thematic"
+    },
+    {
+      "source": "n4",
+      "target": "n6",
+      "weight": 0.4524,
+      "reason": "thematic"
+    },
+    {
+      "source": "n6",
+      "target": "n7",
+      "weight": 0.3786,
+      "reason": "thematic"
+    },
+    {
+      "source": "n8",
+      "target": "n9",
+      "weight": 0.4329,
+      "reason": "thematic"
+    },
+    {
+      "source": "n10",
+      "target": "n11",
+      "weight": 0.423,
+      "reason": "thematic"
+    },
+    {
+      "source": "n11",
+      "target": "n13",
+      "weight": 0.571,
+      "reason": "semantic"
+    },
+    {
+      "source": "n11",
+      "target": "n18",
+      "weight": 0.4159,
+      "reason": "thematic"
+    },
+    {
+      "source": "n11",
+      "target": "n22",
+      "weight": 0.4689,
+      "reason": "thematic"
+    },
+    {
+      "source": "n12",
+      "target": "n14",
+      "weight": 0.4561,
+      "reason": "thematic"
+    },
+    {
+      "source": "n12",
+      "target": "n22",
+      "weight": 0.4618,
+      "reason": "thematic"
+    },
+    {
+      "source": "n13",
+      "target": "n15",
+      "weight": 0.507,
+      "reason": "thematic"
+    },
+    {
+      "source": "n13",
+      "target": "n22",
+      "weight": 0.5627,
+      "reason": "semantic"
+    },
+    {
+      "source": "n14",
+      "target": "n15",
+      "weight": 0.8566,
+      "reason": "morphological"
+    },
+    {
+      "source": "n14",
+      "target": "n16",
+      "weight": 0.4545,
+      "reason": "thematic"
+    },
+    {
+      "source": "n14",
+      "target": "n20",
+      "weight": 0.5387,
+      "reason": "semantic"
+    },
+    {
+      "source": "n14",
+      "target": "n23",
+      "weight": 0.4649,
+      "reason": "thematic"
+    },
+    {
+      "source": "n14",
+      "target": "n24",
+      "weight": 0.5183,
+      "reason": "semantic"
+    },
+    {
+      "source": "n14",
+      "target": "n25",
+      "weight": 0.5549,
+      "reason": "semantic"
+    },
+    {
+      "source": "n15",
+      "target": "n19",
+      "weight": 0.3844,
+      "reason": "thematic"
+    },
+    {
+      "source": "n16",
+      "target": "n17",
+      "weight": 0.3921,
+      "reason": "thematic"
+    },
+    {
+      "source": "n20",
+      "target": "n21",
+      "weight": 0.7222,
+      "reason": "morphological"
+    },
+    {
+      "source": "n20",
+      "target": "n22",
+      "weight": 0.6672,
+      "reason": "semantic"
+    },
+    {
+      "source": "n20",
+      "target": "n43",
+      "weight": 0.3591,
+      "reason": "semantic"
+    },
+    {
+      "source": "n21",
+      "target": "n22",
+      "weight": 0.5218,
+      "reason": "semantic"
+    },
+    {
+      "source": "n21",
+      "target": "n26",
+      "weight": 0.4193,
+      "reason": "thematic"
+    },
+    {
+      "source": "n23",
+      "target": "n24",
+      "weight": 0.5158,
+      "reason": "semantic"
+    },
+    {
+      "source": "n24",
+      "target": "n25",
+      "weight": 0.9024,
+      "reason": "morphological"
+    },
+    {
+      "source": "n24",
+      "target": "n87",
+      "weight": 0.3796,
+      "reason": "semantic"
+    },
+    {
+      "source": "n26",
+      "target": "n27",
+      "weight": 0.4666,
+      "reason": "thematic"
+    },
+    {
+      "source": "n26",
+      "target": "n34",
+      "weight": 0.457,
+      "reason": "thematic"
+    },
+    {
+      "source": "n27",
+      "target": "n28",
+      "weight": 0.4883,
+      "reason": "thematic"
+    },
+    {
+      "source": "n29",
+      "target": "n30",
+      "weight": 0.4678,
+      "reason": "thematic"
+    },
+    {
+      "source": "n29",
+      "target": "n31",
+      "weight": 0.4854,
+      "reason": "thematic"
+    },
+    {
+      "source": "n29",
+      "target": "n34",
+      "weight": 0.4035,
+      "reason": "thematic"
+    },
+    {
+      "source": "n30",
+      "target": "n31",
+      "weight": 0.7124,
+      "reason": "semantic"
+    },
+    {
+      "source": "n32",
+      "target": "n33",
+      "weight": 0.3967,
+      "reason": "thematic"
+    },
+    {
+      "source": "n32",
+      "target": "n34",
+      "weight": 0.4506,
+      "reason": "thematic"
+    },
+    {
+      "source": "n35",
+      "target": "n36",
+      "weight": 0.9628,
+      "reason": "morphological"
+    },
+    {
+      "source": "n35",
+      "target": "n37",
+      "weight": 0.5425,
+      "reason": "semantic"
+    },
+    {
+      "source": "n35",
+      "target": "n38",
+      "weight": 0.4536,
+      "reason": "thematic"
+    },
+    {
+      "source": "n35",
+      "target": "n39",
+      "weight": 0.4968,
+      "reason": "thematic"
+    },
+    {
+      "source": "n35",
+      "target": "n64",
+      "weight": 0.438,
+      "reason": "semantic"
+    },
+    {
+      "source": "n36",
+      "target": "n37",
+      "weight": 0.5287,
+      "reason": "semantic"
+    },
+    {
+      "source": "n37",
+      "target": "n44",
+      "weight": 0.4756,
+      "reason": "thematic"
+    },
+    {
+      "source": "n39",
+      "target": "n40",
+      "weight": 0.5924,
+      "reason": "semantic"
+    },
+    {
+      "source": "n39",
+      "target": "n41",
+      "weight": 0.556,
+      "reason": "semantic"
+    },
+    {
+      "source": "n40",
+      "target": "n42",
+      "weight": 0.5674,
+      "reason": "semantic"
+    },
+    {
+      "source": "n41",
+      "target": "n42",
+      "weight": 0.6751,
+      "reason": "semantic"
+    },
+    {
+      "source": "n43",
+      "target": "n44",
+      "weight": 0.5113,
+      "reason": "semantic"
+    },
+    {
+      "source": "n43",
+      "target": "n45",
+      "weight": 0.5498,
+      "reason": "semantic"
+    },
+    {
+      "source": "n44",
+      "target": "n46",
+      "weight": 0.5218,
+      "reason": "semantic"
+    },
+    {
+      "source": "n45",
+      "target": "n46",
+      "weight": 0.5391,
+      "reason": "semantic"
+    },
+    {
+      "source": "n47",
+      "target": "n52",
+      "weight": 0.5285,
+      "reason": "semantic"
+    },
+    {
+      "source": "n47",
+      "target": "n54",
+      "weight": 0.5266,
+      "reason": "semantic"
+    },
+    {
+      "source": "n47",
+      "target": "n55",
+      "weight": 0.5471,
+      "reason": "semantic"
+    },
+    {
+      "source": "n48",
+      "target": "n51",
+      "weight": 0.6206,
+      "reason": "semantic"
+    },
+    {
+      "source": "n48",
+      "target": "n53",
+      "weight": 0.5587,
+      "reason": "semantic"
+    },
+    {
+      "source": "n48",
+      "target": "n55",
+      "weight": 0.5477,
+      "reason": "semantic"
+    },
+    {
+      "source": "n49",
+      "target": "n50",
+      "weight": 0.5329,
+      "reason": "semantic"
+    },
+    {
+      "source": "n49",
+      "target": "n51",
+      "weight": 0.5661,
+      "reason": "semantic"
+    },
+    {
+      "source": "n50",
+      "target": "n52",
+      "weight": 0.5298,
+      "reason": "semantic"
+    },
+    {
+      "source": "n51",
+      "target": "n52",
+      "weight": 0.6842,
+      "reason": "morphological"
+    },
+    {
+      "source": "n51",
+      "target": "n82",
+      "weight": 0.3121,
+      "reason": "semantic"
+    },
+    {
+      "source": "n53",
+      "target": "n54",
+      "weight": 0.8728,
+      "reason": "morphological"
+    },
+    {
+      "source": "n56",
+      "target": "n57",
+      "weight": 0.4587,
+      "reason": "thematic"
+    },
+    {
+      "source": "n56",
+      "target": "n63",
+      "weight": 0.46,
+      "reason": "thematic"
+    },
+    {
+      "source": "n56",
+      "target": "n65",
+      "weight": 0.4683,
+      "reason": "thematic"
+    },
+    {
+      "source": "n57",
+      "target": "n58",
+      "weight": 0.4788,
+      "reason": "thematic"
+    },
+    {
+      "source": "n57",
+      "target": "n59",
+      "weight": 0.4613,
+      "reason": "thematic"
+    },
+    {
+      "source": "n58",
+      "target": "n59",
+      "weight": 0.5376,
+      "reason": "semantic"
+    },
+    {
+      "source": "n59",
+      "target": "n77",
+      "weight": 0.3964,
+      "reason": "semantic"
+    },
+    {
+      "source": "n60",
+      "target": "n61",
+      "weight": 0.4704,
+      "reason": "thematic"
+    },
+    {
+      "source": "n60",
+      "target": "n62",
+      "weight": 0.4603,
+      "reason": "thematic"
+    },
+    {
+      "source": "n61",
+      "target": "n62",
+      "weight": 0.6008,
+      "reason": "semantic"
+    },
+    {
+      "source": "n61",
+      "target": "n64",
+      "weight": 0.564,
+      "reason": "semantic"
+    },
+    {
+      "source": "n63",
+      "target": "n64",
+      "weight": 0.5559,
+      "reason": "semantic"
+    },
+    {
+      "source": "n63",
+      "target": "n65",
+      "weight": 0.5051,
+      "reason": "thematic"
+    },
+    {
+      "source": "n66",
+      "target": "n71",
+      "weight": 0.4034,
+      "reason": "thematic"
+    },
+    {
+      "source": "n66",
+      "target": "n73",
+      "weight": 0.3883,
+      "reason": "thematic"
+    },
+    {
+      "source": "n66",
+      "target": "n87",
+      "weight": 0.383,
+      "reason": "semantic"
+    },
+    {
+      "source": "n67",
+      "target": "n68",
+      "weight": 0.6933,
+      "reason": "semantic"
+    },
+    {
+      "source": "n67",
+      "target": "n72",
+      "weight": 0.4784,
+      "reason": "thematic"
+    },
+    {
+      "source": "n68",
+      "target": "n72",
+      "weight": 0.4571,
+      "reason": "thematic"
+    },
+    {
+      "source": "n69",
+      "target": "n70",
+      "weight": 0.6789,
+      "reason": "semantic"
+    },
+    {
+      "source": "n69",
+      "target": "n72",
+      "weight": 0.547,
+      "reason": "semantic"
+    },
+    {
+      "source": "n70",
+      "target": "n72",
+      "weight": 0.5851,
+      "reason": "semantic"
+    },
+    {
+      "source": "n72",
+      "target": "n73",
+      "weight": 0.4243,
+      "reason": "thematic"
+    },
+    {
+      "source": "n74",
+      "target": "n75",
+      "weight": 0.524,
+      "reason": "semantic"
+    },
+    {
+      "source": "n74",
+      "target": "n80",
+      "weight": 0.402,
+      "reason": "thematic"
+    },
+    {
+      "source": "n76",
+      "target": "n78",
+      "weight": 0.4535,
+      "reason": "thematic"
+    },
+    {
+      "source": "n77",
+      "target": "n78",
+      "weight": 0.9414,
+      "reason": "morphological"
+    },
+    {
+      "source": "n77",
+      "target": "n81",
+      "weight": 0.4509,
+      "reason": "thematic"
+    },
+    {
+      "source": "n77",
+      "target": "n82",
+      "weight": 0.477,
+      "reason": "thematic"
+    },
+    {
+      "source": "n77",
+      "target": "n83",
+      "weight": 0.4834,
+      "reason": "thematic"
+    },
+    {
+      "source": "n78",
+      "target": "n82",
+      "weight": 0.4666,
+      "reason": "thematic"
+    },
+    {
+      "source": "n79",
+      "target": "n80",
+      "weight": 0.4214,
+      "reason": "thematic"
+    },
+    {
+      "source": "n80",
+      "target": "n81",
+      "weight": 0.4871,
+      "reason": "thematic"
+    },
+    {
+      "source": "n82",
+      "target": "n83",
+      "weight": 0.5789,
+      "reason": "semantic"
+    },
+    {
+      "source": "n84",
+      "target": "n86",
+      "weight": 0.5032,
+      "reason": "thematic"
+    },
+    {
+      "source": "n84",
+      "target": "n87",
+      "weight": 0.5093,
+      "reason": "thematic"
+    },
+    {
+      "source": "n84",
+      "target": "n88",
+      "weight": 0.5522,
+      "reason": "semantic"
+    },
+    {
+      "source": "n84",
+      "target": "n91",
+      "weight": 0.4168,
+      "reason": "thematic"
+    },
+    {
+      "source": "n85",
+      "target": "n87",
+      "weight": 0.6548,
+      "reason": "semantic"
+    },
+    {
+      "source": "n86",
+      "target": "n89",
+      "weight": 0.5075,
+      "reason": "thematic"
+    },
+    {
+      "source": "n88",
+      "target": "n90",
+      "weight": 0.5409,
+      "reason": "semantic"
+    },
+    {
+      "source": "n89",
+      "target": "n90",
+      "weight": 0.6088,
+      "reason": "semantic"
+    }
+  ]
+}
