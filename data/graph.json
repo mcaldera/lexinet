@@ -24,7 +24,10 @@
       "root_meaning": "dog",
       "cognate": "canine",
       "cognate_note": null,
-      "tier": 3
+      "tier": 3,
+      "x": 207.8,
+      "y": 193.1,
+      "region": 5
     },
     {
       "id": "il-gatto",
@@ -37,7 +40,10 @@
       "root_meaning": "cat",
       "cognate": "cat",
       "cognate_note": null,
-      "tier": 5
+      "tier": 5,
+      "x": 229.8,
+      "y": 244.6,
+      "region": 5
     },
     {
       "id": "abbaiare",
@@ -50,7 +56,10 @@
       "root_meaning": null,
       "cognate": null,
       "cognate_note": null,
-      "tier": 6
+      "tier": 6,
+      "x": 196.5,
+      "y": 241.1,
+      "region": 5
     },
     {
       "id": "l-uccello",
@@ -63,7 +72,10 @@
       "root_meaning": "bird",
       "cognate": "avian",
       "cognate_note": "uccello comes from aucellus, \"little bird\"",
-      "tier": 5
+      "tier": 5,
+      "x": 247.3,
+      "y": 271.4,
+      "region": 5
     },
     {
       "id": "volare",
@@ -76,7 +88,10 @@
       "root_meaning": "to fly",
       "cognate": "volatile",
       "cognate_note": "originally \"flying\", then \"evaporating quickly\"",
-      "tier": 5
+      "tier": 5,
+      "x": 254.8,
+      "y": 311.0,
+      "region": 5
     },
     {
       "id": "il-pesce",
@@ -89,7 +104,10 @@
       "root_meaning": "fish",
       "cognate": "Pisces",
       "cognate_note": "the zodiac sign of the fish",
-      "tier": 5
+      "tier": 5,
+      "x": 270.4,
+      "y": 289.1,
+      "region": 5
     },
     {
       "id": "nuotare",
@@ -102,7 +120,10 @@
       "root_meaning": "to swim",
       "cognate": null,
       "cognate_note": null,
-      "tier": 6
+      "tier": 6,
+      "x": 280.8,
+      "y": 324.6,
+      "region": 5
     },
     {
       "id": "il-cavallo",
@@ -115,7 +136,10 @@
       "root_meaning": "horse, nag",
       "cognate": "cavalry",
       "cognate_note": "soldiers on horseback",
-      "tier": 4
+      "tier": 4,
+      "x": 238.1,
+      "y": 214.7,
+      "region": 5
     },
     {
       "id": "la-mucca",
@@ -128,7 +152,10 @@
       "root_meaning": null,
       "cognate": null,
       "cognate_note": null,
-      "tier": 6
+      "tier": 6,
+      "x": 224.8,
+      "y": 168.4,
+      "region": 5
     },
     {
       "id": "il-latte",
@@ -141,7 +168,10 @@
       "root_meaning": "milk",
       "cognate": "lactose",
       "cognate_note": "milk sugar",
-      "tier": 5
+      "tier": 5,
+      "x": -66.2,
+      "y": 179.5,
+      "region": 0
     },
     {
       "id": "il-formaggio",
@@ -154,7 +184,10 @@
       "root_meaning": "form, mould",
       "cognate": "form",
       "cognate_note": "cheese (formaticus) was pressed in a mould",
-      "tier": 5
+      "tier": 5,
+      "x": -45.5,
+      "y": 121.7,
+      "region": 0
     },
     {
       "id": "il-pane",
@@ -167,7 +200,10 @@
       "root_meaning": "bread",
       "cognate": "companion",
       "cognate_note": "com- \"with\" + panis \"bread\": someone you share bread with",
-      "tier": 5
+      "tier": 5,
+      "x": -78.2,
+      "y": 134.1,
+      "region": 0
     },
     {
       "id": "la-pasta",
@@ -180,7 +216,10 @@
       "root_meaning": "dough, paste",
       "cognate": "paste",
       "cognate_note": null,
-      "tier": 6
+      "tier": 6,
+      "x": -101.3,
+      "y": 91.7,
+      "region": 0
     },
     {
       "id": "mangiare",
@@ -193,7 +232,10 @@
       "root_meaning": "to chew, to munch",
       "cognate": "manger",
       "cognate_note": "the trough animals eat from, via French manger \"to eat\"",
-      "tier": 2
+      "tier": 2,
+      "x": 31.1,
+      "y": 212.1,
+      "region": 0
     },
     {
       "id": "mangiato",
@@ -206,7 +248,10 @@
       "root_meaning": "to chew, to munch",
       "cognate": "manger",
       "cognate_note": "the trough animals eat from, via French manger \"to eat\"",
-      "tier": 4
+      "tier": 4,
+      "x": -5.9,
+      "y": 103.5,
+      "region": 0
     },
     {
       "id": "bere",
@@ -219,7 +264,10 @@
       "root_meaning": "to drink",
       "cognate": "imbibe",
       "cognate_note": "in- \"in\" + bibere: to drink in",
-      "tier": 2
+      "tier": 2,
+      "x": -25.8,
+      "y": 217.4,
+      "region": 0
     },
     {
       "id": "l-acqua",
@@ -232,7 +280,10 @@
       "root_meaning": "water",
       "cognate": "aquatic",
       "cognate_note": null,
-      "tier": 2
+      "tier": 2,
+      "x": -34.5,
+      "y": 184.4,
+      "region": 0
     },
     {
       "id": "il-vino",
@@ -245,7 +296,10 @@
       "root_meaning": "wine",
       "cognate": "wine",
       "cognate_note": "borrowed into Germanic very early; vine too",
-      "tier": 4
+      "tier": 4,
+      "x": -15.2,
+      "y": 157.5,
+      "region": 0
     },
     {
       "id": "la-mela",
@@ -258,7 +312,10 @@
       "root_meaning": "apple",
       "cognate": "melon",
       "cognate_note": "Greek mēlopépōn, \"apple-gourd\"",
-      "tier": 6
+      "tier": 6,
+      "x": -31.7,
+      "y": 87.5,
+      "region": 0
     },
     {
       "id": "cucinare",
@@ -271,7 +328,10 @@
       "root_meaning": "to cook",
       "cognate": "cook",
       "cognate_note": "Latin coquus \"cook\" was borrowed into Old English as cōc",
-      "tier": 5
+      "tier": 5,
+      "x": 157.4,
+      "y": 24.6,
+      "region": 1
     },
     {
       "id": "la-cucina",
@@ -284,7 +344,10 @@
       "root_meaning": "to cook",
       "cognate": "kitchen",
       "cognate_note": "Latin coquina \"kitchen\" became Old English cycene",
-      "tier": 4
+      "tier": 4,
+      "x": 175.0,
+      "y": -56.7,
+      "region": 1
     },
     {
       "id": "il-cuoco",
@@ -297,7 +360,10 @@
       "root_meaning": "to cook",
       "cognate": "cook",
       "cognate_note": "Latin coquus \"cook\" was borrowed into Old English as cōc",
-      "tier": 6
+      "tier": 6,
+      "x": 214.3,
+      "y": -19.6,
+      "region": 1
     },
     {
       "id": "la-colazione",
@@ -310,7 +376,10 @@
       "root_meaning": "a bringing together",
       "cognate": "collation",
       "cognate_note": "a light meal; monks ate one during the evening readings (Collationes)",
-      "tier": 4
+      "tier": 4,
+      "x": 76.0,
+      "y": 189.6,
+      "region": 0
     },
     {
       "id": "la-cena",
@@ -323,7 +392,10 @@
       "root_meaning": "dinner",
       "cognate": null,
       "cognate_note": null,
-      "tier": 2
+      "tier": 2,
+      "x": 21.9,
+      "y": 150.7,
+      "region": 0
     },
     {
       "id": "cenare",
@@ -336,7 +408,10 @@
       "root_meaning": "dinner",
       "cognate": null,
       "cognate_note": null,
-      "tier": 6
+      "tier": 6,
+      "x": 84.5,
+      "y": 239.4,
+      "region": 0
     },
     {
       "id": "la-casa",
@@ -349,7 +424,10 @@
       "root_meaning": "hut, cottage",
       "cognate": "casino",
       "cognate_note": "Italian for \"little house\", later a house for gambling",
-      "tier": 1
+      "tier": 1,
+      "x": 139.6,
+      "y": -75.8,
+      "region": 1
     },
     {
       "id": "la-porta",
@@ -362,7 +440,10 @@
       "root_meaning": "gate",
       "cognate": "portal",
       "cognate_note": null,
-      "tier": 1
+      "tier": 1,
+      "x": 144.9,
+      "y": -54.2,
+      "region": 1
     },
     {
       "id": "la-finestra",
@@ -375,7 +456,10 @@
       "root_meaning": "window",
       "cognate": "defenestrate",
       "cognate_note": "de- \"out of\" + fenestra: to throw out of a window",
-      "tier": 4
+      "tier": 4,
+      "x": 165.4,
+      "y": -45.1,
+      "region": 1
     },
     {
       "id": "il-letto",
@@ -388,7 +472,10 @@
       "root_meaning": "bed",
       "cognate": null,
       "cognate_note": null,
-      "tier": 1
+      "tier": 1,
+      "x": 140.9,
+      "y": -100.9,
+      "region": 1
     },
     {
       "id": "dormire",
@@ -401,7 +488,10 @@
       "root_meaning": "to sleep",
       "cognate": "dormitory",
       "cognate_note": "a room for sleeping",
-      "tier": 3
+      "tier": 3,
+      "x": 95.5,
+      "y": -113.7,
+      "region": 1
     },
     {
       "id": "il-sonno",
@@ -414,7 +504,10 @@
       "root_meaning": "sleep",
       "cognate": "insomnia",
       "cognate_note": "in- \"not\" + somnus: no sleep",
-      "tier": 5
+      "tier": 5,
+      "x": 135.7,
+      "y": -146.8,
+      "region": 1
     },
     {
       "id": "la-sedia",
@@ -427,7 +520,10 @@
       "root_meaning": "to sit",
       "cognate": "sedentary",
       "cognate_note": "spending a lot of time sitting",
-      "tier": 5
+      "tier": 5,
+      "x": 172.2,
+      "y": -103.2,
+      "region": 1
     },
     {
       "id": "il-tavolo",
@@ -440,7 +536,10 @@
       "root_meaning": "board, plank",
       "cognate": "table",
       "cognate_note": null,
-      "tier": 4
+      "tier": 4,
+      "x": 198.1,
+      "y": -79.5,
+      "region": 1
     },
     {
       "id": "la-camera",
@@ -453,7 +552,10 @@
       "root_meaning": "vaulted room",
       "cognate": "chamber",
       "cognate_note": "also \"camera\", from camera obscura, \"dark room\"",
-      "tier": 3
+      "tier": 3,
+      "x": 166.2,
+      "y": -76.9,
+      "region": 1
     },
     {
       "id": "parlare",
@@ -466,7 +568,10 @@
       "root_meaning": "speech, parable",
       "cognate": "parley",
       "cognate_note": "a talk between opponents, via French parler \"to speak\"",
-      "tier": 1
+      "tier": 1,
+      "x": -594.0,
+      "y": 119.7,
+      "region": 2
     },
     {
       "id": "parlato",
@@ -479,7 +584,10 @@
       "root_meaning": "speech, parable",
       "cognate": "parley",
       "cognate_note": "a talk between opponents, via French parler \"to speak\"",
-      "tier": 2
+      "tier": 2,
+      "x": -563.4,
+      "y": 109.8,
+      "region": 2
     },
     {
       "id": "la-parola",
@@ -492,7 +600,10 @@
       "root_meaning": "speech, parable",
       "cognate": "parable",
       "cognate_note": "a story that makes a comparison (Greek parabolḗ)",
-      "tier": 2
+      "tier": 2,
+      "x": -522.4,
+      "y": 124.4,
+      "region": 2
     },
     {
       "id": "dire",
@@ -505,7 +616,10 @@
       "root_meaning": "to say",
       "cognate": "diction",
       "cognate_note": "the way words are said",
-      "tier": 1
+      "tier": 1,
+      "x": -548.1,
+      "y": 154.8,
+      "region": 2
     },
     {
       "id": "chiedere",
@@ -518,7 +632,10 @@
       "root_meaning": "to seek, to ask",
       "cognate": "query",
       "cognate_note": null,
-      "tier": 3
+      "tier": 3,
+      "x": -563.5,
+      "y": 206.5,
+      "region": 2
     },
     {
       "id": "la-domanda",
@@ -531,7 +648,10 @@
       "root_meaning": "to entrust",
       "cognate": "demand",
       "cognate_note": "Italian shifted from \"entrust\" to \"ask\"",
-      "tier": 2
+      "tier": 2,
+      "x": -574.5,
+      "y": 176.1,
+      "region": 2
     },
     {
       "id": "rispondere",
@@ -544,7 +664,10 @@
       "root_meaning": "to answer",
       "cognate": "respond",
       "cognate_note": null,
-      "tier": 4
+      "tier": 4,
+      "x": -562.2,
+      "y": 257.6,
+      "region": 2
     },
     {
       "id": "la-risposta",
@@ -557,7 +680,10 @@
       "root_meaning": "to answer",
       "cognate": "response",
       "cognate_note": null,
-      "tier": 3
+      "tier": 3,
+      "x": -624.6,
+      "y": 218.5,
+      "region": 2
     },
     {
       "id": "scrivere",
@@ -570,7 +696,10 @@
       "root_meaning": "to write",
       "cognate": "scribe",
       "cognate_note": "a person who writes by hand",
-      "tier": 4
+      "tier": 4,
+      "x": -455.0,
+      "y": 121.2,
+      "region": 2
     },
     {
       "id": "la-lettera",
@@ -583,7 +712,10 @@
       "root_meaning": "letter of the alphabet",
       "cognate": "letter",
       "cognate_note": null,
-      "tier": 3
+      "tier": 3,
+      "x": -486.3,
+      "y": 141.8,
+      "region": 2
     },
     {
       "id": "leggere",
@@ -596,7 +728,10 @@
       "root_meaning": "to read, to gather",
       "cognate": "legible",
       "cognate_note": "readable",
-      "tier": 4
+      "tier": 4,
+      "x": -509.2,
+      "y": 161.7,
+      "region": 2
     },
     {
       "id": "il-libro",
@@ -609,7 +744,10 @@
       "root_meaning": "book; originally the inner bark of a tree",
       "cognate": "library",
       "cognate_note": null,
-      "tier": 3
+      "tier": 3,
+      "x": -462.8,
+      "y": 155.7,
+      "region": 2
     },
     {
       "id": "la-madre",
@@ -622,7 +760,10 @@
       "root_meaning": "mother",
       "cognate": "maternal",
       "cognate_note": null,
-      "tier": 1
+      "tier": 1,
+      "x": 401.6,
+      "y": 30.4,
+      "region": 6
     },
     {
       "id": "il-padre",
@@ -635,7 +776,10 @@
       "root_meaning": "father",
       "cognate": "paternal",
       "cognate_note": null,
-      "tier": 1
+      "tier": 1,
+      "x": 380.5,
+      "y": 66.1,
+      "region": 6
     },
     {
       "id": "il-fratello",
@@ -648,7 +792,10 @@
       "root_meaning": "brother",
       "cognate": "fraternal",
       "cognate_note": null,
-      "tier": 1
+      "tier": 1,
+      "x": 430.2,
+      "y": 107.1,
+      "region": 6
     },
     {
       "id": "la-sorella",
@@ -661,7 +808,10 @@
       "root_meaning": "sister",
       "cognate": "sorority",
       "cognate_note": null,
-      "tier": 2
+      "tier": 2,
+      "x": 455.0,
+      "y": 40.3,
+      "region": 6
     },
     {
       "id": "il-figlio",
@@ -674,7 +824,10 @@
       "root_meaning": "son",
       "cognate": "filial",
       "cognate_note": "as befits a son or daughter",
-      "tier": 1
+      "tier": 1,
+      "x": 384.4,
+      "y": 133.8,
+      "region": 6
     },
     {
       "id": "la-figlia",
@@ -687,7 +840,10 @@
       "root_meaning": "son",
       "cognate": "filial",
       "cognate_note": "as befits a son or daughter",
-      "tier": 2
+      "tier": 2,
+      "x": 384.9,
+      "y": -2.6,
+      "region": 6
     },
     {
       "id": "il-nonno",
@@ -700,7 +856,10 @@
       "root_meaning": "old man, monk",
       "cognate": null,
       "cognate_note": null,
-      "tier": 4
+      "tier": 4,
+      "x": 433.8,
+      "y": -9.2,
+      "region": 6
     },
     {
       "id": "la-nonna",
@@ -713,7 +872,10 @@
       "root_meaning": "old man, monk",
       "cognate": "nun",
       "cognate_note": "Late Latin nonna, \"old woman\", came to mean \"nun\"",
-      "tier": 3
+      "tier": 3,
+      "x": 325.9,
+      "y": 69.1,
+      "region": 6
     },
     {
       "id": "la-famiglia",
@@ -726,7 +888,10 @@
       "root_meaning": "household",
       "cognate": "family",
       "cognate_note": null,
-      "tier": 1
+      "tier": 1,
+      "x": 357.9,
+      "y": 26.7,
+      "region": 6
     },
     {
       "id": "la-testa",
@@ -739,7 +904,10 @@
       "root_meaning": "clay pot, shell",
       "cognate": "test",
       "cognate_note": "a \"test\" was a clay pot for assaying metal; \"pot\" became slang for \"head\"",
-      "tier": 1
+      "tier": 1,
+      "x": -269.2,
+      "y": 84.8,
+      "region": 3
     },
     {
       "id": "la-mano",
@@ -752,7 +920,10 @@
       "root_meaning": "hand",
       "cognate": "manual",
       "cognate_note": "done by hand",
-      "tier": 2
+      "tier": 2,
+      "x": -295.0,
+      "y": 65.0,
+      "region": 3
     },
     {
       "id": "il-piede",
@@ -765,7 +936,10 @@
       "root_meaning": "foot",
       "cognate": "pedal",
       "cognate_note": "worked by the foot",
-      "tier": 5
+      "tier": 5,
+      "x": -314.0,
+      "y": 32.8,
+      "region": 3
     },
     {
       "id": "camminare",
@@ -778,7 +952,10 @@
       "root_meaning": "road, way (from Celtic)",
       "cognate": null,
       "cognate_note": null,
-      "tier": 5
+      "tier": 5,
+      "x": -334.0,
+      "y": 0.4,
+      "region": 3
     },
     {
       "id": "l-occhio",
@@ -791,7 +968,10 @@
       "root_meaning": "eye",
       "cognate": "ocular",
       "cognate_note": null,
-      "tier": 3
+      "tier": 3,
+      "x": -301.9,
+      "y": 135.1,
+      "region": 3
     },
     {
       "id": "vedere",
@@ -804,7 +984,10 @@
       "root_meaning": "to see",
       "cognate": "video",
       "cognate_note": "Latin for \"I see\"",
-      "tier": 1
+      "tier": 1,
+      "x": -251.9,
+      "y": 87.9,
+      "region": 3
     },
     {
       "id": "guardare",
@@ -817,7 +1000,10 @@
       "root_meaning": "to watch over",
       "cognate": "guard",
       "cognate_note": "same Germanic root as English \"ward\"",
-      "tier": 3
+      "tier": 3,
+      "x": -268.4,
+      "y": 149.3,
+      "region": 3
     },
     {
       "id": "l-orecchio",
@@ -830,7 +1016,10 @@
       "root_meaning": "ear",
       "cognate": null,
       "cognate_note": null,
-      "tier": 6
+      "tier": 6,
+      "x": -252.2,
+      "y": 117.1,
+      "region": 3
     },
     {
       "id": "sentire",
@@ -843,7 +1032,10 @@
       "root_meaning": "to feel, to perceive",
       "cognate": "sentiment",
       "cognate_note": null,
-      "tier": 2
+      "tier": 2,
+      "x": -209.1,
+      "y": 101.4,
+      "region": 3
     },
     {
       "id": "la-bocca",
@@ -856,7 +1048,10 @@
       "root_meaning": "cheek",
       "cognate": null,
       "cognate_note": null,
-      "tier": 3
+      "tier": 3,
+      "x": -296.4,
+      "y": 99.6,
+      "region": 3
     },
     {
       "id": "il-sole",
@@ -869,7 +1064,10 @@
       "root_meaning": "sun",
       "cognate": "solar",
       "cognate_note": null,
-      "tier": 3
+      "tier": 3,
+      "x": -197.5,
+      "y": -305.7,
+      "region": 7
     },
     {
       "id": "la-pioggia",
@@ -882,7 +1080,10 @@
       "root_meaning": "to rain",
       "cognate": null,
       "cognate_note": null,
-      "tier": 5
+      "tier": 5,
+      "x": -214.6,
+      "y": -255.2,
+      "region": 7
     },
     {
       "id": "piovere",
@@ -895,7 +1096,10 @@
       "root_meaning": "to rain",
       "cognate": null,
       "cognate_note": null,
-      "tier": 6
+      "tier": 6,
+      "x": -227.7,
+      "y": -362.7,
+      "region": 7
     },
     {
       "id": "la-neve",
@@ -908,7 +1112,10 @@
       "root_meaning": "snow",
       "cognate": null,
       "cognate_note": null,
-      "tier": 5
+      "tier": 5,
+      "x": -301.4,
+      "y": -252.6,
+      "region": 7
     },
     {
       "id": "nevicare",
@@ -921,7 +1128,10 @@
       "root_meaning": "snow",
       "cognate": null,
       "cognate_note": null,
-      "tier": 6
+      "tier": 6,
+      "x": -304.7,
+      "y": -344.0,
+      "region": 7
     },
     {
       "id": "il-vento",
@@ -934,7 +1144,10 @@
       "root_meaning": "wind",
       "cognate": "ventilate",
       "cognate_note": "to let the wind through",
-      "tier": 5
+      "tier": 5,
+      "x": -150.6,
+      "y": -340.0,
+      "region": 7
     },
     {
       "id": "freddo",
@@ -947,7 +1160,10 @@
       "root_meaning": "cold",
       "cognate": "frigid",
       "cognate_note": null,
-      "tier": 3
+      "tier": 3,
+      "x": -250.8,
+      "y": -298.0,
+      "region": 7
     },
     {
       "id": "caldo",
@@ -960,7 +1176,10 @@
       "root_meaning": "warm, hot",
       "cognate": "cauldron",
       "cognate_note": "a pot for heating (Late Latin caldaria)",
-      "tier": 4
+      "tier": 4,
+      "x": -167.7,
+      "y": -249.8,
+      "region": 7
     },
     {
       "id": "il-treno",
@@ -973,7 +1192,10 @@
       "root_meaning": "to pull, to drag",
       "cognate": "train",
       "cognate_note": "via French traîner \"to drag\": carriages pulled along",
-      "tier": 4
+      "tier": 4,
+      "x": 371.1,
+      "y": -270.9,
+      "region": 4
     },
     {
       "id": "la-stazione",
@@ -986,7 +1208,10 @@
       "root_meaning": "a standing, a post",
       "cognate": "station",
       "cognate_note": null,
-      "tier": 4
+      "tier": 4,
+      "x": 346.7,
+      "y": -197.4,
+      "region": 4
     },
     {
       "id": "il-biglietto",
@@ -999,7 +1224,10 @@
       "root_meaning": "seal, bubble",
       "cognate": "bill",
       "cognate_note": "via French billet; a \"bill\" was a sealed document",
-      "tier": 4
+      "tier": 4,
+      "x": 374.4,
+      "y": -315.0,
+      "region": 4
     },
     {
       "id": "viaggiare",
@@ -1012,7 +1240,10 @@
       "root_meaning": "provisions for a journey (from via, \"road\")",
       "cognate": "voyage",
       "cognate_note": "via French voyage",
-      "tier": 6
+      "tier": 6,
+      "x": 328.3,
+      "y": -306.0,
+      "region": 4
     },
     {
       "id": "il-viaggio",
@@ -1025,7 +1256,10 @@
       "root_meaning": "provisions for a journey (from via, \"road\")",
       "cognate": "voyage",
       "cognate_note": "via French voyage",
-      "tier": 3
+      "tier": 3,
+      "x": 307.5,
+      "y": -306.0,
+      "region": 4
     },
     {
       "id": "la-strada",
@@ -1038,7 +1272,10 @@
       "root_meaning": "paved (road)",
       "cognate": "street",
       "cognate_note": "Latin via strata, \"paved road\", became Old English strǣt",
-      "tier": 2
+      "tier": 2,
+      "x": 307.4,
+      "y": -228.0,
+      "region": 4
     },
     {
       "id": "la-macchina",
@@ -1051,7 +1288,10 @@
       "root_meaning": "device, machine",
       "cognate": "machine",
       "cognate_note": null,
-      "tier": 2
+      "tier": 2,
+      "x": 324.8,
+      "y": -269.1,
+      "region": 4
     },
     {
       "id": "guidare",
@@ -1064,7 +1304,10 @@
       "root_meaning": "to show the way",
       "cognate": "guide",
       "cognate_note": null,
-      "tier": 5
+      "tier": 5,
+      "x": 281.2,
+      "y": -263.6,
+      "region": 4
     },
     {
       "id": "arrivare",
@@ -1077,7 +1320,10 @@
       "root_meaning": "to come ashore",
       "cognate": "arrive",
       "cognate_note": "ad \"to\" + ripa \"shore\"",
-      "tier": 3
+      "tier": 3,
+      "x": 278.7,
+      "y": -335.2,
+      "region": 4
     },
     {
       "id": "partire",
@@ -1090,7 +1336,10 @@
       "root_meaning": "to divide, to share",
       "cognate": "depart",
       "cognate_note": "to part from",
-      "tier": 4
+      "tier": 4,
+      "x": 320.8,
+      "y": -352.7,
+      "region": 4
     },
     {
       "id": "il-giorno",
@@ -1103,7 +1352,10 @@
       "root_meaning": "daily (from dies, \"day\")",
       "cognate": "journal",
       "cognate_note": "a daily record; a \"journey\" was a day's travel",
-      "tier": 1
+      "tier": 1,
+      "x": -59.7,
+      "y": -104.5,
+      "region": 8
     },
     {
       "id": "la-notte",
@@ -1116,7 +1368,10 @@
       "root_meaning": "night",
       "cognate": "nocturnal",
       "cognate_note": null,
-      "tier": 1
+      "tier": 1,
+      "x": -23.6,
+      "y": -67.9,
+      "region": 8
     },
     {
       "id": "la-mattina",
@@ -1129,7 +1384,10 @@
       "root_meaning": "of the morning",
       "cognate": "matins",
       "cognate_note": "early-morning prayers",
-      "tier": 3
+      "tier": 3,
+      "x": -107.8,
+      "y": -96.0,
+      "region": 8
     },
     {
       "id": "la-sera",
@@ -1142,7 +1400,10 @@
       "root_meaning": "late",
       "cognate": null,
       "cognate_note": null,
-      "tier": 2
+      "tier": 2,
+      "x": -33.2,
+      "y": -159.2,
+      "region": 8
     },
     {
       "id": "oggi",
@@ -1155,7 +1416,10 @@
       "root_meaning": "today (hoc die, \"on this day\")",
       "cognate": null,
       "cognate_note": null,
-      "tier": 1
+      "tier": 1,
+      "x": -101.8,
+      "y": -38.9,
+      "region": 8
     },
     {
       "id": "domani",
@@ -1168,7 +1432,10 @@
       "root_meaning": "morning (de mane, \"from the morning\")",
       "cognate": null,
       "cognate_note": null,
-      "tier": 1
+      "tier": 1,
+      "x": -167.6,
+      "y": -30.8,
+      "region": 8
     },
     {
       "id": "ieri",
@@ -1181,7 +1448,10 @@
       "root_meaning": "yesterday",
       "cognate": "yesterday",
       "cognate_note": "Latin heri and English yester- share a Proto-Indo-European root",
-      "tier": 2
+      "tier": 2,
+      "x": -177.7,
+      "y": -95.2,
+      "region": 8
     },
     {
       "id": "la-settimana",
@@ -1194,7 +1464,10 @@
       "root_meaning": "week (from septem, \"seven\")",
       "cognate": "September",
       "cognate_note": "the 7th month of the old Roman year",
-      "tier": 2
+      "tier": 2,
+      "x": -139.6,
+      "y": -145.7,
+      "region": 8
     }
   ],
   "edges": [
@@ -3614,6 +3887,162 @@
       "words": [
         "viaggiare",
         "il-viaggio"
+      ]
+    }
+  ],
+  "regions": [
+    {
+      "id": 0,
+      "name": "Food",
+      "color": 2,
+      "words": [
+        "il-latte",
+        "il-formaggio",
+        "il-pane",
+        "la-pasta",
+        "mangiare",
+        "mangiato",
+        "bere",
+        "l-acqua",
+        "il-vino",
+        "la-mela",
+        "la-colazione",
+        "la-cena",
+        "cenare"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "Home",
+      "color": 0,
+      "words": [
+        "cucinare",
+        "la-cucina",
+        "il-cuoco",
+        "la-casa",
+        "la-porta",
+        "la-finestra",
+        "il-letto",
+        "dormire",
+        "il-sonno",
+        "la-sedia",
+        "il-tavolo",
+        "la-camera"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Communication",
+      "color": 1,
+      "words": [
+        "parlare",
+        "parlato",
+        "la-parola",
+        "dire",
+        "chiedere",
+        "la-domanda",
+        "rispondere",
+        "la-risposta",
+        "scrivere",
+        "la-lettera",
+        "leggere",
+        "il-libro"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Body",
+      "color": 0,
+      "words": [
+        "la-testa",
+        "la-mano",
+        "il-piede",
+        "camminare",
+        "l-occhio",
+        "vedere",
+        "guardare",
+        "l-orecchio",
+        "sentire",
+        "la-bocca"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Travel",
+      "color": 1,
+      "words": [
+        "il-treno",
+        "la-stazione",
+        "il-biglietto",
+        "viaggiare",
+        "il-viaggio",
+        "la-strada",
+        "la-macchina",
+        "guidare",
+        "arrivare",
+        "partire"
+      ]
+    },
+    {
+      "id": 5,
+      "name": "Animals",
+      "color": 1,
+      "words": [
+        "il-cane",
+        "il-gatto",
+        "abbaiare",
+        "l-uccello",
+        "volare",
+        "il-pesce",
+        "nuotare",
+        "il-cavallo",
+        "la-mucca"
+      ]
+    },
+    {
+      "id": 6,
+      "name": "Family",
+      "color": 1,
+      "words": [
+        "la-madre",
+        "il-padre",
+        "il-fratello",
+        "la-sorella",
+        "il-figlio",
+        "la-figlia",
+        "il-nonno",
+        "la-nonna",
+        "la-famiglia"
+      ]
+    },
+    {
+      "id": 7,
+      "name": "Weather",
+      "color": 0,
+      "words": [
+        "il-sole",
+        "la-pioggia",
+        "piovere",
+        "la-neve",
+        "nevicare",
+        "il-vento",
+        "freddo",
+        "caldo"
+      ]
+    },
+    {
+      "id": 8,
+      "name": "Time",
+      "color": 1,
+      "words": [
+        "il-giorno",
+        "la-notte",
+        "la-mattina",
+        "la-sera",
+        "oggi",
+        "domani",
+        "ieri",
+        "la-settimana"
       ]
     }
   ],

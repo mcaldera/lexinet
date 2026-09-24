@@ -41,6 +41,9 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import layout  # noqa: E402
+
 DEFAULT_MODEL = "numberbatch"  # or any sentence-transformers model id, e.g. BAAI/bge-m3
 NUMBERBATCH_URL = "https://conceptnet.s3.amazonaws.com/downloads/2019/numberbatch/numberbatch-en-19.08.txt.gz"
 NUMBERBATCH_PATH = Path.home() / ".cache" / "sprawl" / "numberbatch-en-19.08.txt.gz"
@@ -380,6 +383,31 @@ def build_graph(
         if len(members) >= 2
     ]
 
+    # Fixed map: communities become named, coloured territories (see layout.py).
+    G = nx.Graph()
+    G.add_nodes_from(ids)
+    G.add_edges_from((e["source"], e["target"], {"weight": e["weight"]}) for e in edges)
+    comms = layout.communities(G)
+    pos = layout.map_layout(G, comms)
+    region_of = {v: k for k, c in enumerate(comms) for v in c}
+    adjacency = nx.Graph()
+    adjacency.add_nodes_from(range(len(comms)))
+    adjacency.add_edges_from((region_of[e["source"]], region_of[e["target"]]) for e in edges)
+    adjacency.remove_edges_from(nx.selfloop_edges(adjacency))
+    colors = nx.greedy_color(adjacency, strategy="largest_first")  # neighbours differ
+    for node in nodes:
+        node["x"], node["y"] = pos[node["id"]]
+        node["region"] = region_of[node["id"]]
+    regions = [
+        {
+            "id": k,
+            "name": layout.region_name([nd for nd in nodes if nd["region"] == k], G),
+            "color": colors[k],
+            "words": sorted(c, key=ids.index),
+        }
+        for k, c in enumerate(comms)
+    ]
+
     return {
         "seed": ids[words.index(seed)],
         "params": {
@@ -392,6 +420,7 @@ def build_graph(
         "nodes": nodes,
         "edges": edges,
         "roots": roots,
+        "regions": regions,
         "candidates": candidates,
     }
 
@@ -436,6 +465,7 @@ def main(argv: list[str] | None = None) -> int:
     tiers = pd.Series([nd["tier"] for nd in graph["nodes"]]).value_counts().sort_index().to_dict()
     print(f"{n} nodes, {m} edges (avg degree {2 * m / n:.1f}) {reasons}, seed={seed_word!r} -> {args.out}")
     print(f"tiers (tier: words): {tiers}; {len(graph['roots'])} shared roots")
+    print(f"{len(graph['regions'])} regions: {', '.join(r['name'] for r in graph['regions'])}")
     return 0
 
 

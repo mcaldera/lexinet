@@ -74,6 +74,18 @@ export default function GraphView({
       let n = nodeCache.current.get(id);
       if (!n) {
         n = { id, word };
+        if (word.x !== undefined && word.y !== undefined) {
+          // Pinned to the pipeline's map: the geography never moves.
+          n.x = n.fx = word.x;
+          n.y = n.fy = word.y;
+        } else if (hub) {
+          // Roots sit just below the centre of their words.
+          const pts = hub.words.map((w) => byId.get(w)).filter((w) => w?.x !== undefined);
+          if (pts.length) {
+            n.x = n.fx = pts.reduce((a, w) => a + w!.x!, 0) / pts.length;
+            n.y = n.fy = pts.reduce((a, w) => a + w!.y!, 0) / pts.length + 18;
+          }
+        }
         nodeCache.current.set(id, n);
       }
       n.word = word;
@@ -123,6 +135,18 @@ export default function GraphView({
     fg.current?.d3Force('charge')?.strength(-120);
   }, []);
 
+  // Territories: every visible word of a region, named once you've conquered one of them.
+  const regionsToDraw = (data.graph.regions ?? []).flatMap((r) => {
+    const pts = r.words
+      .filter((w) => inspect || (data.states.get(w) ?? 'locked') !== 'locked')
+      .map((w) => byId.get(w))
+      .filter((w): w is WordNode => w?.x !== undefined && w?.y !== undefined)
+      .map((w) => [w.x!, w.y!] as const);
+    if (!pts.length) return [];
+    const named = inspect || r.words.some((w) => data.states.get(w) === 'conquered');
+    return [{ name: named ? r.name : '', color: REGION_RGB[r.color % REGION_RGB.length], pts }];
+  });
+
   const endId = (x: unknown) => (typeof x === 'object' && x ? (x as N).id : (x as string));
   const isHub = (id: string) => id.startsWith('root:');
   const hidden = (id: string) => !inspect && !isHub(id) && data.states.get(id) !== 'conquered';
@@ -149,6 +173,10 @@ export default function GraphView({
       ctx.stroke();
     }
     const label = (alpha: number) => {
+      // Zoomed far out, word labels give way to region names.
+      const fade = node.id === activeId ? 1 : Math.min(1, Math.max(0, (scale - 0.35) / 0.35));
+      if (fade === 0) return;
+      alpha *= fade;
       const fontSize = Math.max(3, 11 / scale);
       ctx.font = `${fontSize}px sans-serif`;
       ctx.textAlign = 'center';
@@ -207,11 +235,19 @@ export default function GraphView({
     ctx.restore();
   };
 
+  const regionOf = (id: string) => byId.get(id)?.region;
+  const crossRegion = (l: L) => {
+    const [a, b] = [regionOf(endId(l.source)), regionOf(endId(l.target))];
+    return a !== undefined && b !== undefined && a !== b;
+  };
   const linkAlpha = (l: L) => {
-    if (inspect) return activeId === undefined || touchesActive(l) ? 0.9 : 0.15;
+    if (touchesActive(l)) return 0.95;
+    // Links between territories are long; keep them in the background.
+    const dim = crossRegion(l) && !l.descends ? 0.35 : 1;
+    if (inspect) return (activeId === undefined ? 0.8 : 0.15) * dim;
     const [a, b] = [endId(l.source), endId(l.target)];
-    if (hidden(a) || hidden(b)) return 0.3;
-    return Math.max(0.15, edgeOpacity(health.get(a) ?? null, health.get(b) ?? null));
+    if (hidden(a) || hidden(b)) return 0.3 * dim;
+    return Math.max(0.15, edgeOpacity(health.get(a) ?? null, health.get(b) ?? null)) * dim;
   };
 
   const linkTooltip = (l: L) => {
@@ -284,6 +320,7 @@ export default function GraphView({
           isWeakBridge(l) || (l.descends && hidden(endId(l.target))) ? [3, 3] : null
         }
         linkHoverPrecision={6}
+        onRenderFramePre={(ctx, scale) => drawRegions(ctx, scale, regionsToDraw)}
         linkLabel={linkTooltip}
         onNodeClick={(n) => onNodeClick(n.id)}
         maxZoom={4}
@@ -372,4 +409,56 @@ function drawHub(
     ctx.fillStyle = 'rgba(251, 207, 232, 0.6)';
     ctx.fillText(`“${node.word.en}”`, x, y + r + 3 + fontSize);
   }
+}
+
+/** Muted territory colours (RGB); neighbouring regions never share one. */
+const REGION_RGB = [
+  '96, 165, 250',
+  '52, 211, 153',
+  '251, 191, 36',
+  '244, 114, 182',
+  '167, 139, 250',
+  '45, 212, 191',
+  '251, 146, 60',
+  '248, 113, 113',
+];
+const TERRITORY_RADIUS = 30; // map units around each word
+
+type Territory = { name: string; color: string; pts: (readonly [number, number])[] };
+
+/** Territories as unions of soft discs with a border; names scale with zoom. */
+function drawRegions(ctx: CanvasRenderingContext2D, scale: number, regions: Territory[]) {
+  const union = (r: number, pts: Territory['pts']) => {
+    ctx.beginPath();
+    for (const [x, y] of pts) {
+      ctx.moveTo(x + r, y);
+      ctx.arc(x, y, r, 0, 2 * Math.PI);
+    }
+  };
+  const border = 1.5 / scale;
+  ctx.save();
+  for (const t of regions) {
+    union(TERRITORY_RADIUS + border, t.pts);
+    ctx.fillStyle = `rgba(${t.color}, 0.45)`;
+    ctx.fill();
+    union(TERRITORY_RADIUS, t.pts);
+    ctx.fillStyle = '#020617';
+    ctx.fill();
+    ctx.fillStyle = `rgba(${t.color}, 0.09)`;
+    ctx.fill();
+  }
+  // Region names: big and bold zoomed out, faint when zoomed in on words.
+  const alpha = Math.min(0.85, Math.max(0.12, 1.1 - 0.45 * scale));
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  for (const t of regions) {
+    if (!t.name) continue;
+    const cx = t.pts.reduce((a, p) => a + p[0], 0) / t.pts.length;
+    const cy = t.pts.reduce((a, p) => a + p[1], 0) / t.pts.length;
+    const px = Math.min(24, Math.max(12, 8 + 2.5 * Math.sqrt(t.pts.length))); // screen pixels
+    ctx.font = `800 ${px / scale}px sans-serif`;
+    ctx.fillStyle = `rgba(${t.color}, ${alpha})`;
+    ctx.fillText(t.name.toUpperCase(), cx, cy);
+  }
+  ctx.restore();
 }

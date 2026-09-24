@@ -180,3 +180,11 @@ def test_shared_roots_become_hub_entries(df):
             "words": ["parlare", "parlato", "la-parola"],
         }
     ]
+
+
+def test_every_word_gets_map_position_and_region(df):
+    graph = bg.build_graph(df, fake_embedder)
+    assert all(isinstance(n["x"], float) and isinstance(n["y"], float) for n in graph["nodes"])
+    in_regions = sorted(w for r in graph["regions"] for w in r["words"])
+    assert in_regions == sorted(n["id"] for n in graph["nodes"])
+    assert all(r["name"] for r in graph["regions"])

@@ -30,7 +30,13 @@ export type WordNode = {
   cognate_note?: string | null;
   /** 1 = most common words; higher tiers open as you progress. */
   tier?: number;
+  /** Fixed map position and territory from the pipeline layout. */
+  x?: number;
+  y?: number;
+  region?: number;
 };
+/** A territory on the map: a community of closely linked words. */
+export type Region = { id: number; name: string; color: number; words: string[] };
 export type Edge = {
   source: string;
   target: string;
@@ -67,6 +73,7 @@ export type Graph = {
   nodes: WordNode[];
   edges: Edge[];
   roots?: RootHub[];
+  regions?: Region[];
   candidates?: Record<string, Candidate[]>;
 };
 export type CardRow = { id: string; nodeId: string; direction: Direction; card: Card };
