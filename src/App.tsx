@@ -31,7 +31,7 @@ import { pushOf, reachMap, reachSources, sightedWords } from './core/reach';
 import { neighbourMap } from './core/unlock';
 import { nextDrill, TENSES, type Tense } from './core/verbs';
 import { computeProgress, reachInput, verbLevels as computeVerbLevels } from './progress';
-import { cardId, DIRECTIONS, Rating, type Grade } from './core/scheduler';
+import { cardId, Rating, retrievability, type Grade } from './core/scheduler';
 import type { NodeState } from './core/unlock';
 import { nextPractice, nodeStrength } from './core/strength';
 import type { CardRow } from './db/repo';
@@ -480,7 +480,12 @@ export default function App() {
       cost: { base: PLANT_COST, perTierAhead: PLANT_COST_PER_TIER },
     }).map((o) => {
       const word = data.nodes.find((n) => n.id === o.id)!;
-      return { ...o, word, category: regionName(word.region ?? undefined), level: tierName(word.tier) };
+      return {
+        ...o,
+        word,
+        category: regionName(word.region ?? undefined),
+        level: tierName(word.tier),
+      };
     });
 
   // Push (core/reach.ts): how hard each won word pushes, and who pushes the selected word.
@@ -772,9 +777,17 @@ export default function App() {
       });
       return;
     }
-    // Random first direction, so English -> Italian comes first half the time.
-    const dirs = Math.random() < 0.5 ? DIRECTIONS : [...DIRECTIONS].reverse();
-    setSession({ nodeId, cardIds: dirs.map((d) => cardId(nodeId, d)), mode: 'practice' });
+    // Only what is actually due (in random order); a fading word that isn't
+    // due yet is defended with its weakest card. Asking the other, not-due
+    // direction right after felt like the same question again.
+    const own = cardsByNode.get(nodeId) ?? [];
+    const due = own.filter((c) => c.card.due <= now).sort(() => Math.random() - 0.5);
+    const weakest = [...own].sort(
+      (a, b) => (retrievability(a.card, now) ?? 0) - (retrievability(b.card, now) ?? 0),
+    )[0];
+    const cards = due.length ? due : weakest ? [weakest] : [];
+    if (!cards.length) return;
+    setSession({ nodeId, cardIds: cards.map((c) => c.id), mode: 'practice' });
     setTurn((t) => t + 1);
   };
 

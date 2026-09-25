@@ -474,6 +474,14 @@ export default function GraphView({
     const named = inspect || r.words.some((w) => data.states.get(w) === 'conquered');
     return [{ name: named ? r.name : '', color: REGION_RGB[r.color % REGION_RGB.length], ids }];
   });
+  /** Star colour per word in the galaxy view: its category's colour. */
+  const starRgb = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const r of data.graph.regions ?? []) {
+      for (const w of r.words) m.set(w, REGION_RGB[r.color % REGION_RGB.length]);
+    }
+    return m;
+  }, [data.graph.regions]);
   const livePoints = () =>
     regionsToDraw.map((t) => ({
       ...t,
@@ -485,6 +493,7 @@ export default function GraphView({
   const fitted = useRef(false);
   /** A word's pull on its territory: practised words claim more ground. */
   const territoryRadius = (id: string) => {
+    if (inspect) return 24; // galaxy view: every word lights up its nebula
     const st = data.states.get(id);
     if (st === 'conquered') {
       return 32 + 6 * (strength.get(id) ?? 0) + 4 * (verbLevels.get(id) ?? 0);
@@ -506,6 +515,15 @@ export default function GraphView({
   };
   const won = (id: string) => ['conquered', 'claimed'].includes(data.states.get(id) ?? '');
   const hidden = (id: string) => !inspect && !isHub(id) && !won(id);
+  const activeNeighbours = useMemo(
+    () =>
+      new Set(
+        data.edges.flatMap((e) =>
+          e.source === activeId ? [e.target] : e.target === activeId ? [e.source] : [],
+        ),
+      ),
+    [data.edges, activeId],
+  );
   const touchesActive = (l: L) =>
     inspect && activeId !== undefined && [endId(l.source), endId(l.target)].includes(activeId);
 
@@ -517,6 +535,14 @@ export default function GraphView({
     const vl = verbLevels.get(node.id) ?? 0;
     // Stronger words are bigger; every tense a verb masters makes it bigger still.
     const r = state === 'conquered' ? 5 + (strength.get(node.id) ?? 0) * 0.8 + vl * 0.9 : 6;
+    if (inspect && !node.hub) {
+      // Galaxy view: every word a small star in its category's colour.
+      drawStar(ctx, x, y, scale, starRgb.get(node.id) ?? '203, 213, 225', node.word.it, {
+        active: node.id === activeId,
+        linked: activeId !== undefined && activeNeighbours.has(node.id),
+      });
+      return;
+    }
     ctx.save();
     const burst = bursts.current.get(node.id);
     if (burst && !inspect) {
@@ -568,7 +594,16 @@ export default function GraphView({
       return;
     }
     if (node.hub) {
-      drawHub(ctx, node, x, y, scale, node.id === activeId, inspect || unlockedRoots.has(node.id));
+      drawHub(
+        ctx,
+        node,
+        x,
+        y,
+        scale,
+        node.id === activeId,
+        inspect || unlockedRoots.has(node.id),
+        inspect,
+      );
       ctx.restore();
       return;
     }
@@ -991,7 +1026,7 @@ export default function GraphView({
         width={size.width}
         height={size.height}
         graphData={graphData}
-        backgroundColor="#020617"
+        backgroundColor={inspect ? '#01030b' : '#020617'}
         nodeRelSize={6}
         nodeCanvasObject={drawNode}
         nodePointerAreaPaint={(node, color, ctx) => {
@@ -1058,18 +1093,26 @@ export default function GraphView({
           return `${n.word.it} = ${n.word.en}${pct}${str}${verb}${ety} · ${hint}`;
         }}
         linkColor={(l) =>
-          l.hint
-            ? 'rgba(251, 191, 36, 0.55)'
-            : l.flow === 'attack'
-              ? `rgba(248, 113, 113, ${0.35 + 0.3 * Math.sin(Date.now() / 250)})` // pulsing threat
-              : l.via === 'user'
-                ? `rgba(52, 211, 153, ${Math.max(0.5, linkAlpha(l))})` // planted by you
-                : `rgba(${REASON_RGB[l.reason]}, ${linkAlpha(l)})`
+          inspect && !touchesActive(l)
+            ? `rgba(148, 170, 220, ${activeId === undefined ? 0.16 : 0.06})`
+            : l.hint
+              ? 'rgba(251, 191, 36, 0.55)'
+              : l.flow === 'attack'
+                ? `rgba(248, 113, 113, ${0.35 + 0.3 * Math.sin(Date.now() / 250)})` // pulsing threat
+                : l.via === 'user'
+                  ? `rgba(52, 211, 153, ${Math.max(0.5, linkAlpha(l))})` // planted by you
+                  : `rgba(${REASON_RGB[l.reason]}, ${linkAlpha(l)})`
         }
         // Strong links are much thicker (and carry more influence).
         // By rank: the closest pairs (ghiaccio-gelato) stand out from mere same-theme ones.
         linkWidth={(l) =>
-          l.hint ? 0.6 : 0.3 + 5 * weightRank(l.weight) ** 2.5 + (touchesActive(l) ? 1 : 0)
+          inspect
+            ? touchesActive(l)
+              ? 1.4
+              : 0.35 // galaxy view: thin hyperlanes, the selected word's lanes lit
+            : l.hint
+              ? 0.6
+              : 0.3 + 5 * weightRank(l.weight) ** 2.5 + (touchesActive(l) ? 1 : 0)
         }
         linkLineDash={(l) =>
           l.hint
@@ -1095,8 +1138,13 @@ export default function GraphView({
         linkCanvasObject={(l, ctx) =>
           dangerLink(l) ? drawDanger(ctx, l) : isEnergy(l) ? drawEnergy(ctx, l) : drawPush(ctx, l)
         }
-        onRenderFramePre={(ctx, scale) => drawRegions(ctx, scale, livePoints())}
-        onRenderFramePost={(ctx) => {
+        onRenderFramePre={(ctx) => {
+          if (inspect) drawStarfield(ctx);
+          drawRegions(ctx, livePoints(), inspect);
+        }}
+        onRenderFramePost={(ctx, scale) => {
+          // Names on top, so links and words never cover them.
+          drawRegionNames(ctx, scale, livePoints(), inspect);
           pointers.current = drawPointers(
             ctx,
             size.width,
@@ -1157,7 +1205,7 @@ export default function GraphView({
           <span className="pl-1 text-slate-500">N: next</span>
         </div>
       )}
-      <Legend />
+      {!inspect && <Legend />}
     </div>
   );
 }
@@ -1367,8 +1415,11 @@ function drawHub(
   scale: number,
   active: boolean,
   unlocked: boolean,
+  /** Galaxy view: a small marker, named only when zoomed in (or selected). */
+  compact = false,
 ) {
-  const r = 7;
+  const small = compact && !active && scale < 1.6;
+  const r = small ? 3.5 : 7;
   ctx.beginPath();
   for (let i = 0; i < 6; i++) {
     const a = (Math.PI / 3) * i + Math.PI / 6;
@@ -1382,6 +1433,7 @@ function drawHub(
   ctx.lineWidth = active ? 1.5 : 1;
   ctx.stroke();
   ctx.setLineDash([]);
+  if (small) return;
   const fontSize = Math.max(3, 11 / scale);
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
@@ -1427,7 +1479,7 @@ const FIELD_SOFT = 0.035;
  * adds up, and a threshold turns the field into smooth, fused blobs with a
  * border. Denser, stronger areas are drawn more vividly. Names scale with zoom.
  */
-function drawRegions(ctx: CanvasRenderingContext2D, scale: number, regions: Territory[]) {
+function drawRegions(ctx: CanvasRenderingContext2D, regions: Territory[], galaxy = false) {
   const W = ctx.canvas.width;
   const H = ctx.canvas.height;
   const off = fieldCanvas;
@@ -1464,7 +1516,9 @@ function drawRegions(ctx: CanvasRenderingContext2D, scale: number, regions: Terr
     const t0 = FIELD_THRESHOLD * 255;
     const band = FIELD_BORDER * 255;
     const soft = FIELD_SOFT * 255;
-    const BORDER = 150;
+    // Galaxy view: softer, nebula-like areas with a faint rim.
+    const BORDER = galaxy ? 95 : 150;
+    const INNER = galaxy ? 75 : 95;
     for (let i = 3; i < px.length; i += 4) {
       const a = px[i];
       if (a < t0 - soft) px[i] = 0;
@@ -1473,7 +1527,7 @@ function drawRegions(ctx: CanvasRenderingContext2D, scale: number, regions: Terr
       else if (a < t0 + band) px[i] = BORDER;
       else {
         // Inner edge of the border blends into a tint that deepens with density.
-        const inner = Math.min(95, 18 + (a - t0 - band) * 0.9);
+        const inner = Math.min(INNER, (galaxy ? 30 : 18) + (a - t0 - band) * 0.9);
         const k = Math.min(1, (a - t0 - band) / soft);
         px[i] = BORDER + (inner - BORDER) * k;
       }
@@ -1485,19 +1539,96 @@ function drawRegions(ctx: CanvasRenderingContext2D, scale: number, regions: Terr
     ctx.drawImage(off, 0, 0, W, H);
     ctx.restore();
   }
-  // Region names: big and bold zoomed out, faint when zoomed in on words.
-  const alpha = Math.min(0.85, Math.max(0.12, 1.1 - 0.45 * scale));
+}
+
+/**
+ * Region names: big, letter-spaced and outlined so they read over anything.
+ * Bold when zoomed out, faint when zoomed in on words.
+ */
+function drawRegionNames(
+  ctx: CanvasRenderingContext2D,
+  scale: number,
+  regions: Territory[],
+  galaxy = false,
+) {
+  const alpha = Math.min(galaxy ? 0.95 : 0.85, Math.max(0.12, 1.1 - 0.45 * scale));
   ctx.save();
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
+  ctx.lineJoin = 'round';
+  const c = ctx as CanvasRenderingContext2D & { letterSpacing?: string };
   for (const t of regions) {
     if (!t.name || !t.pts.length) continue;
     const cx = t.pts.reduce((a, p) => a + p[0], 0) / t.pts.length;
     const cy = t.pts.reduce((a, p) => a + p[1], 0) / t.pts.length;
-    const px2 = Math.min(24, Math.max(12, 8 + 2.5 * Math.sqrt(t.pts.length))); // screen pixels
-    ctx.font = `800 ${px2 / scale}px sans-serif`;
-    ctx.fillStyle = `rgba(${t.color}, ${alpha})`;
+    const px = Math.min(24, Math.max(12, 8 + 2.5 * Math.sqrt(t.pts.length))); // screen pixels
+    ctx.font = `${galaxy ? 600 : 800} ${px / scale}px sans-serif`;
+    if (galaxy) c.letterSpacing = `${(px * 0.25) / scale}px`;
+    ctx.lineWidth = 4 / scale;
+    ctx.strokeStyle = `rgba(1, 3, 11, ${0.8 * alpha})`;
+    ctx.strokeText(t.name.toUpperCase(), cx, cy);
+    ctx.fillStyle = galaxy ? `rgba(${t.color}, ${alpha})` : `rgba(${t.color}, ${alpha})`;
     ctx.fillText(t.name.toUpperCase(), cx, cy);
+  }
+  ctx.restore();
+}
+
+/** Far stars behind the galaxy view (fixed to the screen). */
+const STARFIELD = Array.from({ length: 260 }, (_, i) => {
+  const h = Math.sin(i * 12.9898) * 43758.5453;
+  const r = (k: number) => {
+    const v = Math.sin(i * 78.233 + k * 37.719) * 43758.5453;
+    return v - Math.floor(v);
+  };
+  return { x: h - Math.floor(h), y: r(1), size: 0.4 + r(2) * 1.1, alpha: 0.15 + r(3) * 0.55 };
+});
+
+function drawStarfield(ctx: CanvasRenderingContext2D) {
+  const W = ctx.canvas.width;
+  const H = ctx.canvas.height;
+  const dpr = Math.max(1, W / (ctx.canvas.clientWidth || W));
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  for (const s of STARFIELD) {
+    ctx.fillStyle = `rgba(226, 232, 255, ${s.alpha})`;
+    ctx.beginPath();
+    ctx.arc(s.x * W, s.y * H, s.size * dpr, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+/** A word in the galaxy view: a glowing star, named when zoomed in. */
+function drawStar(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  scale: number,
+  rgb: string,
+  name: string,
+  { active, linked }: { active: boolean; linked: boolean },
+) {
+  const core = (active ? 3 : 1.8) / Math.sqrt(scale);
+  const glow = core * (active ? 5 : 3.2);
+  ctx.save();
+  const g = ctx.createRadialGradient(x, y, 0, x, y, glow);
+  g.addColorStop(0, `rgba(${rgb}, ${active || linked ? 0.85 : 0.55})`);
+  g.addColorStop(1, `rgba(${rgb}, 0)`);
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(x, y, glow, 0, 2 * Math.PI);
+  ctx.fill();
+  ctx.fillStyle = active ? '#ffffff' : 'rgba(241, 245, 255, 0.95)';
+  ctx.beginPath();
+  ctx.arc(x, y, core, 0, 2 * Math.PI);
+  ctx.fill();
+  if (active || linked || scale > 1.4) {
+    const fontSize = Math.max(3, 10 / scale);
+    ctx.font = `${active ? 'bold ' : ''}${fontSize}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = `rgba(226, 232, 240, ${active ? 1 : linked ? 0.85 : Math.min(0.8, (scale - 1.4) * 1.5)})`;
+    ctx.fillText(name, x, y + glow * 0.6);
   }
   ctx.restore();
 }
