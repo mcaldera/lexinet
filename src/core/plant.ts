@@ -25,7 +25,7 @@ export type PlantOption = {
 export type PlantInput = {
   anchor: string;
   candidates: PlantCandidate[];
-  nodes: { id: string; region?: number; tier?: number }[];
+  nodes: { id: string; region?: number | null; tier?: number }[];
   states: Map<string, string>;
   neighbours: Map<string, string[]>;
   openTier: number;
@@ -40,7 +40,8 @@ export const FILL_WEIGHT = 0.3;
 export function plantOptions(input: PlantInput): PlantOption[] {
   const { anchor, candidates, nodes, states, neighbours, openTier, cost } = input;
   const byId = new Map(nodes.map((n) => [n.id, n]));
-  const region = byId.get(anchor)?.region;
+  // Independent words (no category, region null in the graph) have no category to share.
+  const region = byId.get(anchor)?.region ?? undefined;
   const linked = new Set(neighbours.get(anchor) ?? []);
   const ok = (id: string) => id !== anchor && (states.get(id) ?? 'locked') === 'locked';
   const price = (id: string) =>

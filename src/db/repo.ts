@@ -37,7 +37,8 @@ export type WordNode = {
   /** Fixed map position and territory from the pipeline layout. */
   x?: number;
   y?: number;
-  region?: number;
+  /** Category (null: an independent word that fits no category). */
+  region?: number | null;
   /** Verbs only: six persons per tense (see pipeline/conjugate.py). */
   conjugations?: Record<string, string[]>;
 };

@@ -281,10 +281,22 @@ def edge_reason(semantic: float, morphological: float, etymological: float, them
     return "thematic"
 
 
-def assign_themes(df: pd.DataFrame, total: np.ndarray) -> list[str] | None:
+# An untagged word joins a theme only if it clearly fits: its 3 closest words
+# there are this similar in meaning on average, and that theme beats the next.
+THEME_FIT = 0.45
+THEME_MARGIN = 0.1
+
+
+def theme_fit(semantic_row: np.ndarray, members: list[int]) -> float:
+    return float(np.mean(sorted(semantic_row[members], reverse=True)[:3]))
+
+
+def assign_themes(df: pd.DataFrame, semantic: np.ndarray) -> list[str] | None:
     """Region theme per word when most words have one (curated lists), else None.
 
-    Untagged words join the theme they are most strongly linked to on average.
+    Untagged words join the theme they clearly fit (THEME_FIT, THEME_MARGIN);
+    the rest stay independent ("") instead of being forced into a wrong one
+    ("andare a sciare" is not Health).
     """
     theme_of = [str(t) for t in df["theme"]]
     if sum(bool(t) for t in theme_of) < 0.5 * len(theme_of):
@@ -294,8 +306,11 @@ def assign_themes(df: pd.DataFrame, total: np.ndarray) -> list[str] | None:
         if t:
             members.setdefault(t, []).append(i)
     for i, t in enumerate(theme_of):
-        if not t:
-            theme_of[i] = max(members, key=lambda m: float(np.mean(total[i, members[m]])))
+        if t or len(members) < 2:
+            continue
+        fits = sorted(((theme_fit(semantic[i], m), th) for th, m in members.items()), reverse=True)
+        if fits[0][0] >= THEME_FIT and fits[0][0] - fits[1][0] >= THEME_MARGIN:
+            theme_of[i] = fits[0][1]
     return theme_of
 
 
@@ -309,9 +324,9 @@ def theme_edges(
     by_theme: dict[str, list[int]] = {}
     for i, t in enumerate(theme_of):
         by_theme.setdefault(t, []).append(i)
-    for idx in by_theme.values():
-        if len(idx) < 2:
-            continue
+    for theme, idx in by_theme.items():
+        if not theme or len(idx) < 2:
+            continue  # independent words have no category to hold together
         sub = total[np.ix_(idx, idx)]
         for a, b in tiered_spanning_tree(sub, [tiers[i] for i in idx]):
             out.add(tuple(sorted((idx[a], idx[b]))))
@@ -364,10 +379,10 @@ def build_graph(
     comps = score_components(df, embed)
     total = sum(WEIGHTS[k] * m for k, m in comps.items())
     # Regions first: untagged words join a theme, and then count as part of it.
-    theme_of = assign_themes(df, total)
+    theme_of = assign_themes(df, comps["semantic"])
     if theme_of is not None:
         v = np.array([t.lower() for t in theme_of])
-        comps["thematic"] = (v[:, None] == v[None, :]).astype(float)
+        comps["thematic"] = ((v[:, None] == v[None, :]) & (v[:, None] != "")).astype(float)
         np.fill_diagonal(comps["thematic"], 0.0)
         total = sum(WEIGHTS[k] * m for k, m in comps.items())
 
@@ -497,21 +512,27 @@ def build_graph(
     # Regions: the list's own themes (assigned above) when it has them, else
     # communities of the link graph.
     if theme_of is not None:
-        names = sorted(set(theme_of), key=lambda t: -theme_of.count(t))
+        names = sorted(set(theme_of) - {""}, key=lambda t: -theme_of.count(t))
         comms = [{ids[i] for i in range(n) if theme_of[i] == t} for t in names]
     else:
         comms = layout.communities(G)
         names = []
-    pos = layout.map_layout(G, comms)
+    # Independent words (no category) get laid out as one extra group, but no region.
+    independent = set(ids) - {v for c in comms for v in c}
+    pos = layout.map_layout(G, comms + ([independent] if independent else []))
     region_of = {v: k for k, c in enumerate(comms) for v in c}
     adjacency = nx.Graph()
     adjacency.add_nodes_from(range(len(comms)))
-    adjacency.add_edges_from((region_of[e["source"]], region_of[e["target"]]) for e in edges)
+    adjacency.add_edges_from(
+        (region_of[e["source"]], region_of[e["target"]])
+        for e in edges
+        if e["source"] in region_of and e["target"] in region_of
+    )
     adjacency.remove_edges_from(nx.selfloop_edges(adjacency))
     colors = nx.greedy_color(adjacency, strategy="largest_first")  # neighbours differ
     for node in nodes:
         node["x"], node["y"] = pos[node["id"]]
-        node["region"] = region_of[node["id"]]
+        node["region"] = region_of.get(node["id"])
     regions = [
         {
             "id": k,

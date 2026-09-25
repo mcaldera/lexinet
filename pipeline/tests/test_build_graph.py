@@ -231,3 +231,15 @@ def test_pick_cognate_prefers_the_lookalike_descendant():
     assert bg.pick_cognate("il prosciutto", ["paramount"]) is None  # no help as a hint
     assert bg.pick_cognate("avere", ["behavior"]) is None
     assert bg.pick_cognate("il cane", []) is None
+
+
+def test_untagged_words_that_fit_nowhere_stay_independent(df):
+    df = df.copy()
+    df.loc[len(df)] = {**{c: "" for c in df.columns}, "italian": "andare a sciare", "english": "to go skiing", "pos": "verb"}
+    g = bg.build_graph(df, fake_embedder)
+    node = next(n for n in g["nodes"] if n["it"] == "andare a sciare")
+    assert node["region"] is None
+    assert all(node["id"] not in r["words"] for r in g["regions"])
+    # Still linked into the network (spanning tree), just not held by a category.
+    assert any(node["id"] in (e["source"], e["target"]) for e in g["edges"])
+    assert not any(node["id"] in (e["source"], e["target"]) and e["via"] == "theme" for e in g["edges"])

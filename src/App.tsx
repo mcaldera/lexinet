@@ -480,7 +480,7 @@ export default function App() {
       cost: { base: PLANT_COST, perTierAhead: PLANT_COST_PER_TIER },
     }).map((o) => {
       const word = data.nodes.find((n) => n.id === o.id)!;
-      return { ...o, word, category: regionName(word.region), level: tierName(word.tier) };
+      return { ...o, word, category: regionName(word.region ?? undefined), level: tierName(word.tier) };
     });
 
   // Push (core/reach.ts): how hard each won word pushes, and who pushes the selected word.
@@ -698,6 +698,8 @@ export default function App() {
     setInfo(null);
     setWaitOn(null);
     setPlanting(null);
+    // Another word was clicked: leave the conjugation drill (no penalty).
+    if (verbDrill && verbDrill.nodeId !== nodeId) setVerbDrill(null);
     setSelectedId(nodeId);
     if (fresh.has(nodeId)) setFresh((f) => new Set([...f].filter((id) => id !== nodeId)));
     const hub = data.graph.roots?.find((r) => r.id === nodeId);

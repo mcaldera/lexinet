@@ -29,7 +29,8 @@ CACHE = Path.home() / ".cache" / "sprawl"
 LEVELS = ["A1", "A2", "B1", "B2", "C1"]
 # Frequency rank thresholds per level (OpenSubtitles list): common words come first.
 FREQ_LEVELS = [(1_000, "A1"), (3_000, "A2"), (8_000, "B1"), (20_000, "B2")]
-SKIP_TOPIC = re.compile(r"espressioni|modi di dire|^nomi comuni|^verbi:|parole difficili|sistema politico", re.I)
+# "contrari" lists opposites (dolce - amaro): Italian on both sides, not a gloss.
+SKIP_TOPIC = re.compile(r"espressioni|modi di dire|^nomi comuni|^verbi:|parole difficili|sistema politico|^contrari", re.I)
 # Lessons that are grammar lists, not themes: their words join the closest theme later.
 GENERIC_TOPIC = re.compile(r"^(nomi|verbi|aggettivi|contrari|parole utili|quantit|frequenza|preposizion)", re.I)
 # Near-duplicate lessons share one region; tiny lessons join a related one.
