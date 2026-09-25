@@ -32,10 +32,13 @@ export default function VerbDrill({ word, tense, kind, onDone, onCancel }: Props
 
   return (
     <div className="rounded-lg border border-amber-500/40 bg-slate-900 p-4 text-sm">
-      <div className="mb-3 flex justify-between text-xs uppercase tracking-wider text-amber-300/90">
-        <span>{kind === 'learn' ? `Verb level ${level}: ${tense}` : `Defend: ${tense}`}</span>
-        <button className="normal-case text-slate-400 hover:text-slate-200" onClick={onCancel}>
-          Cancel ✕
+      <div className="mb-3 flex justify-between text-xs text-amber-300/90">
+        <span>
+          {tense}
+          {kind === 'learn' ? ` · ★${level}` : ''}
+        </span>
+        <button className="text-slate-500 hover:text-slate-200" onClick={onCancel}>
+          ✕
         </button>
       </div>
       <div className="mb-3 text-center">
@@ -78,11 +81,7 @@ export default function VerbDrill({ word, tense, kind, onDone, onCancel }: Props
         <div
           className={`mt-3 text-center font-semibold ${passed ? 'text-emerald-300' : 'text-red-300'}`}
         >
-          {passed
-            ? kind === 'learn'
-              ? `Level ${level} reached: ${word.it} in the ${tense}!`
-              : 'Defended!'
-            : 'Not yet: check the red forms.'}
+          {passed ? (kind === 'learn' ? `★${level} ${tense}` : 'Defended') : 'Not yet'}
         </div>
       )}
       <button
@@ -90,7 +89,7 @@ export default function VerbDrill({ word, tense, kind, onDone, onCancel }: Props
         onClick={() => (result ? onDone(result.grade) : check())}
         className="mt-3 w-full rounded bg-amber-700 py-2 text-sm hover:bg-amber-600"
       >
-        {result ? 'Continue' : 'Check'} <span className="text-xs opacity-60">(enter)</span>
+        {result ? 'Continue' : 'Check'}
       </button>
     </div>
   );

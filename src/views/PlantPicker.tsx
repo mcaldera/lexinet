@@ -17,21 +17,20 @@ export default function PlantPicker(props: Props) {
   const cheapest = Math.min(PLANT_COST, ...options.map((o) => o.cost));
   return (
     <div className="rounded-lg border border-emerald-500/40 bg-slate-900 p-4 text-sm">
-      <div className="mb-2 flex justify-between text-xs uppercase tracking-wider text-emerald-300/90">
-        <span>🌱 Plant a word</span>
-        <button className="normal-case text-slate-400 hover:text-slate-200" onClick={onClose}>
-          Close ✕
+      <div className="flex justify-between text-xs text-emerald-300/90">
+        <span>
+          🌱 Plant next to <b>{anchorName}</b>{' '}
+          <span className="text-slate-500">· {anchorCategory}</span>
+        </span>
+        <button className="text-slate-500 hover:text-slate-200" onClick={onClose}>
+          ✕
         </button>
       </div>
-      <p className="text-slate-300">
-        Next to <b>{anchorName}</b> ({anchorCategory}). The word appears there as a “?” joined by
-        your link. Words of the same category tighten it once you conquer them.
-      </p>
-      <p className={`mt-1 text-xs ${coins >= cheapest ? 'text-slate-400' : 'text-amber-300'}`}>
-        {PLANT_COST} coins, more for words from later levels · you have 🪙 {coins}
+      <p className={`mt-1 text-xs ${coins >= cheapest ? 'text-slate-500' : 'text-amber-300'}`}>
+        🪙 {coins}
       </p>
       {options.length === 0 ? (
-        <p className="mt-3 text-slate-400">No hidden words to plant here right now.</p>
+        <p className="mt-3 text-slate-400">Nothing to plant here.</p>
       ) : (
         <ul className="mt-3 space-y-1.5">
           {options.map((o) => (
@@ -50,7 +49,7 @@ export default function PlantPicker(props: Props) {
                 <div className="flex items-center justify-between gap-2 text-xs">
                   <span className={o.sameCategory ? 'text-emerald-300' : 'text-slate-400'}>
                     {o.word.pos ?? 'word'} · {o.category}
-                    {o.sameCategory && ' ✓ same category'}
+                    {o.sameCategory && ' ✓'}
                   </span>
                   <span className="inline-block h-1 w-12 overflow-hidden rounded bg-slate-800">
                     <span

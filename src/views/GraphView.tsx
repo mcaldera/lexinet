@@ -15,6 +15,7 @@ import { ATTENTION_ORDER, type Attention, type AttentionKind } from '../core/att
 import type { AppData, Edge, RootHub, WordNode } from '../db/repo';
 import { stepCursor, useKeyboardCamera } from './useKeyboardCamera';
 import {
+  BAND_COLOR,
   isWeakBridge,
   REGION_RGB,
   regionColors,
@@ -61,13 +62,6 @@ const ATTENTION_LABEL: Record<AttentionKind, string> = {
   threat: 'under threat',
   new: 'new',
 };
-
-const BAND_COLOR = {
-  solid: 'rgba(52, 211, 153, 1)', // emerald
-  faded: 'rgba(52, 211, 153, 0.7)',
-  dashed: 'rgba(250, 204, 21, 0.55)', // amber
-  cracked: 'rgba(248, 113, 113, 0.85)', // red
-} as const;
 
 type Props = {
   data: AppData;
@@ -147,7 +141,7 @@ export default function GraphView({
   const fg = useRef<ForceGraphMethods<N, L>>(undefined);
   const [size, setSize] = useState({ width: 800, height: 600 });
   /** Keyboard cursor: arrows move it along links, Enter/Space opens it. */
-  const [cursorId, setCursorId] = useState<string | undefined>(activeId ?? data.graph.seed);
+  const [cursorId, setCursorId] = useState<string | undefined>(activeId ?? data.seed);
   useEffect(() => {
     if (activeId) setCursorId(activeId);
   }, [activeId]);
@@ -463,7 +457,7 @@ export default function GraphView({
         l.hint ? 1 : l.category ? 0.08 : (0.15 + l.weight * 0.6) * (crossRegion(l) ? 0.3 : 1),
       );
     fg.current?.d3Force('charge')?.strength(-90);
-    fg.current?.d3Force('cluster', clusterForce());
+    fg.current?.d3Force('cluster', clusterForce(settled));
     // Set once: a page shows one graph, and its regions never change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -499,6 +493,40 @@ export default function GraphView({
         .map((n) => [n.x!, n.y!, territoryRadius(n.id)] as const),
     }));
   const fitted = useRef(false);
+  /**
+   * Once the layout has settled, every placed word is pinned: dragging one word
+   * then moves only that word, and newly revealed words settle around a map that
+   * stays put instead of reshuffling it.
+   */
+  const settled = useRef(false);
+  /** The player panned or zoomed: stop refitting the view to the map. */
+  const cameraMoved = useRef(false);
+  /** Fit the visible words into view, never closer than 2× (a new map has only a few). */
+  const fitView = () => {
+    const pts = graphData.nodes.filter((n) => n.x !== undefined && n.y !== undefined);
+    if (!pts.length || !fg.current) return;
+    const xs = pts.map((n) => n.x!);
+    const ys = pts.map((n) => n.y!);
+    const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+    const pad = 80;
+    const k = Math.min(
+      2,
+      (size.width - 2 * pad) / Math.max(1, x1 - x0),
+      (size.height - 2 * pad) / Math.max(1, y1 - y0),
+    );
+    fg.current.centerAt((x0 + x1) / 2, (y0 + y1) / 2, 400);
+    fg.current.zoom(Math.max(0.15, k), 400);
+  };
+  // Switching to or from the whole network is a different map: lay it out afresh.
+  const wasInspect = useRef(inspect);
+  if (wasInspect.current !== inspect) {
+    wasInspect.current = inspect;
+    settled.current = false;
+    for (const n of nodeCache.current.values()) {
+      n.fx = undefined;
+      n.fy = undefined;
+    }
+  }
   /** A word's pull on its territory: practised words claim more ground. */
   const territoryRadius = (id: string) => {
     if (inspect) return 24; // galaxy view: every word lights up its nebula
@@ -1028,7 +1056,14 @@ export default function GraphView({
   };
 
   return (
-    <div ref={wrap} className="relative h-full w-full">
+    <div
+      ref={wrap}
+      className="relative h-full w-full"
+      onWheel={() => (cameraMoved.current = true)}
+      onPointerMove={(e) => {
+        if (e.buttons) cameraMoved.current = true;
+      }}
+    >
       <ForceGraph2D<GNode, GLink>
         ref={fg}
         width={size.width}
@@ -1181,12 +1216,21 @@ export default function GraphView({
           n.fx = n.x;
           n.fy = n.y;
         }}
-        cooldownTicks={200}
+        d3VelocityDecay={0.5}
+        d3AlphaDecay={0.035}
+        warmupTicks={fitted.current ? 0 : 80}
+        cooldownTicks={300}
         onEngineStop={() => {
-          // Fit once on load; afterwards the camera is yours (F refits).
-          if (fitted.current) return;
+          for (const n of graphData.nodes) {
+            if (n.x === undefined || n.fx !== undefined) continue;
+            n.fx = n.x;
+            n.fy = n.y;
+          }
+          settled.current = true;
+          // The camera follows the growing map until you pan or zoom it yourself (F refits).
+          if (fitted.current && cameraMoved.current) return;
           fitted.current = true;
-          fg.current?.zoomToFit(400, 60);
+          fitView();
         }}
       />
       {!inspect && attention.length > 0 && (
@@ -1210,10 +1254,8 @@ export default function GraphView({
               </button>
             );
           })}
-          <span className="pl-1 text-slate-500">N: next</span>
         </div>
       )}
-      {!inspect && <Legend />}
     </div>
   );
 }
@@ -1269,7 +1311,8 @@ function drawPointers(
     if (out.length >= MAX_POINTERS) break;
     const kind = kindOf.get(id);
     const n = nodes.get(id);
-    if (!kind || n?.x === undefined || n.y === undefined) continue;
+    // Newly revealed words are many and not urgent: the jump bar counts them.
+    if (!kind || kind === 'new' || n?.x === undefined || n.y === undefined) continue;
     const sx = T.a * n.x + T.c * n.y + T.e;
     const sy = T.b * n.x + T.d * n.y + T.f;
     if (sx >= 0 && sx <= W && sy >= 0 && sy <= H) continue; // visible: the ripple shows it
@@ -1310,109 +1353,6 @@ function drawPointers(
   }
   ctx.restore();
   return out;
-}
-
-function Legend() {
-  const [open, setOpen] = useState(() => {
-    try {
-      return localStorage.getItem('sprawl.legend') !== 'closed';
-    } catch {
-      return true;
-    }
-  });
-  const toggle = () => {
-    setOpen(!open);
-    try {
-      localStorage.setItem('sprawl.legend', open ? 'closed' : 'open');
-    } catch {
-      // private mode: just not remembered
-    }
-  };
-  if (!open) {
-    return (
-      <button
-        onClick={toggle}
-        className="absolute bottom-3 left-3 rounded bg-slate-900/85 px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-800"
-      >
-        Legend ▴
-      </button>
-    );
-  }
-  return <LegendBody onClose={toggle} />;
-}
-
-function LegendBody({ onClose }: { onClose: () => void }) {
-  const dot = (color: string) => (
-    <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: color }} />
-  );
-  const line = (rgb: string, dashed = false) => (
-    <span
-      className="inline-block w-4"
-      style={{ borderTop: `2px ${dashed ? 'dashed' : 'solid'} rgb(${rgb})` }}
-    />
-  );
-  const item = 'flex items-center gap-1';
-  return (
-    <div className="pointer-events-none absolute bottom-3 left-3 flex flex-col gap-1.5 rounded bg-slate-900/85 px-3 py-2 text-xs text-slate-300">
-      <button
-        onClick={onClose}
-        className="pointer-events-auto absolute right-2 top-1 text-slate-500 hover:text-slate-200"
-        title="Hide the legend"
-      >
-        ▾ hide
-      </button>
-      <div className="flex gap-3">
-        <span className={item}>{dot(BAND_COLOR.solid)}&gt; 90%</span>
-        <span className={item}>{dot(BAND_COLOR.faded)}70–90%</span>
-        <span className={item}>{dot(BAND_COLOR.dashed)}50–70%</span>
-        <span className={item}>{dot(BAND_COLOR.cracked)}&lt; 50%</span>
-        <span className={item}>{dot('rgba(71, 85, 105, 0.9)')}? frontier</span>
-      </div>
-      <div className="flex gap-3">
-        <span>● noun</span>
-        <span>▲ verb</span>
-        <span>◆ adjective</span>
-        <span>■ adverb</span>
-        <span className="text-amber-300">◎ verb level</span>
-      </div>
-      <div className="flex gap-3">
-        <span className="text-red-300">› red: attack</span>
-        <span className="text-emerald-300">› green: support</span>
-        <span className="text-emerald-200">glow: cohesion</span>
-        <span className="text-red-300">? red: hostile</span>
-        <span className="text-amber-300">◔ time until hostile</span>
-        <span className="text-emerald-300">◌ claimed (fragile, steps 1-3)</span>
-        <span className="text-sky-300">◎ ripple / edge arrow: needs you</span>
-        <span className="text-slate-300">◯ white ring: next step opens</span>
-        <span className="text-slate-400">◌ ghost: in sight, not in reach yet</span>
-        <span className="text-sky-300">┅ blue flow: push towards the horizon</span>
-        <span className="text-rose-300">! rose ring: claim in danger after a miss</span>
-        <span className="text-teal-300">↺ teal ring: lost, one answer wins it back</span>
-        <span className="text-emerald-300">-·- green link: planted by you</span>
-        <span className="text-amber-200">
-          ≈ amber dot: your hint (English cousin, shields the word)
-        </span>
-        <span className="text-amber-300">★ verb tense reached</span>
-        <span className="text-pink-300">⬢ shared root</span>
-      </div>
-      <div className="flex gap-3">
-        {(['semantic', 'thematic', 'morphological', 'etymological'] as const).map((r) => (
-          <span key={r} className={item}>
-            {line(REASON_RGB[r])}
-            {REASON_LABEL[r]}
-          </span>
-        ))}
-        <span className={item}>
-          {line('148, 163, 184', true)}
-          weak bridge
-        </span>
-      </div>
-      <div className="text-slate-500">
-        ↑↓←→ move between words · Enter opens · WASD pan · +/− zoom · F fit (Esc leaves the answer
-        box)
-      </div>
-    </div>
-  );
 }
 
 function drawHub(
@@ -1466,7 +1406,7 @@ function drawHub(
  * territories and their names don't pile up. Words without a region (hubs,
  * hints, independent words) are left to the other forces.
  */
-function clusterForce(pull = 0.08, gap = 50) {
+function clusterForce(settled: { current: boolean }, pull = 0.08, gap = 50) {
   let nodes: N[] = [];
   const force = (alpha: number) => {
     const groups = new Map<number, { x: number; y: number; members: N[] }>();
@@ -1491,7 +1431,9 @@ function clusterForce(pull = 0.08, gap = 50) {
         m.vy = (m.vy ?? 0) + (g.cy - m.y!) * pull * alpha;
       }
     }
-    for (let i = 0; i < list.length; i++) {
+    // Pushing regions apart is for the first layout: later it would only shove new
+    // words away from a pinned map.
+    for (let i = 0; i < (settled.current ? 0 : list.length); i++) {
       for (let j = i + 1; j < list.length; j++) {
         const [a, b] = [list[i], list[j]];
         let dx = b.cx - a.cx;

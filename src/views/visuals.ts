@@ -144,3 +144,11 @@ export function regionColors(
   }
   return color;
 }
+
+/** Health bands of conquered words (see core/health). */
+export const BAND_COLOR = {
+  solid: 'rgba(52, 211, 153, 1)', // emerald
+  faded: 'rgba(52, 211, 153, 0.7)',
+  dashed: 'rgba(250, 204, 21, 0.55)', // amber
+  cracked: 'rgba(248, 113, 113, 0.85)', // red
+} as const;

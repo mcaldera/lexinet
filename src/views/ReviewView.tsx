@@ -2,7 +2,6 @@ import { useRef, useState } from 'react';
 import { checkAnswer, type AnswerCheck } from '../core/answer';
 import { CLAIM_STEP_NAMES, unseen, type ClaimStep } from '../core/claim';
 import { Rating, type Grade } from '../core/scheduler';
-import { NEW_NODES_PER_DAY } from '../config';
 import type { AppData, CardRow } from '../db/repo';
 import Etymology from './Etymology';
 
@@ -10,7 +9,7 @@ const ACCENTS = ['à', 'è', 'é', 'ì', 'ò', 'ù'];
 
 const VERDICT = {
   correct: { text: 'Correct', cls: 'border-emerald-500/50 bg-emerald-500/10 text-emerald-300' },
-  almost: { text: 'Accepted (almost)', cls: 'border-amber-500/50 bg-amber-500/10 text-amber-300' },
+  almost: { text: 'Almost', cls: 'border-amber-500/50 bg-amber-500/10 text-amber-300' },
   wrong: { text: 'Not quite', cls: 'border-red-500/50 bg-red-500/10 text-red-300' },
 } as const;
 
@@ -20,7 +19,8 @@ type Props = {
   /** conquer/practice: a node the user clicked; due: the automatic queue. */
   mode: 'conquer' | 'practice' | 'due';
   dueCount: number;
-  newToday: number;
+  /** Idle: go to the next thing to do (an open claim step or the nearest "?"). */
+  onNext?: () => void;
   /** A lost word one right answer wins back: what it was and until when (app ms). */
   reclaim?: { was: 'conquered' | 'claimed'; steps: number; until: number };
   nowMs?: number;
@@ -33,18 +33,8 @@ type Props = {
 };
 
 export default function ReviewView(props: Props) {
-  const {
-    data,
-    current,
-    mode,
-    dueCount,
-    newToday,
-    claimStep,
-    elsewhere,
-    reclaim,
-    onRate,
-    onCancel,
-  } = props;
+  const { data, current, mode, dueCount, onNext, claimStep, elsewhere, reclaim, onRate, onCancel } =
+    props;
   const [typed, setTyped] = useState('');
   const [check, setCheck] = useState<AnswerCheck | null>(null);
   const [busy, setBusy] = useState(false);
@@ -99,74 +89,54 @@ export default function ReviewView(props: Props) {
     });
   };
 
-  const newCls = newToday >= NEW_NODES_PER_DAY ? 'text-amber-400' : '';
-
   return (
     <div className="rounded-lg border border-slate-800 bg-slate-900 p-4">
-      <div className="mb-3 flex justify-between text-xs uppercase tracking-wider text-slate-400">
-        <span>
-          {!current
-            ? 'Review'
-            : reclaim
-              ? 'Winning back'
-              : claimStep
-                ? 'Conquering'
-                : 'Defending · due for review'}
-        </span>
-        <span>
-          {dueCount} due ·{' '}
-          <span className={newCls}>
-            new today {newToday}/{NEW_NODES_PER_DAY}
-          </span>
-        </span>
-      </div>
-
       {!current || !word ? (
-        <p className="py-8 text-center text-slate-400">
+        <div className="py-4 text-center text-sm text-slate-400">
           {elsewhere ? (
-            <>
-              Nothing due next to this word. {elsewhere} more {elsewhere === 1 ? 'is' : 'are'} due
-              elsewhere: press <span className="font-semibold text-slate-200">N</span> or use the
-              jump bar.
-            </>
+            <p className="mb-3">
+              {elsewhere} due elsewhere · <kbd className="text-slate-200">N</kbd>
+            </p>
+          ) : null}
+          {onNext ? (
+            <button
+              autoFocus
+              onClick={onNext}
+              className="w-full rounded bg-emerald-700 py-2 font-medium text-white hover:bg-emerald-600"
+            >
+              Next word <span className="text-xs opacity-60">(enter)</span>
+            </button>
           ) : (
-            <>
-              Nothing due. Click a <span className="font-semibold text-slate-200">?</span> node on
-              the graph to conquer new territory, or a word to practise it.
-            </>
+            !elsewhere && <p>Pick a ? on the map.</p>
           )}
-        </p>
+        </div>
       ) : (
         <>
-          {reclaim ? (
-            <p className="mb-3 rounded border border-teal-500/50 bg-teal-500/10 px-3 py-2 text-sm text-teal-100">
-              ↺ You had{' '}
-              {reclaim.was === 'conquered'
-                ? 'conquered this word'
-                : `claimed this word (${reclaim.steps}/3 steps)`}
-              . One right answer wins it back as it was.{' '}
-              <span className="text-teal-300/80">
-                {timeLeft(reclaim.until - (props.nowMs ?? 0))} left.
+          <div className="mb-1 flex items-center gap-2 text-xs text-slate-500">
+            {reclaim ? (
+              <span className="text-teal-300">
+                ↺ win back · {timeLeft(reclaim.until - (props.nowMs ?? 0))}
               </span>
-            </p>
-          ) : claimStep ? (
-            <ClaimSteps step={claimStep.step} />
-          ) : (
-            <p className="mb-2 text-xs text-slate-400">
-              Already yours. Your memory of it is due for a check: recall it to keep it strong (and
-              its territory held).
-            </p>
-          )}
-          <div className="mb-1 flex gap-2 text-xs text-slate-500">
-            <span>{toItalian ? 'English → Italian' : 'Italian → English'}</span>
-            {word.pos && <span>{word.pos}</span>}
+            ) : claimStep ? (
+              <ClaimSteps step={claimStep.step} />
+            ) : (
+              <span>review{dueCount > 1 ? ` · ${dueCount} due` : ''}</span>
+            )}
             {mode !== 'due' && (
-              <button className="ml-auto text-slate-400 hover:text-slate-200" onClick={onCancel}>
-                Cancel ✕
+              <button
+                className="ml-auto text-slate-500 hover:text-slate-200"
+                onClick={onCancel}
+                title="Cancel"
+              >
+                ✕
               </button>
             )}
           </div>
-          <div className="py-4 text-center text-2xl font-medium">{prompt}</div>
+          <div className="pb-1 pt-3 text-center text-2xl font-medium">{prompt}</div>
+          <div className="mb-3 text-center text-xs text-slate-500">
+            {toItalian ? 'in Italian' : 'in English'}
+            {word.pos && ` · ${word.pos}`}
+          </div>
 
           <input
             ref={input}
@@ -181,7 +151,6 @@ export default function ReviewView(props: Props) {
               e.preventDefault();
               submit();
             }}
-            placeholder={toItalian ? 'Type the Italian…' : 'Type the English…'}
             autoComplete="off"
             autoCapitalize="off"
             spellCheck={false}
@@ -191,12 +160,12 @@ export default function ReviewView(props: Props) {
           {!check ? (
             <>
               {toItalian && (
-                <div className="mt-2 flex gap-1">
+                <div className="mt-1.5 flex gap-1">
                   {ACCENTS.map((ch) => (
                     <button
                       key={ch}
                       onClick={() => insert(ch)}
-                      className="rounded bg-slate-800 px-2 py-0.5 text-sm hover:bg-slate-700"
+                      className="rounded px-1.5 text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200"
                     >
                       {ch}
                     </button>
@@ -208,30 +177,28 @@ export default function ReviewView(props: Props) {
                   onClick={submit}
                   className="flex-1 rounded bg-emerald-700 py-2 text-sm hover:bg-emerald-600"
                 >
-                  Check <span className="text-xs opacity-60">(enter)</span>
+                  Check
                 </button>
                 <button
                   onClick={() => answer && setCheck(checkAnswer('', answer, 'it'))}
-                  className="rounded bg-slate-700 px-3 py-2 text-sm hover:bg-slate-600"
+                  className="rounded bg-slate-800 px-3 py-2 text-sm text-slate-300 hover:bg-slate-700"
                 >
-                  {firstSight ? 'Show me' : "I don't know"}
+                  {firstSight ? 'Show me' : "Don't know"}
                 </button>
               </div>
             </>
           ) : (
             <>
               <div className={`mt-3 rounded border px-3 py-2 ${VERDICT[check.verdict].cls}`}>
-                <div className="flex items-baseline justify-between">
-                  <span className="text-sm font-semibold">
+                <div className="flex items-baseline justify-between text-xs">
+                  <span className="font-semibold">
                     {firstSight && check.verdict === 'wrong'
-                      ? 'New word: remember it'
+                      ? 'New word'
                       : VERDICT[check.verdict].text}
                   </span>
-                  {check.notes.length > 0 && (
-                    <span className="text-xs">{check.notes.join(' · ')}</span>
-                  )}
+                  {check.notes.length > 0 && <span>{check.notes.join(' · ')}</span>}
                 </div>
-                <div className="mt-1 text-xl text-slate-100">{answer}</div>
+                <div className="mt-0.5 text-xl text-slate-100">{answer}</div>
               </div>
               <Etymology word={word} />
               <button
@@ -244,7 +211,7 @@ export default function ReviewView(props: Props) {
                     : 'bg-emerald-700 hover:bg-emerald-600'
                 }`}
               >
-                Continue <span className="text-xs opacity-60">(enter)</span>
+                Continue
               </button>
             </>
           )}
@@ -254,33 +221,32 @@ export default function ReviewView(props: Props) {
   );
 }
 
-/** Where this answer sits in conquering a word: recognise, produce, lock in. */
+/** Where this answer sits in conquering a word: three dots and the step's name. */
 function ClaimSteps({ step }: { step: number }) {
-  const HINT = [
-    'Recognise it: what does it mean?',
-    'Produce it from memory: its name stays hidden until you conquer it.',
-    'Lock it in: one more recall after a break conquers it.',
-  ];
   return (
-    <div className="mb-3">
-      <ol className="flex gap-1 text-xs">
-        {CLAIM_STEP_NAMES.map((name, i) => {
-          const n = i + 1;
-          const cls =
-            n < step
-              ? 'border-emerald-600 bg-emerald-700/40 text-emerald-200'
-              : n === step
-                ? 'border-emerald-400 text-slate-100'
-                : 'border-slate-700 text-slate-500';
-          return (
-            <li key={name} className={`flex-1 rounded border px-2 py-1 text-center ${cls}`}>
-              {n < step ? '✓' : n} {name}
-            </li>
-          );
-        })}
-      </ol>
-      <p className="mt-1 text-xs text-slate-400">{HINT[step - 1]}</p>
-    </div>
+    <span
+      className="flex items-center gap-1.5"
+      title={`Step ${step} of ${CLAIM_STEP_NAMES.length}`}
+    >
+      <StepDots done={step - 1} current={step} />
+      <span className="text-slate-400">{CLAIM_STEP_NAMES[step - 1]}</span>
+    </span>
+  );
+}
+
+/** Claim progress as three dots: done, the one in play, still to come. */
+export function StepDots({ done, current }: { done: number; current?: number }) {
+  return (
+    <span className="flex gap-0.5">
+      {CLAIM_STEP_NAMES.map((_, i) => (
+        <span
+          key={i}
+          className={`h-1.5 w-1.5 rounded-full ${
+            i < done ? 'bg-emerald-400' : i + 1 === current ? 'bg-slate-200' : 'bg-slate-700'
+          }`}
+        />
+      ))}
+    </span>
   );
 }
 

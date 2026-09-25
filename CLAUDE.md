@@ -23,8 +23,10 @@ Italian vocabulary trainer as a territory game. Words are nodes in a graph; answ
 
 Typecheck + lint + tests, then a real browser run: `npm run build`, `npx vite preview --port 4173 --strictPort` (in the background), and a Playwright script in the session scratchpad using the cached Chromium at `~/.cache/ms-playwright/chromium_headless_shell-*/…/chrome-headless-shell` (scratch venv with `pip install playwright pillow numpy scipy`). Read answers from `data/graph.json` to play. Pitfalls:
 
+- A fresh DB shows the start picker: click a category button (or "Anywhere") first.
+- Time travel lives in the ☰ menu (`getByTitle('Menu')`, then `+15 min`). An idle card offers "Next word" (Enter), which walks the game without map clicks.
 - Click `header h1` before keyboard input, not `header` (it contains buttons that swallow Enter).
-- The view auto-fits only once; press `f` to refit.
+- The view refits as the map grows until you pan or zoom; press `f` to refit.
 - Locate nodes by their colour in screenshots.
 - Stop the server with `fuser -k 4173/tcp`. `pkill -f` can kill your own shell.
 
@@ -56,9 +58,10 @@ data/words*.csv ─ pipeline/build_graph.py ─► data/graph*.json ─► app (
 | `fallen` | `recordFalls`, `reclaimable`, `reclaim` (see Game rules) |
 | `danger` | a real miss: `missed` (a claimed word falls to hostile "?", its claimed neighbours get `danger {until, from}` for `DANGER_MS`), `rescue` (a correct answer on the missed word lifts its dangers), `dangerFalls` (deadline passed → they fall, one level, no chain) |
 | `reach` | the horizon: conquered words push 1, claimed 0.45 per step (tuned by a time simulation so the start never stalls), the seed always 1, times a part-of-speech factor (verb 1.25, noun 1, adj/adv 0.8) plus 0.15 per verb level. Push fades over links (`REACH.decay` 1 / 0.5 / 0.1) and pushes add up. Inside a familiar region (≥ `familiarAt` conquered) each link carries up to 1.5×; a link into another region carries 0.7× (more once that region is familiar). Reach ≥ `sight` → ghost (`sightedWords`), ≥ `open` → "?" (`revealChanges`, which also opens the best ghost if nothing is left to do). `recedeChanges`: an untried "?" whose reach dropped below `open` goes back to a ghost (kept: seed, started, hostile, root-unlocked). Computed, never stored. `reachSources` explains a word's reach (details panel, rings on the map). |
-| `claim` | conquest in 3 fixed steps: 1 Recognise (it→en, right away), 2 Produce (en→it, ≥ `CLAIM_STEP_GAP_MS` later), 3 Lock in (either way, ≥ `CLAIM_RECALL_GAP_MS` later). `claimNext` says which card is open when; answers out of turn add nothing. `unseen` = no card ever answered (first sight). |
+| `claim` | conquest in 3 fixed steps: 1 Recognise (it→en, right away), 2 Produce (en→it, ≥ `CLAIM_STEP_GAP_MS` later), 3 Lock in (either way, ≥ `CLAIM_RECALL_GAP_MS` later). **Fast track** (`known`): step 1 right at first sight (never shown) means you knew it, so step 2 opens at once and conquers it. `claimNext` says which card is open when; answers out of turn add nothing. `unseen` = no card ever answered (first sight). |
+| `start` | `startCandidates`/`pickStart`: a first word from a category's easiest tier, linked to ≥ 2 words of its category (or anywhere). `homeWords`: the start word's category, open at every level (`tierAllows(…, home)`). |
 | `attention` | words that need the player, most urgent first: `ready` (claim step open), `threat` (hostile, rebelling, fading), `new` (revealed this visit, not opened yet) |
-| `queue` | automatic queue: due reviews (weakest first), then the unreviewed 2nd direction, then learning cards. Untouched frontier words never appear automatically. `nearby` keeps it local: App only serves cards of the selected word (`selectedId`, also set by answering) and words linked to it; otherwise it stays put and says how many are due elsewhere (attention kind `due`, N / jump bar). |
+| `queue` | automatic queue: due reviews (weakest first), then the unreviewed 2nd direction, then learning cards. Untouched frontier words never appear automatically. `closest` picks what "Next word" opens: an open claim step (or danger/win-back), else the nearest "?" (link distance + penalty 2). `nearby` keeps it local: App only serves cards of the selected word (`selectedId`, also set by answering) and words linked to it; otherwise it stays put and says how many are due elsewhere (attention kind `due`, N / jump bar). |
 | `health`, `fade` | health = mean retrievability; names erode letter by letter from 90% to 50%, then show "?" |
 | `strength` | FSRS stability → level 0–5; `nextPractice` (no cramming: practice only when due) |
 | `tiers` | tier k+1 opens at `TIER_UNLOCK_FRACTION` of tiers 1..k conquered plus `VERBS_PER_TIER` verbs at `verbLevelFor(k)` (level k, spread out when there are more tiers than tenses) |
@@ -67,7 +70,7 @@ data/words*.csv ─ pipeline/build_graph.py ─► data/graph*.json ─► app (
 
 ### src/views
 
-- `GraphView`: the canvas. The white ring (`activeId`) is always the word the side panel is about (`panelId` in App: wait card > verb drill > word card > root quiz > review card); the dashed yellow ring is the keyboard cursor when it differs. Nodes, links, chevron particles, energy bands, cohesion glow, metaball territories (`drawRegions`), keyboard cursor, attention ripples, edge arrows to off-screen attention words (`drawPointers`, clickable) and the jump bar.
+- `GraphView`: the canvas. Layout: once the simulation stops, every placed word is pinned (`fx/fy`), so dragging moves one word and new words settle around a fixed map; region separation only runs before that. Switching to/from the whole network unpins and lays out afresh. Remounted per seed (`key`). The white ring (`activeId`) is always the word the side panel is about (`panelId` in App: wait card > verb drill > word card > root quiz > review card); the dashed yellow ring is the keyboard cursor when it differs. Nodes, links, chevron particles, energy bands, cohesion glow, metaball territories (`drawRegions`), keyboard cursor, attention ripples, edge arrows to off-screen attention words (`drawPointers`, clickable) and the jump bar.
 - `ReviewView`: the typed card, with the claim step indicator while conquering.
 - `VerbDrill`, `RootQuiz`: conjugation drill and root unlock quiz.
 - `WordInfo`: card for a solid conquered word.
@@ -75,7 +78,10 @@ data/words*.csv ─ pipeline/build_graph.py ─► data/graph*.json ─► app (
 - `NodeDetails`: status panel under the main card (health, control, trend, per-neighbour breakdown, claim steps, verb, etymology).
 - `VerbGoals`: which verbs count for the next tier.
 - `InspectPanel`: spoiler view of the whole network. The map then switches to a galaxy style (`drawStar`, `drawStarfield`, softer nebula territories, thin hyperlanes lit for the selected word, compact root markers, no legend). Region names are drawn after everything (`drawRegionNames`, outlined, biggest first, nudged to avoid overlapping) in both views. Region colours come from `regionColors` (visuals.ts: 16-colour palette, strongly linked regions differ, palette spread evenly), not the pipeline's `color`. A `cluster` force pulls words to their region centre and pushes overlapping regions apart.
-- `DebugPanel`: +15 min / +1 day / +7 days, reset.
+- `Menu` (☰ in the header): word list, music/sounds/roots/whole-network toggles, "How it works", time travel (+15 min / +1 day / +7 days / now), New game.
+- `Guide`: rules, scoring formula, map legend and keys (menu or `?`). The main screen carries no explanations; they live here.
+- `StartPicker`: over the map while `data.started` is false (fresh DB or after New game): 🎲 Anywhere or a category.
+- UI style: slim. Header = name · level chip (tooltip has the details) · 🏆/🪙 · ☰. Notices are short toasts at the bottom of the map. `NodeDetails` shows a line or two and folds numbers (influences, cohesion, push, reach) under "more". No `(enter)` hints except on Next word; no explanatory paragraphs in cards.
 - Helpers: `Etymology`, `visuals.ts` (shapes, link colours), `useKeyboardCamera.ts`.
 - `src/audio.ts`: music and sound effects synthesised with Web Audio (no files). Music is a slow D-major ambient loop (pads, sparse pentatonic plucks, reverb), off by default; effects (`sfx('select' | 'correct' | 'conquer' | 'miss' | …)`) are on by default. Header toggles; settings in localStorage `sprawl.audio`. The context starts on the first gesture and suspends in background tabs.
 
@@ -83,14 +89,17 @@ data/words*.csv ─ pipeline/build_graph.py ─► data/graph*.json ─► app (
 
 - Tables: `nodes(id, it, en, pos, theme, state)`, `edges`, `cards(id, node_id, direction, fsrs_json)`, `review_log`, `meta`.
 - `cards.direction` is `it-en`/`en-it`, or `tense:<tense>` for verb tense cards (created on the first successful drill).
-- Meta keys: `debug_day_offset`, `unlocked_roots` (JSON array), `game` (JSON: `simAt` plus per-node `{control, since, hostileUntil, claim, danger, fallen}`), `achievements` ({id: at}), `coins` (number; read from `seeds` for older saves), `user_edges` (planted links), `hints` (word ids).
+- Meta keys: `seed` (chosen first word; absent = picker shows unless reviews exist), `debug_day_offset`, `unlocked_roots` (JSON array), `game` (JSON: `simAt` plus per-node `{control, since, hostileUntil, claim, danger, fallen}`), `achievements` ({id: at}), `coins` (number; read from `seeds` for older saves), `user_edges` (planted links), `hints` (word ids).
 - In memory only (lost on reload): cooldown locks (app time, so time travel lifts them), notices, open sessions. Danger deadlines live in `game` (persisted).
 - sql.js exports the whole DB on every `execute`, so batch writes (multi-row INSERT, or one JSON value) instead of many small statements.
 
 ## Game rules (current)
 
-- **Claiming:** click a "?" (or move to it with the arrow keys) to get step 1, Italian → English. A correct answer makes it **claimed** (fragile). Step 2 (English → Italian) opens 1 min later and step 3 (either way) 10 min after that. Clicks and the automatic queue only offer the open step. A never-seen word offers "Show me", which is not penalised.
-- **Visual feedback:** territory grows with every claim step (and more on conquest and with verb levels). Claim steps, conquests and verb levels flash a burst on the map. A verb level also shows a gold banner, and the verb gets bigger with a gold outline and "★ tense" under its name. Link width follows the weight's rank in the graph (raw weights bunch up in 0.25–0.6). Blue flows run from won words into ghosts, and selecting a word rings the words that push it. Conquered words show their root (pink) when zoomed in; etymology is in the status panel except while the word is being asked. The legend can be hidden.
+- **Start:** a new game asks where to begin (a category, or anywhere); `pickStart` chooses the first word. The start word's category is open at every level, so any category gives a full start (reach still decides what appears).
+- **Flow:** an idle card (nothing due here, or a word waiting/locked) offers "Next word" (Enter): an open claim step first, else the nearest "?".
+
+- **Claiming:** click a "?" (or move to it with the arrow keys) to get step 1, Italian → English. A correct answer makes it **claimed** (fragile). Step 2 (English → Italian) opens 1 min later and step 3 (either way) 10 min after that. A word you knew at first sight skips both waits: step 2 right away conquers it. Clicks and the automatic queue only offer the open step. A never-seen word offers "Show me", which is not penalised.
+- **Visual feedback:** territory grows with every claim step (and more on conquest and with verb levels). Claim steps, conquests and verb levels flash a burst on the map. A verb level also shows a gold banner, and the verb gets bigger with a gold outline and "★ tense" under its name. Link width follows the weight's rank in the graph (raw weights bunch up in 0.25–0.6). Blue flows run from won words into ghosts, and selecting a word rings the words that push it. Conquered words show their root (pink) when zoomed in; etymology is in the status panel except while the word is being asked. The legend is in the guide.
 - **Reach and ghosts:** words are revealed by reach (see `core/reach.ts`), not by simply being next to a claimed word. Hidden words with a little reach show as ghosts with a ring filling towards conquerable. Clicking one says how far it is. A claimed word waiting for its next step has a white countdown ring.
 - **Names are earned:** a word's Italian name appears on the map only once it is conquered. It is also hidden (map, tooltip, status panel) while it is the answer being asked. Claimed words show "?" with a 3-segment ring.
 - **Attention:** ready claim steps (green), threats (red) and newly revealed words (light blue) ripple. Off-screen ones get arrows at the view edge, and the top-right jump bar or `N` cycles through them. A due card for an off-screen word pans the camera to it.
