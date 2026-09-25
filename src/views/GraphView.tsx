@@ -16,6 +16,8 @@ import type { AppData, Edge, RootHub, WordNode } from '../db/repo';
 import { stepCursor, useKeyboardCamera } from './useKeyboardCamera';
 import {
   isWeakBridge,
+  REGION_RGB,
+  regionColors,
   REASON_LABEL,
   REASON_RGB,
   reasonText,
@@ -461,6 +463,7 @@ export default function GraphView({
         l.hint ? 1 : l.category ? 0.08 : (0.15 + l.weight * 0.6) * (crossRegion(l) ? 0.3 : 1),
       );
     fg.current?.d3Force('charge')?.strength(-90);
+    fg.current?.d3Force('cluster', clusterForce());
     // Set once: a page shows one graph, and its regions never change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -468,20 +471,25 @@ export default function GraphView({
   // Territories: every visible word of a region, named once you've conquered one of them.
   // Points are read from the live node objects at draw time, so dragged words take
   // their territory with them.
+  // Colours by who sits next to whom, so neighbouring territories never match.
+  const colorOf = useMemo(
+    () => regionColors(data.graph.regions ?? [], data.edges, (id) => byId.get(id)?.region),
+    [data.graph.regions, data.edges, byId],
+  );
   const regionsToDraw = (data.graph.regions ?? []).flatMap((r) => {
     const ids = r.words.filter((w) => inspect || (data.states.get(w) ?? 'locked') !== 'locked');
     if (!ids.length) return [];
     const named = inspect || r.words.some((w) => data.states.get(w) === 'conquered');
-    return [{ name: named ? r.name : '', color: REGION_RGB[r.color % REGION_RGB.length], ids }];
+    return [{ name: named ? r.name : '', color: REGION_RGB[colorOf.get(r.id) ?? 0], ids }];
   });
   /** Star colour per word in the galaxy view: its category's colour. */
   const starRgb = useMemo(() => {
     const m = new Map<string, string>();
     for (const r of data.graph.regions ?? []) {
-      for (const w of r.words) m.set(w, REGION_RGB[r.color % REGION_RGB.length]);
+      for (const w of r.words) m.set(w, REGION_RGB[colorOf.get(r.id) ?? 0]);
     }
     return m;
-  }, [data.graph.regions]);
+  }, [data.graph.regions, colorOf]);
   const livePoints = () =>
     regionsToDraw.map((t) => ({
       ...t,
@@ -1452,16 +1460,64 @@ function drawHub(
 }
 
 /** Muted territory colours (RGB); neighbouring regions never share one. */
-const REGION_RGB = [
-  '96, 165, 250',
-  '52, 211, 153',
-  '251, 191, 36',
-  '244, 114, 182',
-  '167, 139, 250',
-  '45, 212, 191',
-  '251, 146, 60',
-  '248, 113, 113',
-];
+/**
+ * Keeps categories together and apart: pulls each word towards its region's
+ * centre, and pushes regions whose circles overlap away from each other, so
+ * territories and their names don't pile up. Words without a region (hubs,
+ * hints, independent words) are left to the other forces.
+ */
+function clusterForce(pull = 0.08, gap = 50) {
+  let nodes: N[] = [];
+  const force = (alpha: number) => {
+    const groups = new Map<number, { x: number; y: number; members: N[] }>();
+    for (const n of nodes) {
+      const r = n.hub || n.hintOf ? null : n.word?.region;
+      if (r == null || n.x === undefined || n.y === undefined) continue;
+      const g = groups.get(r) ?? { x: 0, y: 0, members: [] };
+      g.x += n.x;
+      g.y += n.y;
+      g.members.push(n);
+      groups.set(r, g);
+    }
+    const list = [...groups.values()].map((g) => ({
+      ...g,
+      cx: g.x / g.members.length,
+      cy: g.y / g.members.length,
+      radius: 16 * Math.sqrt(g.members.length) + 24,
+    }));
+    for (const g of list) {
+      for (const m of g.members) {
+        m.vx = (m.vx ?? 0) + (g.cx - m.x!) * pull * alpha;
+        m.vy = (m.vy ?? 0) + (g.cy - m.y!) * pull * alpha;
+      }
+    }
+    for (let i = 0; i < list.length; i++) {
+      for (let j = i + 1; j < list.length; j++) {
+        const [a, b] = [list[i], list[j]];
+        let dx = b.cx - a.cx;
+        let dy = b.cy - a.cy;
+        const d = Math.hypot(dx, dy) || 1;
+        const min = a.radius + b.radius + gap;
+        if (d >= min) continue;
+        dx /= d;
+        dy /= d;
+        const push = (min - d) * 0.15 * alpha;
+        for (const m of a.members) {
+          m.vx = (m.vx ?? 0) - dx * push;
+          m.vy = (m.vy ?? 0) - dy * push;
+        }
+        for (const m of b.members) {
+          m.vx = (m.vx ?? 0) + dx * push;
+          m.vy = (m.vy ?? 0) + dy * push;
+        }
+      }
+    }
+  };
+  force.initialize = (ns: N[]) => {
+    nodes = ns;
+  };
+  return force;
+}
 
 type Territory = { name: string; color: string; pts: (readonly [number, number, number])[] };
 
@@ -1557,13 +1613,28 @@ function drawRegionNames(
   ctx.textBaseline = 'middle';
   ctx.lineJoin = 'round';
   const c = ctx as CanvasRenderingContext2D & { letterSpacing?: string };
-  for (const t of regions) {
+  // Bigger territories claim their spot first; a name that would overlap one
+  // already placed is nudged above or below it.
+  const placed: { x0: number; x1: number; y0: number; y1: number }[] = [];
+  const hits = (b: (typeof placed)[number]) =>
+    placed.some((p) => b.x0 < p.x1 && b.x1 > p.x0 && b.y0 < p.y1 && b.y1 > p.y0);
+  for (const t of [...regions].sort((a, b) => b.pts.length - a.pts.length)) {
     if (!t.name || !t.pts.length) continue;
     const cx = t.pts.reduce((a, p) => a + p[0], 0) / t.pts.length;
-    const cy = t.pts.reduce((a, p) => a + p[1], 0) / t.pts.length;
+    let cy = t.pts.reduce((a, p) => a + p[1], 0) / t.pts.length;
     const px = Math.min(24, Math.max(12, 8 + 2.5 * Math.sqrt(t.pts.length))); // screen pixels
     ctx.font = `${galaxy ? 600 : 800} ${px / scale}px sans-serif`;
     if (galaxy) c.letterSpacing = `${(px * 0.25) / scale}px`;
+    const half = ctx.measureText(t.name.toUpperCase()).width / 2;
+    const lh = (px * 1.2) / scale;
+    const box = (y: number) => ({ x0: cx - half, x1: cx + half, y0: y - lh / 2, y1: y + lh / 2 });
+    for (const dy of [0, 1, -1, 2, -2, 3, -3]) {
+      if (!hits(box(cy + dy * lh))) {
+        cy += dy * lh;
+        break;
+      }
+    }
+    placed.push(box(cy));
     ctx.lineWidth = 4 / scale;
     ctx.strokeStyle = `rgba(1, 3, 11, ${0.8 * alpha})`;
     ctx.strokeText(t.name.toUpperCase(), cx, cy);

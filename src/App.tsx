@@ -816,7 +816,16 @@ export default function App() {
             title="Show which verbs count for the next level"
             className="rounded px-1 hover:bg-slate-800"
           >
-            <TierBadge p={progress} names={data.graph.params?.tier_names} />
+            <TierBadge
+              p={progress}
+              names={data.graph.params?.tier_names}
+              // Words being conquered (claimed) in the open tiers: shown as progress too.
+              claimed={
+                data.nodes.filter(
+                  (n) => (n.tier ?? 1) <= progress.tier && data.states.get(n.id) === 'claimed',
+                ).length
+              }
+            />
           </button>
         )}
         {GRAPH_NAMES.length > 1 && (
@@ -1307,13 +1316,17 @@ function AchievementBanner({ earned }: { earned: Achievement[] }) {
 function TierBadge({
   p,
   names,
+  claimed = 0,
 }: {
   p: TierProgress;
   /** Display names per tier, e.g. CEFR levels. */
   names?: Record<string, string> | null;
+  /** Words in the open tiers being conquered right now (not counted yet, but on the way). */
+  claimed?: number;
 }) {
   const name = (t: number) => names?.[String(t)] ?? `tier ${t}`;
   const pct = p.needed ? Math.min(1, p.conquered / p.needed) : 1;
+  const pending = p.needed ? Math.min(1 - pct, claimed / p.needed) : 0;
   return (
     <span
       className="flex items-center gap-2 text-sm text-slate-300"
@@ -1330,14 +1343,21 @@ function TierBadge({
       </span>
       {p.needed > 0 && (
         <>
-          <span className="inline-block h-1.5 w-24 overflow-hidden rounded bg-slate-800">
+          <span className="flex h-1.5 w-32 overflow-hidden rounded bg-slate-800">
+            <span className="block h-full bg-amber-400" style={{ width: `${pct * 100}%` }} />
+            {/* Claimed words: striped, on their way to being counted. */}
             <span
-              className="block h-full bg-amber-400"
-              style={{ width: `${Math.round(pct * 100)}%` }}
+              className="block h-full"
+              style={{
+                width: `${pending * 100}%`,
+                background:
+                  'repeating-linear-gradient(135deg, rgba(251,191,36,0.75) 0 3px, transparent 3px 6px)',
+              }}
             />
           </span>
           <span className="text-xs text-slate-400">
             {p.conquered}/{p.needed} words
+            {claimed > 0 && <span className="text-amber-300/80"> (+{claimed} on the way)</span>}
             {p.verbsNeed > 0 &&
               ` · verbs ${p.verbsHave}/${p.verbsNeed} at ${TENSES[p.verbLevel - 1]}`}{' '}
             to {name(p.tier + 1)}

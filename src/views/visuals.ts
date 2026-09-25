@@ -76,3 +76,71 @@ export function shapePath(
   }
   ctx.closePath();
 }
+
+/** Territory colours (RGB): 16 distinct hues, spread so neighbours differ. */
+export const REGION_RGB = [
+  '96, 165, 250', // blue
+  '52, 211, 153', // emerald
+  '251, 191, 36', // amber
+  '244, 114, 182', // pink
+  '167, 139, 250', // violet
+  '45, 212, 191', // teal
+  '251, 146, 60', // orange
+  '248, 113, 113', // red
+  '163, 230, 53', // lime
+  '56, 189, 248', // sky
+  '232, 121, 249', // fuchsia
+  '253, 224, 71', // yellow
+  '129, 140, 248', // indigo
+  '134, 239, 172', // mint
+  '253, 164, 175', // rose
+  '190, 242, 100', // light lime
+];
+
+/**
+ * A colour per region such that regions tied by many links (so drawn next to
+ * each other) never share one: greedy colouring, biggest regions first, over
+ * each region's most-linked neighbours, spreading the palette evenly.
+ */
+export function regionColors(
+  regions: { id: number; words: string[] }[],
+  edges: { source: string; target: string; weight: number }[],
+  regionOf: (id: string) => number | null | undefined,
+  palette = REGION_RGB.length,
+  closest = 6,
+): Map<number, number> {
+  const ties = new Map<number, Map<number, number>>();
+  for (const e of edges) {
+    const [a, b] = [regionOf(e.source), regionOf(e.target)];
+    if (a == null || b == null || a === b) continue;
+    for (const [x, y] of [
+      [a, b],
+      [b, a],
+    ]) {
+      const m = ties.get(x) ?? new Map<number, number>();
+      m.set(y, (m.get(y) ?? 0) + e.weight);
+      ties.set(x, m);
+    }
+  }
+  const near = (r: number) =>
+    [...(ties.get(r) ?? [])]
+      .sort((p, q) => q[1] - p[1])
+      .slice(0, closest)
+      .map(([id]) => id);
+  const color = new Map<number, number>();
+  for (const r of [...regions].sort((a, b) => b.words.length - a.words.length)) {
+    const taken = new Set<number>();
+    for (const n of near(r.id)) if (color.has(n)) taken.add(color.get(n)!);
+    // Also avoid regions that list this one among their closest.
+    for (const [other, c] of color) if (near(other).includes(r.id)) taken.add(c);
+    // The least-used colour that's free, so the whole palette gets used.
+    const used = new Map<number, number>();
+    for (const c of color.values()) used.set(c, (used.get(c) ?? 0) + 1);
+    const free = Array.from({ length: palette }, (_, c) => c).filter((c) => !taken.has(c));
+    const pick = (free.length ? free : [0]).reduce((best, c) =>
+      (used.get(c) ?? 0) < (used.get(best) ?? 0) ? c : best,
+    );
+    color.set(r.id, pick);
+  }
+  return color;
+}
