@@ -41,14 +41,3 @@ export function applyChanges(states: Map<string, NodeState>, changes: StateChang
   for (const c of changes) next.set(c.id, c.state);
   return next;
 }
-
-/** A real miss on `nodeId`: it and its claimed neighbours slip back to "?". */
-export function slipChanges(
-  nodeId: string,
-  states: Map<string, NodeState>,
-  neighbours: Map<string, string[]>,
-): StateChange[] {
-  return [nodeId, ...(neighbours.get(nodeId) ?? [])]
-    .filter((id) => states.get(id) === 'claimed')
-    .map((id) => ({ id, state: 'frontier' as const }));
-}

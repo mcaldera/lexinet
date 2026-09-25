@@ -11,6 +11,8 @@ export type GameNode = {
   hostileUntil?: number;
   /** Claimed words: progress towards conquest (see core/claim.ts). */
   claim?: Claim;
+  /** Endangered by a miss on `from`: falls at `until` unless rescued (core/danger.ts). */
+  danger?: { until: number; from: string };
 };
 export type Game = { simAt: number; nodes: Map<string, GameNode> };
 

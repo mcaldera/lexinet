@@ -4,6 +4,7 @@ import { CLAIM_STEP_NAMES, type ClaimStep } from '../core/claim';
 import type { NodeState } from '../core/unlock';
 import type { WordNode } from '../db/repo';
 import Etymology from './Etymology';
+import { DANGER_MS } from '../config';
 
 type Props = {
   word: WordNode;
@@ -25,6 +26,13 @@ type Props = {
   reach?: { value: number; sources: { name: string; push: number }[] };
   /** Won words: how hard they push the horizon, and why. */
   push?: { value: number; why: string };
+  /** Claimed words endangered by a miss: the deadline and the word to win back. */
+  danger?: { until: number; from: string };
+  /** A missed word: how many claims it endangers and when the first falls. */
+  endangers?: { count: number; until: number };
+  /** App time (ms), for the danger countdowns. */
+  appNowMs?: number;
+  dangerFrom?: (id: string) => string;
   /** Claimed words: the step to do next and when it opens (null = complete). */
   claimStep?: ClaimStep | null;
   /** Conquered verbs: level and what the next conjugation step is. */
@@ -58,11 +66,22 @@ export default function NodeDetails(props: Props) {
       </div>
     );
   }
+  const clock = (until: number) => {
+    const s = Math.max(0, Math.ceil((until - (props.appNowMs ?? props.nowMs)) / 1000));
+    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  };
   if (state === 'frontier') {
     const attacked = influences.length;
     return (
       <div className="rounded-lg border border-slate-800 bg-slate-900/60 p-3 text-xs text-slate-300">
         <div className="mb-1 uppercase tracking-wider text-slate-500">Unknown word</div>
+        {props.endangers && (
+          <p className="mb-2 rounded border border-rose-500/50 bg-rose-500/10 px-2 py-1.5 text-rose-200">
+            Win it back! {props.endangers.count} fragile{' '}
+            {props.endangers.count === 1 ? 'claim falls' : 'claims fall'} with it in{' '}
+            <b className="font-mono">{clock(props.endangers.until)}</b>.
+          </p>
+        )}
         {hostile ? (
           <p className="text-red-300">
             Hostile: attacking {attacked} of your words ({perDay(total)} of control in total).
@@ -117,9 +136,17 @@ export default function NodeDetails(props: Props) {
           <span className="uppercase tracking-wider text-emerald-300/80">Claimed · fragile</span>
           <span className="text-sm text-slate-100">{name}</span>
         </div>
+        {props.danger && (
+          <p className="mb-2 rounded border border-rose-500/50 bg-rose-500/10 px-2 py-1.5 text-rose-200">
+            In danger! Falls in <b className="font-mono">{clock(props.danger.until)}</b> unless you
+            win back <b>{props.dangerFrom?.(props.danger.from) ?? 'the word you missed'}</b> (or
+            answer this one).
+          </p>
+        )}
         <ul className="space-y-0.5">{CLAIM_STEP_NAMES.map((_, i) => step(i))}</ul>
         <p className="mt-2 text-amber-300/90">
-          Until conquered, a miss on this word or a neighbour makes it slip back to “?”.
+          Until conquered, a miss here makes it fall back to “?”, and a miss on a neighbour puts it
+          in danger for {DANGER_MS / 60_000} min.
         </p>
         {props.push && <PushLine push={props.push} />}
       </div>

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { CLAIM_GAPS, COOLDOWN_MS, INFLUENCE, REACH } from './config';
+import { CLAIM_GAPS, COOLDOWN_MS, DANGER_MS, INFLUENCE, REACH } from './config';
+import { dangers } from './core/danger';
 import { attentionList, newlyRevealed } from './core/attention';
 import {
   claimNext,
@@ -78,16 +79,24 @@ export default function App() {
     if (revealed.length) setFresh((f) => new Set([...f, ...revealed]));
   }, [data, data?.states]);
 
+  // Locks run on app time, so time travel (+15 min) lifts them too.
+  const offsetDays = data?.offsetDays ?? 0;
+  const appMs = () => appNow(offsetDays).getTime();
   // Tick every second while something is cooling down (countdown rings), then expire.
   useEffect(() => {
     if (!cooldowns.size) return;
+    const expire = () => {
+      const t = appNow(offsetDays).getTime();
+      const live = [...cooldowns].filter(([, until]) => until > t);
+      if (live.length < cooldowns.size) setCooldowns(new Map(live));
+    };
+    expire();
     const t = setInterval(() => {
       setSecond((s) => s + 1);
-      const live = [...cooldowns].filter(([, until]) => until > Date.now());
-      if (live.length < cooldowns.size) setCooldowns(new Map(live));
+      expire();
     }, 1000);
     return () => clearInterval(t);
-  }, [cooldowns]);
+  }, [cooldowns, offsetDays]);
 
   // While a claimed word waits for its next step, count down every second.
   const claiming = !!data && [...data.states.values()].includes('claimed');
@@ -274,6 +283,8 @@ export default function App() {
           }));
 
   const claims = new Map([...data.game.nodes].map(([id, g]) => [id, g.claim]));
+  /** Claimed words endangered by a miss: deadline and the word to win back. */
+  const dangerMap = dangers(data.game, data.states);
   // Claimed words waiting for their next step: when it opens and how long the wait is.
   const claimWaits = new Map(
     [...claims].flatMap(([id, c]) => {
@@ -291,7 +302,8 @@ export default function App() {
     fresh,
     nowMs: now.getTime(),
     gaps: CLAIM_GAPS,
-    blocked: (id) => (cooldowns.get(id) ?? 0) > Date.now(),
+    blocked: (id) => (cooldowns.get(id) ?? 0) > appMs(),
+    danger: dangerMap,
   });
 
   const today = startOfDay(now).getTime();
@@ -345,13 +357,15 @@ export default function App() {
     setTurn((t) => t + 1);
     if (grade === Rating.Again) {
       // Locked for a minute either way, so recalling it needs real memory.
-      setCooldowns((m) => new Map(m).set(row.nodeId, Date.now() + COOLDOWN_MS));
-      const slipped = outcome.slipped.filter((id) => id !== row.nodeId).map(wordOf);
+      setCooldowns((m) => new Map(m).set(row.nodeId, appMs() + COOLDOWN_MS));
+      const n = outcome.endangered.length;
       setNotice(
         firstSight
           ? `New word: ${wordOf(row.nodeId)}. Come back in ${COOLDOWN_MS / 1000} s to claim it from memory.`
-          : `Missed! ${wordOf(row.nodeId)} is locked for ${COOLDOWN_MS / 1000} s and turns against you.` +
-              (slipped.length ? ` Your fresh claim on ${slipped.join(', ')} slipped away.` : ''),
+          : `Missed! ${wordOf(row.nodeId)} fell and turns against you (locked ${COOLDOWN_MS / 1000} s).` +
+              (n
+                ? ` ${n} fragile ${n === 1 ? 'claim next to it is' : 'claims next to it are'} in danger: win it back within ${DANGER_MS / 60_000} min or ${n === 1 ? 'it falls' : 'they fall'} too.`
+                : ''),
       );
       setSession((s) => (s?.nodeId === row.nodeId ? null : s));
       return;
@@ -426,8 +440,8 @@ export default function App() {
         setNotice(
           `${hub.root} = “${hub.meaning}”${hub.english?.length ? ` → ${hub.english.join(', ')}` : ''}`,
         );
-      } else if (until && until > Date.now()) {
-        setNotice(`${hub.root} is still locked (${Math.ceil((until - Date.now()) / 1000)} s).`);
+      } else if (until && until > appMs()) {
+        setNotice(`${hub.root} is still locked (${Math.ceil((until - appMs()) / 1000)} s).`);
       } else {
         setSession(null);
         setRootQuiz(nodeId);
@@ -443,8 +457,8 @@ export default function App() {
     }
     if (!data.states.has(nodeId) || data.states.get(nodeId) === 'locked') return; // roots, hidden
     const until = cooldowns.get(nodeId);
-    if (until && until > Date.now()) {
-      setNotice(`${wordOf(nodeId)} is still locked (${Math.ceil((until - Date.now()) / 1000)} s).`);
+    if (until && until > appMs()) {
+      setNotice(`${wordOf(nodeId)} is still locked (${Math.ceil((until - appMs()) / 1000)} s).`);
       return;
     }
     const st = data.states.get(nodeId);
@@ -597,6 +611,7 @@ export default function App() {
             claimWaits={claimWaits}
             sighted={sighted}
             pushes={pushes}
+            danger={dangerMap}
             pushSources={
               detailsReach ? new Map(detailsReach.map((r) => [r.id, r.push])) : undefined
             }
@@ -656,7 +671,7 @@ export default function App() {
                     setVerbDrill(null);
                     if (!verbDrill)
                       setCooldowns((m) =>
-                        new Map(m).set(activeDrill.nodeId, Date.now() + COOLDOWN_MS),
+                        new Map(m).set(activeDrill.nodeId, appMs() + COOLDOWN_MS),
                       );
                   }}
                   onDone={async (grade) => {
@@ -666,7 +681,7 @@ export default function App() {
                     const lv = await reviewTense(nodeId, tense, grade);
                     if (lv) setLevelUp(lv);
                     if (grade === Rating.Again) {
-                      setCooldowns((m) => new Map(m).set(nodeId, Date.now() + COOLDOWN_MS));
+                      setCooldowns((m) => new Map(m).set(nodeId, appMs() + COOLDOWN_MS));
                       setNotice(
                         `Missed a form: ${wordOf(nodeId)} is locked for ${COOLDOWN_MS / 1000} s.`,
                       );
@@ -702,7 +717,7 @@ export default function App() {
                         `Root unlocked${n ? `: ${n} new ${n === 1 ? 'word' : 'words'} to conquer` : ''}.`,
                       );
                     } else {
-                      setCooldowns((m) => new Map(m).set(id, Date.now() + COOLDOWN_MS));
+                      setCooldowns((m) => new Map(m).set(id, appMs() + COOLDOWN_MS));
                     }
                   }}
                 />
@@ -749,6 +764,15 @@ export default function App() {
               }
               nowMs={appNow(data.offsetDays).getTime()}
               claimStep={claimNext(data.game.nodes.get(detailsWord.id)?.claim, CLAIM_GAPS)}
+              danger={dangerMap.get(detailsWord.id)}
+              endangers={(() => {
+                const ds = [...dangerMap.values()].filter((d) => d.from === detailsWord.id);
+                return ds.length
+                  ? { count: ds.length, until: Math.min(...ds.map((d) => d.until)) }
+                  : undefined;
+              })()}
+              appNowMs={appMs()}
+              dangerFrom={(id) => wordOf(id)}
               reach={
                 detailsReach
                   ? {

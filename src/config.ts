@@ -4,7 +4,7 @@ export const NEW_NODES_PER_DAY = 10;
 /** Share of words in the open tiers to conquer before the next tier appears. */
 export const TIER_UNLOCK_FRACTION = 0.8;
 
-/** After a wrong answer ("Again") the word is locked for this long. */
+/** After a wrong answer ("Again") the word is locked for this long (app time). */
 export const COOLDOWN_MS = 60_000;
 
 /** Verbs (at the matching verb level) needed to open each next tier. */
@@ -32,6 +32,8 @@ export const CLAIM_STEP_GAP_MS = 60_000;
 /** A claimed word is conquered by a recall this long after both directions were right. */
 export const CLAIM_RECALL_GAP_MS = 10 * 60_000;
 export const CLAIM_GAPS = { step: CLAIM_STEP_GAP_MS, recall: CLAIM_RECALL_GAP_MS };
+/** After a miss, its claimed neighbours fall unless it is won back within this (app time). */
+export const DANGER_MS = 3 * 60_000;
 /** An unfinished claim slips back to "?" after this long (app time). */
 export const CLAIM_EXPIRY_MS = 24 * 3_600_000;
 

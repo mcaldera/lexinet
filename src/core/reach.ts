@@ -166,3 +166,21 @@ export function revealChanges(
   }
   return changes;
 }
+
+/**
+ * The horizon recedes: an untried "?" whose reach fell below what conquering
+ * needs (a miss, a lost word) goes back to a ghost. Words you started, hostile
+ * ones and root-unlocked ones (`keep`) stay open.
+ */
+export function recedeChanges(
+  states: Map<string, NodeState>,
+  reach: Map<string, number>,
+  rules: ReachRules,
+  keep: (id: string) => boolean,
+): StateChange[] {
+  return [...states]
+    .filter(
+      ([id, st]) => st === 'frontier' && (reach.get(id) ?? 0) < rules.open - 1e-9 && !keep(id),
+    )
+    .map(([id]) => ({ id, state: 'locked' as const }));
+}

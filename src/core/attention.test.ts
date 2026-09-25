@@ -64,3 +64,26 @@ test('newly revealed: hidden before, "?" now', () => {
   ]);
   expect(newlyRevealed(before, after)).toEqual(['a', 'c']);
 });
+
+test('a miss flags the endangered claims and the word to win back first', () => {
+  const list = attentionList({
+    states: new Map<string, NodeState>([
+      ['x', 'frontier'],
+      ['a', 'claimed'],
+      ['r', 'claimed'],
+    ]),
+    claims: new Map([['r', { itEn: t0 - 120_000 }]]),
+    health: new Map(),
+    hostile: new Set(['x']),
+    fresh: new Set(),
+    nowMs: t0,
+    gaps: GAPS,
+    blocked: (id) => id === 'x',
+    danger: new Map([['a', { from: 'x' }]]),
+  });
+  expect(list).toEqual([
+    { id: 'x', kind: 'danger' },
+    { id: 'a', kind: 'danger' },
+    { id: 'r', kind: 'ready' },
+  ]);
+});

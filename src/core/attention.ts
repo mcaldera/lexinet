@@ -4,11 +4,12 @@ import type { NodeState } from './unlock';
 
 /**
  * Why a word wants the player's attention, most urgent first:
+ * danger: a claim about to fall after a miss, or the missed word to win back ·
  * ready: a claim step is open now · threat: hostile, rebelling or fading ·
  * new: just revealed and never tried.
  */
-export type AttentionKind = 'ready' | 'threat' | 'new';
-export const ATTENTION_ORDER: AttentionKind[] = ['ready', 'threat', 'new'];
+export type AttentionKind = 'danger' | 'ready' | 'threat' | 'new';
+export const ATTENTION_ORDER: AttentionKind[] = ['danger', 'ready', 'threat', 'new'];
 export type Attention = { id: string; kind: AttentionKind };
 
 export type AttentionInput = {
@@ -24,14 +25,23 @@ export type AttentionInput = {
   gaps: ClaimGaps;
   /** Words that can't be opened right now (wrong-answer lock). */
   blocked?: (id: string) => boolean;
+  /** Endangered claims and the missed word each depends on (core/danger.ts). */
+  danger?: Map<string, { from: string }>;
 };
 
 /** Words that need attention, sorted by urgency (see ATTENTION_ORDER). */
 export function attentionList(input: AttentionInput): Attention[] {
   const { states, claims, health, hostile, fresh, nowMs, gaps } = input;
   const out: Attention[] = [];
+  const rescuers = new Set([...(input.danger?.values() ?? [])].map((d) => d.from));
   for (const [id, st] of states) {
-    if (st === 'locked' || input.blocked?.(id)) continue;
+    if (st === 'locked') continue;
+    // The missed word stays flagged while locked: that's where the clock is ticking.
+    if (rescuers.has(id) || input.danger?.has(id)) {
+      out.push({ id, kind: 'danger' });
+      continue;
+    }
+    if (input.blocked?.(id)) continue;
     let kind: AttentionKind | null = null;
     if (st === 'claimed') {
       const next = claimNext(claims.get(id), gaps);

@@ -1,16 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { appNow } from './core/clock';
-import { newCard, rate, Rating, type Grade } from './core/scheduler';
+import { newCard, rate, Rating, State, type Grade } from './core/scheduler';
 import { tierAllows, tierMap } from './core/tiers';
 import { tenseCardId, type Tense, type TenseCard } from './core/verbs';
 import { computeProgress, computeReach, verbLevels } from './progress';
-import { afterAnswer, neighbourWeights, simulate, type Game } from './core/influence';
-import { CLAIM_EXPIRY_MS, CLAIM_GAPS, INFLUENCE, REACH } from './config';
-import { revealChanges } from './core/reach';
+import { afterAnswer, isHostile, neighbourWeights, simulate, type Game } from './core/influence';
+import { CLAIM_EXPIRY_MS, CLAIM_GAPS, DANGER_MS, INFLUENCE, REACH } from './config';
+import { recedeChanges, revealChanges } from './core/reach';
+import { dangerFalls, missed, rescue } from './core/danger';
 import {
   applyChanges,
   neighbourMap,
-  slipChanges,
   unlockChanges,
   type NodeState,
   type StateChange,
@@ -59,7 +59,8 @@ export type LevelUp = { tier: number; revealed: number };
 export type ReviewOutcome = {
   levelUp: LevelUp | null;
   conquered: boolean;
-  slipped: string[];
+  /** Claimed neighbours put in danger by a miss (they fall unless it is won back). */
+  endangered: string[];
   /** Claim progress after a successful answer on a word not yet conquered. */
   claim?: Claim;
   /** Hidden words the answer's push made conquerable. */
@@ -98,22 +99,68 @@ export function useSprawl() {
   const weights = useMemo(() => neighbourWeights(data?.edges ?? []), [data?.edges]);
   const [lost, setLost] = useState<LostEvent | null>(null);
 
-  // Tick when the next claim step opens, so it is offered without waiting for the minute clock.
+  // Tick when the next claim step opens or a danger deadline passes, without waiting for the minute clock.
   useEffect(() => {
     if (!data) return;
     const t = now.getTime();
     const opens = [...data.game.nodes]
       .filter(([id]) => data.states.get(id) === 'claimed')
-      .map(([, g]) => claimNext(g.claim, CLAIM_GAPS)?.opensAt ?? Infinity)
+      .flatMap(([, g]) => [
+        claimNext(g.claim, CLAIM_GAPS)?.opensAt ?? Infinity,
+        g.danger?.until ?? Infinity,
+      ])
       .filter((o) => o > t && o < Infinity);
     if (!opens.length) return;
     const timer = setTimeout(() => setTick((n) => n + 1), Math.min(...opens) - t + 50);
     return () => clearTimeout(timer);
   }, [data, now]);
 
+  /**
+   * Move the horizon (core/reach.ts): hidden words the territory now reaches
+   * become "?" (their grace period starts now), and untried "?" that lost their
+   * reach go back to ghosts.
+   */
+  const horizon = useCallback(
+    (states: Map<string, NodeState>, game: Game, tier: number, t: number) => {
+      if (!data) return { changes: [] as StateChange[], game, opened: 0 };
+      const claims = new Map([...game.nodes].map(([id, g]) => [id, g.claim]));
+      const levels = verbLevels(data.nodes, data.tenseCards, appNow(data.offsetDays));
+      const reach = computeReach(data.nodes, neighbours, states, claims, data.graph.seed, levels);
+      const opened = revealChanges(states, reach, REACH, tierAllows(tiers, tier));
+      const rootWords = new Set(
+        (data.graph.roots ?? [])
+          .filter((r) => data.unlockedRoots.has(r.id))
+          .flatMap((r) => r.words),
+      );
+      const started = new Set(
+        data.cards.filter((c) => c.card.state !== State.New).map((c) => c.nodeId),
+      );
+      const receded = recedeChanges(
+        states,
+        reach,
+        REACH,
+        (id) =>
+          id === data.graph.seed ||
+          started.has(id) ||
+          rootWords.has(id) ||
+          isHostile(game.nodes.get(id), 'frontier', t, INFLUENCE),
+      );
+      const changes = [...opened, ...receded];
+      if (!changes.length) return { changes, game, opened: 0 };
+      const nodes = new Map(game.nodes);
+      for (const c of opened) nodes.set(c.id, { control: 0, since: t });
+      for (const c of receded) nodes.delete(c.id); // grace restarts if it comes back
+      return { changes, game: { ...game, nodes }, opened: opened.length };
+    },
+    [data, neighbours, tiers],
+  );
+
   // Advance the influence game whenever app time moves (clock tick, time travel).
   useEffect(() => {
-    if (!db || !data || now.getTime() - data.game.simAt < 60_000) return;
+    if (!db || !data) return;
+    const t = now.getTime();
+    const dangerDue = [...data.game.nodes.values()].some((g) => g.danger && g.danger.until <= t);
+    if (t - data.game.simAt < 60_000 && !dangerDue) return;
     const levels = verbLevels(data.nodes, data.tenseCards, now);
     const next = simulate(data.game, data.states, weights, levels, now.getTime(), INFLUENCE);
     // Unfinished claims slip back after a day: finish what you start.
@@ -125,38 +172,31 @@ export function useSprawl() {
         next.game.nodes.set(id, { control: 0, since: now.getTime() });
       }
     }
-    const changes = [...next.lost, ...expired];
-    void saveGame(db, next.game, changes);
-    if (changes.length) setLost({ at: now.getTime(), ids: changes.map((l) => l.id) });
-    setData((d) => d && { ...d, game: next.game, states: applyChanges(d.states, changes) });
-  }, [db, data, now, weights]);
-
-  /**
-   * Hidden words the territory now reaches become "?" (core/reach.ts); their
-   * grace period starts now.
-   */
-  const reveal = useCallback(
-    (states: Map<string, NodeState>, game: Game, tier: number, t: number) => {
-      if (!data) return { changes: [] as StateChange[], game };
-      const claims = new Map([...game.nodes].map(([id, g]) => [id, g.claim]));
-      const levels = verbLevels(data.nodes, data.tenseCards, appNow(data.offsetDays));
-      const reach = computeReach(data.nodes, neighbours, states, claims, data.graph.seed, levels);
-      const changes = revealChanges(states, reach, REACH, tierAllows(tiers, tier));
-      if (!changes.length) return { changes, game };
-      const nodes = new Map(game.nodes);
-      for (const c of changes) nodes.set(c.id, { control: 0, since: t });
-      return { changes, game: { ...game, nodes } };
-    },
-    [data, neighbours, tiers],
-  );
+    // Words left in danger by a miss fall once their deadline passes.
+    const falls = dangerFalls(
+      next.game,
+      applyChanges(data.states, [...next.lost, ...expired]),
+      t,
+      INFLUENCE.hostileAfterHours * 3_600_000,
+    );
+    const fallen = [...next.lost, ...expired, ...falls.changes];
+    const states = applyChanges(data.states, fallen);
+    const tier = computeProgress(data.nodes, states, data.tenseCards, now).tier;
+    const moved = fallen.length ? horizon(states, falls.game, tier, t) : null;
+    const game = moved?.game ?? falls.game;
+    const changes = [...fallen, ...(moved?.changes ?? [])];
+    void saveGame(db, game, changes);
+    if (fallen.length) setLost({ at: t, ids: fallen.map((l) => l.id) });
+    setData((d) => d && { ...d, game, states: applyChanges(d.states, changes) });
+  }, [db, data, now, weights, horizon]);
 
   const review = useCallback(
     /**
      * Rate a word card. Returns what happened for the UI: a newly opened tier,
-     * a claim completed into a conquest, and words that slipped back to "?".
+     * a claim completed into a conquest, and words a miss put in danger.
      */
     async (row: CardRow, grade: Grade): Promise<ReviewOutcome> => {
-      const none: ReviewOutcome = { levelUp: null, conquered: false, slipped: [] };
+      const none: ReviewOutcome = { levelUp: null, conquered: false, endangered: [] };
       if (!db || !data) return none;
       const at = appNow(data.offsetDays);
       const t = at.getTime();
@@ -196,25 +236,33 @@ export function useSprawl() {
         game = { ...game, nodes };
       }
 
-      // A real miss shakes loose the fragile claims around it.
-      let slipped: string[] = [];
+      // A real miss: the word falls and turns hostile, and puts the fragile
+      // claims around it in danger (core/danger.ts). A win lifts its dangers.
+      let endangered: string[] = [];
       if (!success && !firstSight) {
-        const slips = slipChanges(row.nodeId, applyChanges(data.states, changes), neighbours);
-        slipped = slips.map((c) => c.id);
-        changes = [...changes, ...slips];
-        const nodes = new Map(game.nodes);
-        for (const id of slipped) nodes.set(id, { control: 0, since: t });
-        game = { ...game, nodes };
+        const miss = missed(
+          game,
+          row.nodeId,
+          applyChanges(data.states, changes),
+          neighbours,
+          t,
+          DANGER_MS,
+          INFLUENCE.hostileAfterHours * 3_600_000,
+        );
+        changes = [...changes, ...miss.changes];
+        game = miss.game;
+        endangered = miss.endangered;
       }
+      if (success) game = rescue(game, row.nodeId);
 
       const statesAfter = applyChanges(data.states, changes);
       const after = computeProgress(data.nodes, statesAfter, data.tenseCards, at).tier;
       // What the new territory pushes into reach (and, on a level up, the new tier).
-      const revealed = reveal(statesAfter, game, after, t);
+      const revealed = horizon(statesAfter, game, after, t);
       changes = [...changes, ...revealed.changes];
       game = revealed.game;
       const levelUp: LevelUp | null =
-        after > before ? { tier: after, revealed: revealed.changes.length } : null;
+        after > before ? { tier: after, revealed: revealed.opened } : null;
       await saveReview(db, row.id, card, grade, at, changes);
       await saveGame(db, game);
       setData((d) => {
@@ -229,9 +277,9 @@ export function useSprawl() {
           game,
         };
       });
-      return { levelUp, conquered, slipped, claim: claimed, opened: revealed.changes.length };
+      return { levelUp, conquered, endangered, claim: claimed, opened: revealed.opened };
     },
-    [db, data, neighbours, reveal],
+    [db, data, neighbours, horizon],
   );
 
   /**
@@ -273,7 +321,7 @@ export function useSprawl() {
       let levelUp: LevelUp | null = null;
       let game = hit([]);
       if (after > before) {
-        const revealed = reveal(data.states, game, after, at.getTime());
+        const revealed = horizon(data.states, game, after, at.getTime());
         changes = revealed.changes;
         game = revealed.game;
         levelUp = { tier: after, revealed: changes.length };
@@ -283,7 +331,7 @@ export function useSprawl() {
       setData((d) => d && { ...d, tenseCards, game, states: applyChanges(d.states, changes) });
       return levelUp;
     },
-    [db, data, reveal],
+    [db, data, horizon],
   );
 
   /** Unlock a root hub: its words all become frontier (a shortcut across the map). */

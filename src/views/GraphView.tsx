@@ -4,7 +4,7 @@ import ForceGraph2D, {
   type LinkObject,
   type NodeObject,
 } from 'react-force-graph-2d';
-import { COOLDOWN_MS, INFLUENCE, REACH } from '../config';
+import { COOLDOWN_MS, DANGER_MS, INFLUENCE, REACH } from '../config';
 import { appNow } from '../core/clock';
 import { fadedName, FULL_NAME } from '../core/fade';
 import { edgeOpacity, healthBand } from '../core/health';
@@ -37,11 +37,13 @@ type L = LinkObject<GNode, GLink>;
 
 /** Ripple colours (RGB) for words that need attention. */
 const ATTENTION_RGB: Record<AttentionKind, string> = {
+  danger: '244, 63, 94', // rose: a claim about to fall, or the missed word to win back
   ready: '52, 211, 153', // emerald: a claim step is open
   threat: '248, 113, 113', // red: hostile, rebelling or fading
   new: '125, 211, 252', // light sky: just revealed
 };
 const ATTENTION_LABEL: Record<AttentionKind, string> = {
+  danger: 'in danger',
   ready: 'ready',
   threat: 'under threat',
   new: 'new',
@@ -81,6 +83,8 @@ type Props = {
   claimWaits: Map<string, { opensAt: number; total: number }>;
   /** Hidden words in sight (reach below what conquering needs): drawn as ghosts. */
   sighted: Map<string, number>;
+  /** Claims endangered by a miss: deadline (app ms) and the missed word (core/danger.ts). */
+  danger: Map<string, { until: number; from: string }>;
   /** Push of every won word (core/reach.ts pushOf), for the push flows. */
   pushes: Map<string, number>;
   /** Who pushes the selected word and how much: ringed on the map. */
@@ -111,6 +115,7 @@ export default function GraphView({
   claims,
   claimWaits,
   sighted,
+  danger,
   pushes,
   pushSources,
   attention,
@@ -241,6 +246,7 @@ export default function GraphView({
       attentionOf.size > 0 ||
       claimWaits.size > 0 ||
       sighted.size > 0 ||
+      danger.size > 0 ||
       bursting);
 
   const graphData = useMemo(() => {
@@ -486,10 +492,11 @@ export default function GraphView({
     }
     const attn = attentionOf.get(node.id);
     if (attn) drawRipple(ctx, x, y, r, scale, ATTENTION_RGB[attn]);
+    const appMs = appNow(data.offsetDays).getTime();
     const lockedUntil = cooldowns.get(node.id);
-    if (lockedUntil && lockedUntil > Date.now()) {
-      // Countdown ring for the wrong-answer lock.
-      const left = (lockedUntil - Date.now()) / COOLDOWN_MS;
+    if (lockedUntil && lockedUntil > appMs) {
+      // Countdown ring for the wrong-answer lock (app time: time travel lifts it).
+      const left = (lockedUntil - appMs) / COOLDOWN_MS;
       ctx.beginPath();
       ctx.arc(x, y, r + 3, -Math.PI / 2, -Math.PI / 2 + left * 2 * Math.PI);
       ctx.strokeStyle = 'rgba(248, 113, 113, 0.95)';
@@ -582,6 +589,29 @@ export default function GraphView({
         ctx.strokeStyle = i < steps ? 'rgba(52, 211, 153, 0.95)' : 'rgba(148, 163, 184, 0.35)';
         ctx.lineWidth = 1.6;
         ctx.stroke();
+      }
+      const d = danger.get(node.id);
+      if (d && !inspect) {
+        // In danger: a pulsing rose ring running down to the moment it falls.
+        const pulse = 0.6 + 0.4 * Math.sin(Date.now() / 180);
+        ctx.beginPath();
+        ctx.arc(x, y, r + 8, 0, 2 * Math.PI);
+        ctx.setLineDash([2, 2]);
+        ctx.strokeStyle = `rgba(244, 63, 94, ${0.5 * pulse})`;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.setLineDash([]);
+        const left = Math.max(0, Math.min(1, (d.until - appMs) / DANGER_MS));
+        ctx.beginPath();
+        ctx.arc(x, y, r + 8, -Math.PI / 2, -Math.PI / 2 + left * 2 * Math.PI);
+        ctx.strokeStyle = `rgba(244, 63, 94, ${0.7 + 0.3 * pulse})`;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.font = `bold ${Math.max(4, 11 / scale)}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        ctx.fillStyle = `rgba(253, 164, 175, ${pulse})`;
+        ctx.fillText('!', x + r + 8, y - r - 4);
       }
       const wait = claimWaits.get(node.id);
       if (wait) {
@@ -807,6 +837,35 @@ export default function GraphView({
     return null;
   };
 
+  /** The missed word threatening an endangered claim along this link: [from, to]. */
+  const dangerLink = (l: L): [N, N] | null => {
+    if (inspect || l.category || l.descends) return null;
+    const a = l.source as N;
+    const b = l.target as N;
+    if (typeof a !== 'object' || typeof b !== 'object') return null;
+    if (danger.get(b.id)?.from === a.id) return [a, b];
+    if (danger.get(a.id)?.from === b.id) return [b, a];
+    return null;
+  };
+
+  const drawDanger = (ctx: CanvasRenderingContext2D, l: L) => {
+    const f = dangerLink(l);
+    if (!f) return;
+    const [a, b] = f;
+    if (a.x === undefined || b.x === undefined) return;
+    ctx.save();
+    ctx.setLineDash([4, 4]);
+    ctx.lineDashOffset = -Date.now() / 30; // runs towards the endangered claim
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = `rgba(244, 63, 94, ${0.55 + 0.35 * Math.sin(Date.now() / 180)})`;
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y!);
+    ctx.lineTo(b.x, b.y!);
+    ctx.stroke();
+    ctx.restore();
+  };
+
   const drawPush = (ctx: CanvasRenderingContext2D, l: L) => {
     const f = pushFlow(l);
     if (!f) return;
@@ -873,8 +932,9 @@ export default function GraphView({
           }
           const state = data.states.get(n.id);
           const until = cooldowns.get(n.id);
-          if (until && until > Date.now()) {
-            return `${hidden(n.id) ? 'Unknown word' : n.word.it} · locked ${Math.ceil((until - Date.now()) / 1000)} s`;
+          const nowApp = appNow(data.offsetDays).getTime();
+          if (until && until > nowApp) {
+            return `${hidden(n.id) ? 'Unknown word' : n.word.it} · locked ${Math.ceil((until - nowApp) / 1000)} s`;
           }
           const inSight = inspect ? undefined : sighted.get(n.id);
           if (inSight !== undefined) {
@@ -932,8 +992,12 @@ export default function GraphView({
           l.flow === 'attack' ? 0.004 + 0.01 * l.weight : 0.003 + 0.003 * l.weight
         }
         linkDirectionalParticleCanvasObject={(px, py, l, ctx) => drawChevron(ctx, px, py, l)}
-        linkCanvasObjectMode={(l) => (isEnergy(l) || pushFlow(l) ? 'after' : undefined)}
-        linkCanvasObject={(l, ctx) => (isEnergy(l) ? drawEnergy(ctx, l) : drawPush(ctx, l))}
+        linkCanvasObjectMode={(l) =>
+          isEnergy(l) || pushFlow(l) || dangerLink(l) ? 'after' : undefined
+        }
+        linkCanvasObject={(l, ctx) =>
+          dangerLink(l) ? drawDanger(ctx, l) : isEnergy(l) ? drawEnergy(ctx, l) : drawPush(ctx, l)
+        }
         onRenderFramePre={(ctx, scale) => drawRegions(ctx, scale, livePoints())}
         onRenderFramePost={(ctx) => {
           pointers.current = drawPointers(
@@ -1168,6 +1232,7 @@ function LegendBody({ onClose }: { onClose: () => void }) {
         <span className="text-slate-300">◯ white ring: next step opens</span>
         <span className="text-slate-400">◌ ghost: in sight, not in reach yet</span>
         <span className="text-sky-300">┅ blue flow: push towards the horizon</span>
+        <span className="text-rose-300">! rose ring: claim in danger after a miss</span>
         <span className="text-amber-300">★ verb tense reached</span>
         <span className="text-pink-300">⬢ shared root</span>
       </div>

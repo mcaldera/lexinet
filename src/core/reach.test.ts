@@ -1,4 +1,11 @@
-import { reachMap, reachSources, revealChanges, sightedWords, type ReachInput } from './reach';
+import {
+  reachMap,
+  reachSources,
+  recedeChanges,
+  revealChanges,
+  sightedWords,
+  type ReachInput,
+} from './reach';
 import { neighbourMap, type NodeState } from './unlock';
 
 const RULES = {
@@ -134,5 +141,23 @@ test("reach sources explain where a word's reach comes from", () => {
   expect(reachSources(inp, 'c').map((s) => [s.id, Math.round(s.push * 100) / 100])).toEqual([
     ['b', 1],
     ['a', 0.5],
+  ]);
+});
+
+test('an untried "?" that lost its reach recedes to a ghost; started ones stay', () => {
+  const states = new Map<string, NodeState>([
+    ['a', 'frontier'],
+    ['b', 'frontier'],
+    ['c', 'frontier'],
+    ['d', 'claimed'],
+  ]);
+  const reach = new Map([
+    ['a', 0.9],
+    ['b', 0.5],
+    ['c', 1.2],
+    ['d', 0.1],
+  ]);
+  expect(recedeChanges(states, reach, RULES, (id) => id === 'b')).toEqual([
+    { id: 'a', state: 'locked' },
   ]);
 });
