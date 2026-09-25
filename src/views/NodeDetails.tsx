@@ -1,4 +1,6 @@
 import type { Influence } from '../core/influence';
+import { TENSES, type Drill } from '../core/verbs';
+import { type Claim } from '../core/claim';
 import type { NodeState } from '../core/unlock';
 import type { WordNode } from '../db/repo';
 import Etymology from './Etymology';
@@ -19,6 +21,13 @@ type Props = {
   graceHours?: number;
   /** Hidden while this word is being quizzed (it would give the answer away). */
   showEtymology: boolean;
+  /** Claimed words: progress, and when the recall step opens (ms, app time). */
+  claim?: Claim;
+  recallOpens?: number;
+  /** Conquered verbs: level and what the next conjugation step is. */
+  verb?: { level: number; drill: Drill };
+  onConjugate?: () => void;
+  nowMs: number;
 };
 
 const pct = (v: number) => `${Math.round(v * 100)}%`;
@@ -50,6 +59,42 @@ export default function NodeDetails(props: Props) {
             <b className="text-amber-300">~{Math.max(1, Math.round(props.graceHours ?? 0))} h</b>.
           </p>
         )}
+      </div>
+    );
+  }
+  if (state === 'claimed') {
+    const c = props.claim;
+    const step = (done: boolean, text: string) => (
+      <li className={done ? 'text-emerald-300' : 'text-slate-400'}>
+        {done ? '✓' : '◻'} {text}
+      </li>
+    );
+    const mins =
+      props.recallOpens !== undefined
+        ? Math.max(0, Math.ceil((props.recallOpens - props.nowMs) / 60_000))
+        : undefined;
+    return (
+      <div className="rounded-lg border border-emerald-500/30 bg-slate-900/60 p-3 text-xs text-slate-300">
+        <div className="mb-1 flex justify-between">
+          <span className="uppercase tracking-wider text-emerald-300/80">Claimed · fragile</span>
+          <span className="text-sm text-slate-100">{name}</span>
+        </div>
+        <ul className="space-y-0.5">
+          {step(!!c?.itEn, 'Italian → English')}
+          {step(!!c?.enIt, 'English → Italian')}
+          {step(
+            !!c?.recall,
+            mins === undefined
+              ? 'Recall after a short break'
+              : mins > 0
+                ? `Recall in ~${mins} min`
+                : 'Recall now',
+          )}
+        </ul>
+        <p className="mt-2 text-amber-300/90">
+          Until conquered, a miss on this word or a neighbour makes it slip back to “?”.
+        </p>
+        {props.showEtymology && <Etymology word={word} />}
       </div>
     );
   }
@@ -107,6 +152,38 @@ export default function NodeDetails(props: Props) {
       <p className="mt-2 text-slate-500">
         Cohesion {cohesion.links.toFixed(1)} · part of a {cohesion.cluster}-word territory
       </p>
+      {props.verb && (
+        <div className="mt-3 rounded border border-amber-500/30 bg-amber-500/5 p-2">
+          <div className="flex items-center justify-between">
+            <span className="uppercase tracking-wider text-amber-300/90">
+              Verb level {props.verb.level}/{TENSES.length}{' '}
+              <span className="text-amber-300">{'◎'.repeat(props.verb.level)}</span>
+            </span>
+            {(props.verb.drill.kind === 'learn' || props.verb.drill.kind === 'defend') && (
+              <button
+                onClick={props.onConjugate}
+                className="rounded bg-amber-700 px-2 py-1 text-xs text-white hover:bg-amber-600"
+              >
+                {props.verb.drill.kind === 'learn' ? 'Conjugate' : 'Defend'}:{' '}
+                {props.verb.drill.tense}
+              </button>
+            )}
+          </div>
+          {props.verb.drill.kind === 'wait' && (
+            <p className="mt-1 text-slate-400">
+              Next tense ({props.verb.drill.tense}) in ~
+              {Math.max(
+                1,
+                Math.round((props.verb.drill.until.getTime() - props.nowMs) / 3_600_000),
+              )}{' '}
+              h: one new tense per day.
+            </p>
+          )}
+          {props.verb.drill.kind === 'done' && (
+            <p className="mt-1 text-slate-400">All tenses mastered.</p>
+          )}
+        </div>
+      )}
       {props.showEtymology && <Etymology word={word} />}
     </div>
   );

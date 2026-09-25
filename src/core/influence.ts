@@ -1,3 +1,4 @@
+import type { Claim } from './claim';
 import type { NodeState, StateChange } from './unlock';
 
 /** Game layer on top of memory: how firmly each word is held, and who is hostile. */
@@ -8,6 +9,8 @@ export type GameNode = {
   since?: number;
   /** Hostile until this time (ms) regardless of grace, e.g. after a wrong answer. */
   hostileUntil?: number;
+  /** Claimed words: progress towards conquest (see core/claim.ts). */
+  claim?: Claim;
 };
 export type Game = { simAt: number; nodes: Map<string, GameNode> };
 

@@ -12,9 +12,12 @@ export default function DebugPanel({ offsetDays, now, onTravel, onReset }: Props
       <div className="mb-2 text-xs uppercase tracking-wider text-slate-500">Debug</div>
       <p className="mb-3 text-slate-400">
         App date: {now.toLocaleDateString()} ({offsetDays >= 0 ? '+' : ''}
-        {offsetDays} days)
+        {Math.round(offsetDays * 100) / 100} days)
       </p>
       <div className="flex flex-wrap gap-2">
+        <button className={btn} onClick={() => onTravel(15 / 1440)}>
+          ⏩ +15 min
+        </button>
         <button className={btn} onClick={() => onTravel(1)}>
           ⏩ +1 day
         </button>

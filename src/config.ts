@@ -26,3 +26,8 @@ export const INFLUENCE = {
   /** Control lost immediately when a conquered word is answered wrongly. */
   wrongAnswerHit: 0.35,
 };
+
+/** A claimed word is conquered by a recall this long after both directions were right. */
+export const CLAIM_RECALL_GAP_MS = 10 * 60_000;
+/** An unfinished claim slips back to "?" after this long (app time). */
+export const CLAIM_EXPIRY_MS = 24 * 3_600_000;

@@ -5,8 +5,16 @@ import { tierAllows, tierMap } from './core/tiers';
 import { tenseCardId, type Tense, type TenseCard } from './core/verbs';
 import { computeProgress, verbLevels } from './progress';
 import { afterAnswer, neighbourWeights, simulate } from './core/influence';
-import { INFLUENCE } from './config';
-import { applyChanges, neighbourMap, repairStates, unlockChanges } from './core/unlock';
+import { CLAIM_EXPIRY_MS, CLAIM_RECALL_GAP_MS, INFLUENCE } from './config';
+import {
+  applyChanges,
+  neighbourMap,
+  repairStates,
+  slipChanges,
+  unlockChanges,
+  type StateChange,
+} from './core/unlock';
+import { claimComplete, claimStartedAt, recordClaim } from './core/claim';
 import { openDb, type SqlDb } from './db';
 import { currentGraphName, loadGraph } from './graphs';
 import {
@@ -40,6 +48,7 @@ function getDb() {
 }
 
 export type LevelUp = { tier: number; revealed: number };
+export type ReviewOutcome = { levelUp: LevelUp | null; conquered: boolean; slipped: string[] };
 /** Words lost to hostile pressure in the latest simulation step. */
 export type LostEvent = { at: number; ids: string[] };
 
@@ -78,18 +87,39 @@ export function useSprawl() {
     if (!db || !data || now.getTime() - data.game.simAt < 60_000) return;
     const levels = verbLevels(data.nodes, data.tenseCards, now);
     const next = simulate(data.game, data.states, weights, levels, now.getTime(), INFLUENCE);
-    void saveGame(db, next.game, next.lost);
-    if (next.lost.length) setLost({ at: now.getTime(), ids: next.lost.map((l) => l.id) });
-    setData((d) => d && { ...d, game: next.game, states: applyChanges(d.states, next.lost) });
+    // Unfinished claims slip back after a day: finish what you start.
+    const expired: StateChange[] = [];
+    for (const [id, st] of data.states) {
+      const g = next.game.nodes.get(id);
+      if (st === 'claimed' && now.getTime() - claimStartedAt(g?.claim) > CLAIM_EXPIRY_MS) {
+        expired.push({ id, state: 'frontier' });
+        next.game.nodes.set(id, { control: 0, since: now.getTime() });
+      }
+    }
+    const changes = [...next.lost, ...expired];
+    void saveGame(db, next.game, changes);
+    if (changes.length) setLost({ at: now.getTime(), ids: changes.map((l) => l.id) });
+    setData((d) => d && { ...d, game: next.game, states: applyChanges(d.states, changes) });
   }, [db, data, now, weights]);
 
   const review = useCallback(
-    /** Returns the newly opened tier and how many words it revealed, if any. */
-    async (row: CardRow, grade: Grade): Promise<LevelUp | null> => {
-      if (!db || !data) return null;
+    /**
+     * Rate a word card. Returns what happened for the UI: a newly opened tier,
+     * a claim completed into a conquest, and words that slipped back to "?".
+     */
+    async (row: CardRow, grade: Grade): Promise<ReviewOutcome> => {
+      const none: ReviewOutcome = { levelUp: null, conquered: false, slipped: [] };
+      if (!db || !data) return none;
       const at = appNow(data.offsetDays);
+      const t = at.getTime();
       const card = rate(row.card, grade, at);
+      const stateBefore = data.states.get(row.nodeId);
+      const success = grade !== Rating.Again;
+      // First sight of a word (never reviewed): not knowing it is learning, so
+      // no hostility and no slips. Every later miss counts in the game.
+      const firstSight = row.card.state === State.New;
       const before = computeProgress(data.nodes, data.states, data.tenseCards, at).tier;
+
       let changes = unlockChanges(
         row.nodeId,
         grade,
@@ -97,6 +127,42 @@ export function useSprawl() {
         neighbours,
         tierAllows(tiers, before),
       );
+      let game =
+        firstSight && !success
+          ? data.game
+          : afterAnswer(data.game, row.nodeId, stateBefore, success, changes, t, INFLUENCE);
+
+      // Claim bookkeeping: both directions + a later recall conquer the word.
+      let conquered = false;
+      if (success && (stateBefore === 'frontier' || stateBefore === 'claimed')) {
+        const claim = recordClaim(
+          data.game.nodes.get(row.nodeId)?.claim,
+          row.direction,
+          t,
+          CLAIM_RECALL_GAP_MS,
+        );
+        const nodes = new Map(game.nodes);
+        if (stateBefore === 'claimed' && claimComplete(claim)) {
+          changes = [...changes, { id: row.nodeId, state: 'conquered' }];
+          nodes.set(row.nodeId, { control: 1 });
+          conquered = true;
+        } else {
+          nodes.set(row.nodeId, { ...nodes.get(row.nodeId), control: 1, claim });
+        }
+        game = { ...game, nodes };
+      }
+
+      // A real miss shakes loose the fragile claims around it.
+      let slipped: string[] = [];
+      if (!success && !firstSight) {
+        const slips = slipChanges(row.nodeId, applyChanges(data.states, changes), neighbours);
+        slipped = slips.map((c) => c.id);
+        changes = [...changes, ...slips];
+        const nodes = new Map(game.nodes);
+        for (const id of slipped) nodes.set(id, { control: 0, since: t });
+        game = { ...game, nodes };
+      }
+
       const after = computeProgress(
         data.nodes,
         applyChanges(data.states, changes),
@@ -114,21 +180,6 @@ export function useSprawl() {
         changes = [...changes, ...revealed];
         levelUp = { tier: after, revealed: revealed.length };
       }
-      // First sight of a word (never reviewed): not knowing it is learning, so
-      // no hostility. Every later miss counts in the game.
-      const firstSight = row.card.state === State.New;
-      const game =
-        firstSight && grade === Rating.Again
-          ? data.game
-          : afterAnswer(
-              data.game,
-              row.nodeId,
-              data.states.get(row.nodeId),
-              grade !== Rating.Again,
-              changes,
-              at.getTime(),
-              INFLUENCE,
-            );
       await saveReview(db, row.id, card, grade, at, changes);
       await saveGame(db, game);
       setData((d) => {
@@ -143,7 +194,7 @@ export function useSprawl() {
           game,
         };
       });
-      return levelUp;
+      return { levelUp, conquered, slipped };
     },
     [db, data, neighbours, tiers],
   );

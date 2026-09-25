@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { COOLDOWN_MS, INFLUENCE } from './config';
+import { CLAIM_RECALL_GAP_MS, COOLDOWN_MS, INFLUENCE } from './config';
+import { recallOpensAt } from './core/claim';
 import { FULL_NAME, fadedName } from './core/fade';
 import { cohesion, isHostile, neighbourWeights, pressureBreakdown } from './core/influence';
 import { startOfDay } from './core/clock';
@@ -21,6 +22,7 @@ import RootQuiz from './views/RootQuiz';
 import VerbDrill from './views/VerbDrill';
 import WordInfo from './views/WordInfo';
 import NodeDetails from './views/NodeDetails';
+import VerbGoals, { type VerbGoal } from './views/VerbGoals';
 
 /** A node the user clicked: its cards are reviewed before the automatic queue. */
 type Session = { nodeId: string; cardIds: string[]; mode: 'conquer' | 'practice' };
@@ -41,6 +43,7 @@ export default function App() {
   const [rootQuiz, setRootQuiz] = useState<string | null>(null);
   /** Last word clicked or reached with the arrow keys: shown in the details panel. */
   const [selectedId, setSelectedId] = useState<string>();
+  const [showVerbGoals, setShowVerbGoals] = useState(false);
   /** A conquered word opened for viewing (it isn't due): meaning, etymology, tenses. */
   const [info, setInfo] = useState<{ nodeId: string; status: string } | null>(null);
   const [verbDrill, setVerbDrill] = useState<{
@@ -64,7 +67,7 @@ export default function App() {
   useEffect(() => {
     if (!lost || !data) return;
     const names = lost.ids.map((id) => data.nodes.find((n) => n.id === id)?.it ?? id);
-    setNotice(`Lost to hostile pressure: ${names.join(', ')}. Win them back!`);
+    setNotice(`Slipped away: ${names.join(', ')}. Win them back!`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lost]);
 
@@ -206,33 +209,81 @@ export default function App() {
   const states = [...data.states.values()];
   const conquered = states.filter((s) => s === 'conquered').length;
   const frontier = states.filter((s) => s === 'frontier').length;
+  const claimed = states.filter((s) => s === 'claimed').length;
   const hs = [...health.values()].filter((h): h is number => h !== null);
   const avg = hs.length ? hs.reduce((a, b) => a + b, 0) / hs.length : null;
 
   const wordOf = (id: string) => data.nodes.find((n) => n.id === id)?.it ?? id;
 
   const onRate = async (row: CardRow, grade: Grade) => {
-    const lv = await review(row, grade);
-    if (lv) setLevelUp(lv);
+    const outcome = await review(row, grade);
+    if (outcome.levelUp) setLevelUp(outcome.levelUp);
     setLastCardId(row.id);
     setTurn((t) => t + 1);
     if (grade === Rating.Again) {
       // Locked for a minute either way, so recalling it needs real memory.
       setCooldowns((m) => new Map(m).set(row.nodeId, Date.now() + COOLDOWN_MS));
+      const slipped = outcome.slipped.filter((id) => id !== row.nodeId).map(wordOf);
       setNotice(
         row.card.state === State.New
           ? `New word: ${wordOf(row.nodeId)}. Come back in ${COOLDOWN_MS / 1000} s to claim it from memory.`
-          : `Missed! ${wordOf(row.nodeId)} is locked for ${COOLDOWN_MS / 1000} s and turns against you.`,
+          : `Missed! ${wordOf(row.nodeId)} is locked for ${COOLDOWN_MS / 1000} s and turns against you.` +
+              (slipped.length ? ` Your fresh claim on ${slipped.join(', ')} slipped away.` : ''),
       );
       setSession((s) => (s?.nodeId === row.nodeId ? null : s));
       return;
     }
+    if (outcome.conquered)
+      setNotice(`${wordOf(row.nodeId)} is conquered: it holds its ground now.`);
     setSession((s) => {
       if (!s) return s;
       const rest = s.cardIds.filter((id) => id !== row.id);
       return rest.length ? { ...s, cardIds: rest } : null;
     });
   };
+
+  /** Open the next conjugation step of a conquered verb, if one is available. */
+  const startConjugate = (nodeId: string) => {
+    const drill = nextDrill(
+      data.tenseCards.filter((c) => c.nodeId === nodeId),
+      now,
+    );
+    setSelectedId(nodeId);
+    if (drill.kind === 'learn' || drill.kind === 'defend') {
+      setSession(null);
+      setInfo(null);
+      setVerbDrill({ nodeId, tense: drill.tense, kind: drill.kind });
+    }
+  };
+
+  // Verbs that can satisfy the next tier's requirement (open tiers, conjugable).
+  const verbGoals: VerbGoal[] = data.nodes
+    .filter((n) => n.conjugations && (n.tier ?? 1) <= (progress?.tier ?? 1))
+    .map((n) => {
+      const st = data.states.get(n.id) ?? 'locked';
+      return {
+        id: n.id,
+        name:
+          st === 'conquered'
+            ? fadedName(n.it, health.get(n.id) ?? null)
+            : st === 'locked'
+              ? ''
+              : '?',
+        state: st,
+        level: verbLevels.get(n.id) ?? 0,
+        drill:
+          st === 'conquered'
+            ? nextDrill(
+                data.tenseCards.filter((c) => c.nodeId === n.id),
+                now,
+              )
+            : null,
+      };
+    })
+    .sort(
+      (a, b) =>
+        b.level - a.level || Number(b.state === 'conquered') - Number(a.state === 'conquered'),
+    );
 
   const selectNode = (nodeId: string) => {
     if (inspect) return setInspectId(nodeId);
@@ -257,6 +308,22 @@ export default function App() {
     const until = cooldowns.get(nodeId);
     if (until && until > Date.now()) {
       setNotice(`${wordOf(nodeId)} is still locked (${Math.ceil((until - Date.now()) / 1000)} s).`);
+      return;
+    }
+    if (data.states.get(nodeId) === 'claimed') {
+      // Continue the claim: missing directions first, then the recall once it opens.
+      const claim = data.game.nodes.get(nodeId)?.claim;
+      const missing = DIRECTIONS.filter((d) => !claim?.[d === 'it-en' ? 'itEn' : 'enIt']);
+      const opens = recallOpensAt(claim, CLAIM_RECALL_GAP_MS) ?? 0;
+      if (!missing.length && opens > now.getTime()) {
+        setNotice(
+          `${wordOf(nodeId)}: lock it in with a recall in ~${Math.ceil((opens - now.getTime()) / 60_000)} min. Explore meanwhile, carefully.`,
+        );
+        return;
+      }
+      const dirs = missing.length ? missing : [Math.random() < 0.5 ? DIRECTIONS[0] : DIRECTIONS[1]];
+      setSession({ nodeId, cardIds: dirs.map((d) => cardId(nodeId, d)), mode: 'conquer' });
+      setTurn((t) => t + 1);
       return;
     }
     const conquered = data.states.get(nodeId) === 'conquered';
@@ -317,10 +384,19 @@ export default function App() {
       <header className="flex items-baseline gap-6 whitespace-nowrap border-b border-slate-800 px-4 py-2">
         <h1 className="text-lg font-semibold tracking-wide text-emerald-400">Sprawl</h1>
         <span className="text-sm text-slate-400">
-          {conquered}/{data.nodes.length} conquered · {frontier} frontier
+          {conquered}/{data.nodes.length} conquered · {claimed > 0 && `${claimed} claimed · `}
+          {frontier} frontier
           {avg !== null && ` · territory health ${Math.round(avg * 100)}%`}
         </span>
-        {progress && <TierBadge p={progress} names={data.graph.params?.tier_names} />}
+        {progress && (
+          <button
+            onClick={() => setShowVerbGoals((v) => !v)}
+            title="Show which verbs count for the next level"
+            className="rounded px-1 hover:bg-slate-800"
+          >
+            <TierBadge p={progress} names={data.graph.params?.tier_names} />
+          </button>
+        )}
         {GRAPH_NAMES.length > 1 && (
           <select
             value={graphName}
@@ -384,6 +460,7 @@ export default function App() {
             control={new Map([...data.game.nodes].map(([id, g]) => [id, g.control]))}
             hostile={hostileSet}
             nowMs={now.getTime()}
+            claims={new Map([...data.game.nodes].map(([id, g]) => [id, g.claim]))}
             graceUntil={
               new Map(
                 [...data.game.nodes]
@@ -399,6 +476,21 @@ export default function App() {
           />
         </section>
         <aside className="flex w-96 flex-col gap-4 overflow-y-auto border-l border-slate-800 p-4">
+          {showVerbGoals && progress && progress.verbsNeed > 0 && !inspect && (
+            <VerbGoals
+              goals={verbGoals}
+              need={progress.verbsNeed}
+              level={progress.verbLevel}
+              nextTier={
+                data.graph.params?.tier_names?.[String(progress.tier + 1)] ??
+                `tier ${progress.tier + 1}`
+              }
+              nowMs={now.getTime()}
+              onSelect={(id) => selectNode(id)}
+              onConjugate={(id) => startConjugate(id)}
+              onClose={() => setShowVerbGoals(false)}
+            />
+          )}
           {inspect ? (
             <InspectPanel
               data={data}
@@ -510,6 +602,24 @@ export default function App() {
                   now.getTime()) /
                 3_600_000
               }
+              nowMs={now.getTime()}
+              claim={data.game.nodes.get(detailsWord.id)?.claim}
+              recallOpens={recallOpensAt(
+                data.game.nodes.get(detailsWord.id)?.claim,
+                CLAIM_RECALL_GAP_MS,
+              )}
+              verb={
+                detailsWord.conjugations && data.states.get(detailsWord.id) === 'conquered'
+                  ? {
+                      level: verbLevels.get(detailsWord.id) ?? 0,
+                      drill: nextDrill(
+                        data.tenseCards.filter((c) => c.nodeId === detailsWord.id),
+                        now,
+                      ),
+                    }
+                  : undefined
+              }
+              onConjugate={() => startConjugate(detailsWord.id)}
               showEtymology={
                 (health.get(detailsWord.id) ?? 1) >= FULL_NAME &&
                 session?.nodeId !== detailsWord.id &&

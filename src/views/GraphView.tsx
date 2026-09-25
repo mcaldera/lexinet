@@ -9,6 +9,7 @@ import { fadedName, FULL_NAME } from '../core/fade';
 import { edgeOpacity, healthBand } from '../core/health';
 import { MAX_STRENGTH } from '../core/strength';
 import { TENSES } from '../core/verbs';
+import { CLAIM_STEPS, claimSteps, type Claim } from '../core/claim';
 import type { AppData, Edge, RootHub, WordNode } from '../db/repo';
 import { stepCursor, useKeyboardCamera } from './useKeyboardCamera';
 import {
@@ -60,6 +61,8 @@ type Props = {
   graceUntil: Map<string, number>;
   /** Current app time (ms). */
   nowMs: number;
+  /** Claim progress of claimed words. */
+  claims: Map<string, Claim | undefined>;
   /** Show every word and edge (spoilers) for inspecting the network. */
   inspect: boolean;
   /** Draw shared roots as hub nodes (replaces word-to-word "shared root" links). */
@@ -79,6 +82,7 @@ export default function GraphView({
   hostile,
   graceUntil,
   nowMs,
+  claims,
   inspect,
   showRoots,
   onNodeClick,
@@ -283,9 +287,16 @@ export default function GraphView({
       pts: t.ids
         .map((id) => nodeCache.current.get(id))
         .filter((n): n is N => n?.x !== undefined && n?.y !== undefined)
-        .map((n) => [n.x!, n.y!] as const),
+        .map((n) => [n.x!, n.y!, territoryRadius(n.id)] as const),
     }));
   const fitted = useRef(false);
+  /** A word's pull on its territory: practised words claim more ground. */
+  const territoryRadius = (id: string) => {
+    const st = data.states.get(id);
+    if (st === 'conquered') return 26 + 6 * (strength.get(id) ?? 0);
+    if (st === 'claimed') return 22;
+    return st === 'frontier' ? 16 : 12;
+  };
 
   const endId = (x: unknown) => (typeof x === 'object' && x ? (x as N).id : (x as string));
   const isHub = (id: string) => id.startsWith('root:');
@@ -293,10 +304,12 @@ export default function GraphView({
   const shownName = (id: string) => {
     const word = byId.get(id)?.it ?? '';
     if (inspect) return word;
-    if (data.states.get(id) !== 'conquered') return '';
+    const st = data.states.get(id);
+    if (st !== 'conquered' && st !== 'claimed') return '';
     return fadedName(word, health.get(id) ?? null);
   };
-  const hidden = (id: string) => !inspect && !isHub(id) && data.states.get(id) !== 'conquered';
+  const won = (id: string) => ['conquered', 'claimed'].includes(data.states.get(id) ?? '');
+  const hidden = (id: string) => !inspect && !isHub(id) && !won(id);
   const touchesActive = (l: L) =>
     inspect && activeId !== undefined && [endId(l.source), endId(l.target)].includes(activeId);
 
@@ -351,6 +364,26 @@ export default function GraphView({
       ctx.fillText(text, x, y + r + 2.5);
     };
 
+    if (state === 'claimed') {
+      // Freshly won but fragile: pale, with progress towards conquest.
+      const steps = claimSteps(claims.get(node.id));
+      shapePath(ctx, shape, x, y, r);
+      ctx.fillStyle = 'rgba(52, 211, 153, 0.3)';
+      ctx.fill();
+      ctx.setLineDash([1.5, 1.5]);
+      ctx.strokeStyle = 'rgba(110, 231, 183, 0.9)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.arc(x, y, r + 2.5, -Math.PI / 2, -Math.PI / 2 + (steps / CLAIM_STEPS) * 2 * Math.PI);
+      ctx.strokeStyle = 'rgba(52, 211, 153, 0.95)';
+      ctx.lineWidth = 1.6;
+      ctx.stroke();
+      label(0.85, node.word.it);
+      ctx.restore();
+      return;
+    }
     if (state !== 'conquered') {
       const angry = hostile.has(node.id);
       shapePath(ctx, shape, x, y, r);
@@ -669,6 +702,7 @@ function Legend() {
         <span className="text-emerald-200">glow: cohesion</span>
         <span className="text-red-300">? red: hostile</span>
         <span className="text-amber-300">◔ time until hostile</span>
+        <span className="text-emerald-300">◌ claimed (fragile, 1-3 steps)</span>
         <span className="text-pink-300">⬢ shared root</span>
       </div>
       <div className="flex gap-3">
@@ -742,42 +776,91 @@ const REGION_RGB = [
   '251, 146, 60',
   '248, 113, 113',
 ];
-const TERRITORY_RADIUS = 30; // map units around each word
 
-type Territory = { name: string; color: string; pts: (readonly [number, number])[] };
+type Territory = { name: string; color: string; pts: (readonly [number, number, number])[] };
 
-/** Territories as unions of soft discs with a border; names scale with zoom. */
+/** Offscreen buffer for the territory field (a fraction of the screen resolution). */
+const fieldCanvas = typeof document !== 'undefined' ? document.createElement('canvas') : null;
+const FIELD_DOWNSCALE = 2;
+const FIELD_THRESHOLD = 0.42;
+const FIELD_BORDER = 0.06;
+/** Width of the anti-aliased ramp at the blob edge (fraction of full alpha). */
+const FIELD_SOFT = 0.035;
+
+/**
+ * Territories as metaballs: every word paints a soft radial gradient in its
+ * region colour (bigger for practised words); where they overlap the density
+ * adds up, and a threshold turns the field into smooth, fused blobs with a
+ * border. Denser, stronger areas are drawn more vividly. Names scale with zoom.
+ */
 function drawRegions(ctx: CanvasRenderingContext2D, scale: number, regions: Territory[]) {
-  const union = (r: number, pts: Territory['pts']) => {
-    ctx.beginPath();
-    for (const [x, y] of pts) {
-      ctx.moveTo(x + r, y);
-      ctx.arc(x, y, r, 0, 2 * Math.PI);
+  const W = ctx.canvas.width;
+  const H = ctx.canvas.height;
+  const off = fieldCanvas;
+  const octx = off?.getContext('2d', { willReadFrequently: true });
+  if (off && octx && W > 0 && H > 0) {
+    const w = Math.ceil(W / FIELD_DOWNSCALE);
+    const h = Math.ceil(H / FIELD_DOWNSCALE);
+    if (off.width !== w || off.height !== h) {
+      off.width = w;
+      off.height = h;
     }
-  };
-  const border = 1.5 / scale;
-  ctx.save();
-  for (const t of regions) {
-    if (!t.pts.length) continue;
-    union(TERRITORY_RADIUS + border, t.pts);
-    ctx.fillStyle = `rgba(${t.color}, 0.45)`;
-    ctx.fill();
-    union(TERRITORY_RADIUS, t.pts);
-    ctx.fillStyle = '#020617';
-    ctx.fill();
-    ctx.fillStyle = `rgba(${t.color}, 0.09)`;
-    ctx.fill();
+    octx.setTransform(1, 0, 0, 1, 0, 0);
+    octx.clearRect(0, 0, w, h);
+    const T = ctx.getTransform();
+    const d = FIELD_DOWNSCALE;
+    octx.setTransform(T.a / d, T.b / d, T.c / d, T.d / d, T.e / d, T.f / d);
+    for (const t of regions) {
+      for (const [x, y, r] of t.pts) {
+        const reach = r * 2;
+        const g = octx.createRadialGradient(x, y, 0, x, y, reach);
+        g.addColorStop(0, `rgba(${t.color}, 1)`);
+        g.addColorStop(0.35, `rgba(${t.color}, 0.8)`);
+        g.addColorStop(1, `rgba(${t.color}, 0)`);
+        octx.fillStyle = g;
+        octx.beginPath();
+        octx.arc(x, y, reach, 0, 2 * Math.PI);
+        octx.fill();
+      }
+    }
+    // Threshold the density field: outside -> clear, rim -> border, inside ->
+    // a tint that deepens with density.
+    const img = octx.getImageData(0, 0, w, h);
+    const px = img.data;
+    const t0 = FIELD_THRESHOLD * 255;
+    const band = FIELD_BORDER * 255;
+    const soft = FIELD_SOFT * 255;
+    const BORDER = 150;
+    for (let i = 3; i < px.length; i += 4) {
+      const a = px[i];
+      if (a < t0 - soft) px[i] = 0;
+      else if (a < t0) px[i] = (BORDER * (a - t0 + soft)) / soft; // anti-aliased outer edge
+      else if (a < t0 + band) px[i] = BORDER;
+      else {
+        // Inner edge of the border blends into a tint that deepens with density.
+        const inner = Math.min(95, 18 + (a - t0 - band) * 0.9);
+        const k = Math.min(1, (a - t0 - band) / soft);
+        px[i] = BORDER + (inner - BORDER) * k;
+      }
+    }
+    octx.putImageData(img, 0, 0);
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(off, 0, 0, W, H);
+    ctx.restore();
   }
   // Region names: big and bold zoomed out, faint when zoomed in on words.
   const alpha = Math.min(0.85, Math.max(0.12, 1.1 - 0.45 * scale));
+  ctx.save();
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   for (const t of regions) {
     if (!t.name || !t.pts.length) continue;
     const cx = t.pts.reduce((a, p) => a + p[0], 0) / t.pts.length;
     const cy = t.pts.reduce((a, p) => a + p[1], 0) / t.pts.length;
-    const px = Math.min(24, Math.max(12, 8 + 2.5 * Math.sqrt(t.pts.length))); // screen pixels
-    ctx.font = `800 ${px / scale}px sans-serif`;
+    const px2 = Math.min(24, Math.max(12, 8 + 2.5 * Math.sqrt(t.pts.length))); // screen pixels
+    ctx.font = `800 ${px2 / scale}px sans-serif`;
     ctx.fillStyle = `rgba(${t.color}, ${alpha})`;
     ctx.fillText(t.name.toUpperCase(), cx, cy);
   }
