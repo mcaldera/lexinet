@@ -35,7 +35,7 @@ test('category and verb achievements', () => {
   expect(ids).not.toContain('verb-squad');
 });
 
-test('every achievement has a unique id and pays seeds', () => {
+test('every achievement has a unique id and pays coins', () => {
   expect(new Set(ACHIEVEMENTS.map((a) => a.id)).size).toBe(ACHIEVEMENTS.length);
-  expect(ACHIEVEMENTS.every((a) => a.seeds > 0)).toBe(true);
+  expect(ACHIEVEMENTS.every((a) => a.coins > 0)).toBe(true);
 });

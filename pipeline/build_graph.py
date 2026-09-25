@@ -29,6 +29,7 @@ same-theme pair would turn each theme into a clique.
 from __future__ import annotations
 
 import argparse
+import difflib
 import gzip
 import json
 import re
@@ -322,6 +323,27 @@ def theme_edges(
     return out
 
 
+def pick_cognate(italian: str, english_words: list[str]) -> str | None:
+    """The English descendant of a word's root that looks most like the word
+    itself (pane -> pantry, sorella -> sorority): a memorable cousin, or None.
+
+    A hint has to look like the word: clearly similar overall, or starting the
+    same and fairly similar. Precision over coverage (prosciutto -> paramount
+    shares a root family entry but helps nobody).
+    """
+    it = lemma(italian)
+
+    def score(w: str) -> float:
+        return difflib.SequenceMatcher(None, it, w.lower()).ratio()
+
+    good = [
+        w
+        for w in english_words
+        if score(w) >= 0.6 or (score(w) >= 0.4 and w.lower()[:2] == it[:2])
+    ]
+    return max(good, key=score, default=None)
+
+
 def build_graph(
     df: pd.DataFrame,
     embed: Embedder,
@@ -426,6 +448,15 @@ def build_graph(
         }
         for i, r in enumerate(df.itertuples(index=False))
     ]
+    # Words with a known root but no curated English cousin get the root's most
+    # similar English descendant (bought as a hint in the app).
+    if english:
+        for node in nodes:
+            if node.get("root") and not node.get("cognate"):
+                cousin = pick_cognate(node["it"], english(node["root"]))
+                if cousin:
+                    node["cognate"] = cousin
+                    node["cognate_note"] = f"shares the {node.get('root_lang') or ''} root {node['root']}".replace("  ", " ")
     # Roots shared by 2+ words become hub nodes in the app ("descends from" links).
     by_root: dict[str, list[int]] = {}
     for i, r in enumerate(df["root"]):

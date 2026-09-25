@@ -144,3 +144,26 @@ test('breakdown names who attacks and who supports; cohesion measures the cluste
     cluster: 1,
   });
 });
+
+test('a word with a bought hint takes only part of the hostile pressure', () => {
+  const game: Game = { simAt: t0, nodes: new Map([['c', { control: 0, since: t0 - 48 * H }]]) };
+  const states = st({ a: 'frontier', b: 'conquered', c: 'frontier' });
+  const hinted = pressureBreakdown(
+    'b',
+    game.nodes,
+    states,
+    nb,
+    new Map(),
+    t0,
+    INFLUENCE,
+    new Set(['b']),
+  );
+  expect(hinted.find((p) => p.id === 'c')!.perDay).toBeCloseTo(
+    -INFLUENCE.hostilePressure * INFLUENCE.hintShield,
+  );
+  // Over a day the shielded word keeps more control.
+  const g2: Game = { simAt: t0, nodes: new Map([...game.nodes, ['b', { control: 1 }]]) };
+  const plain = simulate(g2, states, nb, new Map(), t0 + 24 * H, INFLUENCE);
+  const shielded = simulate(g2, states, nb, new Map(), t0 + 24 * H, INFLUENCE, new Set(['b']));
+  expect(shielded.game.nodes.get('b')!.control).toBeGreaterThan(plain.game.nodes.get('b')!.control);
+});

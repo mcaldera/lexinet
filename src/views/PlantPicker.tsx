@@ -6,14 +6,14 @@ type Props = {
   anchorName: string;
   anchorCategory: string;
   options: (PlantOption & { word: WordNode; category: string; level: string })[];
-  seeds: number;
+  coins: number;
   onPlant: (option: PlantOption) => void;
   onClose: () => void;
 };
 
 /** Choose a hidden word (by its English meaning) to plant next to a conquered one. */
 export default function PlantPicker(props: Props) {
-  const { anchorName, anchorCategory, options, seeds, onPlant, onClose } = props;
+  const { anchorName, anchorCategory, options, coins, onPlant, onClose } = props;
   const cheapest = Math.min(PLANT_COST, ...options.map((o) => o.cost));
   return (
     <div className="rounded-lg border border-emerald-500/40 bg-slate-900 p-4 text-sm">
@@ -27,8 +27,8 @@ export default function PlantPicker(props: Props) {
         Next to <b>{anchorName}</b> ({anchorCategory}). The word appears there as a “?” joined by
         your link. Words of the same category tighten it once you conquer them.
       </p>
-      <p className={`mt-1 text-xs ${seeds >= cheapest ? 'text-slate-400' : 'text-amber-300'}`}>
-        {PLANT_COST} seeds, more for words from later levels · you have 🌱 {seeds}
+      <p className={`mt-1 text-xs ${coins >= cheapest ? 'text-slate-400' : 'text-amber-300'}`}>
+        {PLANT_COST} coins, more for words from later levels · you have 🪙 {coins}
       </p>
       {options.length === 0 ? (
         <p className="mt-3 text-slate-400">No hidden words to plant here right now.</p>
@@ -37,14 +37,14 @@ export default function PlantPicker(props: Props) {
           {options.map((o) => (
             <li key={o.id}>
               <button
-                disabled={seeds < o.cost}
+                disabled={coins < o.cost}
                 onClick={() => onPlant(o)}
                 className="w-full rounded border border-slate-700 px-3 py-2 text-left hover:border-emerald-500 hover:bg-emerald-500/10 disabled:opacity-50 disabled:hover:border-slate-700 disabled:hover:bg-transparent"
               >
                 <div className="flex items-baseline justify-between gap-2">
                   <span className="text-slate-100">{o.word.en}</span>
                   <span className="shrink-0 text-xs text-slate-500">
-                    {o.level} · 🌱{o.cost}
+                    {o.level} · 🪙{o.cost}
                   </span>
                 </div>
                 <div className="flex items-center justify-between gap-2 text-xs">

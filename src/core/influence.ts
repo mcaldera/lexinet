@@ -26,6 +26,8 @@ export type InfluenceRules = {
   support: number;
   verbSupportBonus: number;
   wrongAnswerHit: number;
+  /** Hostile and rebel pressure on a word with a bought hint is multiplied by this. */
+  hintShield: number;
 };
 
 export type Link = { source: string; target: string; weight: number };
@@ -52,7 +54,10 @@ export const isRebel = (
 
 export type Influence = { id: string; kind: 'attack' | 'rebel' | 'support'; perDay: number };
 
-/** Each neighbour's effect on a conquered word's control, per day. */
+/**
+ * Each neighbour's effect on a conquered word's control, per day. Words in
+ * `shielded` (a bought hint) take only part of the hostile pressure.
+ */
 export function pressureBreakdown(
   id: string,
   game: Map<string, GameNode>,
@@ -61,15 +66,17 @@ export function pressureBreakdown(
   verbLevels: Map<string, number>,
   t: number,
   rules: InfluenceRules,
+  shielded: Set<string> = new Set(),
 ): Influence[] {
   const out: Influence[] = [];
+  const shield = shielded.has(id) ? rules.hintShield : 1;
   for (const { id: n, weight } of neighbours.get(id) ?? []) {
     const g = game.get(n);
     const s = states.get(n);
     if (isHostile(g, s, t, rules))
-      out.push({ id: n, kind: 'attack', perDay: -rules.hostilePressure * weight });
+      out.push({ id: n, kind: 'attack', perDay: -rules.hostilePressure * weight * shield });
     else if (isRebel(g, s, rules))
-      out.push({ id: n, kind: 'rebel', perDay: -rules.rebelPressure * weight });
+      out.push({ id: n, kind: 'rebel', perDay: -rules.rebelPressure * weight * shield });
     else if (s === 'conquered') {
       const bonus = 1 + rules.verbSupportBonus * (verbLevels.get(n) ?? 0);
       out.push({
@@ -91,8 +98,9 @@ export function pressureOn(
   verbLevels: Map<string, number>,
   t: number,
   rules: InfluenceRules,
+  shielded: Set<string> = new Set(),
 ): number {
-  return pressureBreakdown(id, game, states, neighbours, verbLevels, t, rules).reduce(
+  return pressureBreakdown(id, game, states, neighbours, verbLevels, t, rules, shielded).reduce(
     (a, b) => a + b.perDay,
     0,
   );
@@ -148,6 +156,8 @@ export function simulate(
   verbLevels: Map<string, number>,
   to: number,
   rules: InfluenceRules,
+  /** Words with a bought hint: they take less hostile pressure. */
+  shielded: Set<string> = new Set(),
 ): { game: Game; lost: StateChange[] } {
   const nodes = new Map(game.nodes);
   const st = new Map(states);
@@ -165,7 +175,7 @@ export function simulate(
     const updates: [string, number][] = [];
     for (const [id, s] of st) {
       if (s !== 'conquered') continue;
-      const rate = pressureOn(id, nodes, st, neighbours, verbLevels, t, rules);
+      const rate = pressureOn(id, nodes, st, neighbours, verbLevels, t, rules, shielded);
       if (rate !== 0) updates.push([id, (nodes.get(id)?.control ?? 1) + rate * days]);
     }
     t += dt;

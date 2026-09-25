@@ -25,13 +25,20 @@ import {
 } from './visuals';
 
 /** Word node, or a root hub (then `word` holds the root's name/meaning for labels). */
-type GNode = { id: string; word: WordNode; hub?: RootHub };
+/** Word node, a root hub, or a bought hint (`hintOf`: the word it belongs to). */
+type GNode = { id: string; word: WordNode; hub?: RootHub; hintOf?: string };
 /**
  * `descends`: link from a root hub to one of its words. `category`: invisible
  * spring pulling discovered words of the same category together. `flow`:
  * influence travelling source -> target (drawn as moving particles).
  */
-type GLink = Edge & { descends?: boolean; category?: boolean; flow?: 'attack' | 'support' };
+type GLink = Edge & {
+  descends?: boolean;
+  category?: boolean;
+  flow?: 'attack' | 'support';
+  /** Link from a word to its bought hint. */
+  hint?: boolean;
+};
 type N = NodeObject<GNode>;
 type L = LinkObject<GNode, GLink>;
 
@@ -91,6 +98,8 @@ type Props = {
   danger: Map<string, { until: number; from: string }>;
   /** Lost words one right answer wins back, what they were and until when (app ms). */
   reclaim: Map<string, { was: 'conquered' | 'claimed'; steps: number; until: number }>;
+  /** Words with a bought hint -> their English cousin, drawn as a small node next to them. */
+  hints: Map<string, string>;
   /** Push of every won word (core/reach.ts pushOf), for the push flows. */
   pushes: Map<string, number>;
   /** Who pushes the selected word and how much: ringed on the map. */
@@ -123,6 +132,7 @@ export default function GraphView({
   sighted,
   danger,
   reclaim,
+  hints,
   pushes,
   pushSources,
   attention,
@@ -256,6 +266,8 @@ export default function GraphView({
       danger.size > 0 ||
       bursting);
 
+  const hintKey = [...hints].map(([id, c]) => `${id}=${c}`).join(',');
+
   const graphData = useMemo(() => {
     const visible = new Set(visibleKey.split(',').filter(Boolean));
     const flows = new Map(
@@ -270,13 +282,13 @@ export default function GraphView({
     );
     const linkedTo = (id: string) =>
       data.edges.flatMap((e) => (e.source === id ? [e.target] : e.target === id ? [e.source] : []));
-    const node = (id: string, word: WordNode, hub?: RootHub) => {
+    const node = (id: string, word: WordNode, hub?: RootHub, hintOf?: string) => {
       let n = nodeCache.current.get(id);
       if (!n) {
         n = { id, word };
         // Organic layout: a newly revealed word appears next to a visible word it
         // links to (usually the one that revealed it), then settles by physics.
-        const anchors = hub ? hub.words : linkedTo(id);
+        const anchors = hintOf ? [hintOf] : hub ? hub.words : linkedTo(id);
         const anchor = anchors.map((a) => nodeCache.current.get(a)).find((a) => a?.x !== undefined);
         if (anchor) {
           n.x = anchor.x! + (Math.random() - 0.5) * 40;
@@ -286,6 +298,7 @@ export default function GraphView({
       }
       n.word = word;
       n.hub = hub;
+      n.hintOf = hintOf;
       return n;
     };
     const hubNodes = hubs
@@ -293,9 +306,22 @@ export default function GraphView({
       .map((h) =>
         node(h.id, { id: h.id, it: h.root, en: h.meaning ?? '', pos: null, theme: null }, h),
       );
+    const hintNodes = inspect
+      ? []
+      : [...hints]
+          .filter(([id]) => visible.has(id))
+          .map(([id, cousin]) =>
+            node(
+              `hint:${id}`,
+              { id: `hint:${id}`, it: cousin, en: cousin, pos: null, theme: null },
+              undefined,
+              id,
+            ),
+          );
     const nodes = [
       ...data.nodes.filter((n) => visible.has(n.id)).map((w) => node(w.id, w)),
       ...hubNodes,
+      ...hintNodes,
     ];
     const links: GLink[] = data.edges
       .filter((e) => visible.has(e.source) && visible.has(e.target))
@@ -334,9 +360,18 @@ export default function GraphView({
         });
       }
     }
+    for (const n of hintNodes) {
+      links.push({
+        source: n.hintOf!,
+        target: n.id,
+        weight: 0.9,
+        reason: 'etymological',
+        hint: true,
+      });
+    }
     return { nodes, links };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visibleKey, data.edges, hubs, flowKey]);
+  }, [visibleKey, data.edges, hubs, flowKey, hintKey, inspect]);
 
   /** Centre the camera on a word (zooming in if far out) and open it, like a click. */
   const jumpTo = (id: string) => {
@@ -374,13 +409,13 @@ export default function GraphView({
     onNext: () => jumpNext(),
     onArrow: (dx, dy) => {
       const pos = (id: string) => nodeCache.current.get(id);
-      const visible = graphData.nodes.filter((n) => n.x !== undefined);
+      const visible = graphData.nodes.filter((n) => n.x !== undefined && !n.hintOf);
       const from = (cursorId && pos(cursorId)) || visible[0];
       if (!from) return;
       if (!cursorId || !pos(cursorId)) return setCursorId(from.id);
       const linked = new Set(
         graphData.links
-          .filter((l) => !l.category)
+          .filter((l) => !l.category && !l.hint)
           .flatMap((l) => {
             const [a, b] = [endId(l.source), endId(l.target)];
             return a === from.id ? [b] : b === from.id ? [a] : [];
@@ -420,10 +455,10 @@ export default function GraphView({
     fg.current
       ?.d3Force('link')
       ?.distance((l: L) =>
-        l.category ? 55 : (25 + (1 - l.weight) * 60) * (crossRegion(l) ? 2 : 1),
+        l.hint ? 14 : l.category ? 55 : (25 + (1 - l.weight) * 60) * (crossRegion(l) ? 2 : 1),
       )
       .strength((l: L) =>
-        l.category ? 0.08 : (0.15 + l.weight * 0.6) * (crossRegion(l) ? 0.3 : 1),
+        l.hint ? 1 : l.category ? 0.08 : (0.15 + l.weight * 0.6) * (crossRegion(l) ? 0.3 : 1),
       );
     fg.current?.d3Force('charge')?.strength(-90);
     // Set once: a page shows one graph, and its regions never change.
@@ -526,6 +561,11 @@ export default function GraphView({
       ctx.lineWidth = 1.2;
       ctx.stroke();
       ctx.setLineDash([]);
+    }
+    if (node.hintOf) {
+      drawHint(ctx, node, x, y, scale);
+      ctx.restore();
+      return;
     }
     if (node.hub) {
       drawHub(ctx, node, x, y, scale, node.id === activeId, inspect || unlockedRoots.has(node.id));
@@ -816,6 +856,7 @@ export default function GraphView({
     return a !== undefined && b !== undefined && a !== b;
   };
   const linkAlpha = (l: L) => {
+    if (l.hint) return 0.6;
     if (touchesActive(l)) return 0.95;
     // Links between territories are long; keep them in the background.
     const dim = crossRegion(l) || l.descends ? (inspect ? 0.12 : 0.35) : 1;
@@ -828,6 +869,7 @@ export default function GraphView({
 
   const linkTooltip = (l: L) => {
     const [a, b] = [endId(l.source), endId(l.target)];
+    if (l.hint) return '💡 your hint';
     if (l.descends) {
       const hub = hubs.find((h) => h.id === a);
       const word = hidden(b) || !shownName(b) ? 'This unknown word' : `<b>${shownName(b)}</b>`;
@@ -959,6 +1001,9 @@ export default function GraphView({
           ctx.fill();
         }}
         nodeLabel={(n) => {
+          if (n.hintOf) {
+            return `💡 Hint: English cousin “${n.word.it}” · shields its word (hostile pressure halved)`;
+          }
           if (n.hub && !inspect && !unlockedRoots.has(n.id)) {
             return `${n.hub.lang ?? ''} root ${n.hub.root}: click to unlock it and reveal its words`;
           }
@@ -1013,21 +1058,27 @@ export default function GraphView({
           return `${n.word.it} = ${n.word.en}${pct}${str}${verb}${ety} · ${hint}`;
         }}
         linkColor={(l) =>
-          l.flow === 'attack'
-            ? `rgba(248, 113, 113, ${0.35 + 0.3 * Math.sin(Date.now() / 250)})` // pulsing threat
-            : l.via === 'user'
-              ? `rgba(52, 211, 153, ${Math.max(0.5, linkAlpha(l))})` // planted by you
-              : `rgba(${REASON_RGB[l.reason]}, ${linkAlpha(l)})`
+          l.hint
+            ? 'rgba(251, 191, 36, 0.55)'
+            : l.flow === 'attack'
+              ? `rgba(248, 113, 113, ${0.35 + 0.3 * Math.sin(Date.now() / 250)})` // pulsing threat
+              : l.via === 'user'
+                ? `rgba(52, 211, 153, ${Math.max(0.5, linkAlpha(l))})` // planted by you
+                : `rgba(${REASON_RGB[l.reason]}, ${linkAlpha(l)})`
         }
         // Strong links are much thicker (and carry more influence).
         // By rank: the closest pairs (ghiaccio-gelato) stand out from mere same-theme ones.
-        linkWidth={(l) => 0.3 + 5 * weightRank(l.weight) ** 2.5 + (touchesActive(l) ? 1 : 0)}
+        linkWidth={(l) =>
+          l.hint ? 0.6 : 0.3 + 5 * weightRank(l.weight) ** 2.5 + (touchesActive(l) ? 1 : 0)
+        }
         linkLineDash={(l) =>
-          l.via === 'user'
-            ? [5, 2, 1, 2]
-            : isWeakBridge(l) || (l.descends && hidden(endId(l.target)))
-              ? [3, 3]
-              : null
+          l.hint
+            ? [1, 2]
+            : l.via === 'user'
+              ? [5, 2, 1, 2]
+              : isWeakBridge(l) || (l.descends && hidden(endId(l.target)))
+                ? [3, 3]
+                : null
         }
         linkHoverPrecision={6}
         linkVisibility={(l) => !l.category}
@@ -1063,8 +1114,9 @@ export default function GraphView({
         }}
         linkLabel={linkTooltip}
         onNodeClick={(n) => {
-          setCursorId(n.id);
-          onNodeClick(n.id);
+          const id = n.hintOf ?? n.id; // a hint opens its word
+          setCursorId(id);
+          onNodeClick(id);
         }}
         maxZoom={4}
         minZoom={0.15}
@@ -1281,6 +1333,9 @@ function LegendBody({ onClose }: { onClose: () => void }) {
         <span className="text-rose-300">! rose ring: claim in danger after a miss</span>
         <span className="text-teal-300">↺ teal ring: lost, one answer wins it back</span>
         <span className="text-emerald-300">-·- green link: planted by you</span>
+        <span className="text-amber-200">
+          ≈ amber dot: your hint (English cousin, shields the word)
+        </span>
         <span className="text-amber-300">★ verb tense reached</span>
         <span className="text-pink-300">⬢ shared root</span>
       </div>
@@ -1514,4 +1569,23 @@ function drawBurst(
     }
   }
   ctx.restore();
+}
+
+/** A bought hint: a small amber dot with its English cousin, tied to one word. */
+function drawHint(ctx: CanvasRenderingContext2D, node: N, x: number, y: number, scale: number) {
+  const r = 3;
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, 2 * Math.PI);
+  ctx.fillStyle = 'rgba(251, 191, 36, 0.35)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(251, 191, 36, 0.9)';
+  ctx.lineWidth = 0.8;
+  ctx.stroke();
+  if (scale < 0.6) return; // zoomed out: just the dot
+  const fontSize = Math.max(3, 10.5 / scale);
+  ctx.font = `italic ${fontSize}px serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillStyle = 'rgba(253, 230, 138, 0.9)';
+  ctx.fillText(`≈ ${node.word.it}`, x, y + r + 1.5);
 }

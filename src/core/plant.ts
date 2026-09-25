@@ -1,5 +1,5 @@
 /**
- * Planting: spend seeds on a conquered word to bring one hidden word of the
+ * Planting: spend coins on a conquered word to bring one hidden word of the
  * list next to it, joined by a link you made. Options are the word's strongest
  * partners (from the pipeline) that you can't see yet, then other hidden words
  * of its category. Cheapest first (what you can afford now), and among equal
@@ -18,7 +18,7 @@ export type PlantOption = {
   sameCategory: boolean;
   /** Already linked by the pipeline: planting reveals it, no new link. */
   linked: boolean;
-  /** Seeds: the base price plus extra per level beyond the open one. */
+  /** Coins: the base price plus extra per level beyond the open one. */
   cost: number;
 };
 

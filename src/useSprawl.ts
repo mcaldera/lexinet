@@ -12,7 +12,8 @@ import {
   INFLUENCE,
   REACH,
   RECLAIM_MS,
-  SEEDS_PER_CONQUEST,
+  COINS_PER_CONQUEST,
+  HINT_COST,
 } from './config';
 import type { Achievement } from './core/achievements';
 import type { PlantOption } from './core/plant';
@@ -179,7 +180,15 @@ export function useSprawl() {
     const dangerDue = [...data.game.nodes.values()].some((g) => g.danger && g.danger.until <= t);
     if (t - data.game.simAt < 60_000 && !dangerDue) return;
     const levels = verbLevels(data.nodes, data.tenseCards, now);
-    const next = simulate(data.game, data.states, weights, levels, now.getTime(), INFLUENCE);
+    const next = simulate(
+      data.game,
+      data.states,
+      weights,
+      levels,
+      now.getTime(),
+      INFLUENCE,
+      data.hints,
+    );
     // Unfinished claims slip back after a day: finish what you start.
     const expired: StateChange[] = [];
     for (const [id, st] of data.states) {
@@ -301,9 +310,9 @@ export function useSprawl() {
       await saveReview(db, row.id, card, grade, at, changes);
       if (graduated) await saveCard(db, graduated.id, graduated.card);
       await saveGame(db, game);
-      // Every real conquest (not a win-back) earns a seed for planting.
-      const seeds = data.seeds + (conquered && !wasWon ? SEEDS_PER_CONQUEST : 0);
-      if (seeds !== data.seeds) await saveMeta(db, 'seeds', seeds);
+      // Every real conquest (not a win-back) earns a coin.
+      const coins = data.coins + (conquered && !wasWon ? COINS_PER_CONQUEST : 0);
+      if (coins !== data.coins) await saveMeta(db, 'coins', coins);
       setData((d) => {
         if (!d) return d;
         const firstReview = new Map(d.firstReview);
@@ -316,7 +325,7 @@ export function useSprawl() {
           states: applyChanges(d.states, changes),
           firstReview,
           game,
-          seeds,
+          coins,
         };
       });
       return {
@@ -407,28 +416,28 @@ export function useSprawl() {
     [db, data],
   );
 
-  /** Record newly earned achievements and pay out their seeds. */
+  /** Record newly earned achievements and pay out their coins. */
   const earnAchievements = useCallback(
     async (earned: Achievement[]) => {
       if (!db || !data || !earned.length) return;
       const at = appNow(data.offsetDays).getTime();
       const achievements = { ...data.achievements };
       for (const a of earned) achievements[a.id] = at;
-      const seeds = data.seeds + earned.reduce((n, a) => n + a.seeds, 0);
+      const coins = data.coins + earned.reduce((n, a) => n + a.coins, 0);
       await saveMeta(db, 'achievements', achievements);
-      await saveMeta(db, 'seeds', seeds);
-      setData((d) => d && { ...d, achievements, seeds });
+      await saveMeta(db, 'coins', coins);
+      setData((d) => d && { ...d, achievements, coins });
     },
     [db, data],
   );
 
   /**
    * Plant `option` next to the conquered word `anchor` (core/plant.ts): it
-   * becomes a "?" there, joined by your link, for the option's cost in seeds.
+   * becomes a "?" there, joined by your link, for the option's cost in coins.
    */
   const plant = useCallback(
     async (anchor: string, option: PlantOption): Promise<boolean> => {
-      if (!db || !data || data.seeds < option.cost) return false;
+      if (!db || !data || data.coins < option.cost) return false;
       const t = appNow(data.offsetDays).getTime();
       const edge: Edge = {
         source: anchor,
@@ -443,9 +452,9 @@ export function useSprawl() {
       const nodes = new Map(data.game.nodes);
       for (const c of changes) nodes.set(c.id, { control: 0, since: t }); // grace starts now
       const game = { ...data.game, nodes };
-      const seeds = data.seeds - option.cost;
+      const coins = data.coins - option.cost;
       await saveMeta(db, 'user_edges', userEdges);
-      await saveMeta(db, 'seeds', seeds);
+      await saveMeta(db, 'coins', coins);
       await saveGame(db, game, changes);
       setData(
         (d) =>
@@ -453,11 +462,27 @@ export function useSprawl() {
             ...d,
             userEdges,
             edges: option.linked ? d.edges : [...d.edges, edge],
-            seeds,
+            coins,
             game,
             states: applyChanges(d.states, changes),
           },
       );
+      return true;
+    },
+    [db, data],
+  );
+
+  /** Buy a word's hint: its English cousin shows next to it and shields it. */
+  const buyHint = useCallback(
+    async (nodeId: string): Promise<boolean> => {
+      const word = data?.nodes.find((n) => n.id === nodeId);
+      if (!db || !data || !word?.cognate || data.hints.has(nodeId) || data.coins < HINT_COST)
+        return false;
+      const hints = new Set(data.hints).add(nodeId);
+      const coins = data.coins - HINT_COST;
+      await saveMeta(db, 'hints', [...hints]);
+      await saveMeta(db, 'coins', coins);
+      setData((d) => d && { ...d, hints, coins });
       return true;
     },
     [db, data],
@@ -491,6 +516,7 @@ export function useSprawl() {
     unlockRoot,
     earnAchievements,
     plant,
+    buyHint,
     timeTravel,
     reset,
     graphName,

@@ -4,7 +4,7 @@ import { CLAIM_STEP_NAMES, type ClaimStep } from '../core/claim';
 import type { NodeState } from '../core/unlock';
 import type { WordNode } from '../db/repo';
 import Etymology from './Etymology';
-import { DANGER_MS } from '../config';
+import { DANGER_MS, PLANT_COST } from '../config';
 import { timeLeft } from './ReviewView';
 
 type Props = {
@@ -33,9 +33,11 @@ type Props = {
   endangers?: { count: number; until: number };
   /** Conquered words: links into their category and out of it (score cohesion). */
   links?: { inside: number; outside: number; category: string };
+  /** Words with an English cousin: buy it as a hint, or see the one bought. */
+  hint?: { cognate: string; bought: boolean; cost: number; onBuy: () => void };
   /** Conquered words: open the plant picker (core/plant.ts). */
   onPlant?: () => void;
-  seeds?: number;
+  coins?: number;
   /** A lost word one right answer wins back: what it was and until when (app ms). */
   reclaim?: { was: 'conquered' | 'claimed'; steps: number; until: number };
   /** App time (ms), for the danger countdowns. */
@@ -113,6 +115,7 @@ export default function NodeDetails(props: Props) {
           </p>
         )}
         {props.reach && <ReachBar reach={props.reach} />}
+        {props.hint && <HintLine hint={props.hint} coins={props.coins ?? 0} />}
       </div>
     );
   }
@@ -168,6 +171,7 @@ export default function NodeDetails(props: Props) {
           in danger for {DANGER_MS / 60_000} min.
         </p>
         {props.push && <PushLine push={props.push} />}
+        {props.hint && <HintLine hint={props.hint} coins={props.coins ?? 0} />}
       </div>
     );
   }
@@ -226,6 +230,7 @@ export default function NodeDetails(props: Props) {
         Cohesion {cohesion.links.toFixed(1)} · part of a {cohesion.cluster}-word territory
       </p>
       {props.push && <PushLine push={props.push} />}
+      {props.hint && <HintLine hint={props.hint} coins={props.coins ?? 0} />}
       {props.links && (
         <div className="mt-2 flex items-center justify-between gap-2">
           <span className="text-slate-400">
@@ -238,10 +243,10 @@ export default function NodeDetails(props: Props) {
           {props.onPlant && (
             <button
               onClick={props.onPlant}
-              title="Spend seeds to bring a hidden word next to this one"
+              title="Spend coins to bring a hidden word next to this one"
               className="shrink-0 rounded bg-emerald-800 px-2 py-1 text-xs text-white hover:bg-emerald-700"
             >
-              🌱 Plant a word ({props.seeds ?? 0})
+              🌱 Plant a word (from 🪙{PLANT_COST})
             </button>
           )}
         </div>
@@ -315,5 +320,29 @@ function PushLine({ push }: { push: NonNullable<Props['push']> }) {
       Pushes the horizon: {Math.round(push.value * 100)}% to its neighbours ({push.why}), half that
       two links away.
     </p>
+  );
+}
+
+/** A bought hint (the English cousin, which also shields the word), or the offer to buy one. */
+function HintLine({ hint, coins }: { hint: NonNullable<Props['hint']>; coins: number }) {
+  if (hint.bought) {
+    return (
+      <p className="mt-2 text-amber-200/90">
+        💡 Hint: <b>≈ {hint.cognate}</b> · shielded: hostile pressure on it is halved.
+      </p>
+    );
+  }
+  return (
+    <div className="mt-2 flex items-center justify-between gap-2">
+      <span className="text-slate-400">Can't remember it? An English cousin helps.</span>
+      <button
+        onClick={hint.onBuy}
+        disabled={coins < hint.cost}
+        title="Shows its English cousin next to the word and halves the hostile pressure on it"
+        className="shrink-0 rounded bg-amber-800 px-2 py-1 text-xs text-white hover:bg-amber-700 disabled:opacity-50"
+      >
+        💡 Hint (🪙{hint.cost})
+      </button>
+    </div>
   );
 }

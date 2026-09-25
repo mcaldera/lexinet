@@ -25,6 +25,8 @@ export const INFLUENCE = {
   verbSupportBonus: 0.5,
   /** Control lost immediately when a conquered word is answered wrongly. */
   wrongAnswerHit: 0.35,
+  /** A bought hint (English cousin) halves hostile pressure on its word. */
+  hintShield: 0.5,
 };
 
 /** A claimed word's English -> Italian step opens this long after Italian -> English. */
@@ -66,8 +68,10 @@ export const REACH = {
   verbLevelBonus: 0.15,
 };
 
-/** Seeds: earned per conquest (and from achievements), spent on planting a word. */
-export const SEEDS_PER_CONQUEST = 1;
+/** Coins: earned per conquest (and from achievements), spent on planting a word. */
+export const COINS_PER_CONQUEST = 1;
 export const PLANT_COST = 5;
+/** Price of a hint: a word's English cousin, shown next to it and shielding it. */
+export const HINT_COST = 3;
 /** Planting a word from a later level costs this much more per level ahead. */
 export const PLANT_COST_PER_TIER = 2;

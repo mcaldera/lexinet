@@ -111,10 +111,12 @@ export type AppData = {
   game: Game;
   /** Achievement id -> app time (ms) it was earned (core/achievements.ts). */
   achievements: Record<string, number>;
-  /** Seeds to spend on planting words (core/plant.ts). */
-  seeds: number;
+  /** Coins to spend on planting words (core/plant.ts). */
+  coins: number;
   /** Links the player planted; also merged into `edges`. */
   userEdges: Edge[];
+  /** Words with a bought hint (their English cousin shown next to them). */
+  hints: Set<string>;
 };
 
 async function insertMany(
@@ -241,8 +243,9 @@ export async function loadAll(db: SqlDb, graph: Graph): Promise<AppData> {
     nodes: graph.nodes,
     edges: [...graph.edges, ...userEdges],
     userEdges,
+    hints: new Set((await loadMeta<string[]>(db, 'hints', [])).filter((id) => ids.has(id))),
     achievements: await loadMeta<Record<string, number>>(db, 'achievements', {}),
-    seeds: await loadMeta<number>(db, 'seeds', 0),
+    coins: await loadMeta<number>(db, 'coins', await loadMeta<number>(db, 'seeds', 0)), // 'seeds' before the rename
     cards: cards.map((c) => ({
       id: c.id,
       nodeId: c.node_id,
@@ -305,7 +308,7 @@ async function loadMeta<T>(db: SqlDb, key: string, fallback: T): Promise<T> {
   return rows.length ? (JSON.parse(rows[0].value) as T) : fallback;
 }
 
-/** Store one JSON value under a meta key (achievements, seeds, planted links). */
+/** Store one JSON value under a meta key (achievements, coins, planted links). */
 export async function saveMeta(db: SqlDb, key: string, value: unknown) {
   await db.execute(
     'INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value',

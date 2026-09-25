@@ -1,21 +1,21 @@
 import { ACHIEVEMENTS } from '../core/achievements';
 import type { ClusterScore } from '../core/score';
-import { PLANT_COST, SEEDS_PER_CONQUEST } from '../config';
+import { PLANT_COST, COINS_PER_CONQUEST } from '../config';
 
 type Props = {
   score: number;
   clusters: ClusterScore[];
   regionName: (id: number) => string;
   achievements: Record<string, number>;
-  seeds: number;
+  coins: number;
   onClose: () => void;
 };
 
 const pct = (v: number) => `${Math.round(v * 100)}%`;
 
-/** Score by category, achievements, and how seeds work. */
+/** Score by category, achievements, and how coins work. */
 export default function ProgressPanel(props: Props) {
-  const { score, clusters, regionName, achievements, seeds, onClose } = props;
+  const { score, clusters, regionName, achievements, coins, onClose } = props;
   const earned = ACHIEVEMENTS.filter((a) => a.id in achievements).length;
   return (
     <div className="rounded-lg border border-amber-500/40 bg-slate-900 p-4 text-sm">
@@ -27,7 +27,7 @@ export default function ProgressPanel(props: Props) {
       </div>
       <div className="flex items-baseline justify-between">
         <span className="text-3xl font-bold text-amber-300">{score.toLocaleString()}</span>
-        <span className="text-slate-300">🌱 {seeds} seeds</span>
+        <span className="text-slate-300">🪙 {coins} coins</span>
       </div>
       <p className="mt-1 text-xs text-slate-400">
         Each category scores 10 × its conquered words × (1 + 2 × cohesion). Cohesion = links among
@@ -77,14 +77,14 @@ export default function ProgressPanel(props: Props) {
                 {got ? '🏆' : '·'} {a.title}
               </div>
               <div className="text-[11px] opacity-80">
-                {a.description} · 🌱{a.seeds}
+                {a.description} · 🪙{a.coins}
               </div>
             </li>
           );
         })}
       </ul>
       <p className="mt-3 text-xs text-slate-400">
-        🌱 Seeds: +{SEEDS_PER_CONQUEST} per conquest and more per achievement. Spend {PLANT_COST} to
+        🪙 Coins: +{COINS_PER_CONQUEST} per conquest and more per achievement. Spend {PLANT_COST} to
         plant a word next to one of yours (select a conquered word, then “Plant a word”).
       </p>
     </div>

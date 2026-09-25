@@ -223,3 +223,11 @@ def test_every_theme_is_one_connected_piece(df):
                 stack.append(y)
         assert seen == members, t
     assert any(e["via"] == "theme" for e in g["edges"])
+
+
+def test_pick_cognate_prefers_the_lookalike_descendant():
+    assert bg.pick_cognate("il pane", ["company", "companion", "pantry"]) == "pantry"
+    assert bg.pick_cognate("la sorella", ["sorority"]) == "sorority"
+    assert bg.pick_cognate("il prosciutto", ["paramount"]) is None  # no help as a hint
+    assert bg.pick_cognate("avere", ["behavior"]) is None
+    assert bg.pick_cognate("il cane", []) is None

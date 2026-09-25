@@ -4,6 +4,7 @@ import {
   COOLDOWN_MS,
   DANGER_MS,
   INFLUENCE,
+  HINT_COST,
   PLANT_COST,
   PLANT_COST_PER_TIER,
   REACH,
@@ -67,6 +68,7 @@ export default function App() {
     unlockRoot,
     earnAchievements,
     plant,
+    buyHint,
     timeTravel,
     reset,
     graphName,
@@ -264,7 +266,7 @@ export default function App() {
   );
   const score = totalScore(clusters);
 
-  // Achievements: check the milestones whenever progress changes; new ones pay seeds.
+  // Achievements: check the milestones whenever progress changes; new ones pay coins.
   const [earnedNow, setEarnedNow] = useState<Achievement[]>([]);
   useEffect(() => {
     if (!data) return;
@@ -401,6 +403,7 @@ export default function App() {
           verbLevels,
           now.getTime(),
           INFLUENCE,
+          data.hints,
         )
       : (weights.get(detailsWord.id) ?? [])
           .filter((n) => data.states.get(n.id) === 'conquered')
@@ -833,14 +836,14 @@ export default function App() {
         </button>
         <button
           onClick={() => setShowProgress((v) => !v)}
-          title="Score, achievements and seeds"
+          title="Score, achievements and coins"
           className={`rounded px-2 py-1 text-sm ${
             showProgress
               ? 'bg-amber-700/60 text-amber-100'
               : 'bg-slate-800 text-amber-300 hover:bg-slate-700'
           }`}
         >
-          🏆 {score.toLocaleString()} · 🌱 {data.seeds}
+          🏆 {score.toLocaleString()} · 🪙 {data.coins}
         </button>
         <AudioToggles />
         <button
@@ -884,6 +887,16 @@ export default function App() {
             pushes={pushes}
             danger={dangerMap}
             reclaim={reclaimMap}
+            hints={
+              new Map(
+                [...data.hints].flatMap((id) => {
+                  const w = data.nodes.find((n) => n.id === id);
+                  return w?.cognate && data.states.get(id) !== 'locked'
+                    ? [[id, w.cognate] as const]
+                    : [];
+                }),
+              )
+            }
             pushSources={
               detailsReach ? new Map(detailsReach.map((r) => [r.id, r.push])) : undefined
             }
@@ -910,7 +923,7 @@ export default function App() {
               clusters={clusters}
               regionName={regionName}
               achievements={data.achievements}
-              seeds={data.seeds}
+              coins={data.coins}
               onClose={() => setShowProgress(false)}
             />
           )}
@@ -949,7 +962,7 @@ export default function App() {
                   anchorName={wordOf(planting)}
                   anchorCategory={regionName(regionOf(planting))}
                   options={plantChoices(planting)}
-                  seeds={data.seeds}
+                  coins={data.coins}
                   onClose={() => setPlanting(null)}
                   onPlant={async (o) => {
                     const anchor = planting;
@@ -1111,7 +1124,23 @@ export default function App() {
                     }
                   : undefined
               }
-              seeds={data.seeds}
+              coins={data.coins}
+              hint={
+                detailsWord.cognate && data.states.get(detailsWord.id) !== 'locked'
+                  ? {
+                      cognate: detailsWord.cognate,
+                      bought: data.hints.has(detailsWord.id),
+                      cost: HINT_COST,
+                      onBuy: async () => {
+                        if (!(await buyHint(detailsWord.id))) return;
+                        sfx('plant');
+                        setNotice(
+                          `Hint: “${detailsWord.cognate}”. It stays next to the word and halves the pressure on it.`,
+                        );
+                      },
+                    }
+                  : undefined
+              }
               reclaim={reclaimMap.get(detailsWord.id)}
               endangers={(() => {
                 const ds = [...dangerMap.values()].filter((d) => d.from === detailsWord.id);
@@ -1240,7 +1269,7 @@ function AudioToggles() {
 
 /** Newly earned achievements, celebrated over the map. */
 function AchievementBanner({ earned }: { earned: Achievement[] }) {
-  const seeds = earned.reduce((n, a) => n + a.seeds, 0);
+  const coins = earned.reduce((n, a) => n + a.coins, 0);
   return (
     <div className="pointer-events-none absolute left-1/2 top-4 z-10 -translate-x-1/2 rounded-xl border-2 border-amber-300/70 bg-slate-900/90 px-6 py-3 text-center shadow-[0_0_30px_rgba(251,191,36,0.35)] backdrop-blur">
       <div className="text-xs uppercase tracking-[0.2em] text-amber-200/80">
@@ -1255,7 +1284,7 @@ function AchievementBanner({ earned }: { earned: Achievement[] }) {
       {earned.length > 4 && (
         <div className="text-xs text-amber-100/60">and {earned.length - 4} more</div>
       )}
-      <div className="mt-1 text-sm text-emerald-300">+{seeds} 🌱 seeds</div>
+      <div className="mt-1 text-sm text-emerald-300">+{coins} 🪙 coins</div>
     </div>
   );
 }
