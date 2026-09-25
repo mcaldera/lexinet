@@ -21,6 +21,8 @@ type Props = {
   mode: 'conquer' | 'practice' | 'due';
   dueCount: number;
   newToday: number;
+  /** Cards due away from the word you're on (the review doesn't jump there). */
+  elsewhere?: number;
   /** Word not conquered yet: the claim step this answer completes. */
   claimStep?: ClaimStep | null;
   onRate: (row: CardRow, grade: Grade) => Promise<void>;
@@ -28,7 +30,7 @@ type Props = {
 };
 
 export default function ReviewView(props: Props) {
-  const { data, current, mode, dueCount, newToday, claimStep, onRate, onCancel } = props;
+  const { data, current, mode, dueCount, newToday, claimStep, elsewhere, onRate, onCancel } = props;
   const [typed, setTyped] = useState('');
   const [check, setCheck] = useState<AnswerCheck | null>(null);
   const [busy, setBusy] = useState(false);
@@ -99,8 +101,18 @@ export default function ReviewView(props: Props) {
 
       {!current || !word ? (
         <p className="py-8 text-center text-slate-400">
-          Nothing due. Click a <span className="font-semibold text-slate-200">?</span> node on the
-          graph to conquer new territory, or a word to practise it.
+          {elsewhere ? (
+            <>
+              Nothing due next to this word. {elsewhere} more {elsewhere === 1 ? 'is' : 'are'} due
+              elsewhere: press <span className="font-semibold text-slate-200">N</span> or use the
+              jump bar.
+            </>
+          ) : (
+            <>
+              Nothing due. Click a <span className="font-semibold text-slate-200">?</span> node on
+              the graph to conquer new territory, or a word to practise it.
+            </>
+          )}
         </p>
       ) : (
         <>

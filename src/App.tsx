@@ -14,7 +14,7 @@ import { FULL_NAME, fadedName } from './core/fade';
 import { cohesion, isHostile, neighbourWeights, pressureBreakdown } from './core/influence';
 import { appNow, startOfDay } from './core/clock';
 import { nodeHealth } from './core/health';
-import { buildQueue } from './core/queue';
+import { buildQueue, nearby } from './core/queue';
 import { tierAllows, tierMap, type TierProgress } from './core/tiers';
 import { pushOf, reachMap, reachSources, sightedWords } from './core/reach';
 import { neighbourMap } from './core/unlock';
@@ -264,14 +264,21 @@ export default function App() {
   if (error) return <div className="p-6 text-red-400">Failed to open database: {error}</div>;
   if (!data) return <div className="p-6 text-slate-400">Loading…</div>;
 
+  // The review stays local: only the word you're on or a word linked to it comes
+  // next. With nothing due there, it stays put (N / the jump bar find the rest).
+  const nearQueue = nearby(queue, selectedId, neighbours);
+  const isNear = (id: string) =>
+    !selectedId || id === selectedId || !!neighbours.get(selectedId)?.includes(id);
   const current: CardRow | undefined = session
     ? data.cards.find((c) => c.id === session.cardIds[0])
-    : queue[0];
+    : nearQueue[0];
   const mode = session?.mode ?? 'due';
   // Due tense drills defend automatically once no word card is waiting.
   const dueTense =
     !session && !current
-      ? data.tenseCards.find((c) => c.card.due <= now && !cooldowns.has(c.nodeId))
+      ? data.tenseCards.find(
+          (c) => c.card.due <= now && !cooldowns.has(c.nodeId) && isNear(c.nodeId),
+        )
       : undefined;
   const activeDrill =
     verbDrill ??
@@ -296,7 +303,8 @@ export default function App() {
     (activeDrill && !rootQuiz ? activeDrill.nodeId : undefined) ??
     (info && !rootQuiz ? info.nodeId : undefined) ??
     rootQuiz ??
-    current?.nodeId;
+    current?.nodeId ??
+    selectedId;
   // The word whose Italian name is the answer being asked: hidden everywhere meanwhile.
   const answerId =
     !waitOn && !activeDrill && !info && !rootQuiz && current?.direction === 'en-it'
@@ -349,6 +357,12 @@ export default function App() {
     gaps: CLAIM_GAPS,
     blocked: (id) => (cooldowns.get(id) ?? 0) > appMs(),
     danger: dangerMap,
+    due: new Set([
+      ...queue.map((c) => c.nodeId),
+      ...data.tenseCards
+        .filter((c) => c.card.due <= now && !cooldowns.has(c.nodeId))
+        .map((c) => c.nodeId),
+    ]),
   });
 
   const today = startOfDay(now).getTime();
@@ -411,6 +425,7 @@ export default function App() {
     );
     if (outcome.opened && !outcome.levelUp) setTimeout(() => sfx('reveal'), 450);
     setLastCardId(row.id);
+    setSelectedId(row.nodeId); // the next card comes from around this word
     setTurn((t) => t + 1);
     if (grade === Rating.Again) {
       // Locked for a minute either way, so recalling it needs real memory.
@@ -883,6 +898,10 @@ export default function App() {
                   current={current}
                   mode={mode}
                   dueCount={dueCount}
+                  elsewhere={
+                    queue.filter((c) => !isNear(c.nodeId)).length +
+                    data.tenseCards.filter((c) => c.card.due <= now && !isNear(c.nodeId)).length
+                  }
                   newToday={newToday}
                   claimStep={
                     current &&

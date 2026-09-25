@@ -87,3 +87,24 @@ test('a miss flags the endangered claims and the word to win back first', () => 
     { id: 'r', kind: 'ready' },
   ]);
 });
+
+test('conquered words with a review due are flagged, after open claim steps', () => {
+  const list = attentionList({
+    states: new Map<string, NodeState>([
+      ['w', 'conquered'],
+      ['r', 'claimed'],
+      ['q', 'frontier'],
+    ]),
+    claims: new Map([['r', { itEn: t0 - 120_000 }]]),
+    health: new Map([['w', 0.95]]),
+    hostile: new Set(),
+    fresh: new Set(),
+    nowMs: t0,
+    gaps: GAPS,
+    due: new Set(['w', 'q']),
+  });
+  expect(list).toEqual([
+    { id: 'r', kind: 'ready' },
+    { id: 'w', kind: 'due' },
+  ]);
+});

@@ -5,11 +5,12 @@ import type { NodeState } from './unlock';
 /**
  * Why a word wants the player's attention, most urgent first:
  * danger: a claim about to fall after a miss, or the missed word to win back ·
- * ready: a claim step is open now · threat: hostile, rebelling or fading ·
+ * ready: a claim step is open now · due: a conquered word's review (or tense) is
+ * due · threat: hostile, rebelling or fading ·
  * new: just revealed and never tried.
  */
-export type AttentionKind = 'danger' | 'ready' | 'threat' | 'new';
-export const ATTENTION_ORDER: AttentionKind[] = ['danger', 'ready', 'threat', 'new'];
+export type AttentionKind = 'danger' | 'ready' | 'due' | 'threat' | 'new';
+export const ATTENTION_ORDER: AttentionKind[] = ['danger', 'ready', 'due', 'threat', 'new'];
 export type Attention = { id: string; kind: AttentionKind };
 
 export type AttentionInput = {
@@ -25,6 +26,8 @@ export type AttentionInput = {
   gaps: ClaimGaps;
   /** Words that can't be opened right now (wrong-answer lock). */
   blocked?: (id: string) => boolean;
+  /** Words with a card due for review (the queue, which only serves nearby words). */
+  due?: Set<string>;
   /** Endangered claims and the missed word each depends on (core/danger.ts). */
   danger?: Map<string, { from: string }>;
 };
@@ -46,6 +49,8 @@ export function attentionList(input: AttentionInput): Attention[] {
     if (st === 'claimed') {
       const next = claimNext(claims.get(id), gaps);
       if (next && next.opensAt <= nowMs) kind = 'ready';
+    } else if (st === 'conquered' && input.due?.has(id)) {
+      kind = 'due';
     } else if (hostile.has(id)) {
       kind = 'threat';
     } else if (st === 'conquered' && (health.get(id) ?? 1) < FULL_NAME) {

@@ -1,5 +1,5 @@
 import { appNow } from './clock';
-import { buildQueue, type QueueCard } from './queue';
+import { buildQueue, nearby, type QueueCard } from './queue';
 import { cardId, newCard, rate, Rating, type Direction } from './scheduler';
 import type { NodeState } from './unlock';
 
@@ -68,4 +68,15 @@ test('learning cards wait until they are actually due', () => {
     now: t0,
   });
   expect(q).toEqual([]);
+});
+
+test('nearby keeps the anchor word and its linked words, in queue order', () => {
+  const nb = new Map([
+    ['a', ['b']],
+    ['b', ['a', 'c']],
+  ]);
+  const q = [{ nodeId: 'c' }, { nodeId: 'b' }, { nodeId: 'z' }, { nodeId: 'a' }];
+  expect(nearby(q, 'a', nb).map((c) => c.nodeId)).toEqual(['b', 'a']);
+  expect(nearby(q, 'x', nb)).toEqual([]);
+  expect(nearby(q, undefined, nb)).toEqual(q);
 });

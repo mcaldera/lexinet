@@ -38,12 +38,14 @@ type L = LinkObject<GNode, GLink>;
 /** Ripple colours (RGB) for words that need attention. */
 const ATTENTION_RGB: Record<AttentionKind, string> = {
   danger: '244, 63, 94', // rose: a claim about to fall, or the missed word to win back
+  due: '167, 139, 250', // violet: a conquered word due for review
   ready: '52, 211, 153', // emerald: a claim step is open
   threat: '248, 113, 113', // red: hostile, rebelling or fading
   new: '125, 211, 252', // light sky: just revealed
 };
 const ATTENTION_LABEL: Record<AttentionKind, string> = {
   danger: 'in danger',
+  due: 'due',
   ready: 'ready',
   threat: 'under threat',
   new: 'new',

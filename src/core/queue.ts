@@ -46,3 +46,18 @@ export function buildQueue<T extends QueueCard>(input: QueueInput<T>): T[] {
   }
   return queue;
 }
+
+/**
+ * The queue near `anchor` (the word you are on): its own cards and those of
+ * words linked to it, in queue order. The review never jumps across the map;
+ * with no anchor yet (fresh start) the whole queue is fair game.
+ */
+export function nearby<T extends { nodeId: string }>(
+  queue: T[],
+  anchor: string | undefined,
+  neighbours: Map<string, string[]>,
+): T[] {
+  if (!anchor) return queue;
+  const near = new Set([anchor, ...(neighbours.get(anchor) ?? [])]);
+  return queue.filter((c) => near.has(c.nodeId));
+}
