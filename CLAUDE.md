@@ -50,7 +50,8 @@ data/words*.csv ─ pipeline/build_graph.py ─► data/graph*.json ─► app (
 | `scheduler` | ts-fsrs wrapper, card (de)serialisation, `cardId(node, dir)` = `node:it-en` / `node:en-it` |
 | `answer` | typed-answer checking: exact → Good; article/accent/small typo → Hard ("almost", still counts); else Again. `checkMeaning` is the lenient version for roots. |
 | `unlock` | node states `locked \| frontier \| claimed \| conquered`; `unlockChanges` (frontier → claimed, reveals neighbours), `repairStates`, `slipChanges` |
-| `claim` | claimed → conquered needs it→en ✓, en→it ✓, and a recall ≥ `CLAIM_RECALL_GAP_MS` later |
+| `claim` | conquest in 3 fixed steps: 1 Recognise (it→en, right away), 2 Produce (en→it, ≥ `CLAIM_STEP_GAP_MS` later), 3 Lock in (either way, ≥ `CLAIM_RECALL_GAP_MS` later). `claimNext` says which card is open when; answers out of turn add nothing. `unseen` = no card ever answered (first sight). |
+| `attention` | words that need the player, most urgent first: `ready` (claim step open), `threat` (hostile, rebelling, fading), `new` (revealed this visit, not opened yet) |
 | `queue` | automatic queue: due reviews (weakest first), then the unreviewed 2nd direction, then learning cards. Untouched frontier words never appear automatically. |
 | `health`, `fade` | health = mean retrievability; names erode letter by letter from 90% to 50%, then show "?" |
 | `strength` | FSRS stability → level 0–5; `nextPractice` (no cramming: practice only when due) |
@@ -60,8 +61,8 @@ data/words*.csv ─ pipeline/build_graph.py ─► data/graph*.json ─► app (
 
 ### src/views
 
-- `GraphView`: the canvas. Nodes, links, chevron particles, energy bands, cohesion glow, metaball territories (`drawRegions`), keyboard cursor.
-- `ReviewView`: the typed card.
+- `GraphView`: the canvas. Nodes, links, chevron particles, energy bands, cohesion glow, metaball territories (`drawRegions`), keyboard cursor, attention ripples, edge arrows to off-screen attention words (`drawPointers`, clickable) and the jump bar.
+- `ReviewView`: the typed card, with the claim step indicator while conquering.
 - `VerbDrill`, `RootQuiz`: conjugation drill and root unlock quiz.
 - `WordInfo`: card for a solid conquered word.
 - `NodeDetails`: status panel under the main card (health, control, trend, per-neighbour breakdown, claim steps, verb, etymology).
@@ -80,7 +81,9 @@ data/words*.csv ─ pipeline/build_graph.py ─► data/graph*.json ─► app (
 
 ## Game rules (current)
 
-- **Claiming:** click a "?" (or move to it with the arrow keys) to get a typed card. A correct answer makes it **claimed**: fragile, and it reveals its neighbours. It becomes conquered after both directions plus a recall 10+ min later. A never-seen word offers "Show me", which is not penalised.
+- **Claiming:** click a "?" (or move to it with the arrow keys) to get step 1, Italian → English. A correct answer makes it **claimed**: fragile, and it reveals its neighbours. Step 2 (English → Italian) opens 1 min later and step 3 (either way) 10 min after that. Clicks and the automatic queue only offer the open step. A never-seen word offers "Show me", which is not penalised.
+- **Names are earned:** a word's Italian name appears on the map only once it is conquered. It is also hidden (map, tooltip, status panel) while it is the answer being asked. Claimed words show "?" with a 3-segment ring.
+- **Attention:** ready claim steps (green), threats (red) and newly revealed words (light blue) ripple. Off-screen ones get arrows at the view edge, and the top-right jump bar or `N` cycles through them. A due card for an off-screen word pans the camera to it.
 - **Misses:** a real miss locks the word for 60 s, makes it hostile, and makes claimed neighbours slip back to "?". Unfinished claims expire after 24 h.
 - **Conquered words:** health = min(FSRS memory, control). They can be practised only when due or threatened (below 90%). Clicking a solid one opens `WordInfo`.
 - **Influence:** frontier words turn hostile after 24 h and drain neighbours along links (scaled by link weight). Conquered neighbours and levelled verbs give support. Below 30% control a word rebels; at 0 it's lost (back to hostile frontier). Flows are drawn as red/green chevrons.

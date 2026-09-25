@@ -27,7 +27,10 @@ export const INFLUENCE = {
   wrongAnswerHit: 0.35,
 };
 
+/** A claimed word's English -> Italian step opens this long after Italian -> English. */
+export const CLAIM_STEP_GAP_MS = 60_000;
 /** A claimed word is conquered by a recall this long after both directions were right. */
 export const CLAIM_RECALL_GAP_MS = 10 * 60_000;
+export const CLAIM_GAPS = { step: CLAIM_STEP_GAP_MS, recall: CLAIM_RECALL_GAP_MS };
 /** An unfinished claim slips back to "?" after this long (app time). */
 export const CLAIM_EXPIRY_MS = 24 * 3_600_000;

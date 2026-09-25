@@ -34,12 +34,15 @@ type Options = {
   onArrow: (dx: number, dy: number) => void;
   /** Enter / Space outside text fields: open the node under the cursor. */
   onSelect: () => void;
+  /** N outside text fields: jump to the next word that needs attention. */
+  onNext?: () => void;
 };
 
 /**
  * Keyboard map controls. Arrows move the node cursor to a linked word and select
  * it (even while typing an answer: a one-line box has no use for them).
- * WASD pan while held, +/- zoom, F fits — only outside text fields.
+ * WASD pan while held, +/- zoom, F fits, N jumps to the next word needing
+ * attention — only outside text fields.
  */
 export function useKeyboardCamera(cam: RefObject<Camera | undefined>, options: Options) {
   const opts = useRef(options);
@@ -93,6 +96,9 @@ export function useKeyboardCamera(cam: RefObject<Camera | undefined>, options: O
         c.zoom(c.zoom() / 1.25, 150);
       } else if (c && k === 'f') {
         c.zoomToFit(400, 60);
+      } else if (k === 'n') {
+        e.preventDefault(); // or the "n" lands in the answer box the jump opens
+        opts.current.onNext?.();
       }
     };
     const up = (e: KeyboardEvent) => held.delete(e.key.toLowerCase());

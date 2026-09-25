@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { checkAnswer, type AnswerCheck } from '../core/answer';
-import { Rating, State, type Grade } from '../core/scheduler';
+import { CLAIM_STEP_NAMES, unseen, type ClaimStep } from '../core/claim';
+import { Rating, type Grade } from '../core/scheduler';
 import { NEW_NODES_PER_DAY } from '../config';
 import type { AppData, CardRow } from '../db/repo';
 import Etymology from './Etymology';
@@ -20,12 +21,14 @@ type Props = {
   mode: 'conquer' | 'practice' | 'due';
   dueCount: number;
   newToday: number;
+  /** Word not conquered yet: the claim step this answer completes. */
+  claimStep?: ClaimStep | null;
   onRate: (row: CardRow, grade: Grade) => Promise<void>;
   onCancel: () => void;
 };
 
 export default function ReviewView(props: Props) {
-  const { data, current, mode, dueCount, newToday, onRate, onCancel } = props;
+  const { data, current, mode, dueCount, newToday, claimStep, onRate, onCancel } = props;
   const [typed, setTyped] = useState('');
   const [check, setCheck] = useState<AnswerCheck | null>(null);
   const [busy, setBusy] = useState(false);
@@ -33,7 +36,7 @@ export default function ReviewView(props: Props) {
 
   const word = current && data.nodes.find((n) => n.id === current.nodeId);
   // Never seen before: not knowing it is learning, not a miss (see App.onRate).
-  const firstSight = current?.card.state === State.New;
+  const firstSight = !!current && unseen(data.cards.filter((c) => c.nodeId === current.nodeId));
   const toItalian = current?.direction === 'en-it';
   const prompt = word && (toItalian ? word.en : word.it);
   const answer = word && (toItalian ? word.it : word.en);
@@ -86,7 +89,13 @@ export default function ReviewView(props: Props) {
     <div className="rounded-lg border border-slate-800 bg-slate-900 p-4">
       <div className="mb-3 flex justify-between text-xs uppercase tracking-wider text-slate-400">
         <span>
-          {mode === 'conquer' ? 'Conquering' : mode === 'practice' ? 'Defending' : 'Review'}
+          {claimStep
+            ? 'Conquering'
+            : mode === 'practice'
+              ? 'Defending'
+              : mode === 'conquer'
+                ? 'Conquering'
+                : 'Review'}
         </span>
         <span>
           {dueCount} due ·{' '}
@@ -103,6 +112,7 @@ export default function ReviewView(props: Props) {
         </p>
       ) : (
         <>
+          {claimStep && <ClaimSteps step={claimStep.step} />}
           <div className="mb-1 flex gap-2 text-xs text-slate-500">
             <span>{toItalian ? 'English → Italian' : 'Italian → English'}</span>
             {word.pos && <span>{word.pos}</span>}
@@ -196,6 +206,36 @@ export default function ReviewView(props: Props) {
           )}
         </>
       )}
+    </div>
+  );
+}
+
+/** Where this answer sits in conquering a word: recognise, produce, lock in. */
+function ClaimSteps({ step }: { step: number }) {
+  const HINT = [
+    'Recognise it: what does it mean?',
+    'Produce it from memory: its name stays hidden until you conquer it.',
+    'Lock it in: one more recall after a break conquers it.',
+  ];
+  return (
+    <div className="mb-3">
+      <ol className="flex gap-1 text-xs">
+        {CLAIM_STEP_NAMES.map((name, i) => {
+          const n = i + 1;
+          const cls =
+            n < step
+              ? 'border-emerald-600 bg-emerald-700/40 text-emerald-200'
+              : n === step
+                ? 'border-emerald-400 text-slate-100'
+                : 'border-slate-700 text-slate-500';
+          return (
+            <li key={name} className={`flex-1 rounded border px-2 py-1 text-center ${cls}`}>
+              {n < step ? '✓' : n} {name}
+            </li>
+          );
+        })}
+      </ol>
+      <p className="mt-1 text-xs text-slate-400">{HINT[step - 1]}</p>
     </div>
   );
 }

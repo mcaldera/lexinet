@@ -1,6 +1,6 @@
 import type { Influence } from '../core/influence';
 import { TENSES, type Drill } from '../core/verbs';
-import { type Claim } from '../core/claim';
+import { CLAIM_STEP_NAMES, type ClaimStep } from '../core/claim';
 import type { NodeState } from '../core/unlock';
 import type { WordNode } from '../db/repo';
 import Etymology from './Etymology';
@@ -21,9 +21,8 @@ type Props = {
   graceHours?: number;
   /** Hidden while this word is being quizzed (it would give the answer away). */
   showEtymology: boolean;
-  /** Claimed words: progress, and when the recall step opens (ms, app time). */
-  claim?: Claim;
-  recallOpens?: number;
+  /** Claimed words: the step to do next and when it opens (null = complete). */
+  claimStep?: ClaimStep | null;
   /** Conquered verbs: level and what the next conjugation step is. */
   verb?: { level: number; drill: Drill };
   onConjugate?: () => void;
@@ -63,38 +62,48 @@ export default function NodeDetails(props: Props) {
     );
   }
   if (state === 'claimed') {
-    const c = props.claim;
-    const step = (done: boolean, text: string) => (
-      <li className={done ? 'text-emerald-300' : 'text-slate-400'}>
-        {done ? '✓' : '◻'} {text}
-      </li>
-    );
-    const mins =
-      props.recallOpens !== undefined
-        ? Math.max(0, Math.ceil((props.recallOpens - props.nowMs) / 60_000))
-        : undefined;
+    const next = props.claimStep;
+    const wait = next ? next.opensAt - props.nowMs : 0;
+    const when =
+      wait <= 0
+        ? 'ready now'
+        : wait < 90_000
+          ? `opens in ~${Math.ceil(wait / 1000)} s`
+          : `opens in ~${Math.ceil(wait / 60_000)} min`;
+    const HOW = [
+      'Italian → English',
+      'English → Italian, from memory',
+      'either way, after a break',
+    ];
+    const step = (i: number) => {
+      const n = i + 1;
+      const done = !next || n < next.step;
+      const current = next?.step === n;
+      return (
+        <li
+          key={n}
+          className={
+            done ? 'text-emerald-300' : current && wait <= 0 ? 'text-slate-100' : 'text-slate-500'
+          }
+        >
+          {done ? '✓' : current ? '▸' : '◻'} {n}. {CLAIM_STEP_NAMES[i]}{' '}
+          <span className="opacity-70">({HOW[i]})</span>
+          {current && (
+            <span className={wait <= 0 ? ' text-emerald-300' : ' text-amber-300'}> · {when}</span>
+          )}
+        </li>
+      );
+    };
     return (
       <div className="rounded-lg border border-emerald-500/30 bg-slate-900/60 p-3 text-xs text-slate-300">
         <div className="mb-1 flex justify-between">
           <span className="uppercase tracking-wider text-emerald-300/80">Claimed · fragile</span>
           <span className="text-sm text-slate-100">{name}</span>
         </div>
-        <ul className="space-y-0.5">
-          {step(!!c?.itEn, 'Italian → English')}
-          {step(!!c?.enIt, 'English → Italian')}
-          {step(
-            !!c?.recall,
-            mins === undefined
-              ? 'Recall after a short break'
-              : mins > 0
-                ? `Recall in ~${mins} min`
-                : 'Recall now',
-          )}
-        </ul>
+        <ul className="space-y-0.5">{CLAIM_STEP_NAMES.map((_, i) => step(i))}</ul>
         <p className="mt-2 text-amber-300/90">
           Until conquered, a miss on this word or a neighbour makes it slip back to “?”.
         </p>
-        {props.showEtymology && <Etymology word={word} />}
       </div>
     );
   }

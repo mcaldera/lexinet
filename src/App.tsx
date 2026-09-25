@@ -1,15 +1,17 @@
-import { useEffect, useMemo, useState } from 'react';
-import { CLAIM_RECALL_GAP_MS, COOLDOWN_MS, INFLUENCE } from './config';
-import { recallOpensAt } from './core/claim';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { CLAIM_GAPS, COOLDOWN_MS, INFLUENCE } from './config';
+import { attentionList, newlyRevealed } from './core/attention';
+import { claimNext, CLAIM_STEP_NAMES, CLAIM_STEPS, unseen, type Claim } from './core/claim';
 import { FULL_NAME, fadedName } from './core/fade';
 import { cohesion, isHostile, neighbourWeights, pressureBreakdown } from './core/influence';
-import { startOfDay } from './core/clock';
+import { appNow, startOfDay } from './core/clock';
 import { nodeHealth } from './core/health';
 import { buildQueue } from './core/queue';
 import type { TierProgress } from './core/tiers';
 import { nextDrill, TENSES, type Tense } from './core/verbs';
 import { computeProgress, verbLevels as computeVerbLevels } from './progress';
-import { cardId, DIRECTIONS, Rating, State, type Grade } from './core/scheduler';
+import { cardId, DIRECTIONS, Rating, type Grade } from './core/scheduler';
+import type { NodeState } from './core/unlock';
 import { nextPractice, nodeStrength } from './core/strength';
 import type { CardRow } from './db/repo';
 import { GRAPH_NAMES, graphLabel } from './graphs';
@@ -52,6 +54,18 @@ export default function App() {
     kind: 'learn' | 'defend';
   } | null>(null);
   const [, setSecond] = useState(0);
+  /** Words revealed during this visit and not opened yet: flagged as new on the map. */
+  const [fresh, setFresh] = useState<Set<string>>(new Set());
+  const prevStates = useRef<Map<string, NodeState> | null>(null);
+
+  useEffect(() => {
+    if (!data) return;
+    const prev = prevStates.current;
+    prevStates.current = data.states;
+    if (!prev || prev === data.states) return;
+    const revealed = newlyRevealed(prev, data.states);
+    if (revealed.length) setFresh((f) => new Set([...f, ...revealed]));
+  }, [data, data?.states]);
 
   // Tick every second while something is cooling down (countdown rings), then expire.
   useEffect(() => {
@@ -143,15 +157,19 @@ export default function App() {
     [data, now],
   );
 
-  const queue = useMemo(
-    () =>
-      data
-        ? buildQueue({ cards: data.cards, states: data.states, now, lastCardId }).filter(
-            (c) => !cooldowns.has(c.nodeId),
-          )
-        : [],
-    [data, now, lastCardId, cooldowns],
-  );
+  const queue = useMemo(() => {
+    if (!data) return [];
+    // Words being conquered only offer the card of their open claim step.
+    const stepOpen = (c: CardRow) => {
+      const st = data.states.get(c.nodeId);
+      if (st !== 'frontier' && st !== 'claimed') return true;
+      const next = claimNext(data.game.nodes.get(c.nodeId)?.claim, CLAIM_GAPS);
+      return !!next && next.directions.includes(c.direction) && next.opensAt <= now.getTime();
+    };
+    return buildQueue({ cards: data.cards, states: data.states, now, lastCardId }).filter(
+      (c) => !cooldowns.has(c.nodeId) && stepOpen(c),
+    );
+  }, [data, now, lastCardId, cooldowns]);
 
   if (error) return <div className="p-6 text-red-400">Failed to open database: {error}</div>;
   if (!data) return <div className="p-6 text-slate-400">Loading…</div>;
@@ -176,8 +194,13 @@ export default function App() {
   const detailsId =
     activeDrill?.nodeId ?? session?.nodeId ?? info?.nodeId ?? selectedId ?? current?.nodeId;
   const detailsWord = data.nodes.find((n) => n.id === detailsId);
+  // The word whose Italian name is the answer being asked: hidden everywhere meanwhile.
+  const answerId =
+    !activeDrill && !info && !rootQuiz && current?.direction === 'en-it'
+      ? current.nodeId
+      : undefined;
   const nameOf = (id: string) => {
-    if (data.states.get(id) !== 'conquered') return '';
+    if (data.states.get(id) !== 'conquered' || id === answerId) return '';
     const w = data.nodes.find((n) => n.id === id);
     return w ? fadedName(w.it, health.get(id) ?? null) : '';
   };
@@ -201,6 +224,18 @@ export default function App() {
             perDay: -INFLUENCE.hostilePressure * n.weight,
           }));
 
+  const claims = new Map([...data.game.nodes].map(([id, g]) => [id, g.claim]));
+  const attention = attentionList({
+    states: data.states,
+    claims,
+    health,
+    hostile: hostileSet,
+    fresh,
+    nowMs: now.getTime(),
+    gaps: CLAIM_GAPS,
+    blocked: (id) => (cooldowns.get(id) ?? 0) > Date.now(),
+  });
+
   const today = startOfDay(now).getTime();
   const newToday = [...data.firstReview.values()].filter(
     (iso) => new Date(iso).getTime() >= today,
@@ -216,6 +251,7 @@ export default function App() {
   const wordOf = (id: string) => data.nodes.find((n) => n.id === id)?.it ?? id;
 
   const onRate = async (row: CardRow, grade: Grade) => {
+    const firstSight = unseen(cardsByNode.get(row.nodeId) ?? []);
     const outcome = await review(row, grade);
     if (outcome.levelUp) setLevelUp(outcome.levelUp);
     setLastCardId(row.id);
@@ -225,7 +261,7 @@ export default function App() {
       setCooldowns((m) => new Map(m).set(row.nodeId, Date.now() + COOLDOWN_MS));
       const slipped = outcome.slipped.filter((id) => id !== row.nodeId).map(wordOf);
       setNotice(
-        row.card.state === State.New
+        firstSight
           ? `New word: ${wordOf(row.nodeId)}. Come back in ${COOLDOWN_MS / 1000} s to claim it from memory.`
           : `Missed! ${wordOf(row.nodeId)} is locked for ${COOLDOWN_MS / 1000} s and turns against you.` +
               (slipped.length ? ` Your fresh claim on ${slipped.join(', ')} slipped away.` : ''),
@@ -235,6 +271,8 @@ export default function App() {
     }
     if (outcome.conquered)
       setNotice(`${wordOf(row.nodeId)} is conquered: it holds its ground now.`);
+    else if (outcome.claim)
+      setNotice(claimNotice(outcome.claim, appNow(data.offsetDays).getTime()));
     setSession((s) => {
       if (!s) return s;
       const rest = s.cardIds.filter((id) => id !== row.id);
@@ -289,6 +327,7 @@ export default function App() {
     if (inspect) return setInspectId(nodeId);
     setInfo(null);
     setSelectedId(nodeId);
+    if (fresh.has(nodeId)) setFresh((f) => new Set([...f].filter((id) => id !== nodeId)));
     const hub = data.graph.roots?.find((r) => r.id === nodeId);
     if (hub) {
       const until = cooldowns.get(nodeId);
@@ -310,19 +349,18 @@ export default function App() {
       setNotice(`${wordOf(nodeId)} is still locked (${Math.ceil((until - Date.now()) / 1000)} s).`);
       return;
     }
-    if (data.states.get(nodeId) === 'claimed') {
-      // Continue the claim: missing directions first, then the recall once it opens.
+    const st = data.states.get(nodeId);
+    if (st === 'frontier' || st === 'claimed') {
+      // Conquering goes one step at a time (core/claim.ts): recognise, produce, lock in.
       const claim = data.game.nodes.get(nodeId)?.claim;
-      const missing = DIRECTIONS.filter((d) => !claim?.[d === 'it-en' ? 'itEn' : 'enIt']);
-      const opens = recallOpensAt(claim, CLAIM_RECALL_GAP_MS) ?? 0;
-      if (!missing.length && opens > now.getTime()) {
-        setNotice(
-          `${wordOf(nodeId)}: lock it in with a recall in ~${Math.ceil((opens - now.getTime()) / 60_000)} min. Explore meanwhile, carefully.`,
-        );
+      const next = claimNext(claim, CLAIM_GAPS);
+      if (!next) return;
+      if (next.opensAt > now.getTime()) {
+        setNotice(claimNotice(claim ?? {}, now.getTime()));
         return;
       }
-      const dirs = missing.length ? missing : [Math.random() < 0.5 ? DIRECTIONS[0] : DIRECTIONS[1]];
-      setSession({ nodeId, cardIds: dirs.map((d) => cardId(nodeId, d)), mode: 'conquer' });
+      const dir = next.directions[Math.floor(Math.random() * next.directions.length)];
+      setSession({ nodeId, cardIds: [cardId(nodeId, dir)], mode: 'conquer' });
       setTurn((t) => t + 1);
       return;
     }
@@ -371,11 +409,7 @@ export default function App() {
     }
     // Random first direction, so English -> Italian comes first half the time.
     const dirs = Math.random() < 0.5 ? DIRECTIONS : [...DIRECTIONS].reverse();
-    setSession({
-      nodeId,
-      cardIds: dirs.map((d) => cardId(nodeId, d)),
-      mode: conquered ? 'practice' : 'conquer',
-    });
+    setSession({ nodeId, cardIds: dirs.map((d) => cardId(nodeId, d)), mode: 'practice' });
     setTurn((t) => t + 1);
   };
 
@@ -460,7 +494,9 @@ export default function App() {
             control={new Map([...data.game.nodes].map(([id, g]) => [id, g.control]))}
             hostile={hostileSet}
             nowMs={now.getTime()}
-            claims={new Map([...data.game.nodes].map(([id, g]) => [id, g.claim]))}
+            claims={claims}
+            attention={attention}
+            answerId={answerId}
             graceUntil={
               new Map(
                 [...data.game.nodes]
@@ -575,6 +611,12 @@ export default function App() {
                   mode={mode}
                   dueCount={dueCount}
                   newToday={newToday}
+                  claimStep={
+                    current &&
+                    ['frontier', 'claimed'].includes(data.states.get(current.nodeId) ?? '')
+                      ? claimNext(data.game.nodes.get(current.nodeId)?.claim, CLAIM_GAPS)
+                      : undefined
+                  }
                   onRate={onRate}
                   onCancel={() => {
                     setSession(null);
@@ -603,11 +645,7 @@ export default function App() {
                 3_600_000
               }
               nowMs={now.getTime()}
-              claim={data.game.nodes.get(detailsWord.id)?.claim}
-              recallOpens={recallOpensAt(
-                data.game.nodes.get(detailsWord.id)?.claim,
-                CLAIM_RECALL_GAP_MS,
-              )}
+              claimStep={claimNext(data.game.nodes.get(detailsWord.id)?.claim, CLAIM_GAPS)}
               verb={
                 detailsWord.conjugations && data.states.get(detailsWord.id) === 'conquered'
                   ? {
@@ -641,6 +679,18 @@ export default function App() {
       </main>
     </div>
   );
+}
+
+/** What a claim needs next, e.g. "Step 2/3 (Produce) opens in ~1 min". */
+function claimNotice(claim: Claim, nowMs: number): string {
+  const next = claimNext(claim, CLAIM_GAPS);
+  if (!next) return '';
+  const done = next.step > 1 ? `Step ${next.step - 1}/${CLAIM_STEPS} done. ` : '';
+  const what = next.step === 2 ? 'type it in Italian' : 'recall it once more to conquer it';
+  const wait = next.opensAt - nowMs;
+  if (wait <= 0) return `${done}Next: ${what}.`;
+  const when = wait < 90_000 ? `${Math.ceil(wait / 1000)} s` : `${Math.ceil(wait / 60_000)} min`;
+  return `${done}${CLAIM_STEP_NAMES[next.step - 1]} opens in ~${when}: ${what} then. Explore meanwhile; it pulses when ready.`;
 }
 
 function TierBadge({

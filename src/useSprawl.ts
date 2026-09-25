@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { appNow } from './core/clock';
-import { newCard, rate, Rating, State, type Grade } from './core/scheduler';
+import { newCard, rate, Rating, type Grade } from './core/scheduler';
 import { tierAllows, tierMap } from './core/tiers';
 import { tenseCardId, type Tense, type TenseCard } from './core/verbs';
 import { computeProgress, verbLevels } from './progress';
 import { afterAnswer, neighbourWeights, simulate } from './core/influence';
-import { CLAIM_EXPIRY_MS, CLAIM_RECALL_GAP_MS, INFLUENCE } from './config';
+import { CLAIM_EXPIRY_MS, CLAIM_GAPS, INFLUENCE } from './config';
 import {
   applyChanges,
   neighbourMap,
@@ -14,7 +14,14 @@ import {
   unlockChanges,
   type StateChange,
 } from './core/unlock';
-import { claimComplete, claimStartedAt, recordClaim } from './core/claim';
+import {
+  claimComplete,
+  claimNext,
+  claimStartedAt,
+  recordClaim,
+  unseen,
+  type Claim,
+} from './core/claim';
 import { openDb, type SqlDb } from './db';
 import { currentGraphName, loadGraph } from './graphs';
 import {
@@ -48,7 +55,13 @@ function getDb() {
 }
 
 export type LevelUp = { tier: number; revealed: number };
-export type ReviewOutcome = { levelUp: LevelUp | null; conquered: boolean; slipped: string[] };
+export type ReviewOutcome = {
+  levelUp: LevelUp | null;
+  conquered: boolean;
+  slipped: string[];
+  /** Claim progress after a successful answer on a word not yet conquered. */
+  claim?: Claim;
+};
 /** Words lost to hostile pressure in the latest simulation step. */
 export type LostEvent = { at: number; ids: string[] };
 
@@ -81,6 +94,19 @@ export function useSprawl() {
   const tiers = useMemo(() => tierMap(data?.nodes ?? []), [data?.nodes]);
   const weights = useMemo(() => neighbourWeights(data?.edges ?? []), [data?.edges]);
   const [lost, setLost] = useState<LostEvent | null>(null);
+
+  // Tick when the next claim step opens, so it is offered without waiting for the minute clock.
+  useEffect(() => {
+    if (!data) return;
+    const t = now.getTime();
+    const opens = [...data.game.nodes]
+      .filter(([id]) => data.states.get(id) === 'claimed')
+      .map(([, g]) => claimNext(g.claim, CLAIM_GAPS)?.opensAt ?? Infinity)
+      .filter((o) => o > t && o < Infinity);
+    if (!opens.length) return;
+    const timer = setTimeout(() => setTick((n) => n + 1), Math.min(...opens) - t + 50);
+    return () => clearTimeout(timer);
+  }, [data, now]);
 
   // Advance the influence game whenever app time moves (clock tick, time travel).
   useEffect(() => {
@@ -115,9 +141,9 @@ export function useSprawl() {
       const card = rate(row.card, grade, at);
       const stateBefore = data.states.get(row.nodeId);
       const success = grade !== Rating.Again;
-      // First sight of a word (never reviewed): not knowing it is learning, so
-      // no hostility and no slips. Every later miss counts in the game.
-      const firstSight = row.card.state === State.New;
+      // First sight of a word (neither direction ever answered): not knowing it is
+      // learning, so no hostility and no slips. Every later miss counts in the game.
+      const firstSight = unseen(data.cards.filter((c) => c.nodeId === row.nodeId));
       const before = computeProgress(data.nodes, data.states, data.tenseCards, at).tier;
 
       let changes = unlockChanges(
@@ -132,14 +158,15 @@ export function useSprawl() {
           ? data.game
           : afterAnswer(data.game, row.nodeId, stateBefore, success, changes, t, INFLUENCE);
 
-      // Claim bookkeeping: both directions + a later recall conquer the word.
+      // Claim bookkeeping: recognise, produce, then lock in after a break (core/claim.ts).
       let conquered = false;
+      let claimed: Claim | undefined;
       if (success && (stateBefore === 'frontier' || stateBefore === 'claimed')) {
         const claim = recordClaim(
           data.game.nodes.get(row.nodeId)?.claim,
           row.direction,
           t,
-          CLAIM_RECALL_GAP_MS,
+          CLAIM_GAPS,
         );
         const nodes = new Map(game.nodes);
         if (stateBefore === 'claimed' && claimComplete(claim)) {
@@ -148,6 +175,7 @@ export function useSprawl() {
           conquered = true;
         } else {
           nodes.set(row.nodeId, { ...nodes.get(row.nodeId), control: 1, claim });
+          claimed = claim;
         }
         game = { ...game, nodes };
       }
@@ -194,7 +222,7 @@ export function useSprawl() {
           game,
         };
       });
-      return { levelUp, conquered, slipped };
+      return { levelUp, conquered, slipped, claim: claimed };
     },
     [db, data, neighbours, tiers],
   );

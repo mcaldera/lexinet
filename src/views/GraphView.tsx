@@ -10,6 +10,7 @@ import { edgeOpacity, healthBand } from '../core/health';
 import { MAX_STRENGTH } from '../core/strength';
 import { TENSES } from '../core/verbs';
 import { CLAIM_STEPS, claimSteps, type Claim } from '../core/claim';
+import { ATTENTION_ORDER, type Attention, type AttentionKind } from '../core/attention';
 import type { AppData, Edge, RootHub, WordNode } from '../db/repo';
 import { stepCursor, useKeyboardCamera } from './useKeyboardCamera';
 import {
@@ -32,6 +33,18 @@ type GNode = { id: string; word: WordNode; hub?: RootHub };
 type GLink = Edge & { descends?: boolean; category?: boolean; flow?: 'attack' | 'support' };
 type N = NodeObject<GNode>;
 type L = LinkObject<GNode, GLink>;
+
+/** Ripple colours (RGB) for words that need attention. */
+const ATTENTION_RGB: Record<AttentionKind, string> = {
+  ready: '52, 211, 153', // emerald: a claim step is open
+  threat: '248, 113, 113', // red: hostile, rebelling or fading
+  new: '125, 211, 252', // light sky: just revealed
+};
+const ATTENTION_LABEL: Record<AttentionKind, string> = {
+  ready: 'ready',
+  threat: 'under threat',
+  new: 'new',
+};
 
 const BAND_COLOR = {
   solid: 'rgba(52, 211, 153, 1)', // emerald
@@ -63,6 +76,10 @@ type Props = {
   nowMs: number;
   /** Claim progress of claimed words. */
   claims: Map<string, Claim | undefined>;
+  /** Words that need attention, most urgent first: ripples, edge arrows, jump bar. */
+  attention: Attention[];
+  /** Word whose Italian name is the answer being asked: its name is hidden. */
+  answerId?: string;
   /** Show every word and edge (spoilers) for inspecting the network. */
   inspect: boolean;
   /** Draw shared roots as hub nodes (replaces word-to-word "shared root" links). */
@@ -83,6 +100,8 @@ export default function GraphView({
   graceUntil,
   nowMs,
   claims,
+  attention,
+  answerId,
   inspect,
   showRoots,
   onNodeClick,
@@ -96,6 +115,14 @@ export default function GraphView({
     if (activeId) setCursorId(activeId);
   }, [activeId]);
   const byId = useMemo(() => new Map(data.nodes.map((n) => [n.id, n])), [data.nodes]);
+  const attentionOf = useMemo(
+    () => new Map(inspect ? [] : attention.map((a) => [a.id, a.kind])),
+    [attention, inspect],
+  );
+  /** Off-screen arrows drawn last frame (CSS pixels), for clicks. */
+  const pointers = useRef<{ id: string; x: number; y: number }[]>([]);
+  /** Per kind, the index of the word the jump bar showed last. */
+  const jumpIndex = useRef<Partial<Record<AttentionKind, number>>>({});
 
   // Keep node objects stable across renders so the layout doesn't restart.
   const nodeCache = useRef(new Map<string, N>());
@@ -137,7 +164,7 @@ export default function GraphView({
     return out.join(',');
   }, [data.edges, data.states, hostile, control]);
   // Something moves on screen: keep redrawing (energy bands, arrows, breathing glow).
-  const animate = !inspect && (cohesionOf.size > 0 || flowKey !== '');
+  const animate = !inspect && (cohesionOf.size > 0 || flowKey !== '' || attentionOf.size > 0);
 
   const graphData = useMemo(() => {
     const visible = new Set(visibleKey.split(',').filter(Boolean));
@@ -221,7 +248,40 @@ export default function GraphView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visibleKey, data.edges, hubs, flowKey]);
 
+  /** Centre the camera on a word (zooming in if far out) and open it, like a click. */
+  const jumpTo = (id: string) => {
+    const n = nodeCache.current.get(id);
+    if (n?.x === undefined) return;
+    fg.current?.centerAt(n.x, n.y, 400);
+    if ((fg.current?.zoom() ?? 1) < 1.2) fg.current?.zoom(1.6, 400);
+    setCursorId(id);
+    onNodeClick(id);
+  };
+  /** Next word of `kind` (or of any kind, most urgent first) that needs attention. */
+  const jumpNext = (kind?: AttentionKind) => {
+    const k = kind ?? (attentionOf.size ? attention[0]?.kind : undefined); // sorted by urgency
+    if (!k) return;
+    const ids = attention.filter((a) => a.kind === k).map((a) => a.id);
+    const i = ((jumpIndex.current[k] ?? -1) + 1) % ids.length;
+    jumpIndex.current[k] = i;
+    jumpTo(ids[i]);
+  };
+
+  // A card for a word off-screen (e.g. from the automatic queue): bring it into view.
+  useEffect(() => {
+    const n = activeId ? nodeCache.current.get(activeId) : undefined;
+    const c = fg.current;
+    if (!c || n?.x === undefined || n.y === undefined) return;
+    const p = c.graph2ScreenCoords(n.x, n.y);
+    const m = 40;
+    if (p.x < m || p.y < m || p.x > size.width - m || p.y > size.height - m) {
+      c.centerAt(n.x, n.y, 500);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeId]);
+
   useKeyboardCamera(fg, {
+    onNext: () => jumpNext(),
     onArrow: (dx, dy) => {
       const pos = (id: string) => nodeCache.current.get(id);
       const visible = graphData.nodes.filter((n) => n.x !== undefined);
@@ -304,8 +364,8 @@ export default function GraphView({
   const shownName = (id: string) => {
     const word = byId.get(id)?.it ?? '';
     if (inspect) return word;
-    const st = data.states.get(id);
-    if (st !== 'conquered' && st !== 'claimed') return '';
+    // A name is earned by conquering the word, and hidden while it is the answer.
+    if (data.states.get(id) !== 'conquered' || id === answerId) return '';
     return fadedName(word, health.get(id) ?? null);
   };
   const won = (id: string) => ['conquered', 'claimed'].includes(data.states.get(id) ?? '');
@@ -320,6 +380,8 @@ export default function GraphView({
     const shape: Shape = shapeOf(node.word.pos);
     const r = state === 'conquered' ? 5 + (strength.get(node.id) ?? 0) * 0.8 : 6;
     ctx.save();
+    const attn = attentionOf.get(node.id);
+    if (attn) drawRipple(ctx, x, y, r, scale, ATTENTION_RGB[attn]);
     const lockedUntil = cooldowns.get(node.id);
     if (lockedUntil && lockedUntil > Date.now()) {
       // Countdown ring for the wrong-answer lock.
@@ -365,7 +427,8 @@ export default function GraphView({
     };
 
     if (state === 'claimed') {
-      // Freshly won but fragile: pale, with progress towards conquest.
+      // Freshly won but fragile: pale, one ring segment per conquest step. The
+      // name stays hidden ("?") until conquered, so producing it is real recall.
       const steps = claimSteps(claims.get(node.id));
       shapePath(ctx, shape, x, y, r);
       ctx.fillStyle = 'rgba(52, 211, 153, 0.3)';
@@ -375,12 +438,20 @@ export default function GraphView({
       ctx.lineWidth = 1;
       ctx.stroke();
       ctx.setLineDash([]);
-      ctx.beginPath();
-      ctx.arc(x, y, r + 2.5, -Math.PI / 2, -Math.PI / 2 + (steps / CLAIM_STEPS) * 2 * Math.PI);
-      ctx.strokeStyle = 'rgba(52, 211, 153, 0.95)';
-      ctx.lineWidth = 1.6;
-      ctx.stroke();
-      label(0.85, node.word.it);
+      const seg = (2 * Math.PI) / CLAIM_STEPS;
+      for (let i = 0; i < CLAIM_STEPS; i++) {
+        const a0 = -Math.PI / 2 + i * seg + 0.18;
+        ctx.beginPath();
+        ctx.arc(x, y, r + 2.5, a0, a0 + seg - 0.36);
+        ctx.strokeStyle = i < steps ? 'rgba(52, 211, 153, 0.95)' : 'rgba(148, 163, 184, 0.35)';
+        ctx.lineWidth = 1.6;
+        ctx.stroke();
+      }
+      ctx.fillStyle = '#e2e8f0';
+      ctx.font = 'bold 8px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('?', x, y + (shape === 'triangle' ? 2 : 0.5));
       ctx.restore();
       return;
     }
@@ -603,6 +674,13 @@ export default function GraphView({
           if (!inspect && state === 'frontier') {
             return `Unknown ${n.word.pos ?? 'word'}: click to conquer`;
           }
+          if (!inspect && state === 'claimed') {
+            const steps = claimSteps(claims.get(n.id));
+            return `Claimed ${steps}/${CLAIM_STEPS}: ${
+              attentionOf.get(n.id) === 'ready' ? 'next step ready, click' : 'next step opens soon'
+            }`;
+          }
+          if (!inspect && n.id === answerId) return 'The word you are recalling';
           const h = health.get(n.id);
           const pct = h != null ? ` · health ${Math.round(h * 100)}%` : '';
           if (!inspect && state === 'conquered' && h != null && h < FULL_NAME) {
@@ -644,6 +722,22 @@ export default function GraphView({
         linkCanvasObjectMode={(l) => (isEnergy(l) ? 'after' : undefined)}
         linkCanvasObject={(l, ctx) => drawEnergy(ctx, l)}
         onRenderFramePre={(ctx, scale) => drawRegions(ctx, scale, livePoints())}
+        onRenderFramePost={(ctx) => {
+          pointers.current = drawPointers(
+            ctx,
+            size.width,
+            attention,
+            attentionOf,
+            nodeCache.current,
+          );
+        }}
+        onBackgroundClick={(e) => {
+          // Clicking an edge arrow jumps to the word it points at.
+          const hit = pointers.current.find(
+            (p) => Math.hypot(p.x - e.offsetX, p.y - e.offsetY) < 16,
+          );
+          if (hit) jumpTo(hit.id);
+        }}
         linkLabel={linkTooltip}
         onNodeClick={(n) => {
           setCursorId(n.id);
@@ -664,9 +758,127 @@ export default function GraphView({
           fg.current?.zoomToFit(400, 60);
         }}
       />
+      {!inspect && attention.length > 0 && (
+        <div className="absolute right-3 top-3 flex items-center gap-1.5 rounded bg-slate-900/85 px-2 py-1.5 text-xs">
+          {ATTENTION_ORDER.map((k) => {
+            const n = attention.filter((a) => a.kind === k).length;
+            if (!n) return null;
+            return (
+              <button
+                key={k}
+                onClick={() => jumpNext(k)}
+                title={`Jump to the next ${ATTENTION_LABEL[k]} word`}
+                className="flex items-center gap-1 rounded px-2 py-0.5 hover:bg-slate-800"
+                style={{ color: `rgb(${ATTENTION_RGB[k]})` }}
+              >
+                <span
+                  className="inline-block h-2 w-2 animate-pulse rounded-full"
+                  style={{ background: `rgb(${ATTENTION_RGB[k]})` }}
+                />
+                {n} {ATTENTION_LABEL[k]}
+              </button>
+            );
+          })}
+          <span className="pl-1 text-slate-500">N: next</span>
+        </div>
+      )}
       <Legend />
     </div>
   );
+}
+
+/** Expanding rings (constant on screen) around a word that needs attention. */
+function drawRipple(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  r: number,
+  scale: number,
+  rgb: string,
+) {
+  const t = Date.now() / 1400;
+  ctx.lineWidth = 2 / scale;
+  for (const offset of [0, 0.5]) {
+    const phase = (t + offset) % 1;
+    ctx.beginPath();
+    ctx.arc(x, y, r + 3 + (phase * 18) / scale, 0, 2 * Math.PI);
+    ctx.strokeStyle = `rgba(${rgb}, ${0.85 * (1 - phase)})`;
+    ctx.stroke();
+  }
+  ctx.beginPath();
+  ctx.arc(x, y, r + 3, 0, 2 * Math.PI);
+  ctx.strokeStyle = `rgba(${rgb}, 0.9)`;
+  ctx.stroke();
+}
+
+/** At most this many edge arrows, most urgent first. */
+const MAX_POINTERS = 12;
+
+/**
+ * Arrows at the edge of the view pointing at off-screen words that need
+ * attention. Returns where they were drawn (CSS pixels) for click handling.
+ */
+function drawPointers(
+  ctx: CanvasRenderingContext2D,
+  cssWidth: number,
+  attention: Attention[],
+  kindOf: Map<string, AttentionKind>,
+  nodes: Map<string, N>,
+) {
+  const W = ctx.canvas.width;
+  const H = ctx.canvas.height;
+  const dpr = cssWidth > 0 ? W / cssWidth : 1;
+  const T = ctx.getTransform();
+  const m = 22 * dpr;
+  const [cx, cy] = [W / 2, H / 2];
+  const out: { id: string; x: number; y: number }[] = [];
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  for (const { id } of attention) {
+    if (out.length >= MAX_POINTERS) break;
+    const kind = kindOf.get(id);
+    const n = nodes.get(id);
+    if (!kind || n?.x === undefined || n.y === undefined) continue;
+    const sx = T.a * n.x + T.c * n.y + T.e;
+    const sy = T.b * n.x + T.d * n.y + T.f;
+    if (sx >= 0 && sx <= W && sy >= 0 && sy <= H) continue; // visible: the ripple shows it
+    // Where the line from the centre to the word leaves the inset view.
+    const dx = sx - cx;
+    const dy = sy - cy;
+    const k = Math.min(
+      dx ? (cx - m) / Math.abs(dx) : Infinity,
+      dy ? (cy - m) / Math.abs(dy) : Infinity,
+    );
+    const px = cx + dx * k;
+    const py = cy + dy * k;
+    const angle = Math.atan2(dy, dx);
+    const s = 9 * dpr;
+    const pulse = 0.75 + 0.25 * Math.sin(Date.now() / 250);
+    ctx.save();
+    ctx.translate(px, py);
+    ctx.beginPath();
+    ctx.arc(0, 0, s * 1.35, 0, 2 * Math.PI);
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+    ctx.fill();
+    ctx.strokeStyle = `rgba(${ATTENTION_RGB[kind]}, 0.6)`;
+    ctx.lineWidth = dpr;
+    ctx.stroke();
+    ctx.rotate(angle);
+    ctx.shadowColor = `rgba(${ATTENTION_RGB[kind]}, 0.9)`;
+    ctx.shadowBlur = 8 * dpr;
+    ctx.fillStyle = `rgba(${ATTENTION_RGB[kind]}, ${pulse})`;
+    ctx.beginPath();
+    ctx.moveTo(s, 0);
+    ctx.lineTo(-s * 0.7, -s * 0.8);
+    ctx.lineTo(-s * 0.3, 0);
+    ctx.lineTo(-s * 0.7, s * 0.8);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+    out.push({ id, x: px / dpr, y: py / dpr });
+  }
+  ctx.restore();
+  return out;
 }
 
 function Legend() {
@@ -702,7 +914,8 @@ function Legend() {
         <span className="text-emerald-200">glow: cohesion</span>
         <span className="text-red-300">? red: hostile</span>
         <span className="text-amber-300">◔ time until hostile</span>
-        <span className="text-emerald-300">◌ claimed (fragile, 1-3 steps)</span>
+        <span className="text-emerald-300">◌ claimed (fragile, steps 1-3)</span>
+        <span className="text-sky-300">◎ ripple / edge arrow: needs you</span>
         <span className="text-pink-300">⬢ shared root</span>
       </div>
       <div className="flex gap-3">
@@ -834,7 +1047,8 @@ function drawRegions(ctx: CanvasRenderingContext2D, scale: number, regions: Terr
     for (let i = 3; i < px.length; i += 4) {
       const a = px[i];
       if (a < t0 - soft) px[i] = 0;
-      else if (a < t0) px[i] = (BORDER * (a - t0 + soft)) / soft; // anti-aliased outer edge
+      else if (a < t0)
+        px[i] = (BORDER * (a - t0 + soft)) / soft; // anti-aliased outer edge
       else if (a < t0 + band) px[i] = BORDER;
       else {
         // Inner edge of the border blends into a tint that deepens with density.
