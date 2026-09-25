@@ -3,7 +3,12 @@ import {
   CLAIM_STEP_GAP_MS,
   COINS_PER_CONQUEST,
   DANGER_MS,
+  EXPEDITION,
   HINT_COST,
+  LANDMARK,
+  RAID,
+  TIER_MIN_WORDS,
+  TIER_UNLOCK_FRACTION,
   INFLUENCE,
   PLANT_COST,
   RECLAIM_MS,
@@ -46,8 +51,13 @@ export default function Guide({ onClose }: { onClose: () => void }) {
           <p>
             Click a <b>?</b> to claim it: say what it means. Then produce the Italian (
             {CLAIM_STEP_GAP_MS / 60_000} min later) and recall it once more (
-            {CLAIM_RECALL_GAP_MS / 60_000} min after that) to conquer it. A word you already knew at
-            first sight skips the wait: produce it straight away and it is yours.
+            {CLAIM_RECALL_GAP_MS / 60_000} min after that) to conquer it. A new word first comes as
+            multiple choice; ⚡ type it instead and, if you knew it, it skips the waits: produce it
+            straight away and it is yours.
+          </p>
+          <p>
+            Reviews of your words sometimes fill the gap in a sentence. 🔊 says a word aloud (the
+            menu switches automatic pronunciation off).
           </p>
           <p>
             Won words push the horizon: words close enough appear as ghosts, then as <b>?</b>. Verbs
@@ -67,6 +77,24 @@ export default function Guide({ onClose }: { onClose: () => void }) {
             back with one right answer for {RECLAIM_MS / 86_400_000} days.
           </p>
           <p>Names fade letter by letter as memory weakens: practise when a word is due.</p>
+          <p>
+            🏰 Hold {Math.round(LANDMARK.share * 100)}% of a category (at most {LANDMARK.max} words)
+            and it builds a landmark: its words take less hostile pressure while it stands (+
+            {LANDMARK.coins} 🪙 the first time).
+          </p>
+        </Section>
+
+        <Section title="Events">
+          <p>
+            ⚑ Expedition (header): take {EXPEDITION.goal} words of one category (claimed counts)
+            within {EXPEDITION.minutes} min for {EXPEDITION.coins} 🪙. Failing costs nothing.
+          </p>
+          <p>
+            ⚔ Raids: now and then hostile words strike your weakest border words. Answer each one
+            right within {RAID.durationMs / 60_000} min (click it in the raid box), or it loses{' '}
+            {Math.round(RAID.hit * 100)}% control. Repelling a raid pays {RAID.coins} 🪙.
+          </p>
+          <p>🔥 Your streak counts the days you played; the calendar is in the 🏆 panel.</p>
         </Section>
 
         <Section title="Score and coins">
@@ -80,8 +108,11 @@ export default function Guide({ onClose }: { onClose: () => void }) {
             word next to one of yours (from {PLANT_COST}).
           </p>
           <p>
-            Levels open when enough of the current words are conquered and a few verbs are
-            conjugated (one new tense per day per verb).
+            Levels follow your run: the next opens at {Math.round(TIER_UNLOCK_FRACTION * 100)}% of
+            your home category's words so far (at least {TIER_MIN_WORDS} per level), counting words
+            of that level from anywhere, plus a few verbs conjugated (one new tense per day per
+            verb). Your home category is open at every level. Several runs (☰ → Runs) let you keep
+            separate campaigns.
           </p>
         </Section>
 

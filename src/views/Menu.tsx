@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { audioSettings, onAudioSettings, setMusic, setSfx } from '../audio';
+import { audioSettings, onAudioSettings, setMusic, setSfx, setSpeech } from '../audio';
+import { listRuns } from '../runs';
+import { canSpeak } from '../speech';
 import { GRAPH_NAMES, graphLabel } from '../graphs';
 
 type Props = {
@@ -11,7 +13,14 @@ type Props = {
   onGuide: () => void;
   offsetDays: number;
   onTravel: (days: number) => void;
-  onNewGame: () => void;
+  /** Offer the "say words aloud" switch. */
+  speechToggle?: boolean;
+  runId: string;
+  onNewRun: () => void;
+  onSwitchRun: (id: string) => void;
+  onDeleteRun: (id: string) => void;
+  /** Wipe the current run and pick a new start. */
+  onRestart: () => void;
 };
 
 /** Settings and rarely used actions, out of the way behind one button. */
@@ -19,6 +28,9 @@ export default function Menu(props: Props) {
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLDivElement>(null);
   const audio = useSyncExternalStore(onAudioSettings, audioSettings);
+  // Read fresh on every render: names and counts change while playing.
+  const [, setDeleted] = useState(0);
+  const runs = listRuns(props.graphName).runs;
   useEffect(() => {
     if (!open) return;
     const close = (e: MouseEvent) => {
@@ -87,6 +99,7 @@ export default function Menu(props: Props) {
           )}
           {toggle('Music', audio.music, setMusic)}
           {toggle('Sounds', audio.sfx, setSfx)}
+          {props.speechToggle && canSpeak() && toggle('Say words aloud', audio.speech, setSpeech)}
           {toggle('Roots', props.showRoots, props.onRoots)}
           {toggle('Whole network', props.inspect, (on) => {
             setOpen(false);
@@ -115,10 +128,39 @@ export default function Menu(props: Props) {
             )}
           </div>
           <div className="my-1 border-t border-slate-800" />
+          <div className="px-2 pb-1 pt-1 text-xs text-slate-500">Runs</div>
+          {runs.map((r) => (
+            <div key={r.id} className="group flex items-center">
+              <button
+                disabled={r.id === props.runId}
+                onClick={() => props.onSwitchRun(r.id)}
+                className={`flex flex-1 justify-between rounded px-2 py-1 text-left ${
+                  r.id === props.runId ? 'text-emerald-300' : 'hover:bg-slate-800'
+                }`}
+              >
+                <span className="truncate">{r.name}</span>
+                <span className="text-xs text-slate-500">{r.conquered ?? 0}</span>
+              </button>
+              {r.id !== props.runId && (
+                <button
+                  title="Delete this run"
+                  onClick={() => {
+                    if (!confirm(`Delete the run “${r.name}”?`)) return;
+                    props.onDeleteRun(r.id);
+                    setDeleted((n) => n + 1);
+                  }}
+                  className="invisible px-1.5 text-xs text-slate-500 hover:text-red-300 group-hover:visible"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          ))}
+          {action('+ New run', props.onNewRun, 'text-emerald-300')}
           {action(
-            'New game…',
+            'Restart this run…',
             () => {
-              if (confirm('Start over? All progress on this word list is lost.')) props.onNewGame();
+              if (confirm('Start this run over? Its progress is lost.')) props.onRestart();
             },
             'text-red-300',
           )}

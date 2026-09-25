@@ -48,6 +48,7 @@ type L = LinkObject<GNode, GLink>;
 /** Ripple colours (RGB) for words that need attention. */
 const ATTENTION_RGB: Record<AttentionKind, string> = {
   danger: '244, 63, 94', // rose: a claim about to fall, or the missed word to win back
+  raid: '251, 146, 60', // orange: a border word under raid
   reclaim: '45, 212, 191', // teal: a lost word one answer wins back
   due: '167, 139, 250', // violet: a conquered word due for review
   ready: '52, 211, 153', // emerald: a claim step is open
@@ -56,6 +57,7 @@ const ATTENTION_RGB: Record<AttentionKind, string> = {
 };
 const ATTENTION_LABEL: Record<AttentionKind, string> = {
   danger: 'in danger',
+  raid: 'raided',
   reclaim: 'to win back',
   due: 'due',
   ready: 'ready',
@@ -108,6 +110,8 @@ type Props = {
   inspect: boolean;
   /** Draw shared roots as hub nodes (replaces word-to-word "shared root" links). */
   showRoots: boolean;
+  /** Categories whose landmark stands (core/landmark.ts). */
+  landmarks?: Set<number>;
   onNodeClick: (id: string) => void;
 };
 
@@ -135,6 +139,7 @@ export default function GraphView({
   answerId,
   inspect,
   showRoots,
+  landmarks,
   onNodeClick,
 }: Props) {
   const wrap = useRef<HTMLDivElement>(null);
@@ -457,7 +462,7 @@ export default function GraphView({
         l.hint ? 1 : l.category ? 0.08 : (0.15 + l.weight * 0.6) * (crossRegion(l) ? 0.3 : 1),
       );
     fg.current?.d3Force('charge')?.strength(-90);
-    fg.current?.d3Force('cluster', clusterForce(settled));
+    fg.current?.d3Force('cluster', clusterForce());
     // Set once: a page shows one graph, and its regions never change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -474,7 +479,14 @@ export default function GraphView({
     const ids = r.words.filter((w) => inspect || (data.states.get(w) ?? 'locked') !== 'locked');
     if (!ids.length) return [];
     const named = inspect || r.words.some((w) => data.states.get(w) === 'conquered');
-    return [{ name: named ? r.name : '', color: REGION_RGB[colorOf.get(r.id) ?? 0], ids }];
+    return [
+      {
+        name: named ? r.name : '',
+        color: REGION_RGB[colorOf.get(r.id) ?? 0],
+        ids,
+        landmark: !inspect && !!landmarks?.has(r.id),
+      },
+    ];
   });
   /** Star colour per word in the galaxy view: its category's colour. */
   const starRgb = useMemo(() => {
@@ -493,12 +505,8 @@ export default function GraphView({
         .map((n) => [n.x!, n.y!, territoryRadius(n.id)] as const),
     }));
   const fitted = useRef(false);
-  /**
-   * Once the layout has settled, every placed word is pinned: dragging one word
-   * then moves only that word, and newly revealed words settle around a map that
-   * stays put instead of reshuffling it.
-   */
-  const settled = useRef(false);
+  /** Whole network: rounds of pulling stray words home left (see `shake`). */
+  const shakes = useRef(0);
   /** The player panned or zoomed: stop refitting the view to the map. */
   const cameraMoved = useRef(false);
   /** Fit the visible words into view, never closer than 2× (a new map has only a few). */
@@ -521,7 +529,7 @@ export default function GraphView({
   const wasInspect = useRef(inspect);
   if (wasInspect.current !== inspect) {
     wasInspect.current = inspect;
-    settled.current = false;
+    shakes.current = 0;
     for (const n of nodeCache.current.values()) {
       n.fx = undefined;
       n.fy = undefined;
@@ -1216,17 +1224,17 @@ export default function GraphView({
           n.fx = n.x;
           n.fy = n.y;
         }}
-        d3VelocityDecay={0.5}
-        d3AlphaDecay={0.035}
+        // The whole network is big: it cools slowly to find a better layout.
+        d3AlphaDecay={inspect ? 0.006 : 0.0228}
         warmupTicks={fitted.current ? 0 : 80}
-        cooldownTicks={300}
+        cooldownTicks={inspect ? 2500 : 300}
         onEngineStop={() => {
-          for (const n of graphData.nodes) {
-            if (n.x === undefined || n.fx !== undefined) continue;
-            n.fx = n.x;
-            n.fy = n.y;
+          // A first layout can trap words in the wrong cluster: send strays home and rerun.
+          if (inspect && shakes.current < SHAKES && shake(graphData.nodes)) {
+            shakes.current++;
+            fg.current?.d3ReheatSimulation();
+            return;
           }
-          settled.current = true;
           // The camera follows the growing map until you pan or zoom it yourself (F refits).
           if (fitted.current && cameraMoved.current) return;
           fitted.current = true;
@@ -1406,7 +1414,43 @@ function drawHub(
  * territories and their names don't pile up. Words without a region (hubs,
  * hints, independent words) are left to the other forces.
  */
-function clusterForce(settled: { current: boolean }, pull = 0.08, gap = 50) {
+/** Rounds of `shake` the whole network gets after settling. */
+const SHAKES = 3;
+
+/**
+ * Words stuck far from their region (more than twice its spread from its
+ * centre) jump back next to the centre, and everything gets a small nudge, so
+ * the next run can leave a local optimum. Returns whether any word was stray.
+ */
+function shake(nodes: N[]): boolean {
+  const groups = new Map<number, N[]>();
+  for (const n of nodes) {
+    const r = n.hub || n.hintOf ? null : n.word?.region;
+    if (r == null || n.x === undefined || n.y === undefined) continue;
+    groups.set(r, [...(groups.get(r) ?? []), n]);
+  }
+  let strays = 0;
+  for (const members of groups.values()) {
+    const cx = members.reduce((a, n) => a + n.x!, 0) / members.length;
+    const cy = members.reduce((a, n) => a + n.y!, 0) / members.length;
+    const dist = members.map((n) => Math.hypot(n.x! - cx, n.y! - cy));
+    const spread = dist.reduce((a, d) => a + d, 0) / members.length || 1;
+    members.forEach((n, i) => {
+      if (dist[i] <= 2 * spread || n.fx !== undefined) return;
+      n.x = cx + (Math.random() - 0.5) * spread;
+      n.y = cy + (Math.random() - 0.5) * spread;
+      strays++;
+    });
+  }
+  for (const n of nodes) {
+    if (n.fx !== undefined || n.x === undefined) continue;
+    n.x += (Math.random() - 0.5) * 20;
+    n.y! += (Math.random() - 0.5) * 20;
+  }
+  return strays > 0;
+}
+
+function clusterForce(pull = 0.08, gap = 50) {
   let nodes: N[] = [];
   const force = (alpha: number) => {
     const groups = new Map<number, { x: number; y: number; members: N[] }>();
@@ -1431,9 +1475,7 @@ function clusterForce(settled: { current: boolean }, pull = 0.08, gap = 50) {
         m.vy = (m.vy ?? 0) + (g.cy - m.y!) * pull * alpha;
       }
     }
-    // Pushing regions apart is for the first layout: later it would only shove new
-    // words away from a pinned map.
-    for (let i = 0; i < (settled.current ? 0 : list.length); i++) {
+    for (let i = 0; i < list.length; i++) {
       for (let j = i + 1; j < list.length; j++) {
         const [a, b] = [list[i], list[j]];
         let dx = b.cx - a.cx;
@@ -1461,7 +1503,13 @@ function clusterForce(settled: { current: boolean }, pull = 0.08, gap = 50) {
   return force;
 }
 
-type Territory = { name: string; color: string; pts: (readonly [number, number, number])[] };
+type Territory = {
+  name: string;
+  color: string;
+  pts: (readonly [number, number, number])[];
+  /** Its landmark stands (core/landmark.ts): a gold tower over the name. */
+  landmark?: boolean;
+};
 
 /** Offscreen buffer for the territory field (a fraction of the screen resolution). */
 const fieldCanvas = typeof document !== 'undefined' ? document.createElement('canvas') : null;
@@ -1580,10 +1628,38 @@ function drawRegionNames(
     ctx.lineWidth = 4 / scale;
     ctx.strokeStyle = `rgba(1, 3, 11, ${0.8 * alpha})`;
     ctx.strokeText(t.name.toUpperCase(), cx, cy);
-    ctx.fillStyle = galaxy ? `rgba(${t.color}, ${alpha})` : `rgba(${t.color}, ${alpha})`;
+    ctx.fillStyle = t.landmark
+      ? `rgba(252, 211, 77, ${Math.max(alpha, 0.7)})`
+      : `rgba(${t.color}, ${alpha})`;
     ctx.fillText(t.name.toUpperCase(), cx, cy);
+    if (t.landmark) drawTower(ctx, cx, cy - lh * 1.1, (px * 1.1) / scale);
   }
   ctx.restore();
+}
+
+/** A landmark: a small crenellated gold tower of height `h`, standing on (x, y + h/2). */
+function drawTower(ctx: CanvasRenderingContext2D, x: number, y: number, h: number) {
+  const w = h * 0.7;
+  const top = y - h / 2;
+  const m = w / 5; // merlon width
+  ctx.beginPath();
+  ctx.moveTo(x - w / 2, y + h / 2);
+  // Along the top: merlons (even) and gaps (odd), left to right.
+  for (let i = 0; i < 5; i++) {
+    const yy = i % 2 ? top + m : top;
+    ctx.lineTo(x - w / 2 + i * m, yy);
+    ctx.lineTo(x - w / 2 + (i + 1) * m, yy);
+  }
+  ctx.lineTo(x + w / 2, y + h / 2);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(252, 211, 77, 0.95)';
+  ctx.strokeStyle = 'rgba(1, 3, 11, 0.8)';
+  ctx.lineWidth = h / 12;
+  ctx.stroke();
+  ctx.fill();
+  // The door.
+  ctx.fillStyle = 'rgba(120, 53, 15, 0.9)';
+  ctx.fillRect(x - w / 8, y + h / 2 - h * 0.35, w / 4, h * 0.35);
 }
 
 /** Far stars behind the galaxy view (fixed to the screen). */

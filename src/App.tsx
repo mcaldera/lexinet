@@ -2,6 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   CLAIM_GAPS,
   COOLDOWN_MS,
+  EXPEDITION,
+  LANDMARK,
+  RAID,
   INFLUENCE,
   HINT_COST,
   PLANT_COST,
@@ -27,11 +30,16 @@ import { cardId, Rating, retrievability, type Grade } from './core/scheduler';
 import type { NodeState } from './core/unlock';
 import { nextPractice, nodeStrength } from './core/strength';
 import type { CardRow } from './db/repo';
-import { useSprawl, type LevelUp } from './useSprawl';
+import { useSprawl, type GameEvent, type LevelUp } from './useSprawl';
 import Menu from './views/Menu';
 import Guide from './views/Guide';
 import StartPicker from './views/StartPicker';
-import { homeWords, pickStart } from './core/start';
+import { pickStart } from './core/start';
+import { streak } from './core/streak';
+import { landmarks as builtLandmarks } from './core/landmark';
+import { expeditionStatus } from './core/expedition';
+import { newRun, switchRun, updateRun, deleteRun, runDbSuffix } from './runs';
+import { dbName } from './db';
 import GraphView from './views/GraphView';
 import InspectPanel from './views/InspectPanel';
 import ReviewView from './views/ReviewView';
@@ -66,6 +74,10 @@ export default function App() {
     timeTravel,
     reset,
     graphName,
+    runId,
+    event,
+    startExpedition,
+    shielded,
   } = useSprawl();
   const [lastCardId, setLastCardId] = useState<string>();
   const [session, setSession] = useState<Session | null>(null);
@@ -162,6 +174,14 @@ export default function App() {
     prevReady.current = data ? readyCount : null;
   }, [readyCount, data]);
   useEffect(() => resumeOnGesture(), []);
+  // Keep the run list's summary current (menu → Runs).
+  const conqueredCount = data
+    ? [...data.states.values()].filter((st) => st === 'conquered').length
+    : 0;
+  useEffect(() => {
+    if (data?.started)
+      updateRun(graphName, runId, { conquered: conqueredCount, played: Date.now() });
+  }, [conqueredCount, data?.started, graphName, runId]);
 
   // While a claimed word waits for its next step, count down every second.
   const claiming = !!data && [...data.states.values()].includes('claimed');
@@ -232,7 +252,7 @@ export default function App() {
   );
 
   const progress = useMemo(
-    () => (data ? computeProgress(data.nodes, data.states, data.tenseCards, now) : null),
+    () => (data ? computeProgress(data.nodes, data.states, data.tenseCards, now, data.home) : null),
     [data, now],
   );
   const weights = useMemo(() => neighbourWeights(data?.edges ?? []), [data?.edges]);
@@ -324,7 +344,7 @@ export default function App() {
             data.states,
             reach,
             REACH,
-            tierAllows(tierMap(data.nodes), progress.tier, homeWords(data.nodes, data.seed)),
+            tierAllows(tierMap(data.nodes), progress.tier, data.home),
           )
         : new Map<string, number>(),
     [data, reach, progress],
@@ -411,7 +431,7 @@ export default function App() {
           verbLevels,
           now.getTime(),
           INFLUENCE,
-          data.hints,
+          shielded,
         )
       : (weights.get(detailsWord.id) ?? [])
           .filter((n) => data.states.get(n.id) === 'conquered')
@@ -422,6 +442,22 @@ export default function App() {
           }));
 
   const claims = new Map([...data.game.nodes].map(([id, g]) => [id, g.claim]));
+  /** Raided words still to defend (core/raid.ts). */
+  const raided = new Set(
+    (data.raid.active?.targets ?? []).filter((id) => !data.raid.active?.defended.includes(id)),
+  );
+  const days = streak(data.activity, now);
+  const landmarkSet = builtLandmarks(data.graph.regions ?? [], data.states, LANDMARK);
+  const expedition = data.expedition && {
+    ...data.expedition,
+    name: data.graph.regions?.find((r) => r.id === data.expedition!.region)?.name ?? '',
+    ...expeditionStatus(
+      data.expedition,
+      data.graph.regions?.find((r) => r.id === data.expedition!.region)?.words ?? [],
+      data.states,
+      appMs(),
+    ),
+  };
   /** Claimed words endangered by a miss: deadline and the word to win back. */
   const dangerMap = dangers(data.game, data.states);
   /** Lost words that one right answer still wins back as they were (core/fallen.ts). */
@@ -441,6 +477,7 @@ export default function App() {
     }),
   );
   const attention = attentionList({
+    raid: raided,
     states: data.states,
     claims,
     health,
@@ -517,9 +554,9 @@ export default function App() {
       ? reachSources(reachIn, detailsWord.id).slice(0, 6)
       : null;
 
-  const onRate = async (row: CardRow, grade: Grade) => {
+  const onRate = async (row: CardRow, grade: Grade, typed = true) => {
     const firstSight = unseen(cardsByNode.get(row.nodeId) ?? []);
-    const outcome = await review(row, grade);
+    const outcome = await review(row, grade, typed);
     if (outcome.levelUp) setLevelUp(outcome.levelUp);
     sfx(
       grade === Rating.Again
@@ -721,7 +758,8 @@ export default function App() {
     }
     const conquered = data.states.get(nodeId) === 'conquered';
     // Under pressure (health below 90%), a word can always be defended.
-    const threatened = conquered && (health.get(nodeId) ?? 1) < FULL_NAME;
+    // Under pressure (fading, or raided), a word can always be defended.
+    const threatened = conquered && ((health.get(nodeId) ?? 1) < FULL_NAME || raided.has(nodeId));
     const next =
       conquered && !threatened
         ? nextPractice(
@@ -801,7 +839,9 @@ export default function App() {
               // Words being conquered (claimed) in the open tiers: shown as progress too.
               claimed={
                 data.nodes.filter(
-                  (n) => (n.tier ?? 1) <= progress.tier && data.states.get(n.id) === 'claimed',
+                  (n) =>
+                    ((n.tier ?? 1) <= progress.tier || data.home.has(n.id)) &&
+                    data.states.get(n.id) === 'claimed',
                 ).length
               }
             />
@@ -816,9 +856,28 @@ export default function App() {
           </button>
         )}
         <button
+          onClick={async () => {
+            if (data.expedition) return;
+            if (await startExpedition()) sfx('reveal');
+            else setNotice('No open words for an expedition');
+          }}
+          disabled={!!data.expedition || !data.started}
+          title={`Expedition: take ${EXPEDITION.goal} words of one category in ${EXPEDITION.minutes} min for 🪙${EXPEDITION.coins}`}
+          className="ml-auto rounded px-2 py-0.5 text-sm text-sky-300 hover:bg-slate-800 disabled:opacity-40"
+        >
+          ⚑
+        </button>
+        <button
+          onClick={() => setShowProgress((v) => !v)}
+          title={`Streak: ${days.current} ${days.current === 1 ? 'day' : 'days'}${days.playedToday ? '' : ' (play today to keep it)'} · best ${days.best}`}
+          className={`rounded px-2 py-0.5 text-sm ${days.playedToday ? 'text-orange-300' : 'text-slate-500'} hover:bg-slate-800`}
+        >
+          🔥 {days.current}
+        </button>
+        <button
           onClick={() => setShowProgress((v) => !v)}
           title="Score and achievements"
-          className={`ml-auto rounded px-2 py-0.5 text-sm ${
+          className={`rounded px-2 py-0.5 text-sm ${
             showProgress ? 'bg-amber-700/50 text-amber-100' : 'text-amber-300 hover:bg-slate-800'
           }`}
         >
@@ -833,7 +892,18 @@ export default function App() {
           onGuide={() => setShowGuide(true)}
           offsetDays={data.offsetDays}
           onTravel={timeTravel}
-          onNewGame={async () => {
+          speechToggle
+          runId={runId}
+          onNewRun={() => {
+            newRun(graphName);
+            window.location.reload();
+          }}
+          onSwitchRun={(id) => {
+            switchRun(graphName, id);
+            window.location.reload();
+          }}
+          onDeleteRun={(id) => deleteRun(graphName, id, dbName(graphName, runDbSuffix(id)))}
+          onRestart={async () => {
             setSession(null);
             setSelectedId(undefined);
             await reset();
@@ -854,6 +924,14 @@ export default function App() {
           )}
           {verbUp && !levelUp && <VerbUpBanner word={wordOf(verbUp.nodeId)} level={verbUp.level} />}
           {earnedNow.length > 0 && !levelUp && !verbUp && <AchievementBanner earned={earnedNow} />}
+          {event && <EventBanner key={event.at} event={event} regionName={regionName} />}
+          <Missions
+            expedition={expedition}
+            raid={data.raid.active}
+            nowMs={appMs()}
+            wordName={(id) => nameOf(id) || '?'}
+            onRaidWord={(id) => selectNode(id)}
+          />
           {notice && (
             <div className="pointer-events-none absolute bottom-4 left-1/2 z-10 -translate-x-1/2 rounded-full bg-slate-800/90 px-4 py-1.5 text-sm text-slate-100 shadow-lg">
               {notice}
@@ -867,6 +945,10 @@ export default function App() {
                 if (!seed) return;
                 setSelectedId(undefined);
                 await reset(seed);
+                // The run is named after where it began.
+                updateRun(graphName, runId, {
+                  name: region === undefined ? `Anywhere · ${wordOf(seed)}` : regionName(region),
+                });
                 sfx('reveal');
               }}
             />
@@ -914,6 +996,7 @@ export default function App() {
             inspect={inspect}
             showRoots={showRoots}
             onNodeClick={selectNode}
+            landmarks={landmarkSet}
           />
         </section>
         <aside
@@ -932,6 +1015,9 @@ export default function App() {
                 discovered: states.filter((st) => st !== 'locked').length,
                 total: data.nodes.length,
               }}
+              activity={data.activity}
+              streak={days}
+              now={now}
               onClose={() => setShowProgress(false)}
             />
           )}
@@ -1281,4 +1367,119 @@ function TierBadge({
       )}
     </span>
   );
+}
+
+/** Top-left over the map: the expedition and the raid under way, with their clocks. */
+function Missions(props: {
+  expedition: { name: string; goal: number; taken: number; until: number } | null;
+  raid?: { targets: string[]; defended: string[]; until: number };
+  nowMs: number;
+  wordName: (id: string) => string;
+  onRaidWord: (id: string) => void;
+}) {
+  const { expedition, raid, nowMs } = props;
+  const clock = (until: number) => {
+    const s = Math.max(0, Math.ceil((until - nowMs) / 1000));
+    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  };
+  if (!expedition && !raid) return null;
+  return (
+    <div className="absolute left-3 top-3 z-10 space-y-1.5 text-xs">
+      {expedition && (
+        <div
+          className="rounded bg-slate-900/85 px-2.5 py-1.5 text-sky-200"
+          title="Expedition: claim or conquer words of this category before time runs out"
+        >
+          ⚑ {expedition.name}{' '}
+          <b>
+            {expedition.taken}/{expedition.goal}
+          </b>{' '}
+          <span className="font-mono text-slate-400">{clock(expedition.until)}</span>
+        </div>
+      )}
+      {raid && (
+        <div
+          className="rounded border border-orange-500/50 bg-orange-950/80 px-2.5 py-1.5 text-orange-200"
+          title="Raid: answer each raided word right before time runs out, or it loses control"
+        >
+          ⚔ Raid <span className="font-mono text-orange-300">{clock(raid.until)}</span>
+          <div className="mt-1 flex flex-wrap gap-1">
+            {raid.targets.map((id) =>
+              raid.defended.includes(id) ? (
+                <span key={id} className="rounded bg-emerald-900/60 px-1.5 text-emerald-200">
+                  ✓ {props.wordName(id)}
+                </span>
+              ) : (
+                <button
+                  key={id}
+                  onClick={() => props.onRaidWord(id)}
+                  className="rounded bg-orange-800/70 px-1.5 hover:bg-orange-700"
+                >
+                  {props.wordName(id)}
+                </button>
+              ),
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** A moment the game made on its own: raid, expedition end, landmark. Fades by itself. */
+function EventBanner({
+  event,
+  regionName,
+}: {
+  event: GameEvent;
+  regionName: (r: number) => string;
+}) {
+  const [shown, setShown] = useState(true);
+  useEffect(() => {
+    sfx(
+      event.kind === 'raid' || event.kind === 'raid-lost' || event.kind === 'expedition-lost'
+        ? 'lost'
+        : 'achievement',
+    );
+    const t = setTimeout(() => setShown(false), 4500);
+    return () => clearTimeout(t);
+  }, [event]);
+  if (!shown) return null;
+  const [title, sub, tone] = eventText(event, regionName);
+  const cls = {
+    orange: 'border-orange-400/70 text-orange-200',
+    emerald: 'border-emerald-400/70 text-emerald-200',
+    slate: 'border-slate-500 text-slate-300',
+    amber: 'border-amber-300/70 text-amber-200',
+  }[tone as 'orange' | 'emerald' | 'slate' | 'amber'];
+  return (
+    <div
+      className={`pointer-events-none absolute left-1/2 top-16 z-10 -translate-x-1/2 rounded-xl border bg-slate-900/90 px-5 py-2 text-center shadow-lg backdrop-blur ${cls}`}
+    >
+      <div className="text-lg font-semibold">{title}</div>
+      <div className="text-xs opacity-80">{sub}</div>
+    </div>
+  );
+}
+
+function eventText(e: GameEvent, regionName: (r: number) => string): [string, string, string] {
+  const words = (n: number) => `${n} ${n === 1 ? 'word' : 'words'}`;
+  switch (e.kind) {
+    case 'raid':
+      return ['⚔ Raid!', `Defend ${words(e.count)} in ${RAID.durationMs / 60_000} min`, 'orange'];
+    case 'raid-won':
+      return ['⚔ Raid repelled', `+${e.coins} 🪙`, 'emerald'];
+    case 'raid-lost':
+      return ['⚔ The raid hit', `${words(e.count)} lost ground`, 'orange'];
+    case 'expedition-won':
+      return ['⚑ Expedition done', `+${e.coins} 🪙`, 'emerald'];
+    case 'expedition-lost':
+      return ['⚑ Expedition over', 'Out of time', 'slate'];
+    case 'landmark':
+      return [
+        `🏰 ${e.regions.map(regionName).join(', ')}`,
+        `Landmark built · +${e.coins} 🪙 · its words hold better`,
+        'amber',
+      ];
+  }
 }

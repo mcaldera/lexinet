@@ -1,6 +1,7 @@
 import { MAX_STRENGTH } from '../core/strength';
 import { PRONOUNS, TENSES, type TenseCard } from '../core/verbs';
 import type { WordNode } from '../db/repo';
+import { ExampleLine, SpeakButton } from './ReviewView';
 
 type Props = {
   word: WordNode;
@@ -20,7 +21,9 @@ export default function WordInfo(props: Props) {
     <div className="rounded-lg border border-emerald-500/30 bg-slate-900 p-4 text-sm">
       <div className="flex items-start justify-between">
         <div>
-          <div className="text-2xl font-medium">{word.it}</div>
+          <div className="flex items-center gap-2 text-2xl font-medium">
+            {word.it} <SpeakButton text={word.it} />
+          </div>
           <div className="text-slate-300">{word.en}</div>
         </div>
         <button className="text-xs text-slate-500 hover:text-slate-200" onClick={onClose}>
@@ -35,6 +38,7 @@ export default function WordInfo(props: Props) {
         {word.pos && <span>{word.pos}</span>}
       </div>
       <p className="mt-2 text-xs text-slate-500">{status}</p>
+      {word.example && <ExampleLine example={word.example} />}
       {verbLevel !== undefined && word.conjugations && learned.length > 0 && (
         <div className="mt-3 space-y-2">
           {learned.map((t) => (

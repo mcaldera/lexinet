@@ -3,6 +3,7 @@ import type { Verdict } from '../core/answer';
 import type { Grade } from '../core/scheduler';
 import { checkConjugation, PRONOUNS, TENSES, type Tense } from '../core/verbs';
 import type { WordNode } from '../db/repo';
+import { SpeakButton } from './ReviewView';
 
 type Props = {
   word: WordNode;
@@ -42,7 +43,9 @@ export default function VerbDrill({ word, tense, kind, onDone, onCancel }: Props
         </button>
       </div>
       <div className="mb-3 text-center">
-        <div className="text-2xl font-medium">{word.it}</div>
+        <div className="flex items-center justify-center gap-2 text-2xl font-medium">
+          {word.it} <SpeakButton text={word.it} />
+        </div>
         <div className="text-slate-400">{word.en}</div>
       </div>
       <div className="space-y-1.5">
