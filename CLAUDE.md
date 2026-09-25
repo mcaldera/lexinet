@@ -1,52 +1,114 @@
 # Sprawl (repo: lexinet)
 
-Graph-based spaced-repetition trainer for Italian vocabulary. Words are nodes; learning one reveals its neighbours; node health = FSRS retrievability. Full spec: `docs/PROPOSAL.md` (source of truth for scope).
+Italian vocabulary trainer as a territory game. Words are nodes in a graph; answering a word correctly claims it and reveals its neighbours; memory (FSRS) plus a live influence game decide whether your territory holds. The author (Michael) is user #1 and iterates fast with feature requests.
+
+`docs/PROPOSAL.md` is the original v0.1 plan. The project has since gone well beyond it at the author's request (tiers, verbs, influence game, claims, etymology, multiple word lists). Treat this file as the current source of truth; the proposal's "out of scope" list no longer binds.
 
 ## Stack
 
-- Tauri 2 shell (minimal Rust, `src-tauri/`) + React 19 + TypeScript + Vite 5 + Tailwind 3
-- Graph: `react-force-graph-2d` · Scheduling: `ts-fsrs` 4.x · Tests: Vitest
-- Persistence: SQLite. In Tauri → `@tauri-apps/plugin-sql`; in a plain browser → `sql.js` persisted to localStorage (dev fallback, same schema/SQL)
-- Offline pipeline: Python (`pipeline/`, own venv at `pipeline/.venv`), never bundled into the app. Meaning score from ConceptNet Numberbatch vectors of the English gloss (association, e.g. dog→bark; CC BY-SA 4.0, auto-downloaded to `~/.cache/sprawl/`). Sentence-embedding models (`--model BAAI/bge-m3`) only capture likeness and were worse in a labelled-pair benchmark
+- React 19 + TypeScript + Vite 5 + Tailwind 3; graph: `react-force-graph-2d` (canvas); scheduling: `ts-fsrs` 4.x; tests: Vitest 2
+- Tauri 2 shell in `src-tauri/` (thin, untested: this dev box has no Rust toolchain or webkit2gtk). Day-to-day the app runs in the browser.
+- Persistence: SQLite. Tauri → `@tauri-apps/plugin-sql`; browser → `sql.js`, snapshotted to localStorage (key `sprawl.db`, or `sprawl-<graph>.db`)
+- Offline pipeline: Python 3.13 in `pipeline/.venv` (sentence-transformers, networkx, pandas); never bundled
 
 ## Commands
 
-- `npm run dev`: browser dev server (sql.js fallback)
-- `npm test`: Vitest (src/core, src/db)
-- `npm run lint` / `npm run format` / `npm run typecheck`
-- `npm run tauri dev`: desktop app (needs Rust + webkit2gtk-4.1 system deps)
-- `pipeline/.venv/bin/python pipeline/build_graph.py data/words.csv -o data/graph.json [--seed "il cane"]`
-- `pipeline/.venv/bin/pytest pipeline/tests`
+- `npm run dev` (port 1420, forwarded by VS Code) · `npm test` · `npm run typecheck` · `npm run lint` · `npm run build`
+- `pipeline/.venv/bin/pytest -q pipeline/tests`
+- Build a graph: `pipeline/.venv/bin/python pipeline/build_graph.py data/words.csv -o data/graph.json` (also `words_1000.csv → graph_1000.json`, `words_oic.csv → graph_oic.json`). Flags: `--seed`, `--model` (default `numberbatch`), `-k`, `-t`, `--no-english`, `--no-conjugations`. Takes ~10–50 s.
+- Word lists: `make_wordlist.py data/words.csv -n 1000 -o data/words_1000.csv`; `scrape_oic.py -o data/words_oic.csv`, then `cd pipeline && ../pipeline/.venv/bin/python enrich_etymology.py ../data/words_oic.csv`
+- Node is 18 on the dev box: keep deps Node-18 compatible (Vite 5, Vitest 2, ts-fsrs 4; ts-fsrs 5 needs Node 20).
 
-Node is 18 on the dev box: keep deps Node-18 compatible (Vite 5, Vitest 2, ts-fsrs 4).
+## Verifying changes (how past sessions did it)
 
-## Layout
+Typecheck + lint + tests, then a real browser run: `npm run build`, `npx vite preview --port 4173 --strictPort` (in the background), and a Playwright script in the session scratchpad using the cached Chromium at `~/.cache/ms-playwright/chromium_headless_shell-*/…/chrome-headless-shell` (scratch venv with `pip install playwright pillow numpy scipy`). Read answers from `data/graph.json` to play. Pitfalls:
 
-- `src/core/`: pure TS logic (scheduler, unlock, clock, health, queue, answer). No DB/React imports. Must have unit tests before use in UI.
-- `src/db/`: `SqlDb` interface (execute/select), Tauri + sql.js adapters, schema, repository, seeding from `data/graph.json`
-- `src/views/`: GraphView, ReviewView, DebugPanel
-- `pipeline/`: `build_graph.py` + pytest tests
-- `data/`: `words.csv` (input: italian, english, pos, theme, root, cognate; last four optional), `graph.json` (pipeline output, imported by the app)
-- `docs/DOGFOOD_LOG.md`: daily usage notes
+- Click `header h1` before keyboard input, not `header` (it contains buttons that swallow Enter).
+- The view auto-fits only once; press `f` to refit.
+- Locate nodes by their colour in screenshots.
+- Stop the server with `fuser -k 4173/tcp`. `pkill -f` can kill your own shell.
+
+## Architecture
+
+```
+data/words*.csv ─ pipeline/build_graph.py ─► data/graph*.json ─► app (import.meta.glob in src/graphs.ts)
+                                                                  ├─ ?graph=<name> picks a graph; each has its own DB
+                                                                  └─ SQLite holds progress only
+```
+
+- `graph.json` owns words, edges, regions, roots and conjugations; SQLite owns progress. `syncGraph` (repo.ts) runs on start: it adds new words and cards and repairs frontier states. Node ids are slugs of the Italian word, so regenerating a graph keeps progress (renaming a word loses it).
+- `src/useSprawl.ts`: the state hook. Opens the DB, loads `AppData`, performs all mutations (`review`, `reviewTense`, `unlockRoot`, time travel, reset), and runs the influence simulation when app time moves.
+- `src/App.tsx`: UI orchestration (sessions, cooldowns, notices, selection, which side card shows). Big file; read it before changing flows.
+- `src/progress.ts`: `computeProgress`, the single source of truth for the open tier (words + verb requirement).
+- `src/config.ts`: all tunables (tier fraction, cooldown, verbs per tier, `INFLUENCE` rates, claim gap/expiry).
+
+### src/core (pure and unit-tested; no React/DB imports; add tests before using in UI)
+
+| module | what |
+|---|---|
+| `clock` | app time = real time + debug day offset. Never `new Date()` in logic. |
+| `scheduler` | ts-fsrs wrapper, card (de)serialisation, `cardId(node, dir)` = `node:it-en` / `node:en-it` |
+| `answer` | typed-answer checking: exact → Good; article/accent/small typo → Hard ("almost", still counts); else Again. `checkMeaning` is the lenient version for roots. |
+| `unlock` | node states `locked \| frontier \| claimed \| conquered`; `unlockChanges` (frontier → claimed, reveals neighbours), `repairStates`, `slipChanges` |
+| `claim` | claimed → conquered needs it→en ✓, en→it ✓, and a recall ≥ `CLAIM_RECALL_GAP_MS` later |
+| `queue` | automatic queue: due reviews (weakest first), then the unreviewed 2nd direction, then learning cards. Untouched frontier words never appear automatically. |
+| `health`, `fade` | health = mean retrievability; names erode letter by letter from 90% to 50%, then show "?" |
+| `strength` | FSRS stability → level 0–5; `nextPractice` (no cramming: practice only when due) |
+| `tiers` | tier k+1 opens at `TIER_UNLOCK_FRACTION` of tiers 1..k conquered plus `VERBS_PER_TIER` verbs at level k |
+| `verbs` | tense levels (presente → passato prossimo → imperfetto → futuro → condizionale → congiuntivo), one new tense per 20 h, `nextDrill`, `checkConjugation` |
+| `influence` | game layer: `control` per conquered word, hostile frontier (after 24 h grace or a wrong answer), rebels, lost words; `simulate` (1 h steps), `afterAnswer`, `pressureBreakdown`, `cohesion` |
+
+### src/views
+
+- `GraphView`: the canvas. Nodes, links, chevron particles, energy bands, cohesion glow, metaball territories (`drawRegions`), keyboard cursor.
+- `ReviewView`: the typed card.
+- `VerbDrill`, `RootQuiz`: conjugation drill and root unlock quiz.
+- `WordInfo`: card for a solid conquered word.
+- `NodeDetails`: status panel under the main card (health, control, trend, per-neighbour breakdown, claim steps, verb, etymology).
+- `VerbGoals`: which verbs count for the next tier.
+- `InspectPanel`: spoiler view of the whole network.
+- `DebugPanel`: +15 min / +1 day / +7 days, reset.
+- Helpers: `Etymology`, `visuals.ts` (shapes, link colours), `useKeyboardCamera.ts`.
+
+### Persistence
+
+- Tables: `nodes(id, it, en, pos, theme, state)`, `edges`, `cards(id, node_id, direction, fsrs_json)`, `review_log`, `meta`.
+- `cards.direction` is `it-en`/`en-it`, or `tense:<tense>` for verb tense cards (created on the first successful drill).
+- Meta keys: `debug_day_offset`, `unlocked_roots` (JSON array), `game` (JSON: `simAt` plus per-node `{control, since, hostileUntil, claim}`).
+- In memory only (lost on reload): cooldown locks, notices, open sessions.
+- sql.js exports the whole DB on every `execute`, so batch writes (multi-row INSERT, or one JSON value) instead of many small statements.
+
+## Game rules (current)
+
+- **Claiming:** click a "?" (or move to it with the arrow keys) to get a typed card. A correct answer makes it **claimed**: fragile, and it reveals its neighbours. It becomes conquered after both directions plus a recall 10+ min later. A never-seen word offers "Show me", which is not penalised.
+- **Misses:** a real miss locks the word for 60 s, makes it hostile, and makes claimed neighbours slip back to "?". Unfinished claims expire after 24 h.
+- **Conquered words:** health = min(FSRS memory, control). They can be practised only when due or threatened (below 90%). Clicking a solid one opens `WordInfo`.
+- **Influence:** frontier words turn hostile after 24 h and drain neighbours along links (scaled by link weight). Conquered neighbours and levelled verbs give support. Below 30% control a word rebels; at 0 it's lost (back to hostile frontier). Flows are drawn as red/green chevrons.
+- **Tiers** come from word frequency or a `tier`/`level` column (CEFR names in `graph.params.tier_names`). Verbs also gate tiers; the header tier badge opens the verb list.
+- **Roots** shared by 2+ words are hexagon hubs, sealed until you name the meaning. Unlocking one shows its English cousins and opens all its words.
+- **Map:** the layout is organic (force simulation). Invisible same-category springs gather discovered words, and territories are fused metaballs whose size grows with word strength.
+
+## Pipeline notes
+
+- **Meaning score:** ConceptNet Numberbatch on the English gloss, which captures association (dog→bark). Sentence-embedding models only capture likeness and did worse in a labelled benchmark; `--model BAAI/bge-m3` still works.
+- **Links:** score = 0.6 semantic + 0.25 same stem + 0.25 shared root + 0.15 same theme. Edges are a tier-respecting maximum spanning tree plus top-3 bonus links scoring ≥ 0.25. Lists with themes use them as regions, else Louvain communities (`layout.py`).
+- **Etymology:** hand-curated columns in `words.csv` (root, root_lang, root_meaning, cognate, cognate_note). Generated lists use Wiktionary (kaikki.org) with deliberately conservative root-family rules: homographs produced wrong families, and a wrong etymology is worse than none.
+- **Conjugations:** `conjugate.py` reads Wiktionary forms. Stress accents are normalised, passato prossimo is built from auxiliary + participle, reflexives are handled, and `-sene` verbs are skipped.
+- **Caches** (~1.3 GB, auto-downloaded) live in `~/.cache/sprawl/`: Numberbatch, kaikki Italian/Latin/English, frequency lists, pickled indexes. Delete an `*.pkl` to rebuild its index.
+- `data/words_oic.csv` / `graph_oic.json` are scraped from onlineitalianclub.com: git-ignored, personal study only.
 
 ## Conventions
 
-- All time goes through `clock.ts` (`real now + debug_day_offset`); never call `new Date()` directly in logic.
-- Health is computed, never stored. So is the open tier (`core/tiers.ts`): tier k+1 opens when `TIER_UNLOCK_FRACTION` of tiers 1..k are conquered; closed-tier nodes stay locked and invisible. Tiers come from word frequency (pipeline) or a `tier` CSV column.
-- Strength (`core/strength.ts`) = FSRS stability level 0-5; conquered words can only be practised once a card is due (no cramming). A wrong answer ("Again") locks the word for `COOLDOWN_MS` (in-memory, real time).
-- Roots (`graph.roots`, 2+ words) start sealed; the player unlocks one by naming its meaning (`RootQuiz`, `checkMeaning`), which turns all its words frontier regardless of tier. English examples come from `pipeline/english_roots.py` (English Wiktionary, cached in `~/.cache/sprawl/`).
-- Word lists: `data/words.csv` (hand-curated), `words_1000.csv` (`make_wordlist.py`), `words_oic.csv` (`scrape_oic.py` + `enrich_etymology.py`; git-ignored, site content). Each `data/graph_<name>.json` is selectable in the app (`?graph=<name>`). Lists with themes use them as regions; `tier`/`level` columns set tiers and their names.
-- Verbs (`core/verbs.ts`, `pipeline/conjugate.py`): conquered verbs level up one tense per day (6-person drill); each tense is an FSRS card (`cards.direction = 'tense:<name>'`) that can fade. Tier k+1 also needs `VERBS_PER_TIER` verbs at level k (`src/progress.ts` is the single source for the open tier).
-- Layout is organic (live force simulation); newly revealed words spawn next to a linked word, and invisible `category` springs pull discovered words of the same region together. Territories are drawn from live positions (`drawRegions`). Pipeline x/y positions are no longer used for placement.
-- Claims (`core/claim.ts`): answering a "?" right makes it `claimed` (fragile, reveals neighbours); it becomes `conquered` after both directions plus a recall ≥ `CLAIM_RECALL_GAP_MS` later. A real miss makes the missed word and claimed neighbours slip back to frontier (`slipChanges`); unfinished claims expire after `CLAIM_EXPIRY_MS`. Claim progress lives in `meta.game`.
-- Territories are metaballs (`drawRegions`): per-word radial gradients (radius grows with strength) thresholded on a half-resolution offscreen canvas.
-- Influence game (`core/influence.ts`, rates in `config.INFLUENCE`): conquered words have `control`; frontier words turn hostile after a grace period (or on a wrong answer) and drain neighbours along links (scaled by weight); low-control words rebel; control 0 = lost (back to hostile frontier). Displayed health = min(memory, control). Simulated in 1 h steps on app time, stored as JSON in `meta.game`.
-- Keyboard (`views/useKeyboardCamera.ts`): arrows move a cursor to the linked word in that direction and select it; WASD pan, +/- zoom, F fit (not while typing).
-- `graph.json` owns words and edges; SQLite owns progress only. On startup `syncGraph` adds new words/cards and repairs frontier states, so regenerating the graph keeps progress. Node ids are slugs of the Italian word: renaming a word loses its progress.
-- Review flow (changed from PROPOSAL §3 at the author's request): the user clicks a frontier node to claim it (or a conquered one to practise); the automatic queue only holds due/learning cards. Answers are typed and auto-graded by `core/answer.ts` (article/accent/small typo → Hard, exact → Good, else Again); no self-rating. A never-seen word's "Show me" is not a miss. The 10 new-words/day limit is a soft counter only.
 - Rust stays a thin shell; logic lives in TS.
-- Commit after each milestone (M0–M6). Git remote: the author's **personal** GitHub, never the ProxygenTx org.
+- Commit after each feature with a descriptive message (co-author trailer). The remote `origin` is the author's **personal** GitHub (`mcaldera/lexinet`), never the ProxygenTx org. Ask before pushing.
+- Match the surrounding style; comments explain why, not what. Prettier (single quotes, width 100): run `npx prettier --write src` after edits. It reflows lines, so re-read before making exact-string edits.
+- Keep CLAUDE.md current when rules or architecture change.
 
-## Out of scope for v0.1 (answer: "later")
+## Known issues / ideas not done
 
-Mobile, accounts/sync/backend, adding words in-app, user-created edges, attack events/scores/achievements/sounds/polish, audio/images/example sentences, other languages, porting logic to Rust.
+- The Tauri desktop build has never been compiled here; the web build is what's tested.
+- Inspect mode with 1500+ words is dense (organic layout); the category pull could be stronger.
+- Arrow keys do nothing when no word lies in that direction (no feedback).
+- Cooldown locks reset on reload; notices are ephemeral.
+- Generated word lists have no per-word English cousins (only root-level examples), and some of their region names and glosses are clumsy.
+- `docs/DOGFOOD_LOG.md` is still empty.
