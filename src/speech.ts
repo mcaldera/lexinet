@@ -14,13 +14,30 @@ const VOICE_KEY = 'sprawl.voice';
 const listeners = new Set<() => void>();
 const problems = new Set<(message: string) => void>();
 
-/** Italian voices, local ones first (they work offline and start faster). */
+/**
+ * macOS's novelty voices (Eloquence: Eddy, Flo, Grandma, ...) are listed in
+ * Chrome but play silently there; they work in Safari.
+ */
+const ELOQUENCE = /^(eddy|flo|grandma|grandpa|reed|rocko|sandy|shelley)\b/i;
+export const mayBeSilent = (v: SpeechSynthesisVoice) => ELOQUENCE.test(v.name);
+
+/** How likely a voice is to sound good: Google's, then the system's proper voices. */
+const rank = (v: SpeechSynthesisVoice) =>
+  mayBeSilent(v)
+    ? 3
+    : /google/i.test(v.name)
+      ? 0
+      : /natural|premium|enhanced/i.test(v.name)
+        ? 1
+        : 2;
+
+/** Italian voices, the most dependable first. */
 export function italianVoices(): SpeechSynthesisVoice[] {
   if (!synth) return [];
   return synth
     .getVoices()
     .filter((v) => v.lang.toLowerCase().replace('_', '-').startsWith('it'))
-    .sort((a, b) => Number(b.localService) - Number(a.localService));
+    .sort((a, b) => rank(a) - rank(b));
 }
 
 /** Every voice the browser offers (to tell "no Italian voice" from "no voices at all"). */
@@ -38,11 +55,7 @@ function storedVoice(): string | null {
 export function chosenVoice(): SpeechSynthesisVoice | undefined {
   const voices = italianVoices();
   const name = storedVoice();
-  return (
-    voices.find((v) => v.name === name) ??
-    voices.find((v) => /natural|premium|enhanced|google/i.test(v.name)) ??
-    voices[0]
-  );
+  return voices.find((v) => v.name === name) ?? voices[0];
 }
 
 export function setVoice(name: string) {
@@ -84,6 +97,10 @@ export function speak(text: string, rate = 0.9) {
   } catch {
     // a stale voice object: the system default for it-IT speaks instead
   }
+  let started = false;
+  u.onstart = () => {
+    started = true;
+  };
   u.onend = () => {
     if (current === u) current = null;
   };
@@ -100,6 +117,19 @@ export function speak(text: string, rate = 0.9) {
     s.resume();
     s.speak(u);
   }, 50);
+  // Some voices accept the text and never make a sound: say so instead of staying silent.
+  setTimeout(() => {
+    if (started || current !== u) return;
+    // Chrome's engine can hang for good after an error (still "speaking", no sound):
+    // only quitting the browser clears that.
+    const stuck = s.speaking || s.pending;
+    s.cancel();
+    problem(
+      stuck
+        ? "The browser's speech is stuck: quit Chrome completely and reopen"
+        : `${v?.name ?? 'The voice'} didn't speak: pick another in ☰`,
+    );
+  }, 2500);
 }
 
 /** Say it only if automatic pronunciation is on (menu). */

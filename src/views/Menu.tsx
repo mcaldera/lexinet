@@ -5,6 +5,7 @@ import {
   canSpeak,
   chosenVoice,
   italianVoices,
+  mayBeSilent,
   onVoices,
   setVoice,
   speak,
@@ -203,6 +204,7 @@ function VoicePicker() {
               <option key={v.name} value={v.name}>
                 {v.name}
                 {v.localService ? '' : ' (online)'}
+                {mayBeSilent(v) ? ' (silent in Chrome)' : ''}
               </option>
             ))}
           </select>
