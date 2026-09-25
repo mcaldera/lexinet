@@ -11,6 +11,8 @@ export type GameNode = {
   hostileUntil?: number;
   /** Claimed words: progress towards conquest (see core/claim.ts). */
   claim?: Claim;
+  /** Won once and lost: a single right answer wins it back for a while (core/fallen.ts). */
+  fallen?: { was: 'conquered' | 'claimed'; steps: number; at: number };
   /** Endangered by a miss on `from`: falls at `until` unless rescued (core/danger.ts). */
   danger?: { until: number; from: string };
 };

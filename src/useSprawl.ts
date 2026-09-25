@@ -5,9 +5,10 @@ import { tierAllows, tierMap } from './core/tiers';
 import { tenseCardId, type Tense, type TenseCard } from './core/verbs';
 import { computeProgress, computeReach, verbLevels } from './progress';
 import { afterAnswer, isHostile, neighbourWeights, simulate, type Game } from './core/influence';
-import { CLAIM_EXPIRY_MS, CLAIM_GAPS, DANGER_MS, INFLUENCE, REACH } from './config';
+import { CLAIM_EXPIRY_MS, CLAIM_GAPS, DANGER_MS, INFLUENCE, REACH, RECLAIM_MS } from './config';
 import { recedeChanges, revealChanges } from './core/reach';
 import { dangerFalls, missed, rescue } from './core/danger';
+import { reclaim, reclaimable, recordFalls, type Fallen } from './core/fallen';
 import {
   applyChanges,
   neighbourMap,
@@ -42,6 +43,7 @@ import {
 } from './db/repo';
 
 const graphName = currentGraphName();
+const claimsOf = (game: Game) => new Map([...game.nodes].map(([id, g]) => [id, g.claim]));
 
 // Module-level so StrictMode's double effect doesn't open/seed twice.
 let dbPromise: Promise<{ db: SqlDb; graph: Graph }> | null = null;
@@ -66,6 +68,8 @@ export type ReviewOutcome = {
   claim?: Claim;
   /** Hidden words the answer's push made conquerable. */
   opened?: number;
+  /** A lost word won back with one answer, and what it was restored to. */
+  reclaimed?: Fallen;
 };
 /** Words lost to hostile pressure in the latest simulation step. */
 export type LostEvent = { at: number; ids: string[] };
@@ -181,10 +185,12 @@ export function useSprawl() {
       INFLUENCE.hostileAfterHours * 3_600_000,
     );
     const fallen = [...next.lost, ...expired, ...falls.changes];
+    // Lost words remember what they were: one right answer wins them back for a while.
+    const remembered = recordFalls(falls.game, data.states, claimsOf(data.game), fallen, t);
     const states = applyChanges(data.states, fallen);
     const tier = computeProgress(data.nodes, states, data.tenseCards, now).tier;
-    const moved = fallen.length ? horizon(states, falls.game, tier, t) : null;
-    const game = moved?.game ?? falls.game;
+    const moved = fallen.length ? horizon(states, remembered, tier, t) : null;
+    const game = moved?.game ?? remembered;
     const changes = [...fallen, ...(moved?.changes ?? [])];
     void saveGame(db, game, changes);
     if (fallen.length) setLost({ at: t, ids: fallen.map((l) => l.id) });
@@ -209,6 +215,8 @@ export function useSprawl() {
       const firstSight = unseen(data.cards.filter((c) => c.nodeId === row.nodeId));
       const before = computeProgress(data.nodes, data.states, data.tenseCards, at).tier;
 
+      // A word you had won and lost: one right answer brings its old status back.
+      const wasWon = reclaimable(data.game, data.states, row.nodeId, t, RECLAIM_MS);
       let changes = unlockChanges(row.nodeId, grade, data.states);
       let game =
         firstSight && !success
@@ -218,7 +226,13 @@ export function useSprawl() {
       // Claim bookkeeping: recognise, produce, then lock in after a break (core/claim.ts).
       let conquered = false;
       let claimed: Claim | undefined;
-      if (success && (stateBefore === 'frontier' || stateBefore === 'claimed')) {
+      if (success && wasWon) {
+        const back = reclaim(game, row.nodeId, wasWon, t);
+        changes = [back.change];
+        game = back.game;
+        conquered = wasWon.was === 'conquered';
+        claimed = back.claim;
+      } else if (success && (stateBefore === 'frontier' || stateBefore === 'claimed')) {
         const claim = recordClaim(
           data.game.nodes.get(row.nodeId)?.claim,
           row.direction,
@@ -251,7 +265,7 @@ export function useSprawl() {
           INFLUENCE.hostileAfterHours * 3_600_000,
         );
         changes = [...changes, ...miss.changes];
-        game = miss.game;
+        game = recordFalls(miss.game, data.states, claimsOf(data.game), miss.changes, t);
         endangered = miss.endangered;
       }
       if (success) game = rescue(game, row.nodeId);
@@ -289,7 +303,14 @@ export function useSprawl() {
           game,
         };
       });
-      return { levelUp, conquered, endangered, claim: claimed, opened: revealed.opened };
+      return {
+        levelUp,
+        conquered,
+        endangered,
+        claim: claimed,
+        opened: revealed.opened,
+        reclaimed: success && wasWon ? wasWon : undefined,
+      };
     },
     [db, data, neighbours, horizon],
   );

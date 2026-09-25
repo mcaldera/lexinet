@@ -5,6 +5,7 @@ import type { NodeState } from '../core/unlock';
 import type { WordNode } from '../db/repo';
 import Etymology from './Etymology';
 import { DANGER_MS } from '../config';
+import { timeLeft } from './ReviewView';
 
 type Props = {
   word: WordNode;
@@ -30,6 +31,8 @@ type Props = {
   danger?: { until: number; from: string };
   /** A missed word: how many claims it endangers and when the first falls. */
   endangers?: { count: number; until: number };
+  /** A lost word one right answer wins back: what it was and until when (app ms). */
+  reclaim?: { was: 'conquered' | 'claimed'; steps: number; until: number };
   /** App time (ms), for the danger countdowns. */
   appNowMs?: number;
   dangerFrom?: (id: string) => string;
@@ -75,6 +78,16 @@ export default function NodeDetails(props: Props) {
     return (
       <div className="rounded-lg border border-slate-800 bg-slate-900/60 p-3 text-xs text-slate-300">
         <div className="mb-1 uppercase tracking-wider text-slate-500">Unknown word</div>
+        {props.reclaim && (
+          <p className="mb-2 rounded border border-teal-500/50 bg-teal-500/10 px-2 py-1.5 text-teal-100">
+            ↺ Lost, but not forgotten: it was{' '}
+            {props.reclaim.was === 'conquered'
+              ? 'conquered'
+              : `claimed (${props.reclaim.steps}/3 steps)`}
+            . One right answer wins it back as it was:{' '}
+            <b>{timeLeft(props.reclaim.until - props.nowMs)}</b> left, then it is gone.
+          </p>
+        )}
         {props.endangers && (
           <p className="mb-2 rounded border border-rose-500/50 bg-rose-500/10 px-2 py-1.5 text-rose-200">
             Win it back! {props.endangers.count} fragile{' '}
@@ -84,8 +97,9 @@ export default function NodeDetails(props: Props) {
         )}
         {hostile ? (
           <p className="text-red-300">
-            Hostile: attacking {attacked} of your words ({perDay(total)} of control in total).
-            Conquer it to stop the damage.
+            {attacked
+              ? `Hostile: attacking ${attacked} of your words (${perDay(total)} of control in total). Conquer it to stop the damage.`
+              : 'Hostile, but none of your conquered words are next to it to attack.'}
           </p>
         ) : (
           <p>

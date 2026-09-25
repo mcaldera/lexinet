@@ -4,7 +4,7 @@ import ForceGraph2D, {
   type LinkObject,
   type NodeObject,
 } from 'react-force-graph-2d';
-import { COOLDOWN_MS, DANGER_MS, INFLUENCE, REACH } from '../config';
+import { COOLDOWN_MS, DANGER_MS, INFLUENCE, REACH, RECLAIM_MS } from '../config';
 import { appNow } from '../core/clock';
 import { fadedName, FULL_NAME } from '../core/fade';
 import { edgeOpacity, healthBand } from '../core/health';
@@ -38,6 +38,7 @@ type L = LinkObject<GNode, GLink>;
 /** Ripple colours (RGB) for words that need attention. */
 const ATTENTION_RGB: Record<AttentionKind, string> = {
   danger: '244, 63, 94', // rose: a claim about to fall, or the missed word to win back
+  reclaim: '45, 212, 191', // teal: a lost word one answer wins back
   due: '167, 139, 250', // violet: a conquered word due for review
   ready: '52, 211, 153', // emerald: a claim step is open
   threat: '248, 113, 113', // red: hostile, rebelling or fading
@@ -45,6 +46,7 @@ const ATTENTION_RGB: Record<AttentionKind, string> = {
 };
 const ATTENTION_LABEL: Record<AttentionKind, string> = {
   danger: 'in danger',
+  reclaim: 'to win back',
   due: 'due',
   ready: 'ready',
   threat: 'under threat',
@@ -87,6 +89,8 @@ type Props = {
   sighted: Map<string, number>;
   /** Claims endangered by a miss: deadline (app ms) and the missed word (core/danger.ts). */
   danger: Map<string, { until: number; from: string }>;
+  /** Lost words one right answer wins back, what they were and until when (app ms). */
+  reclaim: Map<string, { was: 'conquered' | 'claimed'; steps: number; until: number }>;
   /** Push of every won word (core/reach.ts pushOf), for the push flows. */
   pushes: Map<string, number>;
   /** Who pushes the selected word and how much: ringed on the map. */
@@ -118,6 +122,7 @@ export default function GraphView({
   claimWaits,
   sighted,
   danger,
+  reclaim,
   pushes,
   pushSources,
   attention,
@@ -661,6 +666,28 @@ export default function GraphView({
       ctx.lineWidth = 1;
       ctx.stroke();
       ctx.setLineDash([]);
+      const back = inspect ? undefined : reclaim.get(node.id);
+      if (back) {
+        // Lost but remembered: the old outline in teal, running down to when it's gone.
+        ctx.beginPath();
+        ctx.arc(x, y, r + 6, 0, 2 * Math.PI);
+        ctx.setLineDash([1.5, 2.5]);
+        ctx.strokeStyle = 'rgba(45, 212, 191, 0.45)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.setLineDash([]);
+        const left = Math.max(0, Math.min(1, (back.until - nowMs) / RECLAIM_MS));
+        ctx.beginPath();
+        ctx.arc(x, y, r + 6, -Math.PI / 2, -Math.PI / 2 + left * 2 * Math.PI);
+        ctx.strokeStyle = 'rgba(45, 212, 191, 0.9)';
+        ctx.lineWidth = 1.6;
+        ctx.stroke();
+        ctx.font = `bold ${Math.max(4, 10 / scale)}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        ctx.fillStyle = 'rgba(94, 234, 212, 0.95)';
+        ctx.fillText(back.was === 'conquered' ? '↺ ★' : `↺ ${back.steps}/3`, x, y - r - 7);
+      }
       const grace = graceUntil.get(node.id);
       if (state === 'frontier' && !angry && grace && !inspect) {
         // Grace period left before this word turns hostile.
@@ -1243,6 +1270,7 @@ function LegendBody({ onClose }: { onClose: () => void }) {
         <span className="text-slate-400">◌ ghost: in sight, not in reach yet</span>
         <span className="text-sky-300">┅ blue flow: push towards the horizon</span>
         <span className="text-rose-300">! rose ring: claim in danger after a miss</span>
+        <span className="text-teal-300">↺ teal ring: lost, one answer wins it back</span>
         <span className="text-amber-300">★ verb tense reached</span>
         <span className="text-pink-300">⬢ shared root</span>
       </div>

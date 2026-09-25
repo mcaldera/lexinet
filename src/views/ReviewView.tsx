@@ -21,6 +21,9 @@ type Props = {
   mode: 'conquer' | 'practice' | 'due';
   dueCount: number;
   newToday: number;
+  /** A lost word one right answer wins back: what it was and until when (app ms). */
+  reclaim?: { was: 'conquered' | 'claimed'; steps: number; until: number };
+  nowMs?: number;
   /** Cards due away from the word you're on (the review doesn't jump there). */
   elsewhere?: number;
   /** Word not conquered yet: the claim step this answer completes. */
@@ -30,7 +33,18 @@ type Props = {
 };
 
 export default function ReviewView(props: Props) {
-  const { data, current, mode, dueCount, newToday, claimStep, elsewhere, onRate, onCancel } = props;
+  const {
+    data,
+    current,
+    mode,
+    dueCount,
+    newToday,
+    claimStep,
+    elsewhere,
+    reclaim,
+    onRate,
+    onCancel,
+  } = props;
   const [typed, setTyped] = useState('');
   const [check, setCheck] = useState<AnswerCheck | null>(null);
   const [busy, setBusy] = useState(false);
@@ -90,7 +104,15 @@ export default function ReviewView(props: Props) {
   return (
     <div className="rounded-lg border border-slate-800 bg-slate-900 p-4">
       <div className="mb-3 flex justify-between text-xs uppercase tracking-wider text-slate-400">
-        <span>{!current ? 'Review' : claimStep ? 'Conquering' : 'Defending · due for review'}</span>
+        <span>
+          {!current
+            ? 'Review'
+            : reclaim
+              ? 'Winning back'
+              : claimStep
+                ? 'Conquering'
+                : 'Defending · due for review'}
+        </span>
         <span>
           {dueCount} due ·{' '}
           <span className={newCls}>
@@ -116,7 +138,18 @@ export default function ReviewView(props: Props) {
         </p>
       ) : (
         <>
-          {claimStep ? (
+          {reclaim ? (
+            <p className="mb-3 rounded border border-teal-500/50 bg-teal-500/10 px-3 py-2 text-sm text-teal-100">
+              ↺ You had{' '}
+              {reclaim.was === 'conquered'
+                ? 'conquered this word'
+                : `claimed this word (${reclaim.steps}/3 steps)`}
+              . One right answer wins it back as it was.{' '}
+              <span className="text-teal-300/80">
+                {timeLeft(reclaim.until - (props.nowMs ?? 0))} left.
+              </span>
+            </p>
+          ) : claimStep ? (
             <ClaimSteps step={claimStep.step} />
           ) : (
             <p className="mb-2 text-xs text-slate-400">
@@ -249,4 +282,12 @@ function ClaimSteps({ step }: { step: number }) {
       <p className="mt-1 text-xs text-slate-400">{HINT[step - 1]}</p>
     </div>
   );
+}
+
+/** "2 d 5 h", "5 h", "40 min" */
+export function timeLeft(ms: number): string {
+  const min = Math.max(1, Math.round(ms / 60_000));
+  if (min < 60) return `${min} min`;
+  const h = Math.round(min / 60);
+  return h < 24 ? `${h} h` : `${Math.floor(h / 24)} d ${h % 24} h`;
 }

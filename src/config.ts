@@ -34,6 +34,8 @@ export const CLAIM_RECALL_GAP_MS = 10 * 60_000;
 export const CLAIM_GAPS = { step: CLAIM_STEP_GAP_MS, recall: CLAIM_RECALL_GAP_MS };
 /** After a miss, its claimed neighbours fall unless it is won back within this (app time). */
 export const DANGER_MS = 3 * 60_000;
+/** A lost word can be won back as it was with one right answer for this long (app time). */
+export const RECLAIM_MS = 3 * 24 * 3_600_000;
 /** An unfinished claim slips back to "?" after this long (app time). */
 export const CLAIM_EXPIRY_MS = 24 * 3_600_000;
 

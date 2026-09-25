@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import { CLAIM_GAPS, COOLDOWN_MS, DANGER_MS, INFLUENCE, REACH } from './config';
+import { CLAIM_GAPS, COOLDOWN_MS, DANGER_MS, INFLUENCE, REACH, RECLAIM_MS } from './config';
 import { dangers } from './core/danger';
+import { reclaimable } from './core/fallen';
 import { attentionList, newlyRevealed } from './core/attention';
 import {
   claimNext,
@@ -140,7 +141,9 @@ export default function App() {
   useEffect(() => {
     if (!lost || !data) return;
     const names = lost.ids.map((id) => data.nodes.find((n) => n.id === id)?.it ?? id);
-    setNotice(`Slipped away: ${names.join(', ')}. Win them back!`);
+    setNotice(
+      `Slipped away: ${names.join(', ')}. One right answer within ${RECLAIM_MS / 86_400_000} days wins ${lost.ids.length === 1 ? 'it' : 'them'} back as ${lost.ids.length === 1 ? 'it was' : 'they were'}.`,
+    );
     sfx('lost');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lost]);
@@ -338,6 +341,13 @@ export default function App() {
   const claims = new Map([...data.game.nodes].map(([id, g]) => [id, g.claim]));
   /** Claimed words endangered by a miss: deadline and the word to win back. */
   const dangerMap = dangers(data.game, data.states);
+  /** Lost words that one right answer still wins back as they were (core/fallen.ts). */
+  const reclaimMap = new Map(
+    [...data.game.nodes].flatMap(([id]) => {
+      const f = reclaimable(data.game, data.states, id, now.getTime(), RECLAIM_MS);
+      return f ? [[id, { ...f, until: f.at + RECLAIM_MS }] as const] : [];
+    }),
+  );
   // Claimed words waiting for their next step: when it opens and how long the wait is.
   const claimWaits = new Map(
     [...claims].flatMap(([id, c]) => {
@@ -357,6 +367,7 @@ export default function App() {
     gaps: CLAIM_GAPS,
     blocked: (id) => (cooldowns.get(id) ?? 0) > appMs(),
     danger: dangerMap,
+    reclaim: new Set(reclaimMap.keys()),
     due: new Set([
       ...queue.map((c) => c.nodeId),
       ...data.tenseCards
@@ -450,7 +461,13 @@ export default function App() {
       });
       return;
     }
-    if (outcome.conquered)
+    if (outcome.reclaimed)
+      setNotice(
+        outcome.reclaimed.was === 'conquered'
+          ? `Won back! ${wordOf(row.nodeId)} is conquered again.`
+          : `Won back! Your claim resumes at step ${outcome.reclaimed.steps + 1}/${CLAIM_STEPS} (${claimNotice(outcome.claim ?? {}, appNow(data.offsetDays).getTime())})`,
+      );
+    else if (outcome.conquered)
       setNotice(`${wordOf(row.nodeId)} is conquered: it holds its ground now.`);
     else if (outcome.claim)
       setNotice(claimNotice(outcome.claim, appNow(data.offsetDays).getTime()));
@@ -763,6 +780,7 @@ export default function App() {
             sighted={sighted}
             pushes={pushes}
             danger={dangerMap}
+            reclaim={reclaimMap}
             pushSources={
               detailsReach ? new Map(detailsReach.map((r) => [r.id, r.push])) : undefined
             }
@@ -903,6 +921,8 @@ export default function App() {
                     data.tenseCards.filter((c) => c.card.due <= now && !isNear(c.nodeId)).length
                   }
                   newToday={newToday}
+                  reclaim={current ? reclaimMap.get(current.nodeId) : undefined}
+                  nowMs={now.getTime()}
                   claimStep={
                     current &&
                     ['frontier', 'claimed'].includes(data.states.get(current.nodeId) ?? '')
@@ -939,6 +959,7 @@ export default function App() {
               nowMs={appNow(data.offsetDays).getTime()}
               claimStep={claimNext(data.game.nodes.get(detailsWord.id)?.claim, CLAIM_GAPS)}
               danger={dangerMap.get(detailsWord.id)}
+              reclaim={reclaimMap.get(detailsWord.id)}
               endangers={(() => {
                 const ds = [...dangerMap.values()].filter((d) => d.from === detailsWord.id);
                 return ds.length
