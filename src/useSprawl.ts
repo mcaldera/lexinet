@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { appNow } from './core/clock';
 import { newCard, rate, Rating, State, type Grade } from './core/scheduler';
 import { tierAllows, tierMap } from './core/tiers';
+import { homeWords } from './core/start';
 import { tenseCardId, type Tense, type TenseCard } from './core/verbs';
 import { computeProgress, computeReach, verbLevels } from './progress';
 import { afterAnswer, isHostile, neighbourWeights, simulate, type Game } from './core/influence';
@@ -114,6 +115,10 @@ export function useSprawl() {
   const now = useMemo(() => appNow(offsetDays), [offsetDays, tick, data]);
   const neighbours = useMemo(() => neighbourMap(data?.edges ?? []), [data?.edges]);
   const tiers = useMemo(() => tierMap(data?.nodes ?? []), [data?.nodes]);
+  const home = useMemo(
+    () => (data ? homeWords(data.nodes, data.seed) : undefined),
+    [data?.nodes, data?.seed], // eslint-disable-line react-hooks/exhaustive-deps
+  );
   const weights = useMemo(() => neighbourWeights(data?.edges ?? []), [data?.edges]);
   const [lost, setLost] = useState<LostEvent | null>(null);
 
@@ -143,8 +148,8 @@ export function useSprawl() {
       if (!data) return { changes: [] as StateChange[], game, opened: 0 };
       const claims = new Map([...game.nodes].map(([id, g]) => [id, g.claim]));
       const levels = verbLevels(data.nodes, data.tenseCards, appNow(data.offsetDays));
-      const reach = computeReach(data.nodes, neighbours, states, claims, data.graph.seed, levels);
-      const opened = revealChanges(states, reach, REACH, tierAllows(tiers, tier));
+      const reach = computeReach(data.nodes, neighbours, states, claims, data.seed, levels);
+      const opened = revealChanges(states, reach, REACH, tierAllows(tiers, tier, home));
       const rootWords = new Set(
         (data.graph.roots ?? [])
           .filter((r) => data.unlockedRoots.has(r.id))
@@ -158,7 +163,7 @@ export function useSprawl() {
         reach,
         REACH,
         (id) =>
-          id === data.graph.seed ||
+          id === data.seed ||
           started.has(id) ||
           rootWords.has(id) ||
           isHostile(game.nodes.get(id), 'frontier', t, INFLUENCE),
@@ -170,7 +175,7 @@ export function useSprawl() {
       for (const c of receded) nodes.delete(c.id); // grace restarts if it comes back
       return { changes, game: { ...game, nodes }, opened: opened.length };
     },
-    [data, neighbours, tiers],
+    [data, neighbours, tiers, home],
   );
 
   // Advance the influence game whenever app time moves (clock tick, time travel).
@@ -259,6 +264,7 @@ export function useSprawl() {
           row.direction,
           t,
           CLAIM_GAPS,
+          firstSight,
         );
         const nodes = new Map(game.nodes);
         if (stateBefore === 'claimed' && claimComplete(claim)) {
@@ -499,12 +505,16 @@ export function useSprawl() {
     [db],
   );
 
-  const reset = useCallback(async () => {
-    if (!db || !data) return;
-    await resetAll(db, data.graph, appNow(0));
-    offsetRef.current = 0;
-    setData(await loadAll(db, data.graph));
-  }, [db, data]);
+  /** Wipe progress; with a first word, a new game starts there (else the picker shows). */
+  const reset = useCallback(
+    async (seed?: string) => {
+      if (!db || !data) return;
+      await resetAll(db, data.graph, appNow(0), seed);
+      offsetRef.current = 0;
+      setData(await loadAll(db, data.graph));
+    },
+    [db, data],
+  );
 
   return {
     data,

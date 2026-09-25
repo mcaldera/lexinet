@@ -1,5 +1,5 @@
 import { appNow } from './clock';
-import { buildQueue, nearby, type QueueCard } from './queue';
+import { buildQueue, closest, nearby, type QueueCard } from './queue';
 import { cardId, newCard, rate, Rating, type Direction } from './scheduler';
 import type { NodeState } from './unlock';
 
@@ -79,4 +79,56 @@ test('nearby keeps the anchor word and its linked words, in queue order', () => 
   expect(nearby(q, 'a', nb).map((c) => c.nodeId)).toEqual(['b', 'a']);
   expect(nearby(q, 'x', nb)).toEqual([]);
   expect(nearby(q, undefined, nb)).toEqual(q);
+});
+
+test('closest: the nearest candidate, penalties added to the distance', () => {
+  // a - b - c - d
+  const nb = new Map([
+    ['a', ['b']],
+    ['b', ['a', 'c']],
+    ['c', ['b', 'd']],
+    ['d', ['c']],
+  ]);
+  expect(
+    closest(
+      'a',
+      nb,
+      new Map([
+        ['c', 0],
+        ['d', 0],
+      ]),
+    ),
+  ).toBe('c');
+  expect(
+    closest(
+      'a',
+      nb,
+      new Map([
+        ['b', 3],
+        ['d', 0],
+      ]),
+    ),
+  ).toBe('d');
+  expect(
+    closest(
+      undefined,
+      nb,
+      new Map([
+        ['d', 1],
+        ['b', 0],
+      ]),
+    ),
+  ).toBe('b');
+  expect(closest('a', nb, new Map())).toBeUndefined();
+  // Not linked at all: last resort.
+  expect(
+    closest(
+      'a',
+      nb,
+      new Map([
+        ['z', 0],
+        ['d', 5],
+      ]),
+    ),
+  ).toBe('d');
 });

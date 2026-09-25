@@ -61,3 +61,31 @@ export function nearby<T extends { nodeId: string }>(
   const near = new Set([anchor, ...(neighbours.get(anchor) ?? [])]);
   return queue.filter((c) => near.has(c.nodeId));
 }
+
+/**
+ * The word to go to next: the candidate with the lowest link distance from
+ * `from` plus its penalty (so an open claim step a few links away beats a new
+ * word next door). Unreachable candidates come last; no `from` counts as 0.
+ */
+export function closest(
+  from: string | undefined,
+  neighbours: Map<string, string[]>,
+  penalty: Map<string, number>,
+): string | undefined {
+  if (!penalty.size) return undefined;
+  const dist = new Map<string, number>();
+  if (from) {
+    dist.set(from, 0);
+    const todo = [from];
+    while (todo.length) {
+      const id = todo.shift()!;
+      for (const n of neighbours.get(id) ?? []) {
+        if (dist.has(n)) continue;
+        dist.set(n, dist.get(id)! + 1);
+        todo.push(n);
+      }
+    }
+  }
+  const cost = (id: string) => (from ? (dist.get(id) ?? 1e6) : 0) + penalty.get(id)!;
+  return [...penalty.keys()].reduce((a, b) => (cost(b) < cost(a) ? b : a));
+}

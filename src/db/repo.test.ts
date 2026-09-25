@@ -102,13 +102,16 @@ test('the real graph.json syncs cleanly', async () => {
   await syncGraph(db, g, t0);
   const data = await loadAll(db, g);
   expect(data.cards.length).toBe(g.nodes.length * 2);
-  // A fresh map opens the seed and the tier-1 words next to it, nothing else.
+  // A fresh map opens the seed and the words next to it that are tier 1 or in
+  // its own (home) category, nothing else.
   const seedNeighbours = new Set(
     g.edges.flatMap((e) =>
       e.source === g.seed ? [e.target] : e.target === g.seed ? [e.source] : [],
     ),
   );
-  const tier1 = (id: string) => (g.nodes.find((n) => n.id === id)?.tier ?? 1) <= 1;
+  const region = (id: string) => g.nodes.find((n) => n.id === id)?.region;
+  const tier1 = (id: string) =>
+    (g.nodes.find((n) => n.id === id)?.tier ?? 1) <= 1 || region(id) === region(g.seed);
   const open = [...data.states].filter(([, s]) => s === 'frontier').map(([id]) => id);
   expect(open).toContain(g.seed);
   expect(open.every((id) => id === g.seed || (seedNeighbours.has(id) && tier1(id)))).toBe(true);

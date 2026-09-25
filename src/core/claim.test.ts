@@ -43,3 +43,22 @@ test('a word is unseen until one of its cards has been answered', () => {
   expect(unseen([{ card: { state: State.New } }, { card: { state: State.New } }])).toBe(true);
   expect(unseen([{ card: { state: State.Learning } }, { card: { state: State.New } }])).toBe(false);
 });
+
+test('a word recognised at first sight is on the fast track: produce it at once to conquer', () => {
+  const t0 = 1_000_000;
+  const c = recordClaim(undefined, 'it-en', t0, GAPS, true);
+  expect(c.known).toBe(true);
+  expect(claimNext(c, GAPS)).toEqual({ step: 2, directions: ['en-it'], opensAt: t0 });
+  const done = recordClaim(c, 'en-it', t0 + 5_000, GAPS);
+  expect(claimComplete(done)).toBe(true);
+  expect(claimNext(done, GAPS)).toBeNull();
+});
+
+test('a word learnt from "Show me" takes the full three steps', () => {
+  const t0 = 1_000_000;
+  const c = recordClaim(undefined, 'it-en', t0, GAPS, false);
+  expect(c.known).toBeUndefined();
+  const two = recordClaim(c, 'en-it', t0 + GAPS.step, GAPS);
+  expect(claimComplete(two)).toBe(false);
+  expect(claimNext(two, GAPS)?.step).toBe(3);
+});

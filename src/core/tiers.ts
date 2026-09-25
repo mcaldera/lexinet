@@ -61,8 +61,10 @@ export function verbLevelFor(tier: number, maxTier: number, maxLevel: number): n
 }
 
 /** Whether a node may be revealed at the given open tier. */
-export const tierAllows = (tiers: Map<string, number>, tier: number) => (id: string) =>
-  (tiers.get(id) ?? 1) <= tier;
+/** Words of the open tiers, plus `home`: the category you started in is open at every level. */
+export const tierAllows =
+  (tiers: Map<string, number>, tier: number, home?: Set<string>) => (id: string) =>
+    (tiers.get(id) ?? 1) <= tier || !!home?.has(id);
 
 export const tierMap = (nodes: { id: string; tier?: number | null }[]) =>
   new Map(nodes.map((n) => [n.id, n.tier ?? 1]));

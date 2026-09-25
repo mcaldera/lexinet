@@ -9,6 +9,7 @@ import {
   type Grade,
 } from '../core/scheduler';
 import { tierAllows, tierMap } from '../core/tiers';
+import { homeWords } from '../core/start';
 import type { Tense, TenseCard } from '../core/verbs';
 import type { Game, GameNode } from '../core/influence';
 import { neighbourMap, type NodeState, type StateChange } from '../core/unlock';
@@ -97,6 +98,10 @@ export type CardRow = { id: string; nodeId: string; direction: Direction; card: 
 
 export type AppData = {
   graph: Graph;
+  /** The first word of this game (chosen at the start; the graph's seed before that). */
+  seed: string;
+  /** A start was chosen or play has begun; otherwise the start picker shows. */
+  started: boolean;
   nodes: WordNode[];
   edges: Edge[];
   cards: CardRow[];
@@ -183,19 +188,13 @@ export async function syncGraph(db: SqlDb, graph: Graph, now: Date) {
     fsrs_json: string;
   }>("SELECT id, node_id, direction, fsrs_json FROM cards WHERE direction LIKE 'tense:%'");
   const open = computeProgress(graph.nodes, states, tenseRows.map(toTenseCard), now).tier;
-  const allowed = tierAllows(tiers, open);
+  const seed = await loadMeta(db, 'seed', graph.seed);
+  const allowed = tierAllows(tiers, open, homeWords(graph.nodes, seed));
   // Reveal what the territory reaches (new words, changed links, an empty map's seed).
   const gameRow = await db.select<{ value: string }>("SELECT value FROM meta WHERE key = 'game'");
   const claims = new Map([...parseGame(gameRow[0]?.value).nodes].map(([id, g]) => [id, g.claim]));
   const levels = verbLevels(graph.nodes, tenseRows.map(toTenseCard), now);
-  const reach = computeReach(
-    graph.nodes,
-    neighbourMap(graph.edges),
-    states,
-    claims,
-    graph.seed,
-    levels,
-  );
+  const reach = computeReach(graph.nodes, neighbourMap(graph.edges), states, claims, seed, levels);
   for (const c of revealChanges(states, reach, REACH, allowed)) {
     await db.execute('UPDATE nodes SET state = ? WHERE id = ?', [c.state, c.id]);
   }
@@ -239,8 +238,11 @@ export async function loadAll(db: SqlDb, graph: Graph): Promise<AppData> {
   const userEdges = (await loadMeta<Edge[]>(db, 'user_edges', [])).filter(
     (e) => ids.has(e.source) && ids.has(e.target),
   );
+  const seed = await loadMeta<string | null>(db, 'seed', null);
   return {
     graph,
+    seed: seed && ids.has(seed) ? seed : graph.seed,
+    started: !!seed || first.length > 0,
     nodes: graph.nodes,
     edges: [...graph.edges, ...userEdges],
     userEdges,
@@ -356,10 +358,11 @@ export async function setOffsetDays(db: SqlDb, days: number) {
   );
 }
 
-/** Wipe all progress and start again from the graph's seed. */
-export async function resetAll(db: SqlDb, graph: Graph, now: Date) {
+/** Wipe all progress; the next game starts from `seed` (none: the start picker shows). */
+export async function resetAll(db: SqlDb, graph: Graph, now: Date, seed?: string) {
   for (const t of ['review_log', 'cards', 'edges', 'nodes', 'meta']) {
     await db.execute(`DELETE FROM ${t}`);
   }
+  if (seed) await saveMeta(db, 'seed', seed);
   await syncGraph(db, graph, now);
 }

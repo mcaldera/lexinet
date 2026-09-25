@@ -76,3 +76,13 @@ test('verb levels follow tiers, spread out when there are more tiers than tenses
     1, 2, 2, 3, 4, 4, 5, 6, 6,
   ]);
 });
+
+test('the home category is open at every level', () => {
+  const tiers = new Map([
+    ['a', 1],
+    ['b', 3],
+    ['c', 3],
+  ]);
+  const allowed = tierAllows(tiers, 1, new Set(['b']));
+  expect(['a', 'b', 'c'].map(allowed)).toEqual([true, true, false]);
+});
