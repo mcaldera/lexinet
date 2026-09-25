@@ -1,11 +1,15 @@
-/** Share of words in the open tiers to conquer before the next tier appears. */
-export const TIER_UNLOCK_FRACTION = 0.8;
+/**
+ * Levels follow your campaign (core/tiers `Campaign`): the next one opens at this
+ * share of your home category's words so far, and at least TIER_MIN_WORDS per level.
+ */
+export const TIER_UNLOCK_FRACTION = 0.6;
+export const TIER_MIN_WORDS = 5;
 
 /** After a wrong answer ("Again") the word is locked for this long (app time). */
 export const COOLDOWN_MS = 60_000;
 
 /** Verbs (at the matching verb level) needed to open each next tier. */
-export const VERBS_PER_TIER = 3;
+export const VERBS_PER_TIER = 2;
 
 /** Influence game (core/influence.ts), all rates per day of app time. */
 export const INFLUENCE = {
@@ -29,7 +33,7 @@ export const INFLUENCE = {
 /** A claimed word's English -> Italian step opens this long after Italian -> English. */
 export const CLAIM_STEP_GAP_MS = 60_000;
 /** A claimed word is conquered by a recall this long after both directions were right. */
-export const CLAIM_RECALL_GAP_MS = 10 * 60_000;
+export const CLAIM_RECALL_GAP_MS = 5 * 60_000;
 export const CLAIM_GAPS = { step: CLAIM_STEP_GAP_MS, recall: CLAIM_RECALL_GAP_MS };
 /** After a miss, its claimed neighbours fall unless it is won back within this (app time). */
 export const DANGER_MS = 3 * 60_000;
@@ -72,3 +76,20 @@ export const PLANT_COST = 5;
 export const HINT_COST = 3;
 /** Planting a word from a later level costs this much more per level ahead. */
 export const PLANT_COST_PER_TIER = 2;
+
+/** Landmarks (core/landmark.ts): half a category (at most 12 words) builds one; it shields the category. */
+export const LANDMARK = { share: 0.5, max: 12, coins: 5 };
+/** Expeditions (core/expedition.ts): take `goal` words of one category within `minutes`. */
+export const EXPEDITION = { minutes: 10, goal: 5, coins: 10 };
+/**
+ * Raids (core/raid.ts): after a right answer, with `chance`, at most every `gapMs`,
+ * hostile words strike up to `targets` border words; each undefended one loses `hit` control.
+ */
+export const RAID = {
+  durationMs: 3 * 60_000,
+  targets: 3,
+  gapMs: 20 * 60_000,
+  chance: 0.15,
+  hit: 0.4,
+  coins: 3,
+};

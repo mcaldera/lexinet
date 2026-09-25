@@ -108,3 +108,20 @@ test('conquered words with a review due are flagged, after open claim steps', ()
     { id: 'w', kind: 'due' },
   ]);
 });
+
+test('raided words come right after danger', () => {
+  const list = attentionList({
+    states: new Map([
+      ['a', 'conquered'],
+      ['b', 'claimed'],
+    ]),
+    claims: new Map([['b', { itEn: 1 }]]),
+    health: new Map(),
+    hostile: new Set(),
+    fresh: new Set(),
+    nowMs: 10_000_000,
+    gaps: { step: 60_000, recall: 300_000 },
+    raid: new Set(['a']),
+  });
+  expect(list.map((a) => a.kind)).toEqual(['raid', 'ready']);
+});

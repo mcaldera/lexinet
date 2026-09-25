@@ -86,3 +86,19 @@ test('the home category is open at every level', () => {
   const allowed = tierAllows(tiers, 1, new Set(['b']));
   expect(['a', 'b', 'c'].map(allowed)).toEqual([true, true, false]);
 });
+
+test('a campaign measures levels by the home category, counting words from anywhere', () => {
+  // Home: a, e, g. Tier 1 needs max(1 × 1, 60% of {a}) = 1 word.
+  const campaign = { home: new Set(['a', 'e', 'g']), minPerTier: 1 };
+  expect(tierProgress(tiers, states([]), 0.6, undefined, campaign)).toMatchObject({
+    tier: 1,
+    needed: 1,
+  });
+  // b is not home but tier 1: it counts. Tier 2 needs max(2, 60% of {a, e}) = 2.
+  expect(tierProgress(tiers, states(['b']), 0.6, undefined, campaign)).toMatchObject({
+    tier: 2,
+    needed: 2,
+  });
+  // g is home (tier 3) and counts already at tier 2.
+  expect(tierProgress(tiers, states(['b', 'g']), 0.6, undefined, campaign).tier).toBe(3);
+});

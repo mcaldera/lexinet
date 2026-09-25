@@ -4,11 +4,15 @@ export function isTauri(): boolean {
   return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 }
 
-/** One database per graph, so experimenting with another graph keeps your progress. */
-export async function openDb(graphName = 'default'): Promise<SqlDb> {
-  const suffix = graphName === 'default' ? '' : `-${graphName}`;
-  if (isTauri()) return (await import('./tauri')).openTauriDb(`sprawl${suffix}.db`);
-  return (await import('./sqljs')).openBrowserDb(`sprawl${suffix}.db`);
+/** Storage name of a graph's run: `sprawl.db`, `sprawl-oic.db`, `sprawl-oic~<run>.db`. */
+export const dbName = (graphName: string, runSuffix = '') =>
+  `sprawl${graphName === 'default' ? '' : `-${graphName}`}${runSuffix}.db`;
+
+/** One database per graph and run, so another graph or run keeps its own progress. */
+export async function openDb(graphName = 'default', runSuffix = ''): Promise<SqlDb> {
+  const name = dbName(graphName, runSuffix);
+  if (isTauri()) return (await import('./tauri')).openTauriDb(name);
+  return (await import('./sqljs')).openBrowserDb(name);
 }
 
 export type { SqlDb } from './types';

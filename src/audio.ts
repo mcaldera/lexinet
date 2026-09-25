@@ -21,14 +21,20 @@ export type Sfx =
   | 'achievement'
   | 'plant';
 
-type Settings = { music: boolean; sfx: boolean };
+/** `speech`: say Italian words aloud automatically (see speech.ts). */
+type Settings = { music: boolean; sfx: boolean; speech: boolean };
 const KEY = 'sprawl.audio';
 
 function load(): Settings {
   try {
-    return { music: false, sfx: true, ...JSON.parse(localStorage.getItem(KEY) ?? '{}') };
+    return {
+      music: false,
+      sfx: true,
+      speech: true,
+      ...JSON.parse(localStorage.getItem(KEY) ?? '{}'),
+    };
   } catch {
-    return { music: false, sfx: true };
+    return { music: false, sfx: true, speech: true };
   }
 }
 
@@ -294,6 +300,11 @@ export function setSfx(on: boolean) {
   settings = { ...settings, sfx: on };
   save();
   if (on) sfx('select');
+}
+
+export function setSpeech(on: boolean) {
+  settings = { ...settings, speech: on };
+  save();
 }
 
 /** Music that was on last time resumes at the first click (autoplay rules). */

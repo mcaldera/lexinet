@@ -5,13 +5,15 @@ import type { NodeState } from './unlock';
 /**
  * Why a word wants the player's attention, most urgent first:
  * danger: a claim about to fall after a miss, or the missed word to win back ·
+ * raid: a border word under raid, to defend with a right answer ·
  * ready: a claim step is open now · reclaim: a lost word one answer wins back · due: a conquered word's review (or tense) is
  * due · threat: hostile, rebelling or fading ·
  * new: just revealed and never tried.
  */
-export type AttentionKind = 'danger' | 'ready' | 'reclaim' | 'due' | 'threat' | 'new';
+export type AttentionKind = 'danger' | 'raid' | 'ready' | 'reclaim' | 'due' | 'threat' | 'new';
 export const ATTENTION_ORDER: AttentionKind[] = [
   'danger',
+  'raid',
   'ready',
   'reclaim',
   'due',
@@ -39,6 +41,8 @@ export type AttentionInput = {
   reclaim?: Set<string>;
   /** Endangered claims and the missed word each depends on (core/danger.ts). */
   danger?: Map<string, { from: string }>;
+  /** Raided words still to defend (core/raid.ts). */
+  raid?: Set<string>;
 };
 
 /** Words that need attention, sorted by urgency (see ATTENTION_ORDER). */
@@ -55,7 +59,9 @@ export function attentionList(input: AttentionInput): Attention[] {
     }
     if (input.blocked?.(id)) continue;
     let kind: AttentionKind | null = null;
-    if (st === 'claimed') {
+    if (input.raid?.has(id)) {
+      kind = 'raid';
+    } else if (st === 'claimed') {
       const next = claimNext(claims.get(id), gaps);
       if (next && next.opensAt <= nowMs) kind = 'ready';
     } else if (st === 'frontier' && input.reclaim?.has(id)) {

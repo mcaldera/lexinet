@@ -1,4 +1,4 @@
-import { REACH, TIER_UNLOCK_FRACTION, VERBS_PER_TIER } from './config';
+import { REACH, TIER_MIN_WORDS, TIER_UNLOCK_FRACTION, VERBS_PER_TIER } from './config';
 import type { Claim } from './core/claim';
 import { reachMap, type ReachInput } from './core/reach';
 import { tierMap, tierProgress, type TierProgress } from './core/tiers';
@@ -21,13 +21,17 @@ export function computeProgress(
   states: Map<string, NodeState>,
   tenseCards: TenseCard[],
   now: Date,
+  /** The start word's category (core/start `homeWords`): levels follow this campaign. */
+  home: Set<string>,
 ): TierProgress {
   const levels = verbLevels(nodes, tenseCards, now);
-  return tierProgress(tierMap(nodes), states, TIER_UNLOCK_FRACTION, {
-    levels,
-    perTier: VERBS_PER_TIER,
-    maxLevel: TENSES.length,
-  });
+  return tierProgress(
+    tierMap(nodes),
+    states,
+    TIER_UNLOCK_FRACTION,
+    { levels, perTier: VERBS_PER_TIER, maxLevel: TENSES.length },
+    { home, minPerTier: TIER_MIN_WORDS },
+  );
 }
 
 /** Everything reach (core/reach.ts) needs, from the current states and claims. */

@@ -18,6 +18,15 @@ export type TierProgress = {
 export type VerbGate = { levels: Map<string, number>; perTier: number; maxLevel: number };
 
 /**
+ * A campaign: the player works from a home category and need not cover the rest.
+ * Tier k+1 then needs `fraction` of the home words in tiers 1..k (at least
+ * `minPerTier` × k words); conquered words of tiers 1..k count wherever they
+ * are, and home words at any tier. The home is fixed, so exploring never lowers
+ * the requirement's base or the tier.
+ */
+export type Campaign = { home: Set<string>; minPerTier: number };
+
+/**
  * Tier k+1 opens once `fraction` of the words in tiers 1..k are conquered and,
  * if verbs are given, enough of their verbs have reached `verbLevelFor(k)`
  * (presente for tier 2, passato prossimo for tier 3, ...). Derived from state,
@@ -28,18 +37,24 @@ export function tierProgress(
   states: Map<string, NodeState>,
   fraction: number,
   verbs?: VerbGate,
+  campaign?: Campaign,
 ): TierProgress {
   const maxTier = Math.max(1, ...tiers.values());
   let tier = 1;
   for (;;) {
     let total = 0;
     let conquered = 0;
+    let homeTotal = 0;
     for (const [id, t] of tiers) {
-      if (t > tier) continue;
+      const home = !!campaign?.home.has(id);
+      if (home && t <= tier) homeTotal++;
+      if (t > tier && !home) continue;
       total++;
       if (states.get(id) === 'conquered') conquered++;
     }
-    const needed = Math.ceil(total * fraction);
+    const needed = campaign
+      ? Math.min(total, Math.max(campaign.minPerTier * tier, Math.ceil(homeTotal * fraction)))
+      : Math.ceil(total * fraction);
     const verbLevel = verbs ? verbLevelFor(tier, maxTier, verbs.maxLevel) : 0;
     const pool = verbs ? [...verbs.levels].filter(([id]) => (tiers.get(id) ?? 1) <= tier) : [];
     const verbsNeed = verbs ? Math.min(verbs.perTier, pool.length) : 0;

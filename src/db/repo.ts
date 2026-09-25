@@ -10,6 +10,10 @@ import {
 } from '../core/scheduler';
 import { tierAllows, tierMap } from '../core/tiers';
 import { homeWords } from '../core/start';
+import { dayKey } from '../core/streak';
+import type { Example } from '../core/cloze';
+import type { Expedition } from '../core/expedition';
+import type { Raid } from '../core/raid';
 import type { Tense, TenseCard } from '../core/verbs';
 import type { Game, GameNode } from '../core/influence';
 import { neighbourMap, type NodeState, type StateChange } from '../core/unlock';
@@ -35,6 +39,8 @@ export type WordNode = {
   cognate_note?: string | null;
   /** 1 = most common words; higher tiers open as you progress. */
   tier?: number;
+  /** A short sentence with the word, for fill-the-gap reviews (Tatoeba). */
+  example?: Example | null;
   /** Fixed map position and territory from the pipeline layout. */
   x?: number;
   y?: number;
@@ -102,6 +108,8 @@ export type AppData = {
   seed: string;
   /** A start was chosen or play has begun; otherwise the start picker shows. */
   started: boolean;
+  /** The seed's category: the campaign's home, open at every level (core/start). */
+  home: Set<string>;
   nodes: WordNode[];
   edges: Edge[];
   cards: CardRow[];
@@ -123,7 +131,16 @@ export type AppData = {
   userEdges: Edge[];
   /** Words with a bought hint (their English cousin shown next to them). */
   hints: Set<string>;
+  /** Answers per local day ("2026-09-25" -> n), for the streak and calendar. */
+  activity: Map<string, number>;
+  /** The expedition under way, if any (core/expedition.ts). */
+  expedition: Expedition | null;
+  /** The raid under way and when the last one started (core/raid.ts). */
+  raid: RaidState;
+  /** Category id -> app time its landmark was first built (paid out once). */
+  landmarks: Record<string, number>;
 };
+export type RaidState = { active?: Raid; last?: number };
 
 async function insertMany(
   db: SqlDb,
@@ -187,9 +204,10 @@ export async function syncGraph(db: SqlDb, graph: Graph, now: Date) {
     direction: string;
     fsrs_json: string;
   }>("SELECT id, node_id, direction, fsrs_json FROM cards WHERE direction LIKE 'tense:%'");
-  const open = computeProgress(graph.nodes, states, tenseRows.map(toTenseCard), now).tier;
   const seed = await loadMeta(db, 'seed', graph.seed);
-  const allowed = tierAllows(tiers, open, homeWords(graph.nodes, seed));
+  const home = homeWords(graph.nodes, seed);
+  const open = computeProgress(graph.nodes, states, tenseRows.map(toTenseCard), now, home).tier;
+  const allowed = tierAllows(tiers, open, home);
   // Reveal what the territory reaches (new words, changed links, an empty map's seed).
   const gameRow = await db.select<{ value: string }>("SELECT value FROM meta WHERE key = 'game'");
   const claims = new Map([...parseGame(gameRow[0]?.value).nodes].map(([id, g]) => [id, g.claim]));
@@ -239,9 +257,19 @@ export async function loadAll(db: SqlDb, graph: Graph): Promise<AppData> {
     (e) => ids.has(e.source) && ids.has(e.target),
   );
   const seed = await loadMeta<string | null>(db, 'seed', null);
+  const activity = new Map<string, number>();
+  for (const r of await db.select<{ at: string }>('SELECT reviewed_at AS at FROM review_log')) {
+    const k = dayKey(new Date(r.at));
+    activity.set(k, (activity.get(k) ?? 0) + 1);
+  }
   return {
+    activity,
+    expedition: await loadMeta<Expedition | null>(db, 'expedition', null),
+    raid: await loadMeta<RaidState>(db, 'raid', {}),
+    landmarks: await loadMeta<Record<string, number>>(db, 'landmarks', {}),
     graph,
     seed: seed && ids.has(seed) ? seed : graph.seed,
+    home: homeWords(graph.nodes, seed && ids.has(seed) ? seed : graph.seed),
     started: !!seed || first.length > 0,
     nodes: graph.nodes,
     edges: [...graph.edges, ...userEdges],
