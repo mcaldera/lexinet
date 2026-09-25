@@ -1,4 +1,4 @@
-import { reachMap, revealChanges, sightedWords, type ReachInput } from './reach';
+import { reachMap, reachSources, revealChanges, sightedWords, type ReachInput } from './reach';
 import { neighbourMap, type NodeState } from './unlock';
 
 const RULES = {
@@ -11,6 +11,8 @@ const RULES = {
   border: 0.5,
   familiarAt: 2,
   familiarBoost: 0.5,
+  pos: {} as Record<string, number>,
+  verbLevelBonus: 0,
 };
 const yes = () => true;
 
@@ -107,4 +109,30 @@ test('with nothing left to work on, the best sighted word opens so the map never
     ['f', 0.3],
   ]);
   expect(revealChanges(states, reach, RULES, yes)).toEqual([{ id: 'c', state: 'frontier' }]);
+});
+
+test('verbs push more than nouns, adjectives less, levelled verbs more still', () => {
+  const rules = { ...RULES, familiarBoost: 0, pos: { verb: 1.25, adj: 0.8 }, verbLevelBonus: 0.15 };
+  const at = (pos: string, level = 0) =>
+    reachMap(
+      input(
+        { a: 'conquered', b: 'locked' },
+        { rules, posOf: () => pos, verbLevels: new Map([['a', level]]) },
+      ),
+    ).get('b');
+  expect(at('noun')).toBeCloseTo(1);
+  expect(at('verb')).toBeCloseTo(1.25);
+  expect(at('verb', 2)).toBeCloseTo(1.55);
+  expect(at('adj')).toBeCloseTo(0.8);
+});
+
+test("reach sources explain where a word's reach comes from", () => {
+  const inp = input(
+    { a: 'conquered', b: 'conquered', c: 'locked', d: 'locked', e: 'locked', f: 'locked' },
+    { rules: { ...RULES, familiarBoost: 0 } },
+  );
+  expect(reachSources(inp, 'c').map((s) => [s.id, Math.round(s.push * 100) / 100])).toEqual([
+    ['b', 1],
+    ['a', 0.5],
+  ]);
 });

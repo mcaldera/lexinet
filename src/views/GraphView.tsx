@@ -81,6 +81,10 @@ type Props = {
   claimWaits: Map<string, { opensAt: number; total: number }>;
   /** Hidden words in sight (reach below what conquering needs): drawn as ghosts. */
   sighted: Map<string, number>;
+  /** Push of every won word (core/reach.ts pushOf), for the push flows. */
+  pushes: Map<string, number>;
+  /** Who pushes the selected word and how much: ringed on the map. */
+  pushSources?: Map<string, number>;
   /** Words that need attention, most urgent first: ripples, edge arrows, jump bar. */
   attention: Attention[];
   /** Word whose Italian name is the answer being asked: its name is hidden. */
@@ -107,6 +111,8 @@ export default function GraphView({
   claims,
   claimWaits,
   sighted,
+  pushes,
+  pushSources,
   attention,
   answerId,
   inspect,
@@ -128,6 +134,61 @@ export default function GraphView({
   );
   /** Off-screen arrows drawn last frame (CSS pixels), for clicks. */
   const pointers = useRef<{ id: string; x: number; y: number }[]>([]);
+  /** Link weights sorted, to draw widths by rank (raw weights bunch up in 0.25-0.6). */
+  const sortedWeights = useMemo(
+    () => data.edges.map((e) => e.weight).sort((a, b) => a - b),
+    [data.edges],
+  );
+  const weightRank = (w: number) => {
+    let lo = 0;
+    let hi = sortedWeights.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (sortedWeights[mid] < w) lo = mid + 1;
+      else hi = mid;
+    }
+    return sortedWeights.length ? lo / sortedWeights.length : w;
+  };
+
+  // Bursts: a flash on the map when a claim step, a conquest or a verb level lands.
+  const bursts = useRef(new Map<string, { at: number; kind: BurstKind }>());
+  const progressKey = useRef<Map<string, string> | null>(null);
+  const [bursting, setBursting] = useState(false);
+  useEffect(() => {
+    const next = new Map<string, string>();
+    for (const [id, st] of data.states) {
+      if (st === 'claimed' || st === 'conquered') {
+        next.set(id, `${st}:${claimSteps(claims.get(id))}:${verbLevels.get(id) ?? 0}`);
+      }
+    }
+    const prev = progressKey.current;
+    progressKey.current = next;
+    if (!prev) return;
+    let any = false;
+    for (const [id, key] of next) {
+      const old = prev.get(id);
+      if (old === key) continue;
+      const [st, steps, vl] = key.split(':');
+      const [ost, osteps, ovl] = (old ?? 'frontier:0:0').split(':');
+      const kind: BurstKind | null =
+        Number(vl) > Number(ovl)
+          ? 'verb'
+          : st === 'conquered' && ost !== 'conquered'
+            ? 'conquer'
+            : Number(steps) > Number(osteps) || (st === 'claimed' && ost !== 'claimed')
+              ? 'step'
+              : null;
+      if (kind) {
+        bursts.current.set(id, { at: Date.now(), kind });
+        any = true;
+      }
+    }
+    if (!any) return;
+    setBursting(true);
+    const t = setTimeout(() => setBursting(false), BURST_MS.verb + 200);
+    return () => clearTimeout(t);
+  }, [data.states, claims, verbLevels]);
+
   /** Per kind, the index of the word the jump bar showed last. */
   const jumpIndex = useRef<Partial<Record<AttentionKind, number>>>({});
 
@@ -175,7 +236,12 @@ export default function GraphView({
   // Something moves on screen: keep redrawing (energy bands, arrows, breathing glow).
   const animate =
     !inspect &&
-    (cohesionOf.size > 0 || flowKey !== '' || attentionOf.size > 0 || claimWaits.size > 0);
+    (cohesionOf.size > 0 ||
+      flowKey !== '' ||
+      attentionOf.size > 0 ||
+      claimWaits.size > 0 ||
+      sighted.size > 0 ||
+      bursting);
 
   const graphData = useMemo(() => {
     const visible = new Set(visibleKey.split(',').filter(Boolean));
@@ -364,8 +430,11 @@ export default function GraphView({
   /** A word's pull on its territory: practised words claim more ground. */
   const territoryRadius = (id: string) => {
     const st = data.states.get(id);
-    if (st === 'conquered') return 26 + 6 * (strength.get(id) ?? 0);
-    if (st === 'claimed') return 22;
+    if (st === 'conquered') {
+      return 32 + 6 * (strength.get(id) ?? 0) + 4 * (verbLevels.get(id) ?? 0);
+    }
+    // Every claim step pushes the border out a little.
+    if (st === 'claimed') return 18 + 5 * claimSteps(claims.get(id));
     return st === 'frontier' ? 16 : 12;
   };
 
@@ -389,8 +458,32 @@ export default function GraphView({
     const y = node.y ?? 0;
     const state = data.states.get(node.id);
     const shape: Shape = shapeOf(node.word.pos);
-    const r = state === 'conquered' ? 5 + (strength.get(node.id) ?? 0) * 0.8 : 6;
+    const vl = verbLevels.get(node.id) ?? 0;
+    // Stronger words are bigger; every tense a verb masters makes it bigger still.
+    const r = state === 'conquered' ? 5 + (strength.get(node.id) ?? 0) * 0.8 + vl * 0.9 : 6;
     ctx.save();
+    const burst = bursts.current.get(node.id);
+    if (burst && !inspect) {
+      const p = (Date.now() - burst.at) / BURST_MS[burst.kind];
+      if (p < 1) drawBurst(ctx, x, y, r, scale, burst.kind, p);
+      else bursts.current.delete(node.id);
+    }
+    const src = pushSources?.get(node.id);
+    if (src !== undefined && !inspect) {
+      // This word pushes the selected one: ring it and say by how much.
+      ctx.beginPath();
+      ctx.arc(x, y, r + 6, 0, 2 * Math.PI);
+      ctx.setLineDash([3, 2]);
+      ctx.strokeStyle = 'rgba(125, 211, 252, 0.9)';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.font = `bold ${Math.max(3, 10 / scale)}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.fillStyle = 'rgba(125, 211, 252, 0.95)';
+      ctx.fillText(`+${Math.round(src * 100)}%`, x, y - r - 7);
+    }
     const attn = attentionOf.get(node.id);
     if (attn) drawRipple(ctx, x, y, r, scale, ATTENTION_RGB[attn]);
     const lockedUntil = cooldowns.get(node.id);
@@ -459,6 +552,13 @@ export default function GraphView({
       ctx.strokeStyle = 'rgba(125, 211, 252, 0.55)';
       ctx.lineWidth = 1;
       ctx.stroke();
+      if (scale > 0.9) {
+        ctx.font = `${Math.max(3, 9 / scale)}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillStyle = 'rgba(125, 211, 252, 0.7)';
+        ctx.fillText(`${Math.round((reach / REACH.open) * 100)}%`, x, y + r + 4);
+      }
       ctx.restore();
       return;
     }
@@ -570,7 +670,15 @@ export default function GraphView({
       ctx.stroke();
     }
     // One gold ring per tense mastered: verbs are the strongholds of a territory.
-    const vl = verbLevels.get(node.id) ?? 0;
+    if (vl > 0 && !inspect) {
+      const glow = ctx.createRadialGradient(x, y, r, x, y, r + 6 + vl * 2.5);
+      glow.addColorStop(0, `rgba(251, 191, 36, ${0.15 + 0.05 * vl})`);
+      glow.addColorStop(1, 'rgba(251, 191, 36, 0)');
+      ctx.beginPath();
+      ctx.arc(x, y, r + 6 + vl * 2.5, 0, 2 * Math.PI);
+      ctx.fillStyle = glow;
+      ctx.fill();
+    }
     for (let i = 0; i < vl; i++) {
       ctx.beginPath();
       ctx.arc(x, y, r + 2.5 + i * 1.8, 0, 2 * Math.PI);
@@ -581,6 +689,11 @@ export default function GraphView({
     shapePath(ctx, shape, x, y, r);
     ctx.fillStyle = BAND_COLOR[band];
     ctx.fill();
+    if (vl > 0) {
+      ctx.strokeStyle = vl >= TENSES.length ? '#fde047' : 'rgba(251, 191, 36, 0.95)';
+      ctx.lineWidth = 1 + vl * 0.25;
+      ctx.stroke();
+    }
     if (band === 'dashed' || band === 'cracked') {
       ctx.setLineDash([2, 1.5]);
       ctx.strokeStyle = band === 'cracked' ? '#fecaca' : '#fde68a';
@@ -603,6 +716,22 @@ export default function GraphView({
     const name = shownName(node.id);
     if (name) {
       label(Math.max(0.35, h), name);
+      const fontSize = Math.max(3, 11 / scale);
+      let below = y + r + 2.5 + fontSize * 1.1;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      if (vl > 0 && scale > 0.5) {
+        // The verb's rank: stars and the tense it has reached.
+        ctx.font = `bold ${fontSize * 0.8}px sans-serif`;
+        ctx.fillStyle = 'rgba(251, 191, 36, 0.95)';
+        ctx.fillText(`${'★'.repeat(vl)} ${TENSES[vl - 1]}`, x, below);
+        below += fontSize;
+      }
+      if (node.word.root && scale > 1.3 && h >= FULL_NAME) {
+        ctx.font = `italic ${fontSize * 0.8}px serif`;
+        ctx.fillStyle = 'rgba(249, 168, 212, 0.75)';
+        ctx.fillText(`‹ ${node.word.root}`, x, below);
+      }
     } else {
       // Faded out completely: the word must be recalled to see it again.
       ctx.fillStyle = '#f8fafc';
@@ -667,6 +796,35 @@ export default function GraphView({
     data.states.get(endId(l.source)) === 'conquered' &&
     data.states.get(endId(l.target)) === 'conquered';
 
+  /** Push running from a won word into a ghost beyond the horizon: [from, to, push]. */
+  const pushFlow = (l: L): [N, N, number] | null => {
+    if (inspect || l.category || l.descends) return null;
+    const a = l.source as N;
+    const b = l.target as N;
+    if (typeof a !== 'object' || typeof b !== 'object') return null;
+    if (pushes.has(a.id) && sighted.has(b.id)) return [a, b, pushes.get(a.id)!];
+    if (pushes.has(b.id) && sighted.has(a.id)) return [b, a, pushes.get(b.id)!];
+    return null;
+  };
+
+  const drawPush = (ctx: CanvasRenderingContext2D, l: L) => {
+    const f = pushFlow(l);
+    if (!f) return;
+    const [a, b, push] = f;
+    if (a.x === undefined || b.x === undefined) return;
+    ctx.save();
+    ctx.setLineDash([2, 6]);
+    ctx.lineDashOffset = -Date.now() / 45; // flows towards the ghost
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = `rgba(125, 211, 252, ${0.35 + 0.35 * Math.min(1, push)})`;
+    ctx.lineWidth = 0.8 + 1.6 * Math.min(1.5, push);
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y!);
+    ctx.lineTo(b.x, b.y!);
+    ctx.stroke();
+    ctx.restore();
+  };
+
   const drawEnergy = (ctx: CanvasRenderingContext2D, l: L) => {
     const a = l.source as N;
     const b = l.target as N;
@@ -677,7 +835,7 @@ export default function GraphView({
     ctx.lineDashOffset = -Date.now() / 60; // flows along the link
     ctx.lineCap = 'round';
     ctx.strokeStyle = `rgba(167, 243, 208, ${0.25 + 0.55 * strength * l.weight})`;
-    ctx.lineWidth = 0.6 + 2.5 * l.weight * strength;
+    ctx.lineWidth = 0.6 + 3 * weightRank(l.weight) ** 2 * strength;
     ctx.beginPath();
     ctx.moveTo(a.x, a.y!);
     ctx.lineTo(b.x, b.y!);
@@ -749,7 +907,10 @@ export default function GraphView({
             vl === undefined
               ? ''
               : ` · verb level ${vl}/${TENSES.length}${vl < TENSES.length ? ` (next: ${TENSES[vl]})` : ''}`;
-          return `${n.word.it} = ${n.word.en}${pct}${str}${verb} · ${hint}`;
+          const ety = n.word.root
+            ? ` · from ${n.word.root_lang ?? ''} ${n.word.root}${n.word.cognate ? ` (cf. ${n.word.cognate})` : ''}`
+            : '';
+          return `${n.word.it} = ${n.word.en}${pct}${str}${verb}${ety} · ${hint}`;
         }}
         linkColor={(l) =>
           l.flow === 'attack'
@@ -757,7 +918,8 @@ export default function GraphView({
             : `rgba(${REASON_RGB[l.reason]}, ${linkAlpha(l)})`
         }
         // Strong links are much thicker (and carry more influence).
-        linkWidth={(l) => 0.3 + 5 * l.weight ** 2 + (touchesActive(l) ? 1 : 0)}
+        // By rank: the closest pairs (ghiaccio-gelato) stand out from mere same-theme ones.
+        linkWidth={(l) => 0.3 + 5 * weightRank(l.weight) ** 2.5 + (touchesActive(l) ? 1 : 0)}
         linkLineDash={(l) =>
           isWeakBridge(l) || (l.descends && hidden(endId(l.target))) ? [3, 3] : null
         }
@@ -770,8 +932,8 @@ export default function GraphView({
           l.flow === 'attack' ? 0.004 + 0.01 * l.weight : 0.003 + 0.003 * l.weight
         }
         linkDirectionalParticleCanvasObject={(px, py, l, ctx) => drawChevron(ctx, px, py, l)}
-        linkCanvasObjectMode={(l) => (isEnergy(l) ? 'after' : undefined)}
-        linkCanvasObject={(l, ctx) => drawEnergy(ctx, l)}
+        linkCanvasObjectMode={(l) => (isEnergy(l) || pushFlow(l) ? 'after' : undefined)}
+        linkCanvasObject={(l, ctx) => (isEnergy(l) ? drawEnergy(ctx, l) : drawPush(ctx, l))}
         onRenderFramePre={(ctx, scale) => drawRegions(ctx, scale, livePoints())}
         onRenderFramePost={(ctx) => {
           pointers.current = drawPointers(
@@ -933,6 +1095,35 @@ function drawPointers(
 }
 
 function Legend() {
+  const [open, setOpen] = useState(() => {
+    try {
+      return localStorage.getItem('sprawl.legend') !== 'closed';
+    } catch {
+      return true;
+    }
+  });
+  const toggle = () => {
+    setOpen(!open);
+    try {
+      localStorage.setItem('sprawl.legend', open ? 'closed' : 'open');
+    } catch {
+      // private mode: just not remembered
+    }
+  };
+  if (!open) {
+    return (
+      <button
+        onClick={toggle}
+        className="absolute bottom-3 left-3 rounded bg-slate-900/85 px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-800"
+      >
+        Legend ▴
+      </button>
+    );
+  }
+  return <LegendBody onClose={toggle} />;
+}
+
+function LegendBody({ onClose }: { onClose: () => void }) {
   const dot = (color: string) => (
     <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: color }} />
   );
@@ -945,6 +1136,13 @@ function Legend() {
   const item = 'flex items-center gap-1';
   return (
     <div className="pointer-events-none absolute bottom-3 left-3 flex flex-col gap-1.5 rounded bg-slate-900/85 px-3 py-2 text-xs text-slate-300">
+      <button
+        onClick={onClose}
+        className="pointer-events-auto absolute right-2 top-1 text-slate-500 hover:text-slate-200"
+        title="Hide the legend"
+      >
+        ▾ hide
+      </button>
       <div className="flex gap-3">
         <span className={item}>{dot(BAND_COLOR.solid)}&gt; 90%</span>
         <span className={item}>{dot(BAND_COLOR.faded)}70–90%</span>
@@ -969,6 +1167,8 @@ function Legend() {
         <span className="text-sky-300">◎ ripple / edge arrow: needs you</span>
         <span className="text-slate-300">◯ white ring: next step opens</span>
         <span className="text-slate-400">◌ ghost: in sight, not in reach yet</span>
+        <span className="text-sky-300">┅ blue flow: push towards the horizon</span>
+        <span className="text-amber-300">★ verb tense reached</span>
         <span className="text-pink-300">⬢ shared root</span>
       </div>
       <div className="flex gap-3">
@@ -1155,5 +1355,50 @@ function drawChevron(ctx: CanvasRenderingContext2D, x: number, y: number, l: L) 
   ctx.lineTo(size * 0.6, 0);
   ctx.lineTo(-size * 0.6, size);
   ctx.stroke();
+  ctx.restore();
+}
+
+type BurstKind = 'step' | 'conquer' | 'verb';
+const BURST_MS: Record<BurstKind, number> = { step: 1200, conquer: 1800, verb: 2600 };
+
+/**
+ * Celebration on the map, `p` from 0 to 1: expanding rings for a claim step,
+ * a bigger emerald wave for a conquest, a golden starburst for a verb level.
+ */
+function drawBurst(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  r: number,
+  scale: number,
+  kind: BurstKind,
+  p: number,
+) {
+  const ease = 1 - (1 - p) ** 3;
+  const reach = (kind === 'step' ? 22 : kind === 'conquer' ? 40 : 55) / scale;
+  const rgb = kind === 'verb' ? '251, 191, 36' : '52, 211, 153';
+  ctx.save();
+  for (const lag of kind === 'step' ? [0] : [0, 0.2]) {
+    const q = Math.max(0, (ease - lag) / (1 - lag));
+    ctx.beginPath();
+    ctx.arc(x, y, r + 2 + q * reach, 0, 2 * Math.PI);
+    ctx.strokeStyle = `rgba(${rgb}, ${0.9 * (1 - q)})`;
+    ctx.lineWidth = (kind === 'step' ? 2 : 3) / scale;
+    ctx.stroke();
+  }
+  if (kind === 'verb') {
+    // Rays of light turning outwards.
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * 2 * Math.PI + p * 1.2;
+      const r0 = r + 3 + ease * reach * 0.3;
+      const r1 = r + 3 + ease * reach;
+      ctx.beginPath();
+      ctx.moveTo(x + Math.cos(a) * r0, y + Math.sin(a) * r0);
+      ctx.lineTo(x + Math.cos(a) * r1, y + Math.sin(a) * r1);
+      ctx.strokeStyle = `rgba(253, 224, 71, ${0.9 * (1 - p)})`;
+      ctx.lineWidth = 2 / scale;
+      ctx.stroke();
+    }
+  }
   ctx.restore();
 }

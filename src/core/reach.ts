@@ -26,6 +26,10 @@ export type ReachRules = {
   familiarAt: number;
   /** Extra push per link inside a fully familiar region. */
   familiarBoost: number;
+  /** Push factor per part of speech (missing: 1). Verbs carry a territory. */
+  pos: Record<string, number>;
+  /** Extra push per verb level (tense mastered). */
+  verbLevelBonus: number;
 };
 
 export type ReachInput = {
@@ -36,6 +40,10 @@ export type ReachInput = {
   regionOf: (id: string) => number | undefined;
   seed: string;
   rules: ReachRules;
+  /** Part of speech per word, for `rules.pos`. */
+  posOf?: (id: string) => string | null | undefined;
+  /** Verb level per conjugable verb, for `rules.verbLevelBonus`. */
+  verbLevels?: Map<string, number>;
 };
 
 export function pushOf(input: ReachInput, id: string): number {
@@ -47,7 +55,46 @@ export function pushOf(input: ReachInput, id: string): number {
       : st === 'claimed'
         ? rules.claimedPerStep * claimSteps(claims.get(id))
         : 0;
-  return id === seed ? Math.max(own, rules.home) : own;
+  const pos = input.posOf?.(id)?.toLowerCase() ?? '';
+  const kind = (rules.pos[pos] ?? 1) + rules.verbLevelBonus * (input.verbLevels?.get(id) ?? 0);
+  return id === seed ? Math.max(own * kind, rules.home) : own * kind;
+}
+
+/** Push arriving from `src` at each word it reaches (excluding itself). */
+function pushFrom(
+  input: ReachInput,
+  src: string,
+  step: (from: string, to: string) => number,
+): Map<string, number> {
+  const push = pushOf(input, src);
+  const best = new Map<string, number>();
+  if (push <= 0) return best;
+  // Best path factor to each word at each hop count, up to the decay's length.
+  let layer = new Map<string, number>([[src, 1]]);
+  for (const share of input.rules.decay) {
+    const next = new Map<string, number>();
+    for (const [id, f] of layer) {
+      for (const n of input.neighbours.get(id) ?? []) {
+        if (n === src) continue;
+        const g = f * step(id, n);
+        if (g > (next.get(n) ?? 0)) next.set(n, g);
+      }
+    }
+    for (const [id, g] of next) best.set(id, Math.max(best.get(id) ?? 0, push * share * g));
+    layer = next;
+  }
+  return best;
+}
+
+function stepFactor(input: ReachInput) {
+  const fam = familiarity(input);
+  const { regionOf, rules } = input;
+  return (from: string, to: string) => {
+    const [a, b] = [regionOf(from), regionOf(to)];
+    const f = b === undefined ? 0 : (fam.get(b) ?? 0);
+    if (a === b) return 1 + rules.familiarBoost * f;
+    return Math.min(1, rules.border * (1 + f));
+  };
 }
 
 /** Familiarity 0..1 per region: conquered words there, up to `familiarAt`. */
@@ -62,38 +109,27 @@ export function familiarity(input: ReachInput): Map<number, number> {
 
 /** Reach of every word that some push arrives at (sources included). */
 export function reachMap(input: ReachInput): Map<string, number> {
-  const { neighbours, regionOf, rules } = input;
-  const fam = familiarity(input);
-  const step = (from: string, to: string) => {
-    const [a, b] = [regionOf(from), regionOf(to)];
-    const f = b === undefined ? 0 : (fam.get(b) ?? 0);
-    if (a === b) return 1 + rules.familiarBoost * f;
-    return Math.min(1, rules.border * (1 + f));
-  };
+  const step = stepFactor(input);
   const reach = new Map<string, number>();
   for (const src of input.states.keys()) {
     const push = pushOf(input, src);
     if (push <= 0) continue;
-    // Best path factor to each word at each hop count, up to the decay's length.
-    const best = new Map<string, number>([[src, push]]);
-    let layer = new Map<string, number>([[src, 1]]);
-    for (const share of rules.decay) {
-      const next = new Map<string, number>();
-      for (const [id, f] of layer) {
-        for (const n of neighbours.get(id) ?? []) {
-          if (n === src) continue;
-          const g = f * step(id, n);
-          if (g > (next.get(n) ?? 0)) next.set(n, g);
-        }
-      }
-      for (const [id, g] of next) {
-        if (id !== src) best.set(id, Math.max(best.get(id) ?? 0, push * share * g));
-      }
-      layer = next;
-    }
-    for (const [id, v] of best) reach.set(id, (reach.get(id) ?? 0) + v);
+    reach.set(src, (reach.get(src) ?? 0) + push);
+    for (const [id, v] of pushFrom(input, src, step)) reach.set(id, (reach.get(id) ?? 0) + v);
   }
   return reach;
+}
+
+/** Who pushes `target` and how much, strongest first (for explaining reach). */
+export function reachSources(input: ReachInput, target: string): { id: string; push: number }[] {
+  const step = stepFactor(input);
+  const out: { id: string; push: number }[] = [];
+  for (const src of input.states.keys()) {
+    if (src === target || pushOf(input, src) <= 0) continue;
+    const v = pushFrom(input, src, step).get(target);
+    if (v) out.push({ id: src, push: v });
+  }
+  return out.sort((a, b) => b.push - a.push);
 }
 
 /** Hidden words in reach that can be seen (not conquered yet). */

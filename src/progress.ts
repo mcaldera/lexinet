@@ -1,6 +1,6 @@
 import { REACH, TIER_UNLOCK_FRACTION, VERBS_PER_TIER } from './config';
 import type { Claim } from './core/claim';
-import { reachMap } from './core/reach';
+import { reachMap, type ReachInput } from './core/reach';
 import { tierMap, tierProgress, type TierProgress } from './core/tiers';
 import type { NodeState } from './core/unlock';
 import { TENSES, verbLevel, type TenseCard } from './core/verbs';
@@ -30,21 +30,28 @@ export function computeProgress(
   });
 }
 
-/** Reach of every word (core/reach.ts), from the current states and claims. */
-export function computeReach(
+/** Everything reach (core/reach.ts) needs, from the current states and claims. */
+export function reachInput(
   nodes: WordNode[],
   neighbours: Map<string, string[]>,
   states: Map<string, NodeState>,
   claims: Map<string, Claim | undefined>,
   seed: string,
-): Map<string, number> {
-  const region = new Map(nodes.map((n) => [n.id, n.region ?? undefined]));
-  return reachMap({
+  levels?: Map<string, number>,
+): ReachInput {
+  const byId = new Map(nodes.map((n) => [n.id, n]));
+  return {
     states,
     claims,
     neighbours,
-    regionOf: (id) => region.get(id),
+    regionOf: (id) => byId.get(id)?.region ?? undefined,
+    posOf: (id) => byId.get(id)?.pos,
+    verbLevels: levels,
     seed,
     rules: REACH,
-  });
+  };
 }
+
+/** Reach of every word (core/reach.ts). */
+export const computeReach = (...args: Parameters<typeof reachInput>) =>
+  reachMap(reachInput(...args));

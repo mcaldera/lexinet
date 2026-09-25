@@ -21,6 +21,10 @@ type Props = {
   graceHours?: number;
   /** Hidden while this word is being quizzed (it would give the answer away). */
   showEtymology: boolean;
+  /** Hidden or "?" words: their reach and who pushes them (names as the player may see them). */
+  reach?: { value: number; sources: { name: string; push: number }[] };
+  /** Won words: how hard they push the horizon, and why. */
+  push?: { value: number; why: string };
   /** Claimed words: the step to do next and when it opens (null = complete). */
   claimStep?: ClaimStep | null;
   /** Conquered verbs: level and what the next conjugation step is. */
@@ -42,6 +46,18 @@ export default function NodeDetails(props: Props) {
   const { word, state, name, health, control, influences, nameOf, cohesion, hostile } = props;
   const total = influences.reduce((a, i) => a + i.perDay, 0);
 
+  if (state === 'locked' && props.reach) {
+    return (
+      <div className="rounded-lg border border-sky-500/30 bg-slate-900/60 p-3 text-xs text-slate-300">
+        <div className="mb-1 uppercase tracking-wider text-sky-300/80">Beyond your reach</div>
+        <p>
+          In sight but not yet conquerable. Win words around it: their push adds up and opens it at
+          100%.
+        </p>
+        <ReachBar reach={props.reach} />
+      </div>
+    );
+  }
   if (state === 'frontier') {
     const attacked = influences.length;
     return (
@@ -58,6 +74,7 @@ export default function NodeDetails(props: Props) {
             <b className="text-amber-300">~{Math.max(1, Math.round(props.graceHours ?? 0))} h</b>.
           </p>
         )}
+        {props.reach && <ReachBar reach={props.reach} />}
       </div>
     );
   }
@@ -104,6 +121,7 @@ export default function NodeDetails(props: Props) {
         <p className="mt-2 text-amber-300/90">
           Until conquered, a miss on this word or a neighbour makes it slip back to “?”.
         </p>
+        {props.push && <PushLine push={props.push} />}
       </div>
     );
   }
@@ -161,6 +179,7 @@ export default function NodeDetails(props: Props) {
       <p className="mt-2 text-slate-500">
         Cohesion {cohesion.links.toFixed(1)} · part of a {cohesion.cluster}-word territory
       </p>
+      {props.push && <PushLine push={props.push} />}
       {props.verb && (
         <div className="mt-3 rounded border border-amber-500/30 bg-amber-500/5 p-2">
           <div className="flex items-center justify-between">
@@ -195,5 +214,40 @@ export default function NodeDetails(props: Props) {
       )}
       {props.showEtymology && <Etymology word={word} />}
     </div>
+  );
+}
+
+/** How far a word's reach has come: a bar to 100% (conquerable) and who pushes it. */
+function ReachBar({ reach }: { reach: NonNullable<Props['reach']> }) {
+  const pctOpen = Math.min(100, Math.round(reach.value * 100));
+  return (
+    <div className="mt-2">
+      <div className="flex justify-between text-sky-300">
+        <span>Reach</span>
+        <span>{Math.round(reach.value * 100)}%</span>
+      </div>
+      <div className="mt-0.5 h-1.5 overflow-hidden rounded bg-slate-800">
+        <div className="h-full bg-sky-400" style={{ width: `${pctOpen}%` }} />
+      </div>
+      {reach.sources.length > 0 && (
+        <ul className="mt-1.5 space-y-0.5">
+          {reach.sources.map((s, i) => (
+            <li key={i} className="flex justify-between">
+              <span>{s.name || '?'}</span>
+              <span className="text-sky-300">+{Math.round(s.push * 100)}%</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function PushLine({ push }: { push: NonNullable<Props['push']> }) {
+  return (
+    <p className="mt-2 text-sky-300/90">
+      Pushes the horizon: {Math.round(push.value * 100)}% to its neighbours ({push.why}), half that
+      two links away.
+    </p>
   );
 }

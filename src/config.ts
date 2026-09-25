@@ -40,8 +40,9 @@ export const REACH = {
   /** Share of a word's push arriving 1, 2 and 3 links away. */
   decay: [1, 0.5, 0.1],
   conquered: 1,
-  /** A claimed word pushes this much per finished step (1-2 of 3). */
-  claimedPerStep: 0.25,
+  /** A claimed word pushes this much per finished step (1-2 of 3): enough that
+   * two fresh claims next to a word open it, so the start never stalls. */
+  claimedPerStep: 0.45,
   home: 1,
   /** Reach to see a word (as a ghost) and to be able to conquer it. */
   sight: 0.25,
@@ -52,4 +53,11 @@ export const REACH = {
   familiarAt: 5,
   /** ...and then carries push 50% further per link. */
   familiarBoost: 0.5,
+  /** Verbs carry a territory, nouns hold it, adjectives and adverbs decorate it. */
+  pos: { verb: 1.25, noun: 1, adj: 0.8, adjective: 0.8, adv: 0.8, adverb: 0.8 } as Record<
+    string,
+    number
+  >,
+  /** Each tense a verb masters adds this much push. */
+  verbLevelBonus: 0.15,
 };

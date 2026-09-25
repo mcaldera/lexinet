@@ -14,7 +14,7 @@ import type { Game, GameNode } from '../core/influence';
 import { neighbourMap, type NodeState, type StateChange } from '../core/unlock';
 import { revealChanges } from '../core/reach';
 import { REACH } from '../config';
-import { computeProgress, computeReach } from '../progress';
+import { computeProgress, computeReach, verbLevels } from '../progress';
 import { SCHEMA } from './schema';
 import type { SqlDb, SqlValue } from './types';
 
@@ -171,7 +171,15 @@ export async function syncGraph(db: SqlDb, graph: Graph, now: Date) {
   // Reveal what the territory reaches (new words, changed links, an empty map's seed).
   const gameRow = await db.select<{ value: string }>("SELECT value FROM meta WHERE key = 'game'");
   const claims = new Map([...parseGame(gameRow[0]?.value).nodes].map(([id, g]) => [id, g.claim]));
-  const reach = computeReach(graph.nodes, neighbourMap(graph.edges), states, claims, graph.seed);
+  const levels = verbLevels(graph.nodes, tenseRows.map(toTenseCard), now);
+  const reach = computeReach(
+    graph.nodes,
+    neighbourMap(graph.edges),
+    states,
+    claims,
+    graph.seed,
+    levels,
+  );
   for (const c of revealChanges(states, reach, REACH, allowed)) {
     await db.execute('UPDATE nodes SET state = ? WHERE id = ?', [c.state, c.id]);
   }

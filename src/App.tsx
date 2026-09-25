@@ -1,17 +1,24 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { CLAIM_GAPS, COOLDOWN_MS, INFLUENCE, REACH } from './config';
 import { attentionList, newlyRevealed } from './core/attention';
-import { claimNext, CLAIM_STEP_NAMES, CLAIM_STEPS, unseen, type Claim } from './core/claim';
+import {
+  claimNext,
+  CLAIM_STEP_NAMES,
+  CLAIM_STEPS,
+  claimSteps,
+  unseen,
+  type Claim,
+} from './core/claim';
 import { FULL_NAME, fadedName } from './core/fade';
 import { cohesion, isHostile, neighbourWeights, pressureBreakdown } from './core/influence';
 import { appNow, startOfDay } from './core/clock';
 import { nodeHealth } from './core/health';
 import { buildQueue } from './core/queue';
 import { tierAllows, tierMap, type TierProgress } from './core/tiers';
-import { sightedWords } from './core/reach';
+import { pushOf, reachMap, reachSources, sightedWords } from './core/reach';
 import { neighbourMap } from './core/unlock';
 import { nextDrill, TENSES, type Tense } from './core/verbs';
-import { computeProgress, computeReach, verbLevels as computeVerbLevels } from './progress';
+import { computeProgress, reachInput, verbLevels as computeVerbLevels } from './progress';
 import { cardId, DIRECTIONS, Rating, type Grade } from './core/scheduler';
 import type { NodeState } from './core/unlock';
 import { nextPractice, nodeStrength } from './core/strength';
@@ -41,6 +48,8 @@ export default function App() {
   const [showRoots, setShowRoots] = useState(true);
   const [inspectId, setInspectId] = useState<string>();
   const [levelUp, setLevelUp] = useState<LevelUp | null>(null);
+  /** A verb that just mastered a new tense: celebrated over the map. */
+  const [verbUp, setVerbUp] = useState<{ nodeId: string; level: number } | null>(null);
   /** Node id -> real time (ms) until which it is locked after a wrong answer. */
   const [cooldowns, setCooldowns] = useState<Map<string, number>>(new Map());
   const [notice, setNotice] = useState<string | null>(null);
@@ -102,6 +111,12 @@ export default function App() {
   }, [notice]);
 
   useEffect(() => {
+    if (!verbUp) return;
+    const t = setTimeout(() => setVerbUp(null), 6000);
+    return () => clearTimeout(t);
+  }, [verbUp]);
+
+  useEffect(() => {
     if (!levelUp) return;
     const t = setTimeout(() => setLevelUp(null), 6000);
     return () => clearTimeout(t);
@@ -147,27 +162,6 @@ export default function App() {
   );
   const weights = useMemo(() => neighbourWeights(data?.edges ?? []), [data?.edges]);
   const neighbours = useMemo(() => neighbourMap(data?.edges ?? []), [data?.edges]);
-  // How far the territory pushes: all reach, and the hidden words it lets you see.
-  const reach = useMemo(
-    () =>
-      data
-        ? computeReach(
-            data.nodes,
-            neighbours,
-            data.states,
-            new Map([...data.game.nodes].map(([id, g]) => [id, g.claim])),
-            data.graph.seed,
-          )
-        : new Map<string, number>(),
-    [data, neighbours],
-  );
-  const sighted = useMemo(
-    () =>
-      data && progress
-        ? sightedWords(data.states, reach, REACH, tierAllows(tierMap(data.nodes), progress.tier))
-        : new Map<string, number>(),
-    [data, reach, progress],
-  );
   const hostileSet = useMemo(
     () =>
       new Set(
@@ -187,6 +181,29 @@ export default function App() {
   const verbLevels = useMemo(
     () => (data ? computeVerbLevels(data.nodes, data.tenseCards, now) : new Map<string, number>()),
     [data, now],
+  );
+  // How far the territory pushes: all reach, and the hidden words it lets you see.
+  const reachIn = useMemo(
+    () =>
+      data
+        ? reachInput(
+            data.nodes,
+            neighbours,
+            data.states,
+            new Map([...data.game.nodes].map(([id, g]) => [id, g.claim])),
+            data.graph.seed,
+            verbLevels,
+          )
+        : null,
+    [data, neighbours, verbLevels],
+  );
+  const reach = useMemo(() => (reachIn ? reachMap(reachIn) : new Map<string, number>()), [reachIn]);
+  const sighted = useMemo(
+    () =>
+      data && progress
+        ? sightedWords(data.states, reach, REACH, tierAllows(tierMap(data.nodes), progress.tier))
+        : new Map<string, number>(),
+    [data, reach, progress],
   );
 
   const queue = useMemo(() => {
@@ -291,6 +308,35 @@ export default function App() {
 
   const wordOf = (id: string) => data.nodes.find((n) => n.id === id)?.it ?? id;
 
+  // Push (core/reach.ts): how hard each won word pushes, and who pushes the selected word.
+  const pushes = new Map(
+    [...data.states]
+      .filter(([, st]) => st !== 'locked')
+      .map(([id]) => [id, reachIn ? pushOf(reachIn, id) : 0] as const)
+      .filter(([, v]) => v > 0),
+  );
+  const pushWhy = (id: string) => {
+    const w = data.nodes.find((n) => n.id === id);
+    const parts: string[] = [];
+    if (data.states.get(id) === 'claimed') {
+      parts.push(`claimed, ${claimSteps(claims.get(id))}/${CLAIM_STEPS} steps`);
+    }
+    const factor = REACH.pos[w?.pos?.toLowerCase() ?? ''];
+    if (factor && factor !== 1) parts.push(`${w?.pos} ×${factor}`);
+    const vl = verbLevels.get(id) ?? 0;
+    if (vl)
+      parts.push(
+        `${vl} ${vl === 1 ? 'tense' : 'tenses'} +${Math.round(vl * REACH.verbLevelBonus * 100)}%`,
+      );
+    if (id === data.graph.seed) parts.push('your home');
+    return parts.join(', ') || 'conquered';
+  };
+  const detailsState = detailsWord ? data.states.get(detailsWord.id) : undefined;
+  const detailsReach =
+    detailsWord && reachIn && (sighted.has(detailsWord.id) || detailsState === 'frontier')
+      ? reachSources(reachIn, detailsWord.id).slice(0, 6)
+      : null;
+
   const onRate = async (row: CardRow, grade: Grade) => {
     const firstSight = unseen(cardsByNode.get(row.nodeId) ?? []);
     const outcome = await review(row, grade);
@@ -314,6 +360,10 @@ export default function App() {
       setNotice(`${wordOf(row.nodeId)} is conquered: it holds its ground now.`);
     else if (outcome.claim)
       setNotice(claimNotice(outcome.claim, appNow(data.offsetDays).getTime()));
+    if (outcome.opened && !outcome.levelUp) {
+      const opened = `Your push opened ${outcome.opened} new ${outcome.opened === 1 ? 'word' : 'words'}.`;
+      setNotice((n) => (n ? `${n} ${opened}` : opened));
+    }
     setSession((s) => {
       if (!s) return s;
       const rest = s.cardIds.filter((id) => id !== row.id);
@@ -533,6 +583,7 @@ export default function App() {
               </div>
             </div>
           )}
+          {verbUp && !levelUp && <VerbUpBanner word={wordOf(verbUp.nodeId)} level={verbUp.level} />}
           <GraphView
             data={data}
             health={health}
@@ -545,6 +596,10 @@ export default function App() {
             claims={claims}
             claimWaits={claimWaits}
             sighted={sighted}
+            pushes={pushes}
+            pushSources={
+              detailsReach ? new Map(detailsReach.map((r) => [r.id, r.push])) : undefined
+            }
             attention={attention}
             answerId={answerId}
             graceUntil={
@@ -616,9 +671,7 @@ export default function App() {
                         `Missed a form: ${wordOf(nodeId)} is locked for ${COOLDOWN_MS / 1000} s.`,
                       );
                     } else if (kind === 'learn') {
-                      setNotice(
-                        `${wordOf(nodeId)} reached verb level ${TENSES.indexOf(tense) + 1}: ${tense}!`,
-                      );
+                      setVerbUp({ nodeId, level: TENSES.indexOf(tense) + 1 });
                     }
                   }}
                 />
@@ -696,6 +749,19 @@ export default function App() {
               }
               nowMs={appNow(data.offsetDays).getTime()}
               claimStep={claimNext(data.game.nodes.get(detailsWord.id)?.claim, CLAIM_GAPS)}
+              reach={
+                detailsReach
+                  ? {
+                      value: reach.get(detailsWord.id) ?? 0,
+                      sources: detailsReach.map((r) => ({ name: nameOf(r.id), push: r.push })),
+                    }
+                  : undefined
+              }
+              push={
+                pushes.has(detailsWord.id)
+                  ? { value: pushes.get(detailsWord.id)!, why: pushWhy(detailsWord.id) }
+                  : undefined
+              }
               verb={
                 detailsWord.conjugations && data.states.get(detailsWord.id) === 'conquered'
                   ? {
@@ -708,8 +774,8 @@ export default function App() {
                   : undefined
               }
               onConjugate={() => startConjugate(detailsWord.id)}
+              // Always there for your words, except while one is being asked (a hint).
               showEtymology={
-                (health.get(detailsWord.id) ?? 1) >= FULL_NAME &&
                 session?.nodeId !== detailsWord.id &&
                 current?.nodeId !== detailsWord.id &&
                 info?.nodeId !== detailsWord.id
@@ -741,6 +807,38 @@ function claimNotice(claim: Claim, nowMs: number): string {
   if (wait <= 0) return `${done}Next: ${what}.`;
   const when = wait < 90_000 ? `${Math.ceil(wait / 1000)} s` : `${Math.ceil(wait / 60_000)} min`;
   return `${done}${CLAIM_STEP_NAMES[next.step - 1]} opens in ~${when}: ${what} then. Explore meanwhile; it pulses when ready.`;
+}
+
+/** A verb mastered a new tense: a moment to be proud of. */
+function VerbUpBanner({ word, level }: { word: string; level: number }) {
+  return (
+    <div className="pointer-events-none absolute left-1/2 top-4 z-10 -translate-x-1/2 rounded-xl border-2 border-amber-300/80 bg-gradient-to-b from-amber-500/30 to-amber-900/40 px-6 py-3 text-center shadow-[0_0_40px_rgba(251,191,36,0.45)] backdrop-blur">
+      <div className="text-xs uppercase tracking-[0.2em] text-amber-200/80">Verb level up</div>
+      <div className="text-2xl font-bold text-amber-200">{word}</div>
+      <div className="mt-1 text-sm text-amber-100">
+        {level > 1 ? TENSES[level - 2] : 'infinitive'} →{' '}
+        <b className="text-amber-300">{TENSES[level - 1]}</b>
+      </div>
+      <div className="mt-2 flex justify-center gap-1">
+        {TENSES.map((t, i) => (
+          <span
+            key={t}
+            title={t}
+            className={`whitespace-nowrap rounded px-1.5 py-0.5 text-[10px] ${
+              i < level
+                ? 'bg-amber-400 font-semibold text-slate-900'
+                : 'border border-amber-400/30 text-amber-200/40'
+            }`}
+          >
+            ★ {t}
+          </span>
+        ))}
+      </div>
+      <div className="mt-1.5 text-xs text-amber-100/70">
+        Its push and its hold on the territory grow with every tense.
+      </div>
+    </div>
+  );
 }
 
 function TierBadge({

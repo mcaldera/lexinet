@@ -62,6 +62,8 @@ export type ReviewOutcome = {
   slipped: string[];
   /** Claim progress after a successful answer on a word not yet conquered. */
   claim?: Claim;
+  /** Hidden words the answer's push made conquerable. */
+  opened?: number;
 };
 /** Words lost to hostile pressure in the latest simulation step. */
 export type LostEvent = { at: number; ids: string[] };
@@ -137,7 +139,8 @@ export function useSprawl() {
     (states: Map<string, NodeState>, game: Game, tier: number, t: number) => {
       if (!data) return { changes: [] as StateChange[], game };
       const claims = new Map([...game.nodes].map(([id, g]) => [id, g.claim]));
-      const reach = computeReach(data.nodes, neighbours, states, claims, data.graph.seed);
+      const levels = verbLevels(data.nodes, data.tenseCards, appNow(data.offsetDays));
+      const reach = computeReach(data.nodes, neighbours, states, claims, data.graph.seed, levels);
       const changes = revealChanges(states, reach, REACH, tierAllows(tiers, tier));
       if (!changes.length) return { changes, game };
       const nodes = new Map(game.nodes);
@@ -226,7 +229,7 @@ export function useSprawl() {
           game,
         };
       });
-      return { levelUp, conquered, slipped, claim: claimed };
+      return { levelUp, conquered, slipped, claim: claimed, opened: revealed.changes.length };
     },
     [db, data, neighbours, reveal],
   );
