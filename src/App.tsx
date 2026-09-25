@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { CLAIM_GAPS, COOLDOWN_MS, DANGER_MS, INFLUENCE, REACH } from './config';
 import { dangers } from './core/danger';
 import { attentionList, newlyRevealed } from './core/attention';
@@ -34,6 +34,7 @@ import RootQuiz from './views/RootQuiz';
 import VerbDrill from './views/VerbDrill';
 import WordInfo from './views/WordInfo';
 import WaitCard from './views/WaitCard';
+import { audioSettings, onAudioSettings, resumeOnGesture, setMusic, setSfx, sfx } from './audio';
 import NodeDetails from './views/NodeDetails';
 import VerbGoals, { type VerbGoal } from './views/VerbGoals';
 
@@ -108,6 +109,26 @@ export default function App() {
     return () => clearInterval(t);
   }, [cooldowns, offsetDays]);
 
+  // A soft bell when a claim step opens (not on load).
+  const readyCount = useMemo(
+    () =>
+      data
+        ? [...data.states].filter(
+            ([id, st]) =>
+              st === 'claimed' &&
+              (claimNext(data.game.nodes.get(id)?.claim, CLAIM_GAPS)?.opensAt ?? Infinity) <=
+                now.getTime(),
+          ).length
+        : 0,
+    [data, now],
+  );
+  const prevReady = useRef<number | null>(null);
+  useEffect(() => {
+    if (prevReady.current !== null && readyCount > prevReady.current) sfx('ready');
+    prevReady.current = data ? readyCount : null;
+  }, [readyCount, data]);
+  useEffect(() => resumeOnGesture(), []);
+
   // While a claimed word waits for its next step, count down every second.
   const claiming = !!data && [...data.states.values()].includes('claimed');
   useEffect(() => {
@@ -120,6 +141,7 @@ export default function App() {
     if (!lost || !data) return;
     const names = lost.ids.map((id) => data.nodes.find((n) => n.id === id)?.it ?? id);
     setNotice(`Slipped away: ${names.join(', ')}. Win them back!`);
+    sfx('lost');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lost]);
 
@@ -376,6 +398,18 @@ export default function App() {
     const firstSight = unseen(cardsByNode.get(row.nodeId) ?? []);
     const outcome = await review(row, grade);
     if (outcome.levelUp) setLevelUp(outcome.levelUp);
+    sfx(
+      grade === Rating.Again
+        ? firstSight
+          ? 'learn'
+          : 'miss'
+        : outcome.levelUp
+          ? 'levelUp'
+          : outcome.conquered
+            ? 'conquer'
+            : 'correct',
+    );
+    if (outcome.opened && !outcome.levelUp) setTimeout(() => sfx('reveal'), 450);
     setLastCardId(row.id);
     setTurn((t) => t + 1);
     if (grade === Rating.Again) {
@@ -534,7 +568,7 @@ export default function App() {
         };
   };
 
-  const selectNode = (nodeId: string) => {
+  const openNode = (nodeId: string, wait: (w: NonNullable<typeof waitOn>) => void) => {
     if (inspect) return setInspectId(nodeId);
     setInfo(null);
     setWaitOn(null);
@@ -544,24 +578,24 @@ export default function App() {
     if (hub) {
       const until = cooldowns.get(nodeId);
       if (data.unlockedRoots.has(nodeId) || (until && until > appMs())) {
-        setWaitOn({ nodeId, reason: 'root' });
+        wait({ nodeId, reason: 'root' });
       } else {
         setSession(null);
         setRootQuiz(nodeId);
       }
       return;
     }
-    if (sighted.has(nodeId)) return setWaitOn({ nodeId, reason: 'reach' });
+    if (sighted.has(nodeId)) return wait({ nodeId, reason: 'reach' });
     if (!data.states.has(nodeId) || data.states.get(nodeId) === 'locked') return; // roots, hidden
     const until = cooldowns.get(nodeId);
-    if (until && until > appMs()) return setWaitOn({ nodeId, reason: 'locked' });
+    if (until && until > appMs()) return wait({ nodeId, reason: 'locked' });
     const st = data.states.get(nodeId);
     if (st === 'frontier' || st === 'claimed') {
       // Conquering goes one step at a time (core/claim.ts): recognise, produce, lock in.
       const claim = data.game.nodes.get(nodeId)?.claim;
       const next = claimNext(claim, CLAIM_GAPS);
       if (!next) return;
-      if (next.opensAt > appMs()) return setWaitOn({ nodeId, reason: 'claim' });
+      if (next.opensAt > appMs()) return wait({ nodeId, reason: 'claim' });
       const dir = next.directions[Math.floor(Math.random() * next.directions.length)];
       setSession({ nodeId, cardIds: [cardId(nodeId, dir)], mode: 'conquer' });
       setTurn((t) => t + 1);
@@ -616,6 +650,16 @@ export default function App() {
     setTurn((t) => t + 1);
   };
 
+  /** Click / arrow / jump on a word: a tick, or a dull tap when it can't be opened now. */
+  const selectNode = (nodeId: string) => {
+    let blocked = false;
+    openNode(nodeId, (w) => {
+      blocked = true;
+      setWaitOn(w);
+    });
+    if (!inspect) sfx(blocked ? 'blocked' : 'select');
+  };
+
   return (
     <div className="flex h-full flex-col">
       <header className="flex items-baseline gap-6 whitespace-nowrap border-b border-slate-800 px-4 py-2">
@@ -664,6 +708,7 @@ export default function App() {
         >
           ⬢ Roots {showRoots ? 'on' : 'off'}
         </button>
+        <AudioToggles />
         <button
           onClick={() => setInspect((v) => !v)}
           title="Show every word and link, including ones you haven't unlocked (spoilers)"
@@ -777,6 +822,15 @@ export default function App() {
                     setTurn((t) => t + 1);
                     const lv = await reviewTense(nodeId, tense, grade);
                     if (lv) setLevelUp(lv);
+                    sfx(
+                      grade === Rating.Again
+                        ? 'miss'
+                        : lv
+                          ? 'levelUp'
+                          : kind === 'learn'
+                            ? 'verbUp'
+                            : 'correct',
+                    );
                     if (grade === Rating.Again) {
                       setCooldowns((m) => new Map(m).set(nodeId, appMs() + COOLDOWN_MS));
                       setWaitOn({ nodeId, reason: 'locked', note: 'Missed a form of this verb.' });
@@ -811,12 +865,14 @@ export default function App() {
                     setRootQuiz(null);
                     if (correct) {
                       const n = await unlockRoot(id);
+                      sfx('conquer');
                       setNotice(
                         `Root unlocked${n ? `: ${n} new ${n === 1 ? 'word' : 'words'} to conquer` : ''}.`,
                       );
                     } else {
                       setCooldowns((m) => new Map(m).set(id, appMs() + COOLDOWN_MS));
                       setWaitOn({ nodeId: id, reason: 'root' });
+                      sfx('miss');
                     }
                   }}
                 />
@@ -961,6 +1017,31 @@ function VerbUpBanner({ word, level }: { word: string; level: number }) {
         Its push and its hold on the territory grow with every tense.
       </div>
     </div>
+  );
+}
+
+/** Header switches for music (off by default) and sound effects (on). */
+function AudioToggles() {
+  const a = useSyncExternalStore(onAudioSettings, audioSettings);
+  const cls = (on: boolean) =>
+    `rounded px-2 py-1 text-sm ${on ? 'bg-emerald-900/60 text-emerald-200' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`;
+  return (
+    <span className="flex gap-1">
+      <button
+        className={cls(a.music)}
+        onClick={() => setMusic(!a.music)}
+        title="Calm background music (synthesised)"
+      >
+        ♪ {a.music ? 'on' : 'off'}
+      </button>
+      <button
+        className={cls(a.sfx)}
+        onClick={() => setSfx(!a.sfx)}
+        title="Sounds for clicks, answers and conquests"
+      >
+        {a.sfx ? '🔊' : '🔈'} sfx
+      </button>
+    </span>
   );
 }
 

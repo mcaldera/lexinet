@@ -73,6 +73,7 @@ data/words*.csv ─ pipeline/build_graph.py ─► data/graph*.json ─► app (
 - `InspectPanel`: spoiler view of the whole network.
 - `DebugPanel`: +15 min / +1 day / +7 days, reset.
 - Helpers: `Etymology`, `visuals.ts` (shapes, link colours), `useKeyboardCamera.ts`.
+- `src/audio.ts`: music and sound effects synthesised with Web Audio (no files). Music is a slow D-major ambient loop (pads, sparse pentatonic plucks, reverb), off by default; effects (`sfx('select' | 'correct' | 'conquer' | 'miss' | …)`) are on by default. Header toggles; settings in localStorage `sprawl.audio`. The context starts on the first gesture and suspends in background tabs.
 
 ### Persistence
 
