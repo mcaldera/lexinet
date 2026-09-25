@@ -250,8 +250,15 @@ export default function App() {
 
   // Details panel: the word being worked on, else the last one selected.
   const detailsId =
-    activeDrill?.nodeId ?? session?.nodeId ?? info?.nodeId ?? selectedId ?? current?.nodeId;
+    activeDrill?.nodeId ?? info?.nodeId ?? session?.nodeId ?? selectedId ?? current?.nodeId;
   const detailsWord = data.nodes.find((n) => n.id === detailsId);
+  // The word the side panel is about, in the order the panel picks its card: the
+  // map rings exactly this one (a due card waits while you look at another word).
+  const panelId =
+    (activeDrill && !rootQuiz ? activeDrill.nodeId : undefined) ??
+    (info && !rootQuiz ? info.nodeId : undefined) ??
+    rootQuiz ??
+    current?.nodeId;
   // The word whose Italian name is the answer being asked: hidden everywhere meanwhile.
   const answerId =
     !activeDrill && !info && !rootQuiz && current?.direction === 'en-it'
@@ -601,7 +608,7 @@ export default function App() {
           <GraphView
             data={data}
             health={health}
-            activeId={inspect ? inspectId : (activeDrill?.nodeId ?? current?.nodeId)}
+            activeId={inspect ? inspectId : panelId}
             strength={strength}
             verbLevels={verbLevels}
             control={new Map([...data.game.nodes].map(([id, g]) => [id, g.control]))}

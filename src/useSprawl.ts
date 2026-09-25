@@ -29,6 +29,7 @@ import {
   loadAll,
   migrate,
   resetAll,
+  saveCard,
   saveReview,
   saveGame,
   saveRootUnlock,
@@ -263,7 +264,16 @@ export function useSprawl() {
       game = revealed.game;
       const levelUp: LevelUp | null =
         after > before ? { tier: after, revealed: revealed.opened } : null;
+      // Conquest locks in both directions: the other card (right in step 1 or 2,
+      // still in FSRS learning) graduates too, so the word isn't asked again at once.
+      const other = conquered
+        ? data.cards.find(
+            (c) => c.nodeId === row.nodeId && c.id !== row.id && c.card.state !== State.Review,
+          )
+        : undefined;
+      const graduated = other && { ...other, card: rate(other.card, Rating.Good, at) };
       await saveReview(db, row.id, card, grade, at, changes);
+      if (graduated) await saveCard(db, graduated.id, graduated.card);
       await saveGame(db, game);
       setData((d) => {
         if (!d) return d;
@@ -271,7 +281,9 @@ export function useSprawl() {
         if (!firstReview.has(row.nodeId)) firstReview.set(row.nodeId, at.toISOString());
         return {
           ...d,
-          cards: d.cards.map((c) => (c.id === row.id ? { ...c, card } : c)),
+          cards: d.cards.map((c) =>
+            c.id === row.id ? { ...c, card } : c.id === graduated?.id ? graduated : c,
+          ),
           states: applyChanges(d.states, changes),
           firstReview,
           game,

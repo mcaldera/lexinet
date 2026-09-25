@@ -88,15 +88,7 @@ export default function ReviewView(props: Props) {
   return (
     <div className="rounded-lg border border-slate-800 bg-slate-900 p-4">
       <div className="mb-3 flex justify-between text-xs uppercase tracking-wider text-slate-400">
-        <span>
-          {claimStep
-            ? 'Conquering'
-            : mode === 'practice'
-              ? 'Defending'
-              : mode === 'conquer'
-                ? 'Conquering'
-                : 'Review'}
-        </span>
+        <span>{!current ? 'Review' : claimStep ? 'Conquering' : 'Defending · due for review'}</span>
         <span>
           {dueCount} due ·{' '}
           <span className={newCls}>
@@ -112,7 +104,14 @@ export default function ReviewView(props: Props) {
         </p>
       ) : (
         <>
-          {claimStep && <ClaimSteps step={claimStep.step} />}
+          {claimStep ? (
+            <ClaimSteps step={claimStep.step} />
+          ) : (
+            <p className="mb-2 text-xs text-slate-400">
+              Already yours. Your memory of it is due for a check: recall it to keep it strong (and
+              its territory held).
+            </p>
+          )}
           <div className="mb-1 flex gap-2 text-xs text-slate-500">
             <span>{toItalian ? 'English → Italian' : 'Italian → English'}</span>
             {word.pos && <span>{word.pos}</span>}

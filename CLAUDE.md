@@ -63,7 +63,7 @@ data/words*.csv ─ pipeline/build_graph.py ─► data/graph*.json ─► app (
 
 ### src/views
 
-- `GraphView`: the canvas. Nodes, links, chevron particles, energy bands, cohesion glow, metaball territories (`drawRegions`), keyboard cursor, attention ripples, edge arrows to off-screen attention words (`drawPointers`, clickable) and the jump bar.
+- `GraphView`: the canvas. The white ring (`activeId`) is always the word the side panel is about (`panelId` in App: verb drill > word card > root quiz > review card); the dashed yellow ring is the keyboard cursor when it differs. Nodes, links, chevron particles, energy bands, cohesion glow, metaball territories (`drawRegions`), keyboard cursor, attention ripples, edge arrows to off-screen attention words (`drawPointers`, clickable) and the jump bar.
 - `ReviewView`: the typed card, with the claim step indicator while conquering.
 - `VerbDrill`, `RootQuiz`: conjugation drill and root unlock quiz.
 - `WordInfo`: card for a solid conquered word.
@@ -89,7 +89,7 @@ data/words*.csv ─ pipeline/build_graph.py ─► data/graph*.json ─► app (
 - **Names are earned:** a word's Italian name appears on the map only once it is conquered. It is also hidden (map, tooltip, status panel) while it is the answer being asked. Claimed words show "?" with a 3-segment ring.
 - **Attention:** ready claim steps (green), threats (red) and newly revealed words (light blue) ripple. Off-screen ones get arrows at the view edge, and the top-right jump bar or `N` cycles through them. A due card for an off-screen word pans the camera to it.
 - **Misses:** a real miss locks the word for 60 s (app time) and makes it hostile; a claimed word falls back to "?". Its claimed neighbours are **in danger** for 3 min (rose ring with countdown, rose link, top of the attention list): winning the missed word back (or answering the endangered word) saves them, otherwise they fall. The horizon then recedes where reach dropped. Unfinished claims expire after 24 h.
-- **Conquered words:** health = min(FSRS memory, control). They can be practised only when due or threatened (below 90%). Clicking a solid one opens `WordInfo`.
+- **Conquered words:** conquest graduates both FSRS cards (the unanswered direction gets a Good too, unlogged via `saveCard`), so a new conquest isn't asked again at once. Health = min(FSRS memory, control). They can be practised only when due or threatened (below 90%). Clicking a solid one opens `WordInfo`.
 - **Influence:** frontier words turn hostile after 24 h and drain neighbours along links (scaled by link weight). Conquered neighbours and levelled verbs give support. Below 30% control a word rebels; at 0 it's lost (back to hostile frontier). Flows are drawn as red/green chevrons.
 - **Tiers** come from word frequency or a `tier`/`level` column (CEFR names in `graph.params.tier_names`). Verbs also gate tiers; the header tier badge opens the verb list.
 - **Roots** shared by 2+ words are hexagon hubs, sealed until you name the meaning. Unlocking one shows its English cousins and opens all its words.

@@ -239,6 +239,11 @@ export async function loadAll(db: SqlDb, graph: Graph): Promise<AppData> {
   };
 }
 
+/** Store a card's schedule without logging a review (e.g. graduated by a conquest). */
+export async function saveCard(db: SqlDb, id: string, card: Card) {
+  await db.execute('UPDATE cards SET fsrs_json = ? WHERE id = ?', [serializeCard(card), id]);
+}
+
 export async function saveReview(
   db: SqlDb,
   id: string,
