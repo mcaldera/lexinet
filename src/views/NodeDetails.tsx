@@ -31,6 +31,11 @@ type Props = {
   danger?: { until: number; from: string };
   /** A missed word: how many claims it endangers and when the first falls. */
   endangers?: { count: number; until: number };
+  /** Conquered words: links into their category and out of it (score cohesion). */
+  links?: { inside: number; outside: number; category: string };
+  /** Conquered words: open the plant picker (core/plant.ts). */
+  onPlant?: () => void;
+  seeds?: number;
   /** A lost word one right answer wins back: what it was and until when (app ms). */
   reclaim?: { was: 'conquered' | 'claimed'; steps: number; until: number };
   /** App time (ms), for the danger countdowns. */
@@ -221,6 +226,26 @@ export default function NodeDetails(props: Props) {
         Cohesion {cohesion.links.toFixed(1)} · part of a {cohesion.cluster}-word territory
       </p>
       {props.push && <PushLine push={props.push} />}
+      {props.links && (
+        <div className="mt-2 flex items-center justify-between gap-2">
+          <span className="text-slate-400">
+            Links: <b className="text-emerald-300">{props.links.inside} inside</b>{' '}
+            {props.links.category} ·{' '}
+            <b className={props.links.outside > props.links.inside ? 'text-amber-300' : ''}>
+              {props.links.outside} outside
+            </b>
+          </span>
+          {props.onPlant && (
+            <button
+              onClick={props.onPlant}
+              title="Spend seeds to bring a hidden word next to this one"
+              className="shrink-0 rounded bg-emerald-800 px-2 py-1 text-xs text-white hover:bg-emerald-700"
+            >
+              🌱 Plant a word ({props.seeds ?? 0})
+            </button>
+          )}
+        </div>
+      )}
       {props.verb && (
         <div className="mt-3 rounded border border-amber-500/30 bg-amber-500/5 p-2">
           <div className="flex items-center justify-between">

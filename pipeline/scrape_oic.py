@@ -124,7 +124,12 @@ def clean_english(en: str) -> str:
     return re.sub(r"\s+", " ", en)
 
 
+ARTICLES = r"(?:il|lo|la|i|gli|le|l'|un|uno|una|un')"
+
+
 def clean_italian(it: str) -> str:
+    # "il/la responsabile" -> "il responsabile": the slash is between articles only.
+    it = re.sub(rf"^\s*({ARTICLES})\s*/\s*{ARTICLES}\s*", r"\1 ", it.strip(), flags=re.I)
     it = it.split("/")[0].split(",")[0]  # first alternative / singular form
     it = re.sub(r"\([^)]*\)", "", it)
     return re.sub(r"\s+", " ", it).strip(" .;:-–").lower()
@@ -137,6 +142,7 @@ def looks_like_entry(it: str, en: str) -> bool:
     en_words = re.findall(r"[a-zà-ù']+", en.lower())
     return (
         0 < len(it.split()) <= 4
+        and not re.fullmatch(ARTICLES, it)  # a bare article: the noun got lost
         and 0 < len(en.split()) <= 5
         and re.fullmatch(r"[a-zà-ùèéìòù' ]+", it) is not None
         and not re.search(r"\d|…|\.\.\.", en)

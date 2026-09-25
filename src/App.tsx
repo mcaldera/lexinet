@@ -1,5 +1,14 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import { CLAIM_GAPS, COOLDOWN_MS, DANGER_MS, INFLUENCE, REACH, RECLAIM_MS } from './config';
+import {
+  CLAIM_GAPS,
+  COOLDOWN_MS,
+  DANGER_MS,
+  INFLUENCE,
+  PLANT_COST,
+  PLANT_COST_PER_TIER,
+  REACH,
+  RECLAIM_MS,
+} from './config';
 import { dangers } from './core/danger';
 import { reclaimable } from './core/fallen';
 import { attentionList, newlyRevealed } from './core/attention';
@@ -35,6 +44,11 @@ import RootQuiz from './views/RootQuiz';
 import VerbDrill from './views/VerbDrill';
 import WordInfo from './views/WordInfo';
 import WaitCard from './views/WaitCard';
+import ProgressPanel from './views/ProgressPanel';
+import PlantPicker from './views/PlantPicker';
+import { clusterScores, totalScore, wordLinks } from './core/score';
+import { newlyEarned, type Achievement, type Stats } from './core/achievements';
+import { plantOptions } from './core/plant';
 import { audioSettings, onAudioSettings, resumeOnGesture, setMusic, setSfx, sfx } from './audio';
 import NodeDetails from './views/NodeDetails';
 import VerbGoals, { type VerbGoal } from './views/VerbGoals';
@@ -43,8 +57,20 @@ import VerbGoals, { type VerbGoal } from './views/VerbGoals';
 type Session = { nodeId: string; cardIds: string[]; mode: 'conquer' | 'practice' };
 
 export default function App() {
-  const { data, now, error, lost, review, reviewTense, unlockRoot, timeTravel, reset, graphName } =
-    useSprawl();
+  const {
+    data,
+    now,
+    error,
+    lost,
+    review,
+    reviewTense,
+    unlockRoot,
+    earnAchievements,
+    plant,
+    timeTravel,
+    reset,
+    graphName,
+  } = useSprawl();
   const [lastCardId, setLastCardId] = useState<string>();
   const [session, setSession] = useState<Session | null>(null);
   const [turn, setTurn] = useState(0);
@@ -226,6 +252,50 @@ export default function App() {
     () => (data ? computeVerbLevels(data.nodes, data.tenseCards, now) : new Map<string, number>()),
     [data, now],
   );
+
+  // Score (core/score.ts): conquered words per category, weighted by cohesion.
+  const regionOf = useMemo(() => {
+    const m = new Map((data?.nodes ?? []).map((n) => [n.id, n.region ?? undefined]));
+    return (id: string) => m.get(id);
+  }, [data?.nodes]);
+  const clusters = useMemo(
+    () => (data ? clusterScores(data.states, data.edges, regionOf) : []),
+    [data, regionOf],
+  );
+  const score = totalScore(clusters);
+
+  // Achievements: check the milestones whenever progress changes; new ones pay seeds.
+  const [earnedNow, setEarnedNow] = useState<Achievement[]>([]);
+  useEffect(() => {
+    if (!data) return;
+    const regions = data.graph.regions ?? [];
+    const stats: Stats = {
+      conquered: [...data.states.values()].filter((st) => st === 'conquered').length,
+      revealed: [...data.states.values()].filter((st) => st !== 'locked').length,
+      categories: regions.map((r) => ({
+        words: r.words.length,
+        conquered: r.words.filter((w) => data.states.get(w) === 'conquered').length,
+      })),
+      cohesionAt: (n) =>
+        Math.max(0, ...clusters.filter((c) => c.words >= n).map((c) => c.cohesion)),
+      verbLevels: [...verbLevels.values()],
+      score,
+      planted: data.userEdges.length,
+    };
+    const gained = newlyEarned(stats, data.achievements);
+    if (!gained.length) return;
+    void earnAchievements(gained);
+    setEarnedNow(gained);
+    sfx('achievement');
+  }, [data, clusters, verbLevels, score, earnAchievements]);
+  useEffect(() => {
+    if (!earnedNow.length) return;
+    const t = setTimeout(() => setEarnedNow([]), 6000);
+    return () => clearTimeout(t);
+  }, [earnedNow]);
+  const [showProgress, setShowProgress] = useState(false);
+  /** Conquered word whose plant picker is open. */
+  const [planting, setPlanting] = useState<string | null>(null);
   // How far the territory pushes: all reach, and the hidden words it lets you see.
   const reachIn = useMemo(
     () =>
@@ -292,6 +362,7 @@ export default function App() {
 
   // Details panel: the word being worked on, else the last one selected.
   const detailsId =
+    planting ??
     waitOn?.nodeId ??
     activeDrill?.nodeId ??
     info?.nodeId ??
@@ -302,6 +373,7 @@ export default function App() {
   // The word the side panel is about, in the order the panel picks its card: the
   // map rings exactly this one (a due card waits while you look at another word).
   const panelId =
+    planting ??
     waitOn?.nodeId ??
     (activeDrill && !rootQuiz ? activeDrill.nodeId : undefined) ??
     (info && !rootQuiz ? info.nodeId : undefined) ??
@@ -389,6 +461,24 @@ export default function App() {
   const avg = hs.length ? hs.reduce((a, b) => a + b, 0) / hs.length : null;
 
   const wordOf = (id: string) => data.nodes.find((n) => n.id === id)?.it ?? id;
+  const regionName = (r: number | undefined) =>
+    data.graph.regions?.find((g) => g.id === r)?.name ?? 'no category';
+  const tierName = (t: number | undefined) =>
+    data.graph.params?.tier_names?.[String(t ?? 1)] ?? `tier ${t ?? 1}`;
+  /** What can be planted next to a conquered word (core/plant.ts). */
+  const plantChoices = (anchor: string) =>
+    plantOptions({
+      anchor,
+      candidates: data.graph.candidates?.[anchor] ?? [],
+      nodes: data.nodes,
+      states: data.states,
+      neighbours,
+      openTier: progress?.tier ?? 1,
+      cost: { base: PLANT_COST, perTierAhead: PLANT_COST_PER_TIER },
+    }).map((o) => {
+      const word = data.nodes.find((n) => n.id === o.id)!;
+      return { ...o, word, category: regionName(word.region), level: tierName(word.tier) };
+    });
 
   // Push (core/reach.ts): how hard each won word pushes, and who pushes the selected word.
   const pushes = new Map(
@@ -604,6 +694,7 @@ export default function App() {
     if (inspect) return setInspectId(nodeId);
     setInfo(null);
     setWaitOn(null);
+    setPlanting(null);
     setSelectedId(nodeId);
     if (fresh.has(nodeId)) setFresh((f) => new Set([...f].filter((id) => id !== nodeId)));
     const hub = data.graph.roots?.find((r) => r.id === nodeId);
@@ -694,7 +785,7 @@ export default function App() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex items-baseline gap-6 whitespace-nowrap border-b border-slate-800 px-4 py-2">
+      <header className="flex flex-wrap items-baseline gap-x-6 gap-y-1 border-b border-slate-800 px-4 py-2">
         <h1 className="text-lg font-semibold tracking-wide text-emerald-400">Sprawl</h1>
         <span className="text-sm text-slate-400">
           {conquered}/{data.nodes.length} conquered · {claimed > 0 && `${claimed} claimed · `}
@@ -740,6 +831,17 @@ export default function App() {
         >
           ⬢ Roots {showRoots ? 'on' : 'off'}
         </button>
+        <button
+          onClick={() => setShowProgress((v) => !v)}
+          title="Score, achievements and seeds"
+          className={`rounded px-2 py-1 text-sm ${
+            showProgress
+              ? 'bg-amber-700/60 text-amber-100'
+              : 'bg-slate-800 text-amber-300 hover:bg-slate-700'
+          }`}
+        >
+          🏆 {score.toLocaleString()} · 🌱 {data.seeds}
+        </button>
         <AudioToggles />
         <button
           onClick={() => setInspect((v) => !v)}
@@ -766,6 +868,7 @@ export default function App() {
             </div>
           )}
           {verbUp && !levelUp && <VerbUpBanner word={wordOf(verbUp.nodeId)} level={verbUp.level} />}
+          {earnedNow.length > 0 && !levelUp && !verbUp && <AchievementBanner earned={earnedNow} />}
           <GraphView
             data={data}
             health={health}
@@ -801,6 +904,16 @@ export default function App() {
           />
         </section>
         <aside className="flex w-96 flex-col gap-4 overflow-y-auto border-l border-slate-800 p-4">
+          {showProgress && !inspect && (
+            <ProgressPanel
+              score={score}
+              clusters={clusters}
+              regionName={regionName}
+              achievements={data.achievements}
+              seeds={data.seeds}
+              onClose={() => setShowProgress(false)}
+            />
+          )}
           {showVerbGoals && progress && progress.verbsNeed > 0 && !inspect && (
             <VerbGoals
               goals={verbGoals}
@@ -830,7 +943,28 @@ export default function App() {
                   {notice}
                 </div>
               )}
-              {waitOn ? (
+              {planting && data.states.get(planting) === 'conquered' ? (
+                <PlantPicker
+                  key={planting}
+                  anchorName={wordOf(planting)}
+                  anchorCategory={regionName(regionOf(planting))}
+                  options={plantChoices(planting)}
+                  seeds={data.seeds}
+                  onClose={() => setPlanting(null)}
+                  onPlant={async (o) => {
+                    const anchor = planting;
+                    if (!(await plant(anchor, o))) return;
+                    setPlanting(null);
+                    sfx('plant');
+                    const w = data.nodes.find((n) => n.id === o.id);
+                    setNotice(
+                      `Planted “${w?.en}” next to ${wordOf(anchor)}. Conquer it to ${
+                        o.sameCategory ? `tighten ${regionName(regionOf(anchor))}` : 'claim it'
+                      }.`,
+                    );
+                  }}
+                />
+              ) : waitOn ? (
                 <WaitCard
                   key={`${waitOn.nodeId}:${waitOn.reason}`}
                   {...waitCard(waitOn)}
@@ -959,6 +1093,25 @@ export default function App() {
               nowMs={appNow(data.offsetDays).getTime()}
               claimStep={claimNext(data.game.nodes.get(detailsWord.id)?.claim, CLAIM_GAPS)}
               danger={dangerMap.get(detailsWord.id)}
+              links={
+                data.states.get(detailsWord.id) === 'conquered'
+                  ? {
+                      ...wordLinks(detailsWord.id, data.edges, regionOf),
+                      category: regionName(regionOf(detailsWord.id)),
+                    }
+                  : undefined
+              }
+              onPlant={
+                data.states.get(detailsWord.id) === 'conquered' && planting !== detailsWord.id
+                  ? () => {
+                      setWaitOn(null);
+                      setInfo(null);
+                      setPlanting(detailsWord.id);
+                      sfx('select');
+                    }
+                  : undefined
+              }
+              seeds={data.seeds}
               reclaim={reclaimMap.get(detailsWord.id)}
               endangers={(() => {
                 const ds = [...dangerMap.values()].filter((d) => d.from === detailsWord.id);
@@ -1082,6 +1235,28 @@ function AudioToggles() {
         {a.sfx ? '🔊' : '🔈'} sfx
       </button>
     </span>
+  );
+}
+
+/** Newly earned achievements, celebrated over the map. */
+function AchievementBanner({ earned }: { earned: Achievement[] }) {
+  const seeds = earned.reduce((n, a) => n + a.seeds, 0);
+  return (
+    <div className="pointer-events-none absolute left-1/2 top-4 z-10 -translate-x-1/2 rounded-xl border-2 border-amber-300/70 bg-slate-900/90 px-6 py-3 text-center shadow-[0_0_30px_rgba(251,191,36,0.35)] backdrop-blur">
+      <div className="text-xs uppercase tracking-[0.2em] text-amber-200/80">
+        🏆 Achievement{earned.length > 1 ? `s (${earned.length})` : ''} unlocked
+      </div>
+      {earned.slice(0, 4).map((a) => (
+        <div key={a.id} className="mt-1">
+          <span className="text-lg font-bold text-amber-200">{a.title}</span>{' '}
+          <span className="text-sm text-amber-100/70">· {a.description}</span>
+        </div>
+      ))}
+      {earned.length > 4 && (
+        <div className="text-xs text-amber-100/60">and {earned.length - 4} more</div>
+      )}
+      <div className="mt-1 text-sm text-emerald-300">+{seeds} 🌱 seeds</div>
+    </div>
   );
 }
 

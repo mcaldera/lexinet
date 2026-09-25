@@ -848,6 +848,9 @@ export default function GraphView({
           c.morphological,
         )} · root ${tick(c.etymological)} · theme ${tick(c.thematic)}</div>`
       : '';
+    if (l.via === 'user') {
+      return `<b>${shownName(a) || '?'} ↔ ${shownName(b) || '?'}</b><div style="color:rgb(52,211,153)">🌱 planted by you</div>`;
+    }
     const weak = isWeakBridge(l)
       ? '<div style="opacity:.8">weak link: only here to connect two groups</div>'
       : '';
@@ -1012,13 +1015,19 @@ export default function GraphView({
         linkColor={(l) =>
           l.flow === 'attack'
             ? `rgba(248, 113, 113, ${0.35 + 0.3 * Math.sin(Date.now() / 250)})` // pulsing threat
-            : `rgba(${REASON_RGB[l.reason]}, ${linkAlpha(l)})`
+            : l.via === 'user'
+              ? `rgba(52, 211, 153, ${Math.max(0.5, linkAlpha(l))})` // planted by you
+              : `rgba(${REASON_RGB[l.reason]}, ${linkAlpha(l)})`
         }
         // Strong links are much thicker (and carry more influence).
         // By rank: the closest pairs (ghiaccio-gelato) stand out from mere same-theme ones.
         linkWidth={(l) => 0.3 + 5 * weightRank(l.weight) ** 2.5 + (touchesActive(l) ? 1 : 0)}
         linkLineDash={(l) =>
-          isWeakBridge(l) || (l.descends && hidden(endId(l.target))) ? [3, 3] : null
+          l.via === 'user'
+            ? [5, 2, 1, 2]
+            : isWeakBridge(l) || (l.descends && hidden(endId(l.target)))
+              ? [3, 3]
+              : null
         }
         linkHoverPrecision={6}
         linkVisibility={(l) => !l.category}
@@ -1271,6 +1280,7 @@ function LegendBody({ onClose }: { onClose: () => void }) {
         <span className="text-sky-300">┅ blue flow: push towards the horizon</span>
         <span className="text-rose-300">! rose ring: claim in danger after a miss</span>
         <span className="text-teal-300">↺ teal ring: lost, one answer wins it back</span>
+        <span className="text-emerald-300">-·- green link: planted by you</span>
         <span className="text-amber-300">★ verb tense reached</span>
         <span className="text-pink-300">⬢ shared root</span>
       </div>

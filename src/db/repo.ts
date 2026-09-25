@@ -50,8 +50,11 @@ export type Edge = {
   reason: EdgeReason;
   components?: Components;
   /** tree: needed to keep the graph connected; bonus: one of a word's top partners. */
-  /** theme: keeps a category in one piece (per-category tree or a lenient in-category link). */
-  via?: 'tree' | 'bonus' | 'theme';
+  /**
+   * theme: keeps a category in one piece (per-category tree or a lenient
+   * in-category link). user: planted by the player (stored in meta, not the graph).
+   */
+  via?: 'tree' | 'bonus' | 'theme' | 'user';
 };
 /** A root shared by 2+ words, drawn as a hub node linked to its descendants. */
 export type RootHub = {
@@ -106,6 +109,12 @@ export type AppData = {
   unlockedRoots: Set<string>;
   /** Influence game: control per conquered word, hostility of frontier words. */
   game: Game;
+  /** Achievement id -> app time (ms) it was earned (core/achievements.ts). */
+  achievements: Record<string, number>;
+  /** Seeds to spend on planting words (core/plant.ts). */
+  seeds: number;
+  /** Links the player planted; also merged into `edges`. */
+  userEdges: Edge[];
 };
 
 async function insertMany(
@@ -224,10 +233,16 @@ export async function loadAll(db: SqlDb, graph: Graph): Promise<AppData> {
     "SELECT value FROM meta WHERE key = 'unlocked_roots'",
   );
   const gameRow = await db.select<{ value: string }>("SELECT value FROM meta WHERE key = 'game'");
+  const userEdges = (await loadMeta<Edge[]>(db, 'user_edges', [])).filter(
+    (e) => ids.has(e.source) && ids.has(e.target),
+  );
   return {
     graph,
     nodes: graph.nodes,
-    edges: graph.edges,
+    edges: [...graph.edges, ...userEdges],
+    userEdges,
+    achievements: await loadMeta<Record<string, number>>(db, 'achievements', {}),
+    seeds: await loadMeta<number>(db, 'seeds', 0),
     cards: cards.map((c) => ({
       id: c.id,
       nodeId: c.node_id,
@@ -285,6 +300,19 @@ export async function saveGame(db: SqlDb, game: Game, changes: StateChange[] = [
 }
 
 /** Mark a root as unlocked and reveal its words (state changes computed by the caller). */
+async function loadMeta<T>(db: SqlDb, key: string, fallback: T): Promise<T> {
+  const rows = await db.select<{ value: string }>('SELECT value FROM meta WHERE key = ?', [key]);
+  return rows.length ? (JSON.parse(rows[0].value) as T) : fallback;
+}
+
+/** Store one JSON value under a meta key (achievements, seeds, planted links). */
+export async function saveMeta(db: SqlDb, key: string, value: unknown) {
+  await db.execute(
+    'INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value',
+    [key, JSON.stringify(value)],
+  );
+}
+
 export async function saveRootUnlock(db: SqlDb, unlocked: Set<string>, changes: StateChange[]) {
   await db.execute(
     "INSERT INTO meta (key, value) VALUES ('unlocked_roots', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",

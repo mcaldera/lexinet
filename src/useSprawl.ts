@@ -5,7 +5,17 @@ import { tierAllows, tierMap } from './core/tiers';
 import { tenseCardId, type Tense, type TenseCard } from './core/verbs';
 import { computeProgress, computeReach, verbLevels } from './progress';
 import { afterAnswer, isHostile, neighbourWeights, simulate, type Game } from './core/influence';
-import { CLAIM_EXPIRY_MS, CLAIM_GAPS, DANGER_MS, INFLUENCE, REACH, RECLAIM_MS } from './config';
+import {
+  CLAIM_EXPIRY_MS,
+  CLAIM_GAPS,
+  DANGER_MS,
+  INFLUENCE,
+  REACH,
+  RECLAIM_MS,
+  SEEDS_PER_CONQUEST,
+} from './config';
+import type { Achievement } from './core/achievements';
+import type { PlantOption } from './core/plant';
 import { recedeChanges, revealChanges } from './core/reach';
 import { dangerFalls, missed, rescue } from './core/danger';
 import { reclaim, reclaimable, recordFalls, type Fallen } from './core/fallen';
@@ -31,6 +41,7 @@ import {
   migrate,
   resetAll,
   saveCard,
+  saveMeta,
   saveReview,
   saveGame,
   saveRootUnlock,
@@ -39,6 +50,7 @@ import {
   syncGraph,
   type AppData,
   type CardRow,
+  type Edge,
   type Graph,
 } from './db/repo';
 
@@ -289,6 +301,9 @@ export function useSprawl() {
       await saveReview(db, row.id, card, grade, at, changes);
       if (graduated) await saveCard(db, graduated.id, graduated.card);
       await saveGame(db, game);
+      // Every real conquest (not a win-back) earns a seed for planting.
+      const seeds = data.seeds + (conquered && !wasWon ? SEEDS_PER_CONQUEST : 0);
+      if (seeds !== data.seeds) await saveMeta(db, 'seeds', seeds);
       setData((d) => {
         if (!d) return d;
         const firstReview = new Map(d.firstReview);
@@ -301,6 +316,7 @@ export function useSprawl() {
           states: applyChanges(d.states, changes),
           firstReview,
           game,
+          seeds,
         };
       });
       return {
@@ -391,6 +407,62 @@ export function useSprawl() {
     [db, data],
   );
 
+  /** Record newly earned achievements and pay out their seeds. */
+  const earnAchievements = useCallback(
+    async (earned: Achievement[]) => {
+      if (!db || !data || !earned.length) return;
+      const at = appNow(data.offsetDays).getTime();
+      const achievements = { ...data.achievements };
+      for (const a of earned) achievements[a.id] = at;
+      const seeds = data.seeds + earned.reduce((n, a) => n + a.seeds, 0);
+      await saveMeta(db, 'achievements', achievements);
+      await saveMeta(db, 'seeds', seeds);
+      setData((d) => d && { ...d, achievements, seeds });
+    },
+    [db, data],
+  );
+
+  /**
+   * Plant `option` next to the conquered word `anchor` (core/plant.ts): it
+   * becomes a "?" there, joined by your link, for the option's cost in seeds.
+   */
+  const plant = useCallback(
+    async (anchor: string, option: PlantOption): Promise<boolean> => {
+      if (!db || !data || data.seeds < option.cost) return false;
+      const t = appNow(data.offsetDays).getTime();
+      const edge: Edge = {
+        source: anchor,
+        target: option.id,
+        weight: option.weight,
+        reason: option.reason,
+        via: 'user',
+      };
+      const userEdges = option.linked ? data.userEdges : [...data.userEdges, edge];
+      const changes: StateChange[] =
+        data.states.get(option.id) === 'locked' ? [{ id: option.id, state: 'frontier' }] : [];
+      const nodes = new Map(data.game.nodes);
+      for (const c of changes) nodes.set(c.id, { control: 0, since: t }); // grace starts now
+      const game = { ...data.game, nodes };
+      const seeds = data.seeds - option.cost;
+      await saveMeta(db, 'user_edges', userEdges);
+      await saveMeta(db, 'seeds', seeds);
+      await saveGame(db, game, changes);
+      setData(
+        (d) =>
+          d && {
+            ...d,
+            userEdges,
+            edges: option.linked ? d.edges : [...d.edges, edge],
+            seeds,
+            game,
+            states: applyChanges(d.states, changes),
+          },
+      );
+      return true;
+    },
+    [db, data],
+  );
+
   const timeTravel = useCallback(
     async (days: number) => {
       if (!db) return;
@@ -417,6 +489,8 @@ export function useSprawl() {
     review,
     reviewTense,
     unlockRoot,
+    earnAchievements,
+    plant,
     timeTravel,
     reset,
     graphName,

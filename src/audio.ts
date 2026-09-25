@@ -17,7 +17,9 @@ export type Sfx =
   | 'ready'
   | 'lost'
   | 'verbUp'
-  | 'levelUp';
+  | 'levelUp'
+  | 'achievement'
+  | 'plant';
 
 type Settings = { music: boolean; sfx: boolean };
 const KEY = 'sprawl.audio';
@@ -186,6 +188,18 @@ const SFX: Record<Sfx, (g: Graph) => void> = {
     [12, 16, 19, 24].forEach((s) => tone(g, hz(D5 + s), 0.5, 1.4, { vol: 0.06, reverb: 0.6 }));
     for (let i = 0; i < 8; i++)
       tone(g, hz(D5 + 24 + i * 2), 0.5 + i * 0.05, 0.2, { vol: 0.03, reverb: 0.6 });
+  },
+  achievement: (g) => {
+    // A bright "ta-daa": two quick notes, then a sparkling chord.
+    tone(g, hz(D5 + 7), 0, 0.12, { type: 'triangle', vol: 0.1, reverb: 0.3 });
+    tone(g, hz(D5 + 12), 0.1, 0.12, { type: 'triangle', vol: 0.1, reverb: 0.3 });
+    [12, 16, 19, 24].forEach((s) => tone(g, hz(D5 + s), 0.22, 1.1, { vol: 0.06, reverb: 0.6 }));
+    for (let i = 0; i < 6; i++) tone(g, hz(D5 + 24 + i * 3), 0.25 + i * 0.04, 0.15, { vol: 0.025 });
+  },
+  plant: (g) => {
+    // A soft rising "bloop" with a leafy shimmer.
+    tone(g, 300, 0, 0.18, { vol: 0.12, slideTo: 700 });
+    tone(g, hz(D5 + 16), 0.15, 0.6, { vol: 0.05, reverb: 0.5 });
   },
   levelUp: (g) => {
     const phrase = [0, 4, 7, 4, 7, 12];

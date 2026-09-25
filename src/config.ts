@@ -65,3 +65,9 @@ export const REACH = {
   /** Each tense a verb masters adds this much push. */
   verbLevelBonus: 0.15,
 };
+
+/** Seeds: earned per conquest (and from achievements), spent on planting a word. */
+export const SEEDS_PER_CONQUEST = 1;
+export const PLANT_COST = 5;
+/** Planting a word from a later level costs this much more per level ahead. */
+export const PLANT_COST_PER_TIER = 2;
