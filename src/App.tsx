@@ -53,6 +53,7 @@ import { clusterScores, totalScore, wordLinks } from './core/score';
 import { newlyEarned, type Achievement, type Stats } from './core/achievements';
 import { plantOptions } from './core/plant';
 import { resumeOnGesture, sfx } from './audio';
+import { onSpeechProblem } from './speech';
 import NodeDetails from './views/NodeDetails';
 import VerbGoals, { type VerbGoal } from './views/VerbGoals';
 
@@ -174,6 +175,7 @@ export default function App() {
     prevReady.current = data ? readyCount : null;
   }, [readyCount, data]);
   useEffect(() => resumeOnGesture(), []);
+  useEffect(() => onSpeechProblem((m) => setNotice(m)), []);
   // Keep the run list's summary current (menu → Runs).
   const conqueredCount = data
     ? [...data.states.values()].filter((st) => st === 'conquered').length

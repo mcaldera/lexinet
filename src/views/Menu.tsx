@@ -1,7 +1,15 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { audioSettings, onAudioSettings, setMusic, setSfx, setSpeech } from '../audio';
 import { listRuns } from '../runs';
-import { canSpeak } from '../speech';
+import {
+  canSpeak,
+  chosenVoice,
+  italianVoices,
+  onVoices,
+  setVoice,
+  speak,
+  voiceCount,
+} from '../speech';
 import { GRAPH_NAMES, graphLabel } from '../graphs';
 
 type Props = {
@@ -28,6 +36,9 @@ export default function Menu(props: Props) {
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLDivElement>(null);
   const audio = useSyncExternalStore(onAudioSettings, audioSettings);
+  // Chrome loads voices after the page: re-render when they arrive or one is picked.
+  const [, setVoicesSeen] = useState(0);
+  useEffect(() => onVoices(() => setVoicesSeen((n) => n + 1)), []);
   // Read fresh on every render: names and counts change while playing.
   const [, setDeleted] = useState(0);
   const runs = listRuns(props.graphName).runs;
@@ -100,6 +111,7 @@ export default function Menu(props: Props) {
           {toggle('Music', audio.music, setMusic)}
           {toggle('Sounds', audio.sfx, setSfx)}
           {props.speechToggle && canSpeak() && toggle('Say words aloud', audio.speech, setSpeech)}
+          {props.speechToggle && canSpeak() && <VoicePicker />}
           {toggle('Roots', props.showRoots, props.onRoots)}
           {toggle('Whole network', props.inspect, (on) => {
             setOpen(false);
@@ -165,6 +177,49 @@ export default function Menu(props: Props) {
             'text-red-300',
           )}
         </div>
+      )}
+    </div>
+  );
+}
+
+/** Which Italian voice speaks, with a test button; says so when there is none. */
+function VoicePicker() {
+  const voices = italianVoices();
+  const current = chosenVoice();
+  return (
+    <div className="px-2 pb-1.5 text-xs">
+      {voices.length ? (
+        <div className="flex items-center gap-1.5">
+          <select
+            value={current?.name}
+            onChange={(e) => {
+              setVoice(e.target.value);
+              speak('Ciao! Come stai?');
+            }}
+            className="min-w-0 flex-1 rounded bg-slate-800 px-1.5 py-1"
+            title="Voice"
+          >
+            {voices.map((v) => (
+              <option key={v.name} value={v.name}>
+                {v.name}
+                {v.localService ? '' : ' (online)'}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={() => speak('Ciao! Come stai?')}
+            className="rounded bg-slate-800 px-2 py-1 hover:bg-slate-700"
+            title="Test the voice"
+          >
+            🔊
+          </button>
+        </div>
+      ) : (
+        <p className="text-amber-300">
+          {voiceCount()
+            ? 'No Italian voice installed on this system (see “How it works”).'
+            : 'The browser offers no voices yet.'}
+        </p>
       )}
     </div>
   );

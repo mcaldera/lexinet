@@ -57,7 +57,14 @@ export default function Guide({ onClose }: { onClose: () => void }) {
           </p>
           <p>
             Reviews of your words sometimes fill the gap in a sentence. 🔊 says a word aloud (the
-            menu switches automatic pronunciation off).
+            menu switches automatic pronunciation off and picks the voice).
+          </p>
+          <p className="text-xs text-slate-400">
+            Voices come from your system. No Italian voice in the menu? Windows: Settings → Time &
+            language → Speech → Add voices → Italian. macOS: System Settings → Accessibility →
+            Spoken Content → System voice → Manage Voices → Italian. Linux: install
+            speech-dispatcher with espeak-ng. Chrome also offers an online “Google italiano” voice
+            on Windows and macOS. Restart the browser afterwards.
           </p>
           <p>
             Won words push the horizon: words close enough appear as ghosts, then as <b>?</b>. Verbs
