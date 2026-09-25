@@ -202,3 +202,24 @@ def test_verbs_get_conjugation_tables(df):
     by_id = {n["id"]: n for n in graph["nodes"]}
     assert by_id["parlare"]["conjugations"] == table
     assert "conjugations" not in by_id["il-cane"]
+
+
+def test_every_theme_is_one_connected_piece(df):
+    # Themes whose words barely relate by meaning still hang together.
+    g = bg.build_graph(df, fake_embedder, bonus_k=0, bonus_threshold=9.0)
+    theme = {n["id"]: n["theme"] for n in g["nodes"]}
+    for t in set(theme.values()):
+        members = {i for i, th in theme.items() if th == t}
+        adj = {i: set() for i in members}
+        for e in g["edges"]:
+            if e["source"] in members and e["target"] in members:
+                adj[e["source"]].add(e["target"])
+                adj[e["target"]].add(e["source"])
+        start = next(iter(members))
+        seen, stack = {start}, [start]
+        while stack:
+            for y in adj[stack.pop()] - seen:
+                seen.add(y)
+                stack.append(y)
+        assert seen == members, t
+    assert any(e["via"] == "theme" for e in g["edges"])

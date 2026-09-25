@@ -10,6 +10,8 @@
     },
     "bonus_k": 3,
     "bonus_threshold": 0.25,
+    "theme_k": 2,
+    "theme_threshold": 0.3,
     "tiers": 6,
     "tier_names": null
   },
@@ -27,8 +29,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": 125.4,
-      "y": 375.5,
+      "x": 145.7,
+      "y": 294.8,
       "region": 6
     },
     {
@@ -44,8 +46,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": 70.8,
-      "y": 373.3,
+      "x": 197.0,
+      "y": 318.3,
       "region": 6
     },
     {
@@ -111,8 +113,8 @@
           "abbaino"
         ]
       },
-      "x": 87.9,
-      "y": 345.5,
+      "x": 194.4,
+      "y": 284.6,
       "region": 6
     },
     {
@@ -128,8 +130,8 @@
       "cognate_note": "uccello comes from aucellus, \"little bird\"",
       "tier": 5,
       "level": null,
-      "x": 39.9,
-      "y": 377.5,
+      "x": 223.5,
+      "y": 336.8,
       "region": 6
     },
     {
@@ -195,8 +197,8 @@
           "volino"
         ]
       },
-      "x": 1.9,
-      "y": 367.5,
+      "x": 247.8,
+      "y": 369.6,
       "region": 6
     },
     {
@@ -212,8 +214,8 @@
       "cognate_note": "the zodiac sign of the fish",
       "tier": 5,
       "level": null,
-      "x": 14.7,
-      "y": 390.4,
+      "x": 252.2,
+      "y": 342.8,
       "region": 6
     },
     {
@@ -279,8 +281,8 @@
           "nuotino"
         ]
       },
-      "x": -21.0,
-      "y": 384.7,
+      "x": 277.4,
+      "y": 370.4,
       "region": 6
     },
     {
@@ -296,8 +298,8 @@
       "cognate_note": "soldiers on horseback",
       "tier": 4,
       "level": null,
-      "x": 93.7,
-      "y": 393.1,
+      "x": 166.7,
+      "y": 325.9,
       "region": 6
     },
     {
@@ -313,8 +315,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": 140.0,
-      "y": 400.9,
+      "x": 120.3,
+      "y": 311.3,
       "region": 6
     },
     {
@@ -330,8 +332,8 @@
       "cognate_note": "milk sugar",
       "tier": 5,
       "level": null,
-      "x": -86.2,
-      "y": 110.4,
+      "x": -73.1,
+      "y": 204.5,
       "region": 0
     },
     {
@@ -347,8 +349,8 @@
       "cognate_note": "cheese (formaticus) was pressed in a mould",
       "tier": 5,
       "level": null,
-      "x": -64.2,
-      "y": 150.1,
+      "x": -60.0,
+      "y": 158.2,
       "region": 0
     },
     {
@@ -364,8 +366,8 @@
       "cognate_note": "com- \"with\" + panis \"bread\": someone you share bread with",
       "tier": 5,
       "level": null,
-      "x": -56.7,
-      "y": 127.3,
+      "x": -87.3,
+      "y": 159.6,
       "region": 0
     },
     {
@@ -381,8 +383,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": -19.9,
-      "y": 134.4,
+      "x": -21.0,
+      "y": 115.4,
       "region": 0
     },
     {
@@ -448,8 +450,8 @@
           "mangino"
         ]
       },
-      "x": -152.2,
-      "y": 144.0,
+      "x": 26.5,
+      "y": 181.2,
       "region": 0
     },
     {
@@ -465,8 +467,8 @@
       "cognate_note": "the trough animals eat from, via French manger \"to eat\"",
       "tier": 4,
       "level": null,
-      "x": -78.1,
-      "y": 180.0,
+      "x": -55.4,
+      "y": 127.6,
       "region": 0
     },
     {
@@ -532,8 +534,8 @@
           "bevano"
         ]
       },
-      "x": -126.0,
-      "y": 112.0,
+      "x": -17.5,
+      "y": 224.3,
       "region": 0
     },
     {
@@ -549,8 +551,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": -104.9,
-      "y": 124.3,
+      "x": -53.5,
+      "y": 226.3,
       "region": 0
     },
     {
@@ -566,8 +568,8 @@
       "cognate_note": "borrowed into Germanic very early; vine too",
       "tier": 4,
       "level": null,
-      "x": -98.6,
-      "y": 147.4,
+      "x": -41.7,
+      "y": 195.0,
       "region": 0
     },
     {
@@ -583,8 +585,8 @@
       "cognate_note": "Greek mēlopépōn, \"apple-gourd\"",
       "tier": 6,
       "level": null,
-      "x": -56.8,
-      "y": 175.9,
+      "x": -84.0,
+      "y": 131.0,
       "region": 0
     },
     {
@@ -650,8 +652,8 @@
           "cucinino"
         ]
       },
-      "x": 11.7,
-      "y": 154.9,
+      "x": 26.7,
+      "y": 136.7,
       "region": 0
     },
     {
@@ -667,9 +669,9 @@
       "cognate_note": "Latin coquina \"kitchen\" became Old English cycene",
       "tier": 4,
       "level": null,
-      "x": 208.9,
-      "y": 25.0,
-      "region": 3
+      "x": 236.3,
+      "y": -36.4,
+      "region": 2
     },
     {
       "id": "il-cuoco",
@@ -684,8 +686,8 @@
       "cognate_note": "Latin coquus \"cook\" was borrowed into Old English as cōc",
       "tier": 6,
       "level": null,
-      "x": 1.9,
-      "y": 103.3,
+      "x": -17.4,
+      "y": 66.3,
       "region": 0
     },
     {
@@ -701,8 +703,8 @@
       "cognate_note": "a light meal; monks ate one during the evening readings (Collationes)",
       "tier": 4,
       "level": null,
-      "x": -162.7,
-      "y": 178.7,
+      "x": 46.8,
+      "y": 214.8,
       "region": 0
     },
     {
@@ -718,8 +720,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": -115.3,
-      "y": 169.6,
+      "x": -14.6,
+      "y": 175.5,
       "region": 0
     },
     {
@@ -785,8 +787,8 @@
           "cenino"
         ]
       },
-      "x": -193.3,
-      "y": 158.4,
+      "x": 83.7,
+      "y": 196.1,
       "region": 0
     },
     {
@@ -802,9 +804,9 @@
       "cognate_note": "Italian for \"little house\", later a house for gambling",
       "tier": 1,
       "level": null,
-      "x": 164.6,
-      "y": 48.1,
-      "region": 3
+      "x": 218.0,
+      "y": 9.0,
+      "region": 2
     },
     {
       "id": "la-porta",
@@ -819,9 +821,9 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 179.4,
-      "y": 19.1,
-      "region": 3
+      "x": 244.9,
+      "y": -8.2,
+      "region": 2
     },
     {
       "id": "la-finestra",
@@ -836,9 +838,9 @@
       "cognate_note": "de- \"out of\" + fenestra: to throw out of a window",
       "tier": 4,
       "level": null,
-      "x": 233.2,
-      "y": 32.4,
-      "region": 3
+      "x": 226.7,
+      "y": -59.4,
+      "region": 2
     },
     {
       "id": "il-letto",
@@ -853,9 +855,9 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 162.6,
-      "y": 83.8,
-      "region": 3
+      "x": 183.3,
+      "y": 14.4,
+      "region": 2
     },
     {
       "id": "dormire",
@@ -920,9 +922,9 @@
           "dormano"
         ]
       },
-      "x": 97.3,
-      "y": 88.1,
-      "region": 3
+      "x": 125.6,
+      "y": 40.7,
+      "region": 2
     },
     {
       "id": "il-sonno",
@@ -937,9 +939,9 @@
       "cognate_note": "in- \"not\" + somnus: no sleep",
       "tier": 5,
       "level": null,
-      "x": 141.7,
-      "y": 145.0,
-      "region": 3
+      "x": 185.4,
+      "y": 78.5,
+      "region": 2
     },
     {
       "id": "la-sedia",
@@ -954,9 +956,9 @@
       "cognate_note": "spending a lot of time sitting",
       "tier": 5,
       "level": null,
-      "x": 205.1,
-      "y": 96.7,
-      "region": 3
+      "x": 166.7,
+      "y": -25.9,
+      "region": 2
     },
     {
       "id": "il-tavolo",
@@ -971,9 +973,9 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 245.1,
-      "y": 68.2,
-      "region": 3
+      "x": 190.7,
+      "y": -67.6,
+      "region": 2
     },
     {
       "id": "la-camera",
@@ -988,9 +990,9 @@
       "cognate_note": "also \"camera\", from camera obscura, \"dark room\"",
       "tier": 3,
       "level": null,
-      "x": 205.1,
-      "y": 60.0,
-      "region": 3
+      "x": 202.5,
+      "y": -29.4,
+      "region": 2
     },
     {
       "id": "parlare",
@@ -1055,8 +1057,8 @@
           "parlino"
         ]
       },
-      "x": -284.5,
-      "y": -583.6,
+      "x": -573.1,
+      "y": -365.0,
       "region": 1
     },
     {
@@ -1072,8 +1074,8 @@
       "cognate_note": "a talk between opponents, via French parler \"to speak\"",
       "tier": 2,
       "level": null,
-      "x": -277.4,
-      "y": -553.6,
+      "x": -550.3,
+      "y": -333.7,
       "region": 1
     },
     {
@@ -1089,8 +1091,8 @@
       "cognate_note": "a story that makes a comparison (Greek parabolḗ)",
       "tier": 2,
       "level": null,
-      "x": -294.0,
-      "y": -513.8,
+      "x": -502.2,
+      "y": -392.9,
       "region": 1
     },
     {
@@ -1156,8 +1158,8 @@
           "dicano"
         ]
       },
-      "x": -322.5,
-      "y": -541.8,
+      "x": -520.5,
+      "y": -362.0,
       "region": 1
     },
     {
@@ -1223,8 +1225,8 @@
           "chiedano"
         ]
       },
-      "x": -357.8,
-      "y": -580.5,
+      "x": -493.2,
+      "y": -321.1,
       "region": 1
     },
     {
@@ -1240,8 +1242,8 @@
       "cognate_note": "Italian shifted from \"entrust\" to \"ask\"",
       "tier": 2,
       "level": null,
-      "x": -356.6,
-      "y": -550.2,
+      "x": -489.8,
+      "y": -349.1,
       "region": 1
     },
     {
@@ -1307,8 +1309,8 @@
           "rispondano"
         ]
       },
-      "x": -419.2,
-      "y": -572.5,
+      "x": -436.0,
+      "y": -318.3,
       "region": 1
     },
     {
@@ -1324,8 +1326,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": -370.4,
-      "y": -629.5,
+      "x": -492.3,
+      "y": -274.0,
       "region": 1
     },
     {
@@ -1391,8 +1393,8 @@
           "scrivano"
         ]
       },
-      "x": -296.0,
-      "y": -446.3,
+      "x": -501.9,
+      "y": -452.4,
       "region": 1
     },
     {
@@ -1408,8 +1410,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": -313.7,
-      "y": -479.0,
+      "x": -520.7,
+      "y": -422.8,
       "region": 1
     },
     {
@@ -1475,8 +1477,8 @@
           "leggano"
         ]
       },
-      "x": -331.8,
-      "y": -503.0,
+      "x": -531.0,
+      "y": -397.0,
       "region": 1
     },
     {
@@ -1492,8 +1494,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": -329.7,
-      "y": -456.8,
+      "x": -534.7,
+      "y": -442.6,
       "region": 1
     },
     {
@@ -1509,8 +1511,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 350.7,
-      "y": 313.5,
+      "x": 424.1,
+      "y": 125.1,
       "region": 5
     },
     {
@@ -1526,8 +1528,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 292.0,
-      "y": 269.9,
+      "x": 398.1,
+      "y": 176.5,
       "region": 5
     },
     {
@@ -1543,8 +1545,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 231.4,
-      "y": 306.1,
+      "x": 330.5,
+      "y": 194.0,
       "region": 5
     },
     {
@@ -1560,8 +1562,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": 318.5,
-      "y": 378.0,
+      "x": 336.2,
+      "y": 113.8,
       "region": 5
     },
     {
@@ -1577,8 +1579,8 @@
       "cognate_note": "as befits a son or daughter",
       "tier": 1,
       "level": null,
-      "x": 221.7,
-      "y": 244.0,
+      "x": 362.8,
+      "y": 240.9,
       "region": 5
     },
     {
@@ -1594,8 +1596,8 @@
       "cognate_note": "as befits a son or daughter",
       "tier": 2,
       "level": null,
-      "x": 280.7,
-      "y": 345.7,
+      "x": 383.0,
+      "y": 92.7,
       "region": 5
     },
     {
@@ -1611,8 +1613,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 342.8,
-      "y": 230.7,
+      "x": 455.5,
+      "y": 196.1,
       "region": 5
     },
     {
@@ -1628,8 +1630,8 @@
       "cognate_note": "Late Latin nonna, \"old woman\", came to mean \"nun\"",
       "tier": 3,
       "level": null,
-      "x": 374.6,
-      "y": 260.5,
+      "x": 472.5,
+      "y": 151.5,
       "region": 5
     },
     {
@@ -1645,8 +1647,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 307.2,
-      "y": 311.5,
+      "x": 384.6,
+      "y": 135.0,
       "region": 5
     },
     {
@@ -1662,9 +1664,9 @@
       "cognate_note": "a \"test\" was a clay pot for assaying metal; \"pot\" became slang for \"head\"",
       "tier": 1,
       "level": null,
-      "x": -226.8,
-      "y": -274.9,
-      "region": 2
+      "x": -310.4,
+      "y": -182.7,
+      "region": 3
     },
     {
       "id": "la-mano",
@@ -1679,9 +1681,9 @@
       "cognate_note": "done by hand",
       "tier": 2,
       "level": null,
-      "x": -251.1,
-      "y": -288.8,
-      "region": 2
+      "x": -342.8,
+      "y": -200.0,
+      "region": 3
     },
     {
       "id": "il-piede",
@@ -1696,9 +1698,9 @@
       "cognate_note": "worked by the foot",
       "tier": 5,
       "level": null,
-      "x": -282.9,
-      "y": -293.2,
-      "region": 2
+      "x": -369.9,
+      "y": -232.5,
+      "region": 3
     },
     {
       "id": "camminare",
@@ -1763,9 +1765,9 @@
           "camminino"
         ]
       },
-      "x": -315.1,
-      "y": -298.3,
-      "region": 2
+      "x": -398.0,
+      "y": -265.0,
+      "region": 3
     },
     {
       "id": "l-occhio",
@@ -1780,9 +1782,9 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": -197.9,
-      "y": -317.4,
-      "region": 2
+      "x": -337.8,
+      "y": -120.8,
+      "region": 3
     },
     {
       "id": "vedere",
@@ -1847,9 +1849,9 @@
           "vedano"
         ]
       },
-      "x": -218.7,
-      "y": -262.3,
-      "region": 2
+      "x": -290.7,
+      "y": -182.4,
+      "region": 3
     },
     {
       "id": "guardare",
@@ -1914,9 +1916,9 @@
           "guardino"
         ]
       },
-      "x": -175.6,
-      "y": -295.6,
-      "region": 2
+      "x": -297.9,
+      "y": -111.0,
+      "region": 3
     },
     {
       "id": "l-orecchio",
@@ -1931,9 +1933,9 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": -195.7,
-      "y": -272.2,
-      "region": 2
+      "x": -285.7,
+      "y": -149.7,
+      "region": 3
     },
     {
       "id": "sentire",
@@ -1998,9 +2000,9 @@
           "sentano"
         ]
       },
-      "x": -193.8,
-      "y": -232.9,
-      "region": 2
+      "x": -240.6,
+      "y": -175.1,
+      "region": 3
     },
     {
       "id": "la-bocca",
@@ -2015,9 +2017,9 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": -224.1,
-      "y": -301.3,
-      "region": 2
+      "x": -338.1,
+      "y": -161.2,
+      "region": 3
     },
     {
       "id": "il-sole",
@@ -2032,8 +2034,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": -317.1,
-      "y": 38.3,
+      "x": -300.2,
+      "y": 106.1,
       "region": 8
     },
     {
@@ -2049,8 +2051,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -366.8,
-      "y": 25.2,
+      "x": -250.7,
+      "y": 117.5,
       "region": 8
     },
     {
@@ -2116,8 +2118,8 @@
           "piovano"
         ]
       },
-      "x": -264.2,
-      "y": 5.4,
+      "x": -351.3,
+      "y": 140.0,
       "region": 8
     },
     {
@@ -2133,8 +2135,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -287.4,
-      "y": -67.5,
+      "x": -326.4,
+      "y": 211.2,
       "region": 8
     },
     {
@@ -2200,8 +2202,8 @@
           "nevichino"
         ]
       },
-      "x": -375.2,
-      "y": -58.1,
+      "x": -240.0,
+      "y": 199.5,
       "region": 8
     },
     {
@@ -2217,8 +2219,8 @@
       "cognate_note": "to let the wind through",
       "tier": 5,
       "level": null,
-      "x": -280.9,
-      "y": 81.1,
+      "x": -337.0,
+      "y": 64.8,
       "region": 8
     },
     {
@@ -2234,8 +2236,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": -328.0,
-      "y": -12.5,
+      "x": -287.9,
+      "y": 155.9,
       "region": 8
     },
     {
@@ -2251,8 +2253,8 @@
       "cognate_note": "a pot for heating (Late Latin caldaria)",
       "tier": 4,
       "level": null,
-      "x": -368.9,
-      "y": 70.7,
+      "x": -249.9,
+      "y": 72.6,
       "region": 8
     },
     {
@@ -2268,8 +2270,8 @@
       "cognate_note": "via French traîner \"to drag\": carriages pulled along",
       "tier": 4,
       "level": null,
-      "x": 451.5,
-      "y": -81.5,
+      "x": 410.1,
+      "y": -230.3,
       "region": 4
     },
     {
@@ -2285,8 +2287,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 362.4,
-      "y": -113.1,
+      "x": 475.8,
+      "y": -194.0,
       "region": 4
     },
     {
@@ -2302,8 +2304,8 @@
       "cognate_note": "via French billet; a \"bill\" was a sealed document",
       "tier": 4,
       "level": null,
-      "x": 496.4,
-      "y": -51.7,
+      "x": 368.6,
+      "y": -241.3,
       "region": 4
     },
     {
@@ -2369,8 +2371,8 @@
           "viaggino"
         ]
       },
-      "x": 453.3,
-      "y": -13.9,
+      "x": 368.9,
+      "y": -195.7,
       "region": 4
     },
     {
@@ -2386,8 +2388,8 @@
       "cognate_note": "via French voyage",
       "tier": 3,
       "level": null,
-      "x": 437.6,
-      "y": 6.1,
+      "x": 365.3,
+      "y": -175.9,
       "region": 4
     },
     {
@@ -2403,8 +2405,8 @@
       "cognate_note": "Latin via strata, \"paved road\", became Old English strǣt",
       "tier": 2,
       "level": null,
-      "x": 362.4,
-      "y": -52.3,
+      "x": 439.7,
+      "y": -161.9,
       "region": 4
     },
     {
@@ -2420,8 +2422,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": 415.1,
-      "y": -38.2,
+      "x": 403.5,
+      "y": -185.8,
       "region": 4
     },
     {
@@ -2487,8 +2489,8 @@
           "guidino"
         ]
       },
-      "x": 377.1,
-      "y": -0.3,
+      "x": 401.0,
+      "y": -143.2,
       "region": 4
     },
     {
@@ -2554,8 +2556,8 @@
           "arrivino"
         ]
       },
-      "x": 444.2,
-      "y": 55.7,
+      "x": 332.3,
+      "y": -153.6,
       "region": 4
     },
     {
@@ -2621,8 +2623,8 @@
           "partano"
         ]
       },
-      "x": 492.7,
-      "y": 28.3,
+      "x": 323.0,
+      "y": -196.9,
       "region": 4
     },
     {
@@ -2638,8 +2640,8 @@
       "cognate_note": "a daily record; a \"journey\" was a day's travel",
       "tier": 1,
       "level": null,
-      "x": -57.2,
-      "y": -93.1,
+      "x": -62.9,
+      "y": -64.2,
       "region": 7
     },
     {
@@ -2655,8 +2657,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": -14.8,
-      "y": -55.4,
+      "x": -113.1,
+      "y": -33.9,
       "region": 7
     },
     {
@@ -2672,8 +2674,8 @@
       "cognate_note": "early-morning prayers",
       "tier": 3,
       "level": null,
-      "x": -24.8,
-      "y": -123.4,
+      "x": -90.1,
+      "y": -101.2,
       "region": 7
     },
     {
@@ -2689,8 +2691,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": -88.4,
-      "y": -56.0,
+      "x": -38.2,
+      "y": -20.6,
       "region": 7
     },
     {
@@ -2706,8 +2708,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": -73.3,
-      "y": -151.7,
+      "x": -35.4,
+      "y": -120.8,
       "region": 7
     },
     {
@@ -2723,8 +2725,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": -42.5,
-      "y": -200.1,
+      "x": -57.6,
+      "y": -175.8,
       "region": 7
     },
     {
@@ -2740,8 +2742,8 @@
       "cognate_note": "Latin heri and English yester- share a Proto-Indo-European root",
       "tier": 2,
       "level": null,
-      "x": 7.5,
-      "y": -175.6,
+      "x": -113.1,
+      "y": -160.3,
       "region": 7
     },
     {
@@ -2757,8 +2759,8 @@
       "cognate_note": "the 7th month of the old Roman year",
       "tier": 2,
       "level": null,
-      "x": 24.4,
-      "y": -123.3,
+      "x": -140.2,
+      "y": -110.4,
       "region": 7
     }
   ],
@@ -3139,6 +3141,19 @@
         "thematic": 1.0
       },
       "via": "tree"
+    },
+    {
+      "source": "mangiare",
+      "target": "cucinare",
+      "weight": 0.333,
+      "reason": "thematic",
+      "components": {
+        "semantic": 0.305,
+        "morphological": 0.0,
+        "etymological": 0.0,
+        "thematic": 1.0
+      },
+      "via": "theme"
     },
     {
       "source": "mangiare",
@@ -5255,23 +5270,6 @@
     },
     {
       "id": 2,
-      "name": "Body",
-      "color": 0,
-      "words": [
-        "la-testa",
-        "la-mano",
-        "il-piede",
-        "camminare",
-        "l-occhio",
-        "vedere",
-        "guardare",
-        "l-orecchio",
-        "sentire",
-        "la-bocca"
-      ]
-    },
-    {
-      "id": 3,
       "name": "Home",
       "color": 0,
       "words": [
@@ -5285,6 +5283,23 @@
         "la-sedia",
         "il-tavolo",
         "la-camera"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Body",
+      "color": 0,
+      "words": [
+        "la-testa",
+        "la-mano",
+        "il-piede",
+        "camminare",
+        "l-occhio",
+        "vedere",
+        "guardare",
+        "l-orecchio",
+        "sentire",
+        "la-bocca"
       ]
     },
     {
@@ -6725,7 +6740,7 @@
           "etymological": 0.0,
           "thematic": 1.0
         },
-        "linked": false
+        "linked": true
       },
       {
         "id": "il-cuoco",
@@ -7277,7 +7292,7 @@
           "etymological": 0.0,
           "thematic": 1.0
         },
-        "linked": false
+        "linked": true
       },
       {
         "id": "la-cena",

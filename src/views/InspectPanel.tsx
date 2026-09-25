@@ -109,6 +109,14 @@ export default function InspectPanel({ data, health, selectedId, onSelect }: Pro
             {pct(params?.bonus_threshold ?? 0.25)}. Everything else stays unlinked so themes don't
             become tangles where everything connects to everything.
           </li>
+          {params?.theme_k !== undefined && (
+            <li>
+              Within a category the bar is lower, so categories stay together on the map: each
+              category's words are joined by their own spanning tree, and each word also links to
+              its top {params.theme_k} partners in its category from{' '}
+              {pct(params.theme_threshold ?? 0.3)}.
+            </li>
+          )}
         </ol>
       </div>
     );

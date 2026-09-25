@@ -10,6 +10,8 @@
     },
     "bonus_k": 3,
     "bonus_threshold": 0.25,
+    "theme_k": 2,
+    "theme_threshold": 0.3,
     "tiers": 10,
     "tier_names": null
   },
@@ -27,8 +29,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": -1069.3,
-      "y": 150.9,
+      "x": -1179.6,
+      "y": 300.9,
       "region": 4
     },
     {
@@ -44,8 +46,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": -1081.8,
-      "y": 151.9,
+      "x": -1164.7,
+      "y": 316.0,
       "region": 4
     },
     {
@@ -111,8 +113,8 @@
           "abbaino"
         ]
       },
-      "x": -1077.9,
-      "y": 133.4,
+      "x": -1197.6,
+      "y": 303.8,
       "region": 4
     },
     {
@@ -128,8 +130,8 @@
       "cognate_note": "uccello comes from aucellus, \"little bird\"",
       "tier": 8,
       "level": null,
-      "x": -1116.4,
-      "y": 148.5,
+      "x": -1117.1,
+      "y": 345.7,
       "region": 4
     },
     {
@@ -195,8 +197,8 @@
           "volino"
         ]
       },
-      "x": -1113.7,
-      "y": 120.9,
+      "x": -1099.9,
+      "y": 384.3,
       "region": 4
     },
     {
@@ -212,8 +214,8 @@
       "cognate_note": "the zodiac sign of the fish",
       "tier": 6,
       "level": null,
-      "x": -1155.8,
-      "y": 147.7,
+      "x": -1070.1,
+      "y": 358.6,
       "region": 4
     },
     {
@@ -279,8 +281,8 @@
           "nuotino"
         ]
       },
-      "x": -1143.6,
-      "y": 122.6,
+      "x": -1071.6,
+      "y": 376.9,
       "region": 4
     },
     {
@@ -296,8 +298,8 @@
       "cognate_note": "soldiers on horseback",
       "tier": 5,
       "level": null,
-      "x": -1070.2,
-      "y": 180.3,
+      "x": -1161.5,
+      "y": 280.7,
       "region": 4
     },
     {
@@ -313,8 +315,8 @@
       "cognate_note": null,
       "tier": 9,
       "level": null,
-      "x": -1074.6,
-      "y": 217.7,
+      "x": -1134.5,
+      "y": 252.1,
       "region": 4
     },
     {
@@ -330,8 +332,8 @@
       "cognate_note": "milk sugar",
       "tier": 7,
       "level": null,
-      "x": -1086.7,
-      "y": 269.0,
+      "x": -1093.8,
+      "y": 207.1,
       "region": 4
     },
     {
@@ -347,8 +349,8 @@
       "cognate_note": "cheese (formaticus) was pressed in a mould",
       "tier": 8,
       "level": null,
-      "x": -1100.6,
-      "y": 258.5,
+      "x": -1072.3,
+      "y": 227.7,
       "region": 4
     },
     {
@@ -364,8 +366,8 @@
       "cognate_note": "com- \"with\" + panis \"bread\": someone you share bread with",
       "tier": 8,
       "level": null,
-      "x": -1110.5,
-      "y": 257.1,
+      "x": -1074.5,
+      "y": 236.6,
       "region": 4
     },
     {
@@ -381,8 +383,8 @@
       "cognate_note": null,
       "tier": 9,
       "level": null,
-      "x": -1123.2,
-      "y": 239.9,
+      "x": -1057.4,
+      "y": 256.5,
       "region": 4
     },
     {
@@ -448,8 +450,8 @@
           "mangino"
         ]
       },
-      "x": -1138.7,
-      "y": 281.0,
+      "x": -1084.8,
+      "y": 213.2,
       "region": 4
     },
     {
@@ -465,8 +467,8 @@
       "cognate_note": "the trough animals eat from, via French manger \"to eat\"",
       "tier": 5,
       "level": null,
-      "x": -1128.2,
-      "y": 263.2,
+      "x": -1090.6,
+      "y": 231.7,
       "region": 4
     },
     {
@@ -532,8 +534,8 @@
           "bevano"
         ]
       },
-      "x": -1101.4,
-      "y": 299.4,
+      "x": -1071.0,
+      "y": 176.6,
       "region": 4
     },
     {
@@ -549,8 +551,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": -1097.8,
-      "y": 314.3,
+      "x": -1084.2,
+      "y": 161.1,
       "region": 4
     },
     {
@@ -566,8 +568,8 @@
       "cognate_note": "borrowed into Germanic very early; vine too",
       "tier": 5,
       "level": null,
-      "x": -1090.9,
-      "y": 298.2,
+      "x": -1055.1,
+      "y": 181.6,
       "region": 4
     },
     {
@@ -583,8 +585,8 @@
       "cognate_note": "Greek mēlopépōn, \"apple-gourd\"",
       "tier": 9,
       "level": null,
-      "x": -1103.5,
-      "y": 249.3,
+      "x": -1060.4,
+      "y": 238.2,
       "region": 4
     },
     {
@@ -650,8 +652,8 @@
           "cucinino"
         ]
       },
-      "x": -878.8,
-      "y": 657.0,
+      "x": -854.4,
+      "y": 589.2,
       "region": 8
     },
     {
@@ -667,8 +669,8 @@
       "cognate_note": "Latin coquina \"kitchen\" became Old English cycene",
       "tier": 4,
       "level": null,
-      "x": -868.7,
-      "y": 656.8,
+      "x": -868.5,
+      "y": 595.3,
       "region": 8
     },
     {
@@ -684,8 +686,8 @@
       "cognate_note": "Latin coquus \"cook\" was borrowed into Old English as cōc",
       "tier": 9,
       "level": null,
-      "x": -881.7,
-      "y": 665.8,
+      "x": -860.6,
+      "y": 582.4,
       "region": 8
     },
     {
@@ -701,8 +703,8 @@
       "cognate_note": "a light meal; monks ate one during the evening readings (Collationes)",
       "tier": 6,
       "level": null,
-      "x": -1149.4,
-      "y": 301.3,
+      "x": -1105.3,
+      "y": 193.5,
       "region": 4
     },
     {
@@ -718,8 +720,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": -1153.6,
-      "y": 286.6,
+      "x": -1112.2,
+      "y": 212.1,
       "region": 4
     },
     {
@@ -785,8 +787,8 @@
           "cenino"
         ]
       },
-      "x": -1156.7,
-      "y": 294.1,
+      "x": -1107.8,
+      "y": 204.3,
       "region": 4
     },
     {
@@ -802,8 +804,8 @@
       "cognate_note": "Italian for \"little house\", later a house for gambling",
       "tier": 1,
       "level": null,
-      "x": -893.1,
-      "y": 649.4,
+      "x": -887.2,
+      "y": 594.2,
       "region": 8
     },
     {
@@ -819,8 +821,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": -867.8,
-      "y": 676.0,
+      "x": -856.1,
+      "y": 570.2,
       "region": 8
     },
     {
@@ -836,8 +838,8 @@
       "cognate_note": "de- \"out of\" + fenestra: to throw out of a window",
       "tier": 6,
       "level": null,
-      "x": -877.7,
-      "y": 678.8,
+      "x": -875.0,
+      "y": 568.0,
       "region": 8
     },
     {
@@ -853,8 +855,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": -870.9,
-      "y": 620.1,
+      "x": -887.6,
+      "y": 638.9,
       "region": 8
     },
     {
@@ -920,8 +922,8 @@
           "dormano"
         ]
       },
-      "x": -891.2,
-      "y": 601.2,
+      "x": -908.5,
+      "y": 659.5,
       "region": 8
     },
     {
@@ -937,8 +939,8 @@
       "cognate_note": "in- \"not\" + somnus: no sleep",
       "tier": 8,
       "level": null,
-      "x": -885.2,
-      "y": 596.6,
+      "x": -913.3,
+      "y": 653.0,
       "region": 8
     },
     {
@@ -954,8 +956,8 @@
       "cognate_note": "spending a lot of time sitting",
       "tier": 7,
       "level": null,
-      "x": -846.3,
-      "y": 613.8,
+      "x": -875.2,
+      "y": 653.6,
       "region": 8
     },
     {
@@ -971,8 +973,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -852.6,
-      "y": 632.5,
+      "x": -867.3,
+      "y": 629.8,
       "region": 8
     },
     {
@@ -988,8 +990,8 @@
       "cognate_note": "also \"camera\", from camera obscura, \"dark room\"",
       "tier": 3,
       "level": null,
-      "x": -871.6,
-      "y": 640.1,
+      "x": -862.9,
+      "y": 607.2,
       "region": 8
     },
     {
@@ -1055,8 +1057,8 @@
           "parlino"
         ]
       },
-      "x": 354.5,
-      "y": -361.6,
+      "x": 407.3,
+      "y": -300.0,
       "region": 5
     },
     {
@@ -1072,8 +1074,8 @@
       "cognate_note": "a talk between opponents, via French parler \"to speak\"",
       "tier": 2,
       "level": null,
-      "x": 338.5,
-      "y": -290.2,
+      "x": 332.9,
+      "y": -343.5,
       "region": 5
     },
     {
@@ -1089,8 +1091,8 @@
       "cognate_note": "a story that makes a comparison (Greek parabolḗ)",
       "tier": 3,
       "level": null,
-      "x": 320.8,
-      "y": -320.5,
+      "x": 371.8,
+      "y": -354.3,
       "region": 5
     },
     {
@@ -1156,8 +1158,8 @@
           "dicano"
         ]
       },
-      "x": 359.2,
-      "y": -309.0,
+      "x": 345.5,
+      "y": -312.6,
       "region": 5
     },
     {
@@ -1223,8 +1225,8 @@
           "chiedano"
         ]
       },
-      "x": 332.5,
-      "y": -262.2,
+      "x": 295.0,
+      "y": -359.8,
       "region": 5
     },
     {
@@ -1240,8 +1242,8 @@
       "cognate_note": "Italian shifted from \"entrust\" to \"ask\"",
       "tier": 2,
       "level": null,
-      "x": 350.8,
-      "y": -278.7,
+      "x": 312.6,
+      "y": -334.7,
       "region": 5
     },
     {
@@ -1307,8 +1309,8 @@
           "rispondano"
         ]
       },
-      "x": 318.0,
-      "y": -208.1,
+      "x": 256.5,
+      "y": -418.5,
       "region": 5
     },
     {
@@ -1324,8 +1326,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 285.8,
-      "y": -229.3,
+      "x": 227.1,
+      "y": -381.2,
       "region": 5
     },
     {
@@ -1391,8 +1393,8 @@
           "scrivano"
         ]
       },
-      "x": 271.0,
-      "y": -320.6,
+      "x": 384.0,
+      "y": -415.0,
       "region": 5
     },
     {
@@ -1408,8 +1410,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 298.5,
-      "y": -349.5,
+      "x": 411.9,
+      "y": -373.6,
       "region": 5
     },
     {
@@ -1475,8 +1477,8 @@
           "leggano"
         ]
       },
-      "x": 328.3,
-      "y": -333.1,
+      "x": 384.3,
+      "y": -341.5,
       "region": 5
     },
     {
@@ -1492,8 +1494,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": 303.3,
-      "y": -311.8,
+      "x": 366.4,
+      "y": -377.8,
       "region": 5
     },
     {
@@ -1509,8 +1511,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": -1264.0,
-      "y": -198.1,
+      "x": -1232.5,
+      "y": -135.3,
       "region": 13
     },
     {
@@ -1526,8 +1528,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": -1280.0,
-      "y": -177.2,
+      "x": -1260.2,
+      "y": -140.0,
       "region": 13
     },
     {
@@ -1543,8 +1545,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": -1268.6,
-      "y": -130.7,
+      "x": -1317.6,
+      "y": -189.7,
       "region": 13
     },
     {
@@ -1560,8 +1562,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": -1343.8,
-      "y": -107.1,
+      "x": -1370.4,
+      "y": -151.8,
       "region": 13
     },
     {
@@ -1577,8 +1579,8 @@
       "cognate_note": "as befits a son or daughter",
       "tier": 1,
       "level": null,
-      "x": -1351.0,
-      "y": -159.9,
+      "x": -1336.5,
+      "y": -122.3,
       "region": 13
     },
     {
@@ -1594,8 +1596,8 @@
       "cognate_note": "as befits a son or daughter",
       "tier": 2,
       "level": null,
-      "x": -1306.7,
-      "y": -178.8,
+      "x": -1287.2,
+      "y": -122.9,
       "region": 13
     },
     {
@@ -1611,8 +1613,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -1370.6,
-      "y": -99.7,
+      "x": -1363.9,
+      "y": -122.8,
       "region": 13
     },
     {
@@ -1628,8 +1630,8 @@
       "cognate_note": "Late Latin nonna, \"old woman\", came to mean \"nun\"",
       "tier": 4,
       "level": null,
-      "x": -1397.4,
-      "y": -140.7,
+      "x": -1197.4,
+      "y": -92.2,
       "region": 13
     },
     {
@@ -1645,8 +1647,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": -1294.5,
-      "y": -242.2,
+      "x": -1251.3,
+      "y": -79.3,
       "region": 13
     },
     {
@@ -1662,8 +1664,8 @@
       "cognate_note": "a \"test\" was a clay pot for assaying metal; \"pot\" became slang for \"head\"",
       "tier": 1,
       "level": null,
-      "x": 702.8,
-      "y": -3.3,
+      "x": 723.2,
+      "y": 18.9,
       "region": 2
     },
     {
@@ -1679,8 +1681,8 @@
       "cognate_note": "done by hand",
       "tier": 2,
       "level": null,
-      "x": 792.7,
-      "y": 726.1,
+      "x": 750.7,
+      "y": 757.5,
       "region": 12
     },
     {
@@ -1696,8 +1698,8 @@
       "cognate_note": "worked by the foot",
       "tier": 6,
       "level": null,
-      "x": 830.6,
-      "y": 712.8,
+      "x": 746.8,
+      "y": 797.2,
       "region": 12
     },
     {
@@ -1763,8 +1765,8 @@
           "camminino"
         ]
       },
-      "x": 864.6,
-      "y": 692.2,
+      "x": 729.2,
+      "y": 830.3,
       "region": 12
     },
     {
@@ -1780,8 +1782,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": 739.2,
-      "y": 15.1,
+      "x": 708.0,
+      "y": -20.0,
       "region": 2
     },
     {
@@ -1847,8 +1849,8 @@
           "vedano"
         ]
       },
-      "x": 717.8,
-      "y": -12.3,
+      "x": 719.3,
+      "y": 5.8,
       "region": 2
     },
     {
@@ -1914,8 +1916,8 @@
           "guardino"
         ]
       },
-      "x": 760.9,
-      "y": -4.9,
+      "x": 727.0,
+      "y": -36.0,
       "region": 2
     },
     {
@@ -1931,8 +1933,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": 717.6,
-      "y": 27.8,
+      "x": 692.7,
+      "y": -1.1,
       "region": 2
     },
     {
@@ -1998,8 +2000,8 @@
           "sentano"
         ]
       },
-      "x": 750.3,
-      "y": 34.9,
+      "x": 683.5,
+      "y": -31.9,
       "region": 2
     },
     {
@@ -2015,8 +2017,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": 702.8,
-      "y": 21.2,
+      "x": 696.0,
+      "y": 15.7,
       "region": 2
     },
     {
@@ -2032,8 +2034,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": -55.9,
-      "y": -353.3,
+      "x": -40.1,
+      "y": -369.1,
       "region": 15
     },
     {
@@ -2049,8 +2051,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": -52.0,
-      "y": -306.1,
+      "x": 6.8,
+      "y": -383.1,
       "region": 15
     },
     {
@@ -2116,8 +2118,8 @@
           "piovano"
         ]
       },
-      "x": -26.0,
-      "y": -307.5,
+      "x": 15.6,
+      "y": -365.1,
       "region": 15
     },
     {
@@ -2133,8 +2135,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": -51.0,
-      "y": -254.2,
+      "x": 41.9,
+      "y": -420.5,
       "region": 15
     },
     {
@@ -2200,8 +2202,8 @@
           "nevichino"
         ]
       },
-      "x": -4.4,
-      "y": -249.5,
+      "x": 77.5,
+      "y": -368.6,
       "region": 15
     },
     {
@@ -2217,8 +2219,8 @@
       "cognate_note": "to let the wind through",
       "tier": 7,
       "level": null,
-      "x": -16.3,
-      "y": -333.3,
+      "x": -7.2,
+      "y": -348.4,
       "region": 15
     },
     {
@@ -2234,8 +2236,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": -66.0,
-      "y": -320.3,
+      "x": -33.4,
+      "y": -403.7,
       "region": 15
     },
     {
@@ -2251,8 +2253,8 @@
       "cognate_note": "a pot for heating (Late Latin caldaria)",
       "tier": 5,
       "level": null,
-      "x": -86.4,
-      "y": -320.5,
+      "x": -10.4,
+      "y": -404.1,
       "region": 15
     },
     {
@@ -2268,8 +2270,8 @@
       "cognate_note": "via French traîner \"to drag\": carriages pulled along",
       "tier": 5,
       "level": null,
-      "x": -97.7,
-      "y": 981.7,
+      "x": -72.8,
+      "y": 961.9,
       "region": 20
     },
     {
@@ -2285,8 +2287,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": -104.4,
-      "y": 1007.5,
+      "x": -104.1,
+      "y": 972.3,
       "region": 20
     },
     {
@@ -2302,8 +2304,8 @@
       "cognate_note": "via French billet; a \"bill\" was a sealed document",
       "tier": 5,
       "level": null,
-      "x": -66.5,
-      "y": 956.0,
+      "x": -24.9,
+      "y": 976.9,
       "region": 20
     },
     {
@@ -2369,8 +2371,8 @@
           "viaggino"
         ]
       },
-      "x": -35.7,
-      "y": 946.8,
+      "x": -3.6,
+      "y": 1038.5,
       "region": 20
     },
     {
@@ -2386,8 +2388,8 @@
       "cognate_note": "via French voyage",
       "tier": 3,
       "level": null,
-      "x": -16.7,
-      "y": 960.3,
+      "x": 9.8,
+      "y": 1005.7,
       "region": 20
     },
     {
@@ -2403,8 +2405,8 @@
       "cognate_note": "Latin via strata, \"paved road\", became Old English strǣt",
       "tier": 2,
       "level": null,
-      "x": -58.3,
-      "y": 1017.5,
+      "x": -82.9,
+      "y": 1026.2,
       "region": 20
     },
     {
@@ -2420,8 +2422,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": -83.1,
-      "y": 1027.8,
+      "x": -110.2,
+      "y": 1008.2,
       "region": 20
     },
     {
@@ -2487,8 +2489,8 @@
           "guidino"
         ]
       },
-      "x": -36.0,
-      "y": 992.6,
+      "x": -42.6,
+      "y": 1031.3,
       "region": 20
     },
     {
@@ -2554,8 +2556,8 @@
           "arrivino"
         ]
       },
-      "x": -20.1,
-      "y": 432.2,
+      "x": -75.2,
+      "y": 577.4,
       "region": 1
     },
     {
@@ -2621,8 +2623,8 @@
           "partano"
         ]
       },
-      "x": 20.6,
-      "y": 477.9,
+      "x": -21.8,
+      "y": 583.5,
       "region": 1
     },
     {
@@ -2638,8 +2640,8 @@
       "cognate_note": "a daily record; a \"journey\" was a day's travel",
       "tier": 1,
       "level": null,
-      "x": -520.2,
-      "y": 249.9,
+      "x": -526.3,
+      "y": 273.2,
       "region": 3
     },
     {
@@ -2655,8 +2657,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": -498.6,
-      "y": 202.5,
+      "x": -556.9,
+      "y": 319.2,
       "region": 3
     },
     {
@@ -2672,8 +2674,8 @@
       "cognate_note": "early-morning prayers",
       "tier": 3,
       "level": null,
-      "x": -484.8,
-      "y": 228.6,
+      "x": -521.9,
+      "y": 316.5,
       "region": 3
     },
     {
@@ -2689,8 +2691,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": -449.6,
-      "y": 180.6,
+      "x": -548.4,
+      "y": 370.6,
       "region": 3
     },
     {
@@ -2706,8 +2708,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": -468.6,
-      "y": 281.5,
+      "x": -494.4,
+      "y": 310.0,
       "region": 3
     },
     {
@@ -2723,8 +2725,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": -428.2,
-      "y": 251.7,
+      "x": -492.4,
+      "y": 354.8,
       "region": 3
     },
     {
@@ -2740,8 +2742,8 @@
       "cognate_note": "Latin heri and English yester- share a Proto-Indo-European root",
       "tier": 2,
       "level": null,
-      "x": -524.9,
-      "y": 266.1,
+      "x": -553.5,
+      "y": 296.1,
       "region": 3
     },
     {
@@ -2757,8 +2759,8 @@
       "cognate_note": "the 7th month of the old Roman year",
       "tier": 2,
       "level": null,
-      "x": -575.2,
-      "y": 287.0,
+      "x": -568.7,
+      "y": 250.6,
       "region": 3
     },
     {
@@ -2774,8 +2776,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 562.8,
-      "y": -992.8,
+      "x": 653.9,
+      "y": -884.8,
       "region": 0
     },
     {
@@ -2791,8 +2793,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 536.2,
-      "y": -873.3,
+      "x": 701.5,
+      "y": -1004.1,
       "region": 0
     },
     {
@@ -2808,8 +2810,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 575.0,
-      "y": -921.3,
+      "x": 669.4,
+      "y": -943.6,
       "region": 0
     },
     {
@@ -2825,8 +2827,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 186.3,
-      "y": -642.9,
+      "x": 137.3,
+      "y": -713.8,
       "region": 14
     },
     {
@@ -2842,8 +2844,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": -440.5,
-      "y": 327.0,
+      "x": -445.6,
+      "y": 314.1,
       "region": 3
     },
     {
@@ -2859,8 +2861,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 537.7,
-      "y": -1008.5,
+      "x": 664.2,
+      "y": -856.1,
       "region": 0
     },
     {
@@ -2876,8 +2878,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 481.8,
-      "y": -920.3,
+      "x": 603.6,
+      "y": -785.4,
       "region": 0
     },
     {
@@ -2943,8 +2945,8 @@
           "facciano"
         ]
       },
-      "x": 314.2,
-      "y": 117.4,
+      "x": 301.4,
+      "y": 98.5,
       "region": 11
     },
     {
@@ -3010,8 +3012,8 @@
           "sappiano"
         ]
       },
-      "x": 386.2,
-      "y": -275.0,
+      "x": 367.6,
+      "y": -263.5,
       "region": 5
     },
     {
@@ -3027,8 +3029,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 675.0,
-      "y": -954.9,
+      "x": 623.0,
+      "y": -1009.3,
       "region": 0
     },
     {
@@ -3094,8 +3096,8 @@
           "orino"
         ]
       },
-      "x": -779.6,
-      "y": -66.8,
+      "x": -807.0,
+      "y": -29.3,
       "region": 7
     },
     {
@@ -3161,8 +3163,8 @@
           "vadano"
         ]
       },
-      "x": -41.9,
-      "y": 471.8,
+      "x": -58.6,
+      "y": 550.4,
       "region": 1
     },
     {
@@ -3178,8 +3180,8 @@
       "cognate_note": null,
       "tier": 10,
       "level": null,
-      "x": -1188.0,
-      "y": 158.4,
+      "x": -1039.0,
+      "y": 372.2,
       "region": 4
     },
     {
@@ -3195,8 +3197,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 603.3,
-      "y": -1005.6,
+      "x": 602.0,
+      "y": -848.2,
       "region": 0
     },
     {
@@ -3212,8 +3214,8 @@
       "cognate_note": null,
       "tier": 9,
       "level": null,
-      "x": 785.5,
-      "y": 686.9,
+      "x": 784.4,
+      "y": 772.5,
       "region": 12
     },
     {
@@ -3229,8 +3231,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": -227.0,
-      "y": 143.9,
+      "x": -31.3,
+      "y": -114.1,
       "region": 9
     },
     {
@@ -3246,8 +3248,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": -765.3,
-      "y": -85.5,
+      "x": -785.5,
+      "y": -44.2,
       "region": 7
     },
     {
@@ -3263,8 +3265,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": -769.0,
-      "y": -52.5,
+      "x": -801.7,
+      "y": -10.8,
       "region": 7
     },
     {
@@ -3330,8 +3332,8 @@
           "stiano"
         ]
       },
-      "x": -20.0,
-      "y": 454.8,
+      "x": -56.0,
+      "y": 573.5,
       "region": 1
     },
     {
@@ -3347,8 +3349,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 635.2,
-      "y": -957.5,
+      "x": 640.5,
+      "y": -949.4,
       "region": 0
     },
     {
@@ -3414,8 +3416,8 @@
           "vogliano"
         ]
       },
-      "x": 331.4,
-      "y": 145.1,
+      "x": 330.1,
+      "y": 116.8,
       "region": 11
     },
     {
@@ -3431,8 +3433,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 546.6,
-      "y": -844.7,
+      "x": 749.2,
+      "y": -972.5,
       "region": 0
     },
     {
@@ -3448,8 +3450,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 695.6,
-      "y": -990.0,
+      "x": 558.7,
+      "y": -968.0,
       "region": 0
     },
     {
@@ -3515,8 +3517,8 @@
           "possano"
         ]
       },
-      "x": 306.2,
-      "y": 133.8,
+      "x": 296.8,
+      "y": 121.2,
       "region": 11
     },
     {
@@ -3532,8 +3534,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": -553.0,
-      "y": 316.6,
+      "x": -533.6,
+      "y": 248.1,
       "region": 3
     },
     {
@@ -3549,8 +3551,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 554.8,
-      "y": -939.7,
+      "x": 590.8,
+      "y": -857.7,
       "region": 0
     },
     {
@@ -3566,8 +3568,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": 620.7,
-      "y": -864.7,
+      "x": 646.9,
+      "y": -1039.7,
       "region": 0
     },
     {
@@ -3583,8 +3585,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 597.3,
-      "y": -931.4,
+      "x": 620.9,
+      "y": -929.5,
       "region": 0
     },
     {
@@ -3650,8 +3652,8 @@
           "ancorino"
         ]
       },
-      "x": -193.2,
-      "y": -69.5,
+      "x": -93.7,
+      "y": 139.9,
       "region": 9
     },
     {
@@ -3667,8 +3669,8 @@
       "cognate_note": null,
       "tier": 10,
       "level": null,
-      "x": -100.9,
-      "y": 111.2,
+      "x": -28.8,
+      "y": 9.4,
       "region": 9
     },
     {
@@ -3684,8 +3686,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 637.0,
-      "y": -938.0,
+      "x": 626.1,
+      "y": -973.2,
       "region": 0
     },
     {
@@ -3701,8 +3703,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 736.7,
-      "y": -996.1,
+      "x": 578.2,
+      "y": -1033.7,
       "region": 0
     },
     {
@@ -3718,8 +3720,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 676.3,
-      "y": -458.2,
+      "x": 687.3,
+      "y": -454.6,
       "region": 26
     },
     {
@@ -3735,8 +3737,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": -273.4,
-      "y": -929.8,
+      "x": -264.7,
+      "y": -916.6,
       "region": 23
     },
     {
@@ -3752,8 +3754,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 714.5,
-      "y": -934.7,
+      "x": 558.0,
+      "y": -1015.9,
       "region": 0
     },
     {
@@ -3769,8 +3771,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 598.1,
-      "y": -910.2,
+      "x": 591.6,
+      "y": -904.4,
       "region": 0
     },
     {
@@ -3836,8 +3838,8 @@
           "debbano"
         ]
       },
-      "x": -139.4,
-      "y": 137.2,
+      "x": -14.0,
+      "y": -32.2,
       "region": 9
     },
     {
@@ -3853,8 +3855,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 451.6,
-      "y": -298.2,
+      "x": 267.1,
+      "y": -239.6,
       "region": 5
     },
     {
@@ -3870,8 +3872,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": -1171.0,
-      "y": -193.8,
+      "x": -1319.0,
+      "y": -275.9,
       "region": 13
     },
     {
@@ -3887,8 +3889,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 607.8,
-      "y": -774.9,
+      "x": 481.2,
+      "y": -844.8,
       "region": 0
     },
     {
@@ -3904,8 +3906,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": -534.3,
-      "y": 232.2,
+      "x": -502.2,
+      "y": 232.3,
       "region": 3
     },
     {
@@ -3971,8 +3973,8 @@
           "credano"
         ]
       },
-      "x": 391.1,
-      "y": -338.8,
+      "x": 294.9,
+      "y": -295.6,
       "region": 5
     },
     {
@@ -3988,8 +3990,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": -1296.1,
-      "y": -263.8,
+      "x": -1244.1,
+      "y": -59.4,
       "region": 13
     },
     {
@@ -4005,8 +4007,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": -824.3,
-      "y": 693.7,
+      "x": -812.5,
+      "y": 544.9,
       "region": 8
     },
     {
@@ -4022,8 +4024,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": -606.3,
-      "y": 291.6,
+      "x": -593.8,
+      "y": 237.9,
       "region": 3
     },
     {
@@ -4039,8 +4041,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": 48.7,
-      "y": 446.3,
+      "x": -23.3,
+      "y": 617.4,
       "region": 1
     },
     {
@@ -4106,8 +4108,8 @@
           "lavorino"
         ]
       },
-      "x": -589.0,
-      "y": 568.1,
+      "x": -330.0,
+      "y": 809.1,
       "region": 18
     },
     {
@@ -4123,8 +4125,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": 877.2,
-      "y": 438.3,
+      "x": 900.9,
+      "y": 445.0,
       "region": 19
     },
     {
@@ -4140,8 +4142,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": -595.8,
-      "y": 345.1,
+      "x": -594.4,
+      "y": 280.8,
       "region": 3
     },
     {
@@ -4157,8 +4159,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": -466.8,
-      "y": 312.1,
+      "x": -471.3,
+      "y": 306.7,
       "region": 3
     },
     {
@@ -4174,8 +4176,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 1217.2,
-      "y": -393.1,
+      "x": 1221.4,
+      "y": -422.5,
       "region": 31
     },
     {
@@ -4191,8 +4193,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": -922.4,
-      "y": -157.8,
+      "x": -860.8,
+      "y": -208.7,
       "region": 7
     },
     {
@@ -4208,8 +4210,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 285.6,
-      "y": 117.7,
+      "x": 272.9,
+      "y": 104.0,
       "region": 11
     },
     {
@@ -4275,8 +4277,8 @@
           "si amichino"
         ]
       },
-      "x": -1152.1,
-      "y": -162.8,
+      "x": -1286.6,
+      "y": -283.1,
       "region": 13
     },
     {
@@ -4342,8 +4344,8 @@
           "pongano"
         ]
       },
-      "x": -82.9,
-      "y": 541.9,
+      "x": -41.7,
+      "y": 480.2,
       "region": 1
     },
     {
@@ -4359,8 +4361,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": -879.2,
-      "y": -107.1,
+      "x": -874.6,
+      "y": -131.1,
       "region": 7
     },
     {
@@ -4376,8 +4378,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 207.6,
-      "y": -656.5,
+      "x": 114.9,
+      "y": -688.4,
       "region": 14
     },
     {
@@ -4443,8 +4445,8 @@
           "cazzino"
         ]
       },
-      "x": 798.3,
-      "y": 606.6,
+      "x": 816.1,
+      "y": 642.6,
       "region": 12
     },
     {
@@ -4510,8 +4512,8 @@
           "diano"
         ]
       },
-      "x": 425.0,
-      "y": 367.1,
+      "x": 432.6,
+      "y": 492.4,
       "region": 16
     },
     {
@@ -4577,8 +4579,8 @@
           "sembrino"
         ]
       },
-      "x": 781.0,
-      "y": -41.7,
+      "x": 765.6,
+      "y": -46.2,
       "region": 2
     },
     {
@@ -4594,8 +4596,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 750.4,
-      "y": -940.1,
+      "x": 553.6,
+      "y": -1052.6,
       "region": 0
     },
     {
@@ -4611,8 +4613,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": -211.9,
-      "y": -85.8,
+      "x": -56.6,
+      "y": 143.7,
       "region": 9
     },
     {
@@ -4678,8 +4680,8 @@
           "dispiacciano"
         ]
       },
-      "x": 254.2,
-      "y": 818.8,
+      "x": 514.9,
+      "y": 861.4,
       "region": 6
     },
     {
@@ -4745,8 +4747,8 @@
           "pensino"
         ]
       },
-      "x": 417.4,
-      "y": -302.3,
+      "x": 315.7,
+      "y": -245.2,
       "region": 5
     },
     {
@@ -4762,8 +4764,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": -674.6,
-      "y": 592.1,
+      "x": -1018.0,
+      "y": 559.8,
       "region": 8
     },
     {
@@ -4779,8 +4781,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": -493.3,
-      "y": 328.5,
+      "x": -493.6,
+      "y": 294.1,
       "region": 3
     },
     {
@@ -4796,8 +4798,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 664.9,
-      "y": -1002.2,
+      "x": 696.5,
+      "y": -935.2,
       "region": 0
     },
     {
@@ -4813,8 +4815,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": -609.8,
-      "y": 352.3,
+      "x": -608.8,
+      "y": 279.2,
       "region": 3
     },
     {
@@ -4830,8 +4832,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 173.9,
-      "y": -639.0,
+      "x": 147.5,
+      "y": -715.6,
       "region": 14
     },
     {
@@ -4847,8 +4849,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 628.5,
-      "y": -994.8,
+      "x": 657.7,
+      "y": -927.5,
       "region": 0
     },
     {
@@ -4864,8 +4866,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": -759.9,
-      "y": 473.3,
+      "x": -834.4,
+      "y": 788.2,
       "region": 8
     },
     {
@@ -4931,8 +4933,8 @@
           "succedano"
         ]
       },
-      "x": -49.9,
-      "y": 558.3,
+      "x": -16.1,
+      "y": 495.8,
       "region": 1
     },
     {
@@ -4948,8 +4950,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 561.3,
-      "y": -983.0,
+      "x": 636.1,
+      "y": -872.5,
       "region": 0
     },
     {
@@ -5015,8 +5017,8 @@
           "aspettino"
         ]
       },
-      "x": 831.3,
-      "y": 7.7,
+      "x": 730.0,
+      "y": -103.3,
       "region": 2
     },
     {
@@ -5032,8 +5034,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": -369.1,
-      "y": -497.1,
+      "x": -364.8,
+      "y": -479.7,
       "region": 22
     },
     {
@@ -5049,8 +5051,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": -893.8,
-      "y": -213.3,
+      "x": -926.1,
+      "y": -210.1,
       "region": 7
     },
     {
@@ -5066,8 +5068,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": -1196.5,
-      "y": -169.1,
+      "x": -1299.3,
+      "y": -246.8,
       "region": 13
     },
     {
@@ -5083,8 +5085,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": -400.8,
-      "y": -943.8,
+      "x": -408.1,
+      "y": -939.9,
       "region": 23
     },
     {
@@ -5100,8 +5102,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": -888.9,
-      "y": -228.4,
+      "x": -943.2,
+      "y": -212.5,
       "region": 7
     },
     {
@@ -5117,8 +5119,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 508.7,
-      "y": -1018.7,
+      "x": 679.4,
+      "y": -827.5,
       "region": 0
     },
     {
@@ -5134,8 +5136,8 @@
       "cognate_note": null,
       "tier": 9,
       "level": null,
-      "x": -118.4,
-      "y": 58.4,
+      "x": -82.8,
+      "y": -0.1,
       "region": 9
     },
     {
@@ -5151,8 +5153,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": -236.0,
-      "y": -917.5,
+      "x": -229.0,
+      "y": -918.1,
       "region": 23
     },
     {
@@ -5168,8 +5170,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": 1010.0,
-      "y": -311.3,
+      "x": 982.3,
+      "y": -307.1,
       "region": 21
     },
     {
@@ -5235,8 +5237,8 @@
           "ideino"
         ]
       },
-      "x": -190.1,
-      "y": 512.5,
+      "x": -98.9,
+      "y": 437.5,
       "region": 1
     },
     {
@@ -5302,8 +5304,8 @@
           "figlino"
         ]
       },
-      "x": -1385.7,
-      "y": -213.1,
+      "x": -1334.6,
+      "y": -60.8,
       "region": 13
     },
     {
@@ -5369,8 +5371,8 @@
           "accordino"
         ]
       },
-      "x": 391.4,
-      "y": -134.8,
+      "x": 475.7,
+      "y": -129.7,
       "region": 5
     },
     {
@@ -5386,8 +5388,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 755.4,
-      "y": -902.5,
+      "x": 534.3,
+      "y": -1052.9,
       "region": 0
     },
     {
@@ -5453,8 +5455,8 @@
           "vengano"
         ]
       },
-      "x": -87.7,
-      "y": 462.7,
+      "x": -86.7,
+      "y": 522.8,
       "region": 1
     },
     {
@@ -5470,8 +5472,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": -799.8,
-      "y": 694.9,
+      "x": -789.6,
+      "y": 533.7,
       "region": 8
     },
     {
@@ -5537,8 +5539,8 @@
           "trovino"
         ]
       },
-      "x": 557.9,
-      "y": 448.3,
+      "x": 547.0,
+      "y": 407.5,
       "region": 16
     },
     {
@@ -5554,8 +5556,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 311.7,
-      "y": 194.3,
+      "x": 350.7,
+      "y": 173.3,
       "region": 11
     },
     {
@@ -5621,8 +5623,8 @@
           "forzino"
         ]
       },
-      "x": -408.6,
-      "y": -557.7,
+      "x": -313.3,
+      "y": -415.7,
       "region": 22
     },
     {
@@ -5638,8 +5640,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": -796.4,
-      "y": -103.6,
+      "x": -812.1,
+      "y": -73.3,
       "region": 7
     },
     {
@@ -5655,8 +5657,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 30.4,
-      "y": 630.9,
+      "x": 87.8,
+      "y": 530.5,
       "region": 1
     },
     {
@@ -5672,8 +5674,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": -118.9,
-      "y": 659.9,
+      "x": 88.3,
+      "y": 446.3,
       "region": 1
     },
     {
@@ -5739,8 +5741,8 @@
           "mondino"
         ]
       },
-      "x": -768.2,
-      "y": 540.1,
+      "x": -745.7,
+      "y": 730.7,
       "region": 8
     },
     {
@@ -5806,8 +5808,8 @@
           "prendano"
         ]
       },
-      "x": -68.9,
-      "y": 494.8,
+      "x": -59.9,
+      "y": 521.5,
       "region": 1
     },
     {
@@ -5823,8 +5825,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 565.9,
-      "y": -1021.4,
+      "x": 625.8,
+      "y": -841.3,
       "region": 0
     },
     {
@@ -5840,8 +5842,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": -897.7,
-      "y": -143.9,
+      "x": -866.2,
+      "y": -177.3,
       "region": 7
     },
     {
@@ -5907,8 +5909,8 @@
           "bastino"
         ]
       },
-      "x": 483.9,
-      "y": -1080.1,
+      "x": 755.6,
+      "y": -821.3,
       "region": 0
     },
     {
@@ -5924,8 +5926,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 54.0,
-      "y": -1172.7,
+      "x": 38.5,
+      "y": -1222.1,
       "region": 25
     },
     {
@@ -5941,8 +5943,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": -863.5,
-      "y": -152.7,
+      "x": -849.2,
+      "y": -153.1,
       "region": 7
     },
     {
@@ -6008,8 +6010,8 @@
           "subiscano"
         ]
       },
-      "x": 229.8,
-      "y": 125.2,
+      "x": 210.8,
+      "y": 81.4,
       "region": 11
     },
     {
@@ -6025,8 +6027,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 508.1,
-      "y": -835.5,
+      "x": 742.7,
+      "y": -1023.6,
       "region": 0
     },
     {
@@ -6092,8 +6094,8 @@
           "capiscano"
         ]
       },
-      "x": 391.6,
-      "y": -222.1,
+      "x": 418.5,
+      "y": -221.8,
       "region": 5
     },
     {
@@ -6159,8 +6161,8 @@
           "testino"
         ]
       },
-      "x": 580.1,
-      "y": -991.3,
+      "x": 689.1,
+      "y": -916.9,
       "region": 0
     },
     {
@@ -6176,8 +6178,8 @@
       "cognate_note": null,
       "tier": 9,
       "level": null,
-      "x": -119.5,
-      "y": -1122.2,
+      "x": -121.8,
+      "y": -1239.5,
       "region": 25
     },
     {
@@ -6193,8 +6195,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 500.7,
-      "y": -896.1,
+      "x": 740.9,
+      "y": -984.3,
       "region": 0
     },
     {
@@ -6210,8 +6212,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": -386.9,
-      "y": 377.9,
+      "x": -384.9,
+      "y": 337.9,
       "region": 3
     },
     {
@@ -6227,8 +6229,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 211.6,
-      "y": -689.8,
+      "x": 198.0,
+      "y": -707.0,
       "region": 14
     },
     {
@@ -6294,8 +6296,8 @@
           "scusino"
         ]
       },
-      "x": 660.2,
-      "y": -556.0,
+      "x": 597.2,
+      "y": -378.4,
       "region": 26
     },
     {
@@ -6311,8 +6313,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": -869.4,
-      "y": 706.0,
+      "x": -850.9,
+      "y": 538.6,
       "region": 8
     },
     {
@@ -6328,8 +6330,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": -1228.7,
-      "y": -123.4,
+      "x": -1254.5,
+      "y": -212.0,
       "region": 13
     },
     {
@@ -6345,8 +6347,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": -1285.2,
-      "y": -271.8,
+      "x": -1231.6,
+      "y": -56.2,
       "region": 13
     },
     {
@@ -6362,8 +6364,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 497.8,
-      "y": 939.0,
+      "x": 245.6,
+      "y": 784.9,
       "region": 6
     },
     {
@@ -6429,8 +6431,8 @@
           "cerchino"
         ]
       },
-      "x": 606.7,
-      "y": 422.7,
+      "x": 599.1,
+      "y": 425.5,
       "region": 16
     },
     {
@@ -6446,8 +6448,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 522.4,
-      "y": 45.7,
+      "x": 730.9,
+      "y": 200.7,
       "region": 2
     },
     {
@@ -6513,8 +6515,8 @@
           "menino"
         ]
       },
-      "x": -386.3,
-      "y": -557.3,
+      "x": -314.5,
+      "y": -438.9,
       "region": 22
     },
     {
@@ -6530,8 +6532,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": 25.1,
-      "y": 721.6,
+      "x": -42.4,
+      "y": 383.8,
       "region": 1
     },
     {
@@ -6547,8 +6549,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": -535.0,
-      "y": 275.7,
+      "x": -491.6,
+      "y": 246.3,
       "region": 3
     },
     {
@@ -6564,8 +6566,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": -45.4,
-      "y": -81.5,
+      "x": -165.6,
+      "y": -40.0,
       "region": 9
     },
     {
@@ -6581,8 +6583,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": -463.3,
-      "y": 674.8,
+      "x": -438.6,
+      "y": 698.4,
       "region": 18
     },
     {
@@ -6598,8 +6600,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": -1209.2,
-      "y": -148.3,
+      "x": -1288.1,
+      "y": -227.5,
       "region": 13
     },
     {
@@ -6665,8 +6667,8 @@
           "aiutino"
         ]
       },
-      "x": 219.3,
-      "y": 197.4,
+      "x": 262.7,
+      "y": 0.4,
       "region": 11
     },
     {
@@ -6682,8 +6684,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": 323.4,
-      "y": 907.0,
+      "x": 397.6,
+      "y": 940.9,
       "region": 6
     },
     {
@@ -6699,8 +6701,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": 524.2,
-      "y": -1030.6,
+      "x": 701.6,
+      "y": -853.8,
       "region": 0
     },
     {
@@ -6716,8 +6718,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": 670.9,
-      "y": 4.3,
+      "x": 738.4,
+      "y": 45.4,
       "region": 2
     },
     {
@@ -6733,8 +6735,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": 918.5,
-      "y": -379.9,
+      "x": 915.0,
+      "y": -368.0,
       "region": 21
     },
     {
@@ -6750,8 +6752,8 @@
       "cognate_note": null,
       "tier": 9,
       "level": null,
-      "x": 632.3,
-      "y": 510.7,
+      "x": 527.4,
+      "y": 306.7,
       "region": 16
     },
     {
@@ -6817,8 +6819,8 @@
           "uccidano"
         ]
       },
-      "x": 419.9,
-      "y": 890.1,
+      "x": 302.4,
+      "y": 879.6,
       "region": 6
     },
     {
@@ -6884,8 +6886,8 @@
           "pianino"
         ]
       },
-      "x": -1060.8,
-      "y": 114.7,
+      "x": -1089.8,
+      "y": 443.7,
       "region": 4
     },
     {
@@ -6901,8 +6903,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": 639.0,
-      "y": -893.1,
+      "x": 587.4,
+      "y": -953.3,
       "region": 0
     },
     {
@@ -6918,8 +6920,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": -600.9,
-      "y": 267.3,
+      "x": -577.7,
+      "y": 224.5,
       "region": 3
     },
     {
@@ -6935,8 +6937,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": 593.0,
-      "y": -1045.4,
+      "x": 676.2,
+      "y": -867.5,
       "region": 0
     },
     {
@@ -7002,8 +7004,8 @@
           "prestino"
         ]
       },
-      "x": 378.9,
-      "y": 375.7,
+      "x": 386.9,
+      "y": 494.3,
       "region": 16
     },
     {
@@ -7019,8 +7021,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": -913.0,
-      "y": -240.7,
+      "x": -944.2,
+      "y": -242.5,
       "region": 7
     },
     {
@@ -7086,8 +7088,8 @@
           "tornino"
         ]
       },
-      "x": 79.8,
-      "y": 721.6,
+      "x": -14.8,
+      "y": 357.6,
       "region": 1
     },
     {
@@ -7103,8 +7105,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": 588.7,
-      "y": -1065.6,
+      "x": 604.5,
+      "y": -822.3,
       "region": 0
     },
     {
@@ -7170,8 +7172,8 @@
           "girino"
         ]
       },
-      "x": -437.8,
-      "y": -376.3,
+      "x": -508.9,
+      "y": -505.4,
       "region": 22
     },
     {
@@ -7187,8 +7189,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": 148.3,
-      "y": -645.9,
+      "x": 132.2,
+      "y": -686.5,
       "region": 14
     },
     {
@@ -7204,8 +7206,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": 460.4,
-      "y": -1011.3,
+      "x": 692.2,
+      "y": -773.2,
       "region": 0
     },
     {
@@ -7271,8 +7273,8 @@
           "contrino"
         ]
       },
-      "x": -266.7,
-      "y": -949.9,
+      "x": -254.6,
+      "y": -937.0,
       "region": 23
     },
     {
@@ -7288,8 +7290,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": 997.5,
-      "y": -320.0,
+      "x": 992.9,
+      "y": -317.6,
       "region": 21
     },
     {
@@ -7305,8 +7307,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": -91.5,
-      "y": 643.2,
+      "x": 74.6,
+      "y": 467.5,
       "region": 1
     },
     {
@@ -7372,8 +7374,8 @@
           "puntino"
         ]
       },
-      "x": -371.3,
-      "y": -538.1,
+      "x": -338.9,
+      "y": -445.0,
       "region": 22
     },
     {
@@ -7389,8 +7391,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": 9.6,
-      "y": 928.5,
+      "x": 34.4,
+      "y": 1067.0,
       "region": 20
     },
     {
@@ -7406,8 +7408,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": 613.0,
-      "y": -946.8,
+      "x": 668.8,
+      "y": -981.2,
       "region": 0
     },
     {
@@ -7423,8 +7425,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": 675.3,
-      "y": -1031.2,
+      "x": 553.3,
+      "y": -915.9,
       "region": 0
     },
     {
@@ -7490,8 +7492,8 @@
           "finiscano"
         ]
       },
-      "x": -443.5,
-      "y": 656.0,
+      "x": -428.6,
+      "y": 677.5,
       "region": 18
     },
     {
@@ -7507,8 +7509,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": -752.0,
-      "y": -89.1,
+      "x": -770.3,
+      "y": -43.6,
       "region": 7
     },
     {
@@ -7524,8 +7526,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": 591.2,
-      "y": -1100.3,
+      "x": 729.1,
+      "y": -847.4,
       "region": 0
     },
     {
@@ -7541,8 +7543,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": -498.9,
-      "y": 263.8,
+      "x": -494.4,
+      "y": 271.8,
       "region": 3
     },
     {
@@ -7608,8 +7610,8 @@
           "passino"
         ]
       },
-      "x": -581.8,
-      "y": 168.7,
+      "x": -494.2,
+      "y": 166.1,
       "region": 3
     },
     {
@@ -7625,8 +7627,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": 542.7,
-      "y": -1085.7,
+      "x": 639.9,
+      "y": -789.4,
       "region": 0
     },
     {
@@ -7642,8 +7644,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": -72.0,
-      "y": -928.0,
+      "x": -74.8,
+      "y": -897.5,
       "region": 28
     },
     {
@@ -7659,8 +7661,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": -391.3,
-      "y": 395.6,
+      "x": -383.7,
+      "y": 354.0,
       "region": 3
     },
     {
@@ -7726,8 +7728,8 @@
           "importino"
         ]
       },
-      "x": 248.3,
-      "y": 11.7,
+      "x": 170.8,
+      "y": 151.2,
       "region": 11
     },
     {
@@ -7793,8 +7795,8 @@
           "perdano"
         ]
       },
-      "x": -834.1,
-      "y": 959.3,
+      "x": -812.5,
+      "y": 981.2,
       "region": 29
     },
     {
@@ -7860,8 +7862,8 @@
           "escano"
         ]
       },
-      "x": 864.8,
-      "y": -17.8,
+      "x": 763.4,
+      "y": -123.7,
       "region": 2
     },
     {
@@ -7877,8 +7879,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": -429.3,
-      "y": 188.4,
+      "x": -587.9,
+      "y": 357.9,
       "region": 3
     },
     {
@@ -7894,8 +7896,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": -114.4,
-      "y": 89.3,
+      "x": -51.5,
+      "y": -0.1,
       "region": 9
     },
     {
@@ -7911,8 +7913,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": -568.7,
-      "y": 324.2,
+      "x": -559.7,
+      "y": 269.6,
       "region": 3
     },
     {
@@ -7928,8 +7930,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": 193.5,
-      "y": 118.7,
+      "x": 279.4,
+      "y": 251.6,
       "region": 11
     },
     {
@@ -7945,8 +7947,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": -75.7,
-      "y": -660.1,
+      "x": -246.6,
+      "y": -714.2,
       "region": 27
     },
     {
@@ -8012,8 +8014,8 @@
           "significhino"
         ]
       },
-      "x": 388.3,
-      "y": -308.1,
+      "x": 328.8,
+      "y": -281.1,
       "region": 5
     },
     {
@@ -8029,8 +8031,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": 45.4,
-      "y": 689.7,
+      "x": -14.5,
+      "y": 397.4,
       "region": 1
     },
     {
@@ -8096,8 +8098,8 @@
           "riescano"
         ]
       },
-      "x": 601.2,
-      "y": -15.9,
+      "x": 764.5,
+      "y": 111.0,
       "region": 2
     },
     {
@@ -8113,8 +8115,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": -1128.9,
-      "y": 344.3,
+      "x": -1032.2,
+      "y": 157.9,
       "region": 4
     },
     {
@@ -8180,8 +8182,8 @@
           "chiamino"
         ]
       },
-      "x": 954.3,
-      "y": 368.0,
+      "x": 837.3,
+      "y": 351.4,
       "region": 19
     },
     {
@@ -8197,8 +8199,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": -23.8,
-      "y": -933.7,
+      "x": -48.8,
+      "y": -946.3,
       "region": 28
     },
     {
@@ -8214,8 +8216,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": -341.3,
-      "y": 388.8,
+      "x": -343.3,
+      "y": 333.2,
       "region": 3
     },
     {
@@ -8231,8 +8233,8 @@
       "cognate_note": null,
       "tier": 10,
       "level": null,
-      "x": 815.8,
-      "y": -1156.7,
+      "x": 339.7,
+      "y": -893.0,
       "region": 0
     },
     {
@@ -8298,8 +8300,8 @@
           "sperino"
         ]
       },
-      "x": 350.1,
-      "y": 155.9,
+      "x": 351.3,
+      "y": 112.8,
       "region": 11
     },
     {
@@ -8315,8 +8317,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": 201.1,
-      "y": 902.9,
+      "x": 530.6,
+      "y": 1003.3,
       "region": 6
     },
     {
@@ -8382,8 +8384,8 @@
           "ascoltino"
         ]
       },
-      "x": 786.9,
-      "y": 19.9,
+      "x": 706.9,
+      "y": -63.7,
       "region": 2
     },
     {
@@ -8399,8 +8401,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": 224.6,
-      "y": 55.0,
+      "x": 225.7,
+      "y": 196.2,
       "region": 11
     },
     {
@@ -8466,8 +8468,8 @@
           "fantastichino"
         ]
       },
-      "x": 175.8,
-      "y": -782.4,
+      "x": 270.0,
+      "y": -679.5,
       "region": 14
     },
     {
@@ -8483,8 +8485,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": -508.9,
-      "y": 633.5,
+      "x": -393.1,
+      "y": 737.0,
       "region": 18
     },
     {
@@ -8550,8 +8552,8 @@
           "numerino"
         ]
       },
-      "x": -359.8,
-      "y": -884.9,
+      "x": -360.5,
+      "y": -879.9,
       "region": 23
     },
     {
@@ -8567,8 +8569,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": 671.0,
-      "y": -749.9,
+      "x": 627.9,
+      "y": -1125.8,
       "region": 0
     },
     {
@@ -8584,8 +8586,8 @@
       "cognate_note": null,
       "tier": 9,
       "level": null,
-      "x": -1136.1,
-      "y": 365.0,
+      "x": -1159.9,
+      "y": 111.7,
       "region": 4
     },
     {
@@ -8651,8 +8653,8 @@
           "entrino"
         ]
       },
-      "x": -23.3,
-      "y": 496.2,
+      "x": -33.3,
+      "y": 550.4,
       "region": 1
     },
     {
@@ -8668,8 +8670,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": 49.6,
-      "y": -355.5,
+      "x": -104.2,
+      "y": -452.1,
       "region": 15
     },
     {
@@ -8735,8 +8737,8 @@
           "portino"
         ]
       },
-      "x": -104.5,
-      "y": 504.9,
+      "x": -68.4,
+      "y": 493.8,
       "region": 1
     },
     {
@@ -8752,8 +8754,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": 199.1,
-      "y": -626.1,
+      "x": 121.9,
+      "y": -727.3,
       "region": 14
     },
     {
@@ -8819,8 +8821,8 @@
           "amino"
         ]
       },
-      "x": 894.1,
-      "y": -422.2,
+      "x": 869.8,
+      "y": -369.7,
       "region": 21
     },
     {
@@ -8836,8 +8838,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": 472.2,
-      "y": -875.7,
+      "x": 701.5,
+      "y": -1059.1,
       "region": 0
     },
     {
@@ -8903,8 +8905,8 @@
           "agiscano"
         ]
       },
-      "x": 635.7,
-      "y": -71.7,
+      "x": 790.8,
+      "y": 70.5,
       "region": 2
     },
     {
@@ -8920,8 +8922,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": 15.5,
-      "y": 646.8,
+      "x": -2.6,
+      "y": 443.5,
       "region": 1
     },
     {
@@ -8937,8 +8939,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": 542.9,
-      "y": 941.4,
+      "x": 199.4,
+      "y": 758.0,
       "region": 6
     },
     {
@@ -8954,8 +8956,8 @@
       "cognate_note": null,
       "tier": 10,
       "level": null,
-      "x": 751.6,
-      "y": -55.7,
+      "x": 772.9,
+      "y": -15.9,
       "region": 2
     },
     {
@@ -8971,8 +8973,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": 543.2,
-      "y": -334.4,
+      "x": 218.4,
+      "y": -121.8,
       "region": 5
     },
     {
@@ -9038,8 +9040,8 @@
           "telefonino"
         ]
       },
-      "x": 985.7,
-      "y": 386.9,
+      "x": 807.3,
+      "y": 325.5,
       "region": 19
     },
     {
@@ -9055,8 +9057,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": -49.8,
-      "y": -968.6,
+      "x": -98.0,
+      "y": -944.5,
       "region": 28
     },
     {
@@ -9072,8 +9074,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": -682.2,
-      "y": -500.2,
+      "x": -742.8,
+      "y": -470.5,
       "region": 24
     },
     {
@@ -9089,8 +9091,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": -801.4,
-      "y": 661.7,
+      "x": -843.5,
+      "y": 693.3,
       "region": 8
     },
     {
@@ -9106,8 +9108,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": -303.4,
-      "y": -902.1,
+      "x": -301.7,
+      "y": -900.7,
       "region": 23
     },
     {
@@ -9123,8 +9125,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": -515.7,
-      "y": -210.4,
+      "x": -534.3,
+      "y": -142.9,
       "region": 17
     },
     {
@@ -9140,8 +9142,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": -1182.2,
-      "y": 294.4,
+      "x": -1144.2,
+      "y": 212.6,
       "region": 4
     },
     {
@@ -9157,8 +9159,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": 312.7,
-      "y": 909.4,
+      "x": 408.6,
+      "y": 946.3,
       "region": 6
     },
     {
@@ -9174,8 +9176,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": 560.4,
-      "y": -898.0,
+      "x": 661.8,
+      "y": -968.9,
       "region": 0
     },
     {
@@ -9191,8 +9193,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": -265.4,
-      "y": -886.2,
+      "x": -254.3,
+      "y": -880.6,
       "region": 23
     },
     {
@@ -9208,8 +9210,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": 664.5,
-      "y": -440.8,
+      "x": 670.1,
+      "y": -475.5,
       "region": 26
     },
     {
@@ -9225,8 +9227,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": 680.1,
-      "y": -830.1,
+      "x": 482.8,
+      "y": -940.5,
       "region": 0
     },
     {
@@ -9292,8 +9294,8 @@
           "ufficino"
         ]
       },
-      "x": 528.3,
-      "y": 983.1,
+      "x": 237.5,
+      "y": 721.7,
       "region": 6
     },
     {
@@ -9359,8 +9361,8 @@
           "versino"
         ]
       },
-      "x": -103.1,
-      "y": 556.3,
+      "x": -47.5,
+      "y": 457.4,
       "region": 1
     },
     {
@@ -9376,8 +9378,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": -573.8,
-      "y": 255.9,
+      "x": -551.9,
+      "y": 233.6,
       "region": 3
     },
     {
@@ -9393,8 +9395,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": 539.0,
-      "y": -1047.2,
+      "x": 651.5,
+      "y": -821.5,
       "region": 0
     },
     {
@@ -9460,8 +9462,8 @@
           "muoiano"
         ]
       },
-      "x": 499.7,
-      "y": 901.1,
+      "x": 222.9,
+      "y": 824.6,
       "region": 6
     },
     {
@@ -9477,8 +9479,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": -821.6,
-      "y": -127.9,
+      "x": -837.7,
+      "y": -101.4,
       "region": 7
     },
     {
@@ -9494,8 +9496,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": -863.3,
-      "y": -303.7,
+      "x": -1030.8,
+      "y": -214.7,
       "region": 7
     },
     {
@@ -9511,8 +9513,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": 822.5,
-      "y": 401.4,
+      "x": 974.4,
+      "y": 421.8,
       "region": 19
     },
     {
@@ -9528,8 +9530,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": -20.6,
-      "y": 61.3,
+      "x": -190.9,
+      "y": 38.0,
       "region": 9
     },
     {
@@ -9595,8 +9597,8 @@
           "vivano"
         ]
       },
-      "x": -1268.1,
-      "y": -293.4,
+      "x": -1207.2,
+      "y": -43.5,
       "region": 13
     },
     {
@@ -9612,8 +9614,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 676.0,
-      "y": -507.3,
+      "x": 636.6,
+      "y": -426.2,
       "region": 26
     },
     {
@@ -9679,8 +9681,8 @@
           "provino"
         ]
       },
-      "x": 1204.0,
-      "y": 646.5,
+      "x": 1151.7,
+      "y": 677.1,
       "region": 10
     },
     {
@@ -9746,8 +9748,8 @@
           "ricordino"
         ]
       },
-      "x": 245.9,
-      "y": 889.8,
+      "x": 490.6,
+      "y": 964.9,
       "region": 6
     },
     {
@@ -9813,8 +9815,8 @@
           "divertano"
         ]
       },
-      "x": -414.1,
-      "y": -381.4,
+      "x": -485.9,
+      "y": -517.0,
       "region": 22
     },
     {
@@ -9880,8 +9882,8 @@
           "paiano"
         ]
       },
-      "x": 746.4,
-      "y": -29.2,
+      "x": 746.3,
+      "y": -16.2,
       "region": 2
     },
     {
@@ -9947,8 +9949,8 @@
           "contino"
         ]
       },
-      "x": -347.6,
-      "y": -907.0,
+      "x": -348.8,
+      "y": -904.2,
       "region": 23
     },
     {
@@ -9964,8 +9966,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": -511.8,
-      "y": 281.3,
+      "x": -478.2,
+      "y": 258.3,
       "region": 3
     },
     {
@@ -9981,8 +9983,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": 528.2,
-      "y": -954.5,
+      "x": 684.1,
+      "y": -885.4,
       "region": 0
     },
     {
@@ -10048,8 +10050,8 @@
           "esigano"
         ]
       },
-      "x": 299.7,
-      "y": 94.5,
+      "x": 257.9,
+      "y": 87.1,
       "region": 11
     },
     {
@@ -10065,8 +10067,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": -713.7,
-      "y": -45.4,
+      "x": -746.2,
+      "y": 15.8,
       "region": 7
     },
     {
@@ -10082,8 +10084,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": -395.0,
-      "y": 350.5,
+      "x": -400.0,
+      "y": 317.9,
       "region": 3
     },
     {
@@ -10149,8 +10151,8 @@
           "motivino"
         ]
       },
-      "x": 429.0,
-      "y": -140.1,
+      "x": 511.2,
+      "y": -159.3,
       "region": 5
     },
     {
@@ -10166,8 +10168,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": -1162.9,
-      "y": 234.0,
+      "x": -1063.2,
+      "y": 280.7,
       "region": 4
     },
     {
@@ -10233,8 +10235,8 @@
           "capitanino"
         ]
       },
-      "x": -129.4,
-      "y": -24.8,
+      "x": -108.5,
+      "y": 68.9,
       "region": 9
     },
     {
@@ -10250,8 +10252,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": -482.8,
-      "y": 659.7,
+      "x": -418.0,
+      "y": 712.6,
       "region": 18
     },
     {
@@ -10317,8 +10319,8 @@
           "giochino"
         ]
       },
-      "x": -53.0,
-      "y": 456.8,
+      "x": -74.3,
+      "y": 551.1,
       "region": 1
     },
     {
@@ -10334,8 +10336,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": 361.1,
-      "y": -1001.0,
+      "x": 749.5,
+      "y": -718.5,
       "region": 0
     },
     {
@@ -10351,8 +10353,8 @@
       "cognate_note": null,
       "tier": 9,
       "level": null,
-      "x": 761.1,
-      "y": -402.2,
+      "x": 780.4,
+      "y": -531.3,
       "region": 26
     },
     {
@@ -10368,8 +10370,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": 1043.8,
-      "y": -225.7,
+      "x": 960.3,
+      "y": -225.3,
       "region": 21
     },
     {
@@ -10435,8 +10437,8 @@
           "trattino"
         ]
       },
-      "x": 587.0,
-      "y": -17.7,
+      "x": 770.4,
+      "y": 123.5,
       "region": 2
     },
     {
@@ -10452,8 +10454,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": 15.0,
-      "y": 606.9,
+      "x": 64.6,
+      "y": 527.2,
       "region": 1
     },
     {
@@ -10519,8 +10521,8 @@
           "controllino"
         ]
       },
-      "x": 710.4,
-      "y": -37.6,
+      "x": 706.9,
+      "y": 28.8,
       "region": 2
     },
     {
@@ -10536,8 +10538,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -1251.2,
-      "y": -62.2,
+      "x": -1210.0,
+      "y": -259.9,
       "region": 13
     },
     {
@@ -10553,8 +10555,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": 742.7,
-      "y": -1161.5,
+      "x": 399.4,
+      "y": -843.4,
       "region": 0
     },
     {
@@ -10570,8 +10572,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": -8.3,
-      "y": 596.2,
+      "x": 6.7,
+      "y": 488.2,
       "region": 1
     },
     {
@@ -10587,8 +10589,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": -916.3,
-      "y": -186.6,
+      "x": -891.0,
+      "y": -219.7,
       "region": 7
     },
     {
@@ -10604,8 +10606,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": 751.6,
-      "y": -853.1,
+      "x": 467.0,
+      "y": -1007.5,
       "region": 0
     },
     {
@@ -10621,8 +10623,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": -1232.7,
-      "y": -85.3,
+      "x": -1230.1,
+      "y": -239.2,
       "region": 13
     },
     {
@@ -10638,8 +10640,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": -37.2,
-      "y": -92.7,
+      "x": -172.6,
+      "y": -51.1,
       "region": 9
     },
     {
@@ -10655,8 +10657,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": 731.2,
-      "y": 861.4,
+      "x": 653.9,
+      "y": 679.1,
       "region": 12
     },
     {
@@ -10722,8 +10724,8 @@
           "mandino"
         ]
       },
-      "x": 450.9,
-      "y": 357.7,
+      "x": 427.9,
+      "y": 466.7,
       "region": 16
     },
     {
@@ -10739,8 +10741,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": -460.1,
-      "y": -125.3,
+      "x": -451.9,
+      "y": -141.7,
       "region": 17
     },
     {
@@ -10806,8 +10808,8 @@
           "inizino"
         ]
       },
-      "x": -59.7,
-      "y": 378.9,
+      "x": -119.8,
+      "y": 598.2,
       "region": 1
     },
     {
@@ -10873,8 +10875,8 @@
           "causino"
         ]
       },
-      "x": 540.2,
-      "y": -803.4,
+      "x": 721.7,
+      "y": -1061.4,
       "region": 0
     },
     {
@@ -10890,8 +10892,8 @@
       "cognate_note": null,
       "tier": 9,
       "level": null,
-      "x": -1311.0,
-      "y": -200.3,
+      "x": -1203.1,
+      "y": -136.9,
       "region": 13
     },
     {
@@ -10907,8 +10909,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": -1226.3,
-      "y": -61.4,
+      "x": -1234.6,
+      "y": -262.1,
       "region": 13
     },
     {
@@ -10974,8 +10976,8 @@
           "ricevano"
         ]
       },
-      "x": 479.3,
-      "y": 376.7,
+      "x": 466.4,
+      "y": 464.2,
       "region": 16
     },
     {
@@ -10991,8 +10993,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": 658.0,
-      "y": 26.2,
+      "x": 763.0,
+      "y": 40.1,
       "region": 2
     },
     {
@@ -11008,8 +11010,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": 1267.5,
-      "y": -367.2,
+      "x": 1288.2,
+      "y": -397.5,
       "region": 31
     },
     {
@@ -11025,8 +11027,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": 7.1,
-      "y": 73.8,
+      "x": -219.1,
+      "y": 43.7,
       "region": 9
     },
     {
@@ -11042,8 +11044,8 @@
       "cognate_note": null,
       "tier": 9,
       "level": null,
-      "x": -1152.9,
-      "y": 212.3,
+      "x": -1045.8,
+      "y": 297.5,
       "region": 4
     },
     {
@@ -11059,8 +11061,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": 1308.4,
-      "y": 597.7,
+      "x": 1155.9,
+      "y": 792.0,
       "region": 10
     },
     {
@@ -11076,8 +11078,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": -145.5,
-      "y": 654.2,
+      "x": 80.5,
+      "y": 425.8,
       "region": 1
     },
     {
@@ -11093,8 +11095,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": 460.7,
-      "y": 892.3,
+      "x": 260.3,
+      "y": 854.3,
       "region": 6
     },
     {
@@ -11110,8 +11112,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": 714.1,
-      "y": -66.0,
+      "x": 682.0,
+      "y": 45.1,
       "region": 2
     },
     {
@@ -11127,8 +11129,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": 240.8,
-      "y": -641.8,
+      "x": 80.7,
+      "y": -680.6,
       "region": 14
     },
     {
@@ -11194,8 +11196,8 @@
           "durino"
         ]
       },
-      "x": -596.3,
-      "y": 315.0,
+      "x": -596.0,
+      "y": 258.2,
       "region": 3
     },
     {
@@ -11211,8 +11213,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": -690.1,
-      "y": -480.1,
+      "x": -720.4,
+      "y": -463.6,
       "region": 24
     },
     {
@@ -11228,8 +11230,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": 1250.8,
-      "y": -387.0,
+      "x": 1255.3,
+      "y": -395.6,
       "region": 31
     },
     {
@@ -11245,8 +11247,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": 809.2,
-      "y": 394.1,
+      "x": 984.9,
+      "y": 435.3,
       "region": 19
     },
     {
@@ -11312,8 +11314,8 @@
           "immaginino"
         ]
       },
-      "x": 463.2,
-      "y": -317.8,
+      "x": 287.2,
+      "y": -198.2,
       "region": 5
     },
     {
@@ -11379,8 +11381,8 @@
           "musichino"
         ]
       },
-      "x": 763.6,
-      "y": 123.7,
+      "x": 595.5,
+      "y": -40.0,
       "region": 2
     },
     {
@@ -11446,8 +11448,8 @@
           "tengano"
         ]
       },
-      "x": -97.9,
-      "y": 460.3,
+      "x": -97.1,
+      "y": 524.0,
       "region": 1
     },
     {
@@ -11513,8 +11515,8 @@
           "diventino"
         ]
       },
-      "x": 592.7,
-      "y": -966.6,
+      "x": 694.9,
+      "y": -955.0,
       "region": 0
     },
     {
@@ -11580,8 +11582,8 @@
           "sbaglino"
         ]
       },
-      "x": -126.1,
-      "y": 563.8,
+      "x": -20.6,
+      "y": 459.1,
       "region": 1
     },
     {
@@ -11597,8 +11599,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": 1.6,
-      "y": 380.6,
+      "x": -123.3,
+      "y": 582.4,
       "region": 1
     },
     {
@@ -11614,8 +11616,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 436.7,
-      "y": 109.8,
+      "x": 422.8,
+      "y": 33.3,
       "region": 11
     },
     {
@@ -11631,8 +11633,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": 530.3,
-      "y": -895.8,
+      "x": 568.1,
+      "y": -826.4,
       "region": 0
     },
     {
@@ -11698,8 +11700,8 @@
           "scoprano"
         ]
       },
-      "x": 582.9,
-      "y": 494.9,
+      "x": 537.0,
+      "y": 358.8,
       "region": 16
     },
     {
@@ -11715,8 +11717,8 @@
       "cognate_note": null,
       "tier": 9,
       "level": null,
-      "x": -52.1,
-      "y": -998.9,
+      "x": -127.6,
+      "y": -962.0,
       "region": 28
     },
     {
@@ -11732,8 +11734,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": 45.5,
-      "y": 60.5,
+      "x": -251.2,
+      "y": 23.0,
       "region": 9
     },
     {
@@ -11749,8 +11751,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": 645.0,
-      "y": -991.8,
+      "x": 609.8,
+      "y": -933.4,
       "region": 0
     },
     {
@@ -11766,8 +11768,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": -619.4,
-      "y": 257.0,
+      "x": -585.4,
+      "y": 207.8,
       "region": 3
     },
     {
@@ -11783,8 +11785,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": 1123.5,
-      "y": 657.9,
+      "x": 1205.8,
+      "y": 627.5,
       "region": 10
     },
     {
@@ -11850,8 +11852,8 @@
           "decidano"
         ]
       },
-      "x": 434.3,
-      "y": 133.8,
+      "x": 431.3,
+      "y": 58.3,
       "region": 11
     },
     {
@@ -11917,8 +11919,8 @@
           "messaggino"
         ]
       },
-      "x": 276.4,
-      "y": -424.6,
+      "x": 507.2,
+      "y": -383.9,
       "region": 5
     },
     {
@@ -11934,8 +11936,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": -241.6,
-      "y": -867.8,
+      "x": -263.6,
+      "y": -951.2,
       "region": 23
     },
     {
@@ -11951,8 +11953,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": -462.5,
-      "y": -133.0,
+      "x": -449.4,
+      "y": -134.3,
       "region": 17
     },
     {
@@ -12018,8 +12020,8 @@
           "usino"
         ]
       },
-      "x": 1328.9,
-      "y": 694.4,
+      "x": 1047.2,
+      "y": 734.3,
       "region": 10
     },
     {
@@ -12035,8 +12037,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": -101.3,
-      "y": -368.7,
+      "x": -28.2,
+      "y": -321.4,
       "region": 15
     },
     {
@@ -12102,8 +12104,8 @@
           "bagnino"
         ]
       },
-      "x": -843.3,
-      "y": 671.8,
+      "x": -897.3,
+      "y": 610.7,
       "region": 8
     },
     {
@@ -12119,8 +12121,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": -143.1,
-      "y": -374.1,
+      "x": -7.8,
+      "y": -284.3,
       "region": 15
     },
     {
@@ -12136,8 +12138,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": 748.6,
-      "y": 67.5,
+      "x": 653.0,
+      "y": -35.3,
       "region": 2
     },
     {
@@ -12153,8 +12155,8 @@
       "cognate_note": null,
       "tier": 10,
       "level": null,
-      "x": -419.0,
-      "y": 799.9,
+      "x": -541.2,
+      "y": 644.0,
       "region": 18
     },
     {
@@ -12170,8 +12172,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": -873.2,
-      "y": -242.4,
+      "x": -963.9,
+      "y": -200.5,
       "region": 7
     },
     {
@@ -12187,8 +12189,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": -709.8,
-      "y": -124.6,
+      "x": -713.5,
+      "y": -65.7,
       "region": 7
     },
     {
@@ -12204,8 +12206,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": -744.6,
-      "y": -494.3,
+      "x": -695.6,
+      "y": -519.5,
       "region": 24
     },
     {
@@ -12221,8 +12223,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": 31.4,
-      "y": -1168.6,
+      "x": 32.8,
+      "y": -1200.0,
       "region": 25
     },
     {
@@ -12238,8 +12240,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": -368.2,
-      "y": 594.2,
+      "x": -374.0,
+      "y": 605.0,
       "region": 18
     },
     {
@@ -12255,8 +12257,8 @@
       "cognate_note": null,
       "tier": 9,
       "level": null,
-      "x": 521.4,
-      "y": -1072.5,
+      "x": 659.3,
+      "y": -791.2,
       "region": 0
     },
     {
@@ -12272,8 +12274,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": -905.5,
-      "y": 238.7,
+      "x": -916.0,
+      "y": 369.7,
       "region": 4
     },
     {
@@ -12289,8 +12291,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": 724.2,
-      "y": -428.0,
+      "x": 737.6,
+      "y": -498.1,
       "region": 26
     },
     {
@@ -12306,8 +12308,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": 1144.0,
-      "y": 655.2,
+      "x": 1191.0,
+      "y": 641.9,
       "region": 10
     },
     {
@@ -12373,8 +12375,8 @@
           "funzionino"
         ]
       },
-      "x": 538.5,
-      "y": -66.9,
+      "x": 851.8,
+      "y": 122.5,
       "region": 2
     },
     {
@@ -12390,8 +12392,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": -533.8,
-      "y": 987.5,
+      "x": -535.5,
+      "y": 990.8,
       "region": 30
     },
     {
@@ -12407,8 +12409,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": -598.3,
-      "y": 372.6,
+      "x": -615.3,
+      "y": 294.7,
       "region": 3
     },
     {
@@ -12424,8 +12426,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": -502.7,
-      "y": -127.6,
+      "x": -460.7,
+      "y": -102.0,
       "region": 17
     },
     {
@@ -12491,8 +12493,8 @@
           "cibino"
         ]
       },
-      "x": -1171.1,
-      "y": 275.9,
+      "x": -1046.6,
+      "y": 211.1,
       "region": 4
     },
     {
@@ -12558,8 +12560,8 @@
           "frettino"
         ]
       },
-      "x": 705.0,
-      "y": 629.0,
+      "x": 854.6,
+      "y": 784.7,
       "region": 12
     },
     {
@@ -12575,8 +12577,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 925.4,
-      "y": -353.6,
+      "x": 940.2,
+      "y": -370.7,
       "region": 21
     },
     {
@@ -12592,8 +12594,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": -385.0,
-      "y": 609.6,
+      "x": -387.2,
+      "y": 621.7,
       "region": 18
     },
     {
@@ -12609,8 +12611,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": 475.0,
-      "y": 910.4,
+      "x": 254.3,
+      "y": 827.5,
       "region": 6
     },
     {
@@ -12676,8 +12678,8 @@
           "odino"
         ]
       },
-      "x": 921.5,
-      "y": -411.3,
+      "x": 892.0,
+      "y": -385.6,
       "region": 21
     },
     {
@@ -12693,8 +12695,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": -8.4,
-      "y": -353.5,
+      "x": -65.5,
+      "y": -408.4,
       "region": 15
     },
     {
@@ -12760,8 +12762,8 @@
           "incidano"
         ]
       },
-      "x": 788.9,
-      "y": 893.2,
+      "x": 598.9,
+      "y": 713.5,
       "region": 12
     },
     {
@@ -12777,8 +12779,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": 491.8,
-      "y": -813.2,
+      "x": 772.5,
+      "y": -1022.7,
       "region": 0
     },
     {
@@ -12794,8 +12796,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": 623.3,
-      "y": -665.2,
+      "x": 407.5,
+      "y": -762.1,
       "region": 0
     },
     {
@@ -12861,8 +12863,8 @@
           "cambino"
         ]
       },
-      "x": 78.9,
-      "y": 738.2,
+      "x": -6.8,
+      "y": 346.7,
       "region": 1
     },
     {
@@ -12878,8 +12880,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": -771.0,
-      "y": -501.6,
+      "x": -683.9,
+      "y": -546.9,
       "region": 24
     },
     {
@@ -12895,8 +12897,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": 676.0,
-      "y": -1142.8,
+      "x": 473.3,
+      "y": -805.7,
       "region": 0
     },
     {
@@ -12962,8 +12964,8 @@
           "riguardino"
         ]
       },
-      "x": 289.5,
-      "y": 847.6,
+      "x": 467.1,
+      "y": 895.8,
       "region": 6
     },
     {
@@ -12979,8 +12981,8 @@
       "cognate_note": null,
       "tier": 10,
       "level": null,
-      "x": 206.8,
-      "y": -360.6,
+      "x": 479.4,
+      "y": -455.9,
       "region": 5
     },
     {
@@ -12996,8 +12998,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": -393.0,
-      "y": 784.4,
+      "x": -560.8,
+      "y": 664.3,
       "region": 18
     },
     {
@@ -13013,8 +13015,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": 1016.5,
-      "y": 380.0,
+      "x": 800.6,
+      "y": 290.3,
       "region": 19
     },
     {
@@ -13080,8 +13082,8 @@
           "permettano"
         ]
       },
-      "x": 413.0,
-      "y": 323.9,
+      "x": 429.0,
+      "y": 531.2,
       "region": 16
     },
     {
@@ -13097,8 +13099,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": 1190.5,
-      "y": 635.0,
+      "x": 1148.5,
+      "y": 659.0,
       "region": 10
     },
     {
@@ -13114,8 +13116,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": 460.9,
-      "y": -234.7,
+      "x": 362.2,
+      "y": -157.5,
       "region": 5
     },
     {
@@ -13131,8 +13133,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": 639.2,
-      "y": -872.3,
+      "x": 550.2,
+      "y": -938.4,
       "region": 0
     },
     {
@@ -13148,8 +13150,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": 109.8,
-      "y": 398.5,
+      "x": -28.5,
+      "y": 680.3,
       "region": 1
     },
     {
@@ -13215,8 +13217,8 @@
           "sistemino"
         ]
       },
-      "x": 580.8,
-      "y": 5.3,
+      "x": 750.3,
+      "y": 135.2,
       "region": 2
     },
     {
@@ -13282,8 +13284,8 @@
           "fondino"
         ]
       },
-      "x": 595.3,
-      "y": 388.6,
+      "x": 602.4,
+      "y": 389.7,
       "region": 16
     },
     {
@@ -13299,8 +13301,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 750.0,
-      "y": 812.6,
+      "x": 681.5,
+      "y": 720.6,
       "region": 12
     },
     {
@@ -13366,8 +13368,8 @@
           "fermino"
         ]
       },
-      "x": -395.5,
-      "y": -418.1,
+      "x": -443.6,
+      "y": -506.9,
       "region": 22
     },
     {
@@ -13383,8 +13385,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": -749.0,
-      "y": -46.6,
+      "x": -782.6,
+      "y": 2.0,
       "region": 7
     },
     {
@@ -13400,8 +13402,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": 943.0,
-      "y": 380.7,
+      "x": 856.8,
+      "y": 353.1,
       "region": 19
     },
     {
@@ -13417,8 +13419,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": -1160.5,
-      "y": 202.9,
+      "x": -1081.0,
+      "y": 330.4,
       "region": 4
     },
     {
@@ -13434,8 +13436,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": -500.9,
-      "y": 998.8,
+      "x": -501.4,
+      "y": 996.6,
       "region": 30
     },
     {
@@ -13451,8 +13453,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": -152.5,
-      "y": -46.9,
+      "x": -97.9,
+      "y": 96.8,
       "region": 9
     },
     {
@@ -13468,8 +13470,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": -225.0,
-      "y": -695.6,
+      "x": -90.3,
+      "y": -613.0,
       "region": 27
     },
     {
@@ -13535,8 +13537,8 @@
           "liberino"
         ]
       },
-      "x": 243.6,
-      "y": 453.3,
+      "x": 91.5,
+      "y": 727.4,
       "region": 1
     },
     {
@@ -13552,8 +13554,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 70.6,
-      "y": 513.0,
+      "x": 24.0,
+      "y": 592.4,
       "region": 1
     },
     {
@@ -13619,8 +13621,8 @@
           "segretino"
         ]
       },
-      "x": 603.8,
-      "y": 566.1,
+      "x": 496.8,
+      "y": 299.2,
       "region": 16
     },
     {
@@ -13636,8 +13638,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": -79.7,
-      "y": 681.9,
+      "x": 108.9,
+      "y": 478.8,
       "region": 1
     },
     {
@@ -13703,8 +13705,8 @@
           "porgano"
         ]
       },
-      "x": 796.9,
-      "y": 774.0,
+      "x": 732.8,
+      "y": 697.1,
       "region": 12
     },
     {
@@ -13720,8 +13722,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 448.1,
-      "y": -957.9,
+      "x": 654.8,
+      "y": -768.1,
       "region": 0
     },
     {
@@ -13787,8 +13789,8 @@
           "listino"
         ]
       },
-      "x": -997.0,
-      "y": 326.6,
+      "x": -1215.5,
+      "y": 74.1,
       "region": 4
     },
     {
@@ -13804,8 +13806,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 770.4,
-      "y": -1133.4,
+      "x": 391.7,
+      "y": -883.8,
       "region": 0
     },
     {
@@ -13871,8 +13873,8 @@
           "assassinino"
         ]
       },
-      "x": 438.4,
-      "y": 849.8,
+      "x": 263.5,
+      "y": 910.6,
       "region": 6
     },
     {
@@ -13888,8 +13890,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": -482.4,
-      "y": 293.2,
+      "x": -471.9,
+      "y": 284.3,
       "region": 3
     },
     {
@@ -13955,8 +13957,8 @@
           "interessino"
         ]
       },
-      "x": 535.1,
-      "y": -967.6,
+      "x": 732.8,
+      "y": -938.0,
       "region": 0
     },
     {
@@ -13972,8 +13974,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": -144.8,
-      "y": 11.6,
+      "x": -73.5,
+      "y": 55.1,
       "region": 9
     },
     {
@@ -13989,8 +13991,8 @@
       "cognate_note": null,
       "tier": 9,
       "level": null,
-      "x": 257.4,
-      "y": -695.9,
+      "x": 228.7,
+      "y": -742.5,
       "region": 14
     },
     {
@@ -14006,8 +14008,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": -455.3,
-      "y": -155.2,
+      "x": -458.8,
+      "y": -116.9,
       "region": 17
     },
     {
@@ -14023,8 +14025,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": -905.2,
-      "y": -133.1,
+      "x": -850.6,
+      "y": -179.1,
       "region": 7
     },
     {
@@ -14090,8 +14092,8 @@
           "giurino"
         ]
       },
-      "x": -381.5,
-      "y": -61.6,
+      "x": -385.7,
+      "y": -206.0,
       "region": 17
     },
     {
@@ -14157,8 +14159,8 @@
           "consiglino"
         ]
       },
-      "x": 321.2,
-      "y": -241.2,
+      "x": 279.8,
+      "y": -386.3,
       "region": 5
     },
     {
@@ -14174,8 +14176,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 635.5,
-      "y": -1056.9,
+      "x": 561.0,
+      "y": -859.0,
       "region": 0
     },
     {
@@ -14191,8 +14193,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": -1318.5,
-      "y": -65.3,
+      "x": -1383.3,
+      "y": -186.2,
       "region": 13
     },
     {
@@ -14258,8 +14260,8 @@
           "centrino"
         ]
       },
-      "x": -79.4,
-      "y": 710.5,
+      "x": 132.7,
+      "y": 483.2,
       "region": 1
     },
     {
@@ -14325,8 +14327,8 @@
           "sognino"
         ]
       },
-      "x": 178.3,
-      "y": -831.2,
+      "x": 319.9,
+      "y": -683.8,
       "region": 14
     },
     {
@@ -14392,8 +14394,8 @@
           "carino"
         ]
       },
-      "x": 375.3,
-      "y": 851.7,
+      "x": 372.1,
+      "y": 854.5,
       "region": 6
     },
     {
@@ -14459,8 +14461,8 @@
           "bruttino"
         ]
       },
-      "x": 63.6,
-      "y": -728.2,
+      "x": 166.1,
+      "y": -555.5,
       "region": 14
     },
     {
@@ -14476,8 +14478,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": 800.1,
-      "y": -15.4,
+      "x": 745.3,
+      "y": -70.3,
       "region": 2
     },
     {
@@ -14493,8 +14495,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 168.2,
-      "y": -731.4,
+      "x": 203.3,
+      "y": -639.3,
       "region": 14
     },
     {
@@ -14510,8 +14512,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": -466.3,
-      "y": 714.7,
+      "x": -475.5,
+      "y": 703.9,
       "region": 18
     },
     {
@@ -14527,8 +14529,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": -355.8,
-      "y": -495.5,
+      "x": -356.0,
+      "y": -490.5,
       "region": 22
     },
     {
@@ -14594,8 +14596,8 @@
           "rispettino"
         ]
       },
-      "x": 406.5,
-      "y": -394.5,
+      "x": 226.3,
+      "y": -316.6,
       "region": 5
     },
     {
@@ -14611,8 +14613,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 785.3,
-      "y": 401.0,
+      "x": 998.8,
+      "y": 459.0,
       "region": 19
     },
     {
@@ -14678,8 +14680,8 @@
           "incontrino"
         ]
       },
-      "x": 890.8,
-      "y": 395.3,
+      "x": 902.1,
+      "y": 394.7,
       "region": 19
     },
     {
@@ -14745,8 +14747,8 @@
           "servano"
         ]
       },
-      "x": -93.2,
-      "y": -1144.9,
+      "x": -94.0,
+      "y": -1219.3,
       "region": 25
     },
     {
@@ -14812,8 +14814,8 @@
           "rapportino"
         ]
       },
-      "x": -529.7,
-      "y": -277.6,
+      "x": -595.0,
+      "y": -129.0,
       "region": 17
     },
     {
@@ -14829,8 +14831,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": -77.6,
-      "y": 617.7,
+      "x": 39.9,
+      "y": 464.5,
       "region": 1
     },
     {
@@ -14896,8 +14898,8 @@
           "paghino"
         ]
       },
-      "x": -154.1,
-      "y": 102.0,
+      "x": -49.1,
+      "y": -38.7,
       "region": 9
     },
     {
@@ -14913,8 +14915,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": 266.7,
-      "y": 808.9,
+      "x": 496.3,
+      "y": 856.3,
       "region": 6
     },
     {
@@ -14930,8 +14932,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": -529.0,
-      "y": 603.9,
+      "x": -364.0,
+      "y": 752.7,
       "region": 18
     },
     {
@@ -14947,8 +14949,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": -53.8,
-      "y": -1191.5,
+      "x": -52.1,
+      "y": -1176.1,
       "region": 25
     },
     {
@@ -15014,8 +15016,8 @@
           "medichino"
         ]
       },
-      "x": 1064.4,
-      "y": 649.8,
+      "x": 1252.7,
+      "y": 664.3,
       "region": 10
     },
     {
@@ -15081,8 +15083,8 @@
           "schifino"
         ]
       },
-      "x": 895.1,
-      "y": -395.1,
+      "x": 891.5,
+      "y": -356.7,
       "region": 21
     },
     {
@@ -15098,8 +15100,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 302.4,
-      "y": 906.1,
+      "x": 421.3,
+      "y": 947.6,
       "region": 6
     },
     {
@@ -15115,8 +15117,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 662.0,
-      "y": -10.0,
+      "x": 726.3,
+      "y": 61.3,
       "region": 2
     },
     {
@@ -15132,8 +15134,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 174.7,
-      "y": -684.7,
+      "x": 157.1,
+      "y": -665.6,
       "region": 14
     },
     {
@@ -15149,8 +15151,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 899.1,
-      "y": -337.4,
+      "x": 945.7,
+      "y": -398.8,
       "region": 21
     },
     {
@@ -15216,8 +15218,8 @@
           "addossino"
         ]
       },
-      "x": -444.9,
-      "y": 678.7,
+      "x": -439.5,
+      "y": 715.4,
       "region": 18
     },
     {
@@ -15233,8 +15235,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 145.7,
-      "y": 480.7,
+      "x": 50.3,
+      "y": 656.9,
       "region": 1
     },
     {
@@ -15250,8 +15252,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": -528.3,
-      "y": -223.9,
+      "x": -550.2,
+      "y": -147.7,
       "region": 17
     },
     {
@@ -15267,8 +15269,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 1104.7,
-      "y": 648.6,
+      "x": 1224.7,
+      "y": 635.5,
       "region": 10
     },
     {
@@ -15334,8 +15336,8 @@
           "sparino"
         ]
       },
-      "x": 709.7,
-      "y": 884.2,
+      "x": 642.3,
+      "y": 651.4,
       "region": 12
     },
     {
@@ -15351,8 +15353,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 703.4,
-      "y": -451.3,
+      "x": 717.1,
+      "y": -467.0,
       "region": 26
     },
     {
@@ -15368,8 +15370,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 49.3,
-      "y": -317.7,
+      "x": -74.7,
+      "y": -475.1,
       "region": 15
     },
     {
@@ -15385,8 +15387,8 @@
       "cognate_note": null,
       "tier": 9,
       "level": null,
-      "x": -1329.6,
-      "y": -313.0,
+      "x": -1248.3,
+      "y": -1.9,
       "region": 13
     },
     {
@@ -15452,8 +15454,8 @@
           "programmino"
         ]
       },
-      "x": 474.9,
-      "y": -736.9,
+      "x": 834.3,
+      "y": -1062.3,
       "region": 0
     },
     {
@@ -15469,8 +15471,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 50.9,
-      "y": 543.5,
+      "x": 28.7,
+      "y": 562.3,
       "region": 1
     },
     {
@@ -15486,8 +15488,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": -146.5,
-      "y": 623.0,
+      "x": 50.9,
+      "y": 423.5,
       "region": 1
     },
     {
@@ -15503,8 +15505,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 6.8,
-      "y": -1190.3,
+      "x": 7.5,
+      "y": -1180.2,
       "region": 25
     },
     {
@@ -15520,8 +15522,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 461.7,
-      "y": -832.2,
+      "x": 755.7,
+      "y": -1069.8,
       "region": 0
     },
     {
@@ -15587,8 +15589,8 @@
           "chiudano"
         ]
       },
-      "x": -661.9,
-      "y": -458.5,
+      "x": -721.2,
+      "y": -425.1,
       "region": 24
     },
     {
@@ -15604,8 +15606,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 159.3,
-      "y": -704.5,
+      "x": 178.7,
+      "y": -653.5,
       "region": 14
     },
     {
@@ -15671,8 +15673,8 @@
           "ritardino"
         ]
       },
-      "x": -360.0,
-      "y": -444.7,
+      "x": -392.5,
+      "y": -528.8,
       "region": 22
     },
     {
@@ -15738,8 +15740,8 @@
           "attentino"
         ]
       },
-      "x": 1261.0,
-      "y": 650.7,
+      "x": 1128.6,
+      "y": 727.8,
       "region": 10
     },
     {
@@ -15805,8 +15807,8 @@
           "fallino"
         ]
       },
-      "x": 1289.8,
-      "y": 664.3,
+      "x": 1105.3,
+      "y": 747.7,
       "region": 10
     },
     {
@@ -15872,8 +15874,8 @@
           "dimentichino"
         ]
       },
-      "x": 281.6,
-      "y": 881.5,
+      "x": 457.4,
+      "y": 936.0,
       "region": 6
     },
     {
@@ -15889,8 +15891,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 194.5,
-      "y": 83.7,
+      "x": 250.3,
+      "y": 233.3,
       "region": 11
     },
     {
@@ -15906,8 +15908,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 1291.7,
-      "y": 687.6,
+      "x": 1084.1,
+      "y": 739.7,
       "region": 10
     },
     {
@@ -15973,8 +15975,8 @@
           "studino"
         ]
       },
-      "x": 732.1,
-      "y": -122.5,
+      "x": 628.0,
+      "y": 68.1,
       "region": 2
     },
     {
@@ -16040,8 +16042,8 @@
           "armino"
         ]
       },
-      "x": 765.9,
-      "y": 754.2,
+      "x": 736.3,
+      "y": 734.7,
       "region": 12
     },
     {
@@ -16057,8 +16059,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 902.3,
-      "y": -65.1,
+      "x": 812.3,
+      "y": -156.0,
       "region": 2
     },
     {
@@ -16074,8 +16076,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": 8.6,
-      "y": 467.0,
+      "x": -36.2,
+      "y": 587.7,
       "region": 1
     },
     {
@@ -16091,8 +16093,8 @@
       "cognate_note": null,
       "tier": 9,
       "level": null,
-      "x": 206.4,
-      "y": 43.6,
+      "x": 214.5,
+      "y": 216.3,
       "region": 11
     },
     {
@@ -16108,8 +16110,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 14.9,
-      "y": 563.0,
+      "x": 25.3,
+      "y": 530.8,
       "region": 1
     },
     {
@@ -16125,8 +16127,8 @@
       "cognate_note": null,
       "tier": 9,
       "level": null,
-      "x": -0.4,
-      "y": 527.9,
+      "x": -1.8,
+      "y": 546.9,
       "region": 1
     },
     {
@@ -16142,8 +16144,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": -13.4,
-      "y": -896.6,
+      "x": -8.2,
+      "y": -931.7,
       "region": 28
     },
     {
@@ -16159,8 +16161,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 235.0,
-      "y": -693.4,
+      "x": 213.8,
+      "y": -725.1,
       "region": 14
     },
     {
@@ -16176,8 +16178,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 263.2,
-      "y": 36.4,
+      "x": 199.3,
+      "y": 159.9,
       "region": 11
     },
     {
@@ -16193,8 +16195,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 730.8,
-      "y": 649.6,
+      "x": 841.9,
+      "y": 714.8,
       "region": 12
     },
     {
@@ -16210,8 +16212,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 319.8,
-      "y": 937.2,
+      "x": 380.7,
+      "y": 970.5,
       "region": 6
     },
     {
@@ -16277,8 +16279,8 @@
           "pecchino"
         ]
       },
-      "x": 1127.5,
-      "y": 572.3,
+      "x": 1126.0,
+      "y": 574.9,
       "region": 10
     },
     {
@@ -16294,8 +16296,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": -182.1,
-      "y": -379.0,
+      "x": 12.4,
+      "y": -250.7,
       "region": 15
     },
     {
@@ -16361,8 +16363,8 @@
           "rubino"
         ]
       },
-      "x": 395.5,
-      "y": 906.4,
+      "x": 324.7,
+      "y": 902.2,
       "region": 6
     },
     {
@@ -16428,8 +16430,8 @@
           "salino"
         ]
       },
-      "x": 903.5,
-      "y": 72.1,
+      "x": 732.1,
+      "y": -187.8,
       "region": 2
     },
     {
@@ -16445,8 +16447,8 @@
       "cognate_note": null,
       "tier": 9,
       "level": null,
-      "x": -706.6,
-      "y": -72.9,
+      "x": -728.7,
+      "y": -10.5,
       "region": 7
     },
     {
@@ -16462,8 +16464,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": -64.2,
-      "y": -1205.5,
+      "x": -61.5,
+      "y": -1161.6,
       "region": 25
     },
     {
@@ -16479,8 +16481,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": -19.7,
-      "y": -1189.9,
+      "x": -18.7,
+      "y": -1179.8,
       "region": 25
     },
     {
@@ -16496,8 +16498,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": 732.5,
-      "y": 724.9,
+      "x": 782.7,
+      "y": 722.8,
       "region": 12
     },
     {
@@ -16513,8 +16515,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 64.0,
-      "y": 477.3,
+      "x": 1.2,
+      "y": 610.8,
       "region": 1
     },
     {
@@ -16580,8 +16582,8 @@
           "valgano"
         ]
       },
-      "x": 493.8,
-      "y": 337.1,
+      "x": 437.5,
+      "y": 439.4,
       "region": 16
     },
     {
@@ -16597,8 +16599,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": -2.6,
-      "y": 574.0,
+      "x": 4.3,
+      "y": 507.9,
       "region": 1
     },
     {
@@ -16614,8 +16616,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 712.9,
-      "y": -883.7,
+      "x": 510.1,
+      "y": -994.1,
       "region": 0
     },
     {
@@ -16631,8 +16633,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": -905.0,
-      "y": 650.8,
+      "x": -897.8,
+      "y": 592.1,
       "region": 8
     },
     {
@@ -16698,8 +16700,8 @@
           "pranzino"
         ]
       },
-      "x": -1165.4,
-      "y": 304.0,
+      "x": -1124.2,
+      "y": 196.7,
       "region": 4
     },
     {
@@ -16715,8 +16717,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": -135.8,
-      "y": 79.5,
+      "x": -65.5,
+      "y": -17.8,
       "region": 9
     },
     {
@@ -16782,8 +16784,8 @@
           "continuino"
         ]
       },
-      "x": -34.9,
-      "y": 411.3,
+      "x": -88.1,
+      "y": 591.4,
       "region": 1
     },
     {
@@ -16799,8 +16801,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": -467.2,
-      "y": 726.1,
+      "x": -486.0,
+      "y": 705.9,
       "region": 18
     },
     {
@@ -16816,8 +16818,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 281.4,
-      "y": -364.4,
+      "x": 433.6,
+      "y": -391.2,
       "region": 5
     },
     {
@@ -16833,8 +16835,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": -452.8,
-      "y": -107.2,
+      "x": -450.8,
+      "y": -159.7,
       "region": 17
     },
     {
@@ -16850,8 +16852,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": -283.4,
-      "y": -848.7,
+      "x": -273.7,
+      "y": -844.3,
       "region": 23
     },
     {
@@ -16867,8 +16869,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": -582.3,
-      "y": 158.2,
+      "x": -487.0,
+      "y": 160.1,
       "region": 3
     },
     {
@@ -16884,8 +16886,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": -41.0,
-      "y": 1033.5,
+      "x": -87.0,
+      "y": 1055.1,
       "region": 20
     },
     {
@@ -16901,8 +16903,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": 83.8,
-      "y": 437.3,
+      "x": -18.1,
+      "y": 645.1,
       "region": 1
     },
     {
@@ -16968,8 +16970,8 @@
           "lineino"
         ]
       },
-      "x": 433.4,
-      "y": -753.8,
+      "x": 856.7,
+      "y": -1025.8,
       "region": 0
     },
     {
@@ -16985,8 +16987,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": -77.5,
-      "y": -38.5,
+      "x": -138.8,
+      "y": 6.0,
       "region": 9
     },
     {
@@ -17052,8 +17054,8 @@
           "scappino"
         ]
       },
-      "x": 886.1,
-      "y": -39.4,
+      "x": 791.5,
+      "y": -134.4,
       "region": 2
     },
     {
@@ -17069,8 +17071,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 722.7,
-      "y": 684.5,
+      "x": 821.9,
+      "y": 739.9,
       "region": 12
     },
     {
@@ -17136,8 +17138,8 @@
           "vincano"
         ]
       },
-      "x": -810.0,
-      "y": 950.7,
+      "x": -834.2,
+      "y": 954.8,
       "region": 29
     },
     {
@@ -17153,8 +17155,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 790.5,
-      "y": 377.0,
+      "x": 1010.9,
+      "y": 445.0,
       "region": 19
     },
     {
@@ -17220,8 +17222,8 @@
           "silenzino"
         ]
       },
-      "x": 772.6,
-      "y": 363.3,
+      "x": 1014.1,
+      "y": 480.3,
       "region": 19
     },
     {
@@ -17237,8 +17239,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": -525.5,
-      "y": -255.3,
+      "x": -575.1,
+      "y": -133.8,
       "region": 17
     },
     {
@@ -17254,8 +17256,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": -731.7,
-      "y": -111.3,
+      "x": -741.1,
+      "y": -59.6,
       "region": 7
     },
     {
@@ -17321,8 +17323,8 @@
           "ricerchino"
         ]
       },
-      "x": 538.3,
-      "y": 425.1,
+      "x": 544.9,
+      "y": 434.9,
       "region": 16
     },
     {
@@ -17388,8 +17390,8 @@
           "penino"
         ]
       },
-      "x": 201.1,
-      "y": 138.0,
+      "x": 183.8,
+      "y": 62.9,
       "region": 11
     },
     {
@@ -17455,8 +17457,8 @@
           "esistano"
         ]
       },
-      "x": -154.8,
-      "y": 409.2,
+      "x": -154.3,
+      "y": 507.7,
       "region": 1
     },
     {
@@ -17472,8 +17474,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 603.9,
-      "y": -1030.2,
+      "x": 623.9,
+      "y": -879.1,
       "region": 0
     },
     {
@@ -17489,8 +17491,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": -120.7,
-      "y": 598.3,
+      "x": 22.6,
+      "y": 439.7,
       "region": 1
     },
     {
@@ -17556,8 +17558,8 @@
           "salvino"
         ]
       },
-      "x": 207.6,
-      "y": 213.1,
+      "x": 253.3,
+      "y": -18.7,
       "region": 11
     },
     {
@@ -17573,8 +17575,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 749.7,
-      "y": 85.2,
+      "x": 636.7,
+      "y": -39.8,
       "region": 2
     },
     {
@@ -17640,8 +17642,8 @@
           "pubblichino"
         ]
       },
-      "x": 240.4,
-      "y": -331.5,
+      "x": 404.7,
+      "y": -450.6,
       "region": 5
     },
     {
@@ -17657,8 +17659,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 125.9,
-      "y": 376.8,
+      "x": -31.3,
+      "y": 701.7,
       "region": 1
     },
     {
@@ -17674,8 +17676,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 676.0,
-      "y": -484.2,
+      "x": 662.3,
+      "y": -436.7,
       "region": 26
     },
     {
@@ -17742,7 +17744,7 @@
         ]
       },
       "x": 1095.7,
-      "y": -373.4,
+      "y": -307.4,
       "region": 21
     },
     {
@@ -17758,8 +17760,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": -455.7,
-      "y": 243.5,
+      "x": -541.5,
+      "y": 342.0,
       "region": 3
     },
     {
@@ -17775,8 +17777,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 555.4,
-      "y": -95.5,
+      "x": 835.7,
+      "y": 150.6,
       "region": 2
     },
     {
@@ -17792,8 +17794,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 885.8,
-      "y": 75.3,
+      "x": 715.8,
+      "y": -194.1,
       "region": 2
     },
     {
@@ -17859,8 +17861,8 @@
           "scelgano"
         ]
       },
-      "x": 397.2,
-      "y": 126.7,
+      "x": 390.5,
+      "y": 68.0,
       "region": 11
     },
     {
@@ -17876,8 +17878,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 194.4,
-      "y": 17.8,
+      "x": 185.7,
+      "y": 233.4,
       "region": 11
     },
     {
@@ -17943,8 +17945,8 @@
           "contattino"
         ]
       },
-      "x": 954.6,
-      "y": 338.2,
+      "x": 810.7,
+      "y": 371.2,
       "region": 19
     },
     {
@@ -18010,8 +18012,8 @@
           "pericolino"
         ]
       },
-      "x": 617.3,
-      "y": -983.5,
+      "x": 693.7,
+      "y": -978.6,
       "region": 0
     },
     {
@@ -18077,8 +18079,8 @@
           "freddino"
         ]
       },
-      "x": -120.4,
-      "y": -294.5,
+      "x": 11.2,
+      "y": -440.8,
       "region": 15
     },
     {
@@ -18094,8 +18096,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 1017.0,
-      "y": -337.8,
+      "x": 1016.3,
+      "y": -315.5,
       "region": 21
     },
     {
@@ -18161,8 +18163,8 @@
           "promettano"
         ]
       },
-      "x": -366.2,
-      "y": -38.0,
+      "x": -372.6,
+      "y": -227.7,
       "region": 17
     },
     {
@@ -18228,8 +18230,8 @@
           "esercitino"
         ]
       },
-      "x": -148.9,
-      "y": 998.5,
+      "x": -126.0,
+      "y": 921.0,
       "region": 20
     },
     {
@@ -18245,8 +18247,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 777.4,
-      "y": -830.8,
+      "x": 439.4,
+      "y": -1026.3,
       "region": 0
     },
     {
@@ -18262,8 +18264,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 668.5,
-      "y": -886.9,
+      "x": 567.3,
+      "y": -981.9,
       "region": 0
     },
     {
@@ -18279,8 +18281,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": -923.8,
-      "y": 638.7,
+      "x": -902.9,
+      "y": 569.8,
       "region": 8
     },
     {
@@ -18346,8 +18348,8 @@
           "caccino"
         ]
       },
-      "x": 636.7,
-      "y": 406.8,
+      "x": 629.4,
+      "y": 428.8,
       "region": 16
     },
     {
@@ -18363,8 +18365,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": -28.7,
-      "y": 392.3,
+      "x": -91.9,
+      "y": 607.6,
       "region": 1
     },
     {
@@ -18380,8 +18382,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": -523.3,
-      "y": 618.9,
+      "x": -378.7,
+      "y": 749.4,
       "region": 18
     },
     {
@@ -18397,8 +18399,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 607.6,
-      "y": -873.3,
+      "x": 556.4,
+      "y": -905.1,
       "region": 0
     },
     {
@@ -18414,8 +18416,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": 1113.2,
-      "y": 738.0,
+      "x": 1235.0,
+      "y": 556.9,
       "region": 10
     },
     {
@@ -18481,8 +18483,8 @@
           "ballino"
         ]
       },
-      "x": 739.3,
-      "y": 100.5,
+      "x": 620.7,
+      "y": -33.6,
       "region": 2
     },
     {
@@ -18498,8 +18500,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": -1077.3,
-      "y": 316.2,
+      "x": -1054.2,
+      "y": 148.2,
       "region": 4
     },
     {
@@ -18515,8 +18517,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 806.7,
-      "y": -1034.1,
+      "x": 575.6,
+      "y": -1129.7,
       "region": 0
     },
     {
@@ -18582,8 +18584,8 @@
           "governino"
         ]
       },
-      "x": 1083.0,
-      "y": 755.4,
+      "x": 1227.4,
+      "y": 523.9,
       "region": 10
     },
     {
@@ -18599,8 +18601,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 451.9,
-      "y": 104.2,
+      "x": 435.7,
+      "y": 20.9,
       "region": 11
     },
     {
@@ -18666,8 +18668,8 @@
           "animino"
         ]
       },
-      "x": -158.2,
-      "y": 530.2,
+      "x": -82.5,
+      "y": 459.3,
       "region": 1
     },
     {
@@ -18733,8 +18735,8 @@
           "formino"
         ]
       },
-      "x": -157.2,
-      "y": 506.6,
+      "x": -68.2,
+      "y": 446.0,
       "region": 1
     },
     {
@@ -18750,8 +18752,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": 121.2,
-      "y": 732.0,
+      "x": -41.5,
+      "y": 333.1,
       "region": 1
     },
     {
@@ -18767,8 +18769,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -136.4,
-      "y": -640.3,
+      "x": -177.4,
+      "y": -730.6,
       "region": 27
     },
     {
@@ -18784,8 +18786,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": 284.9,
-      "y": 228.7,
+      "x": 376.6,
+      "y": 217.7,
       "region": 11
     },
     {
@@ -18801,8 +18803,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -421.5,
-      "y": 213.9,
+      "x": -567.9,
+      "y": 377.5,
       "region": 3
     },
     {
@@ -18868,8 +18870,8 @@
           "droghino"
         ]
       },
-      "x": -634.0,
-      "y": 295.0,
+      "x": -614.8,
+      "y": 226.7,
       "region": 3
     },
     {
@@ -18885,8 +18887,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": 270.3,
-      "y": 200.5,
+      "x": 346.1,
+      "y": 216.6,
       "region": 11
     },
     {
@@ -18902,8 +18904,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": 968.6,
-      "y": 367.3,
+      "x": 831.7,
+      "y": 335.7,
       "region": 19
     },
     {
@@ -18919,8 +18921,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": 267.1,
-      "y": 79.1,
+      "x": 241.4,
+      "y": 141.0,
       "region": 11
     },
     {
@@ -18936,8 +18938,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -774.3,
-      "y": 684.2,
+      "x": -819.1,
+      "y": 709.6,
       "region": 8
     },
     {
@@ -18953,8 +18955,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": -145.1,
-      "y": 315.9,
+      "x": -208.5,
+      "y": 567.3,
       "region": 1
     },
     {
@@ -19020,8 +19022,8 @@
           "attacchino"
         ]
       },
-      "x": -1.2,
-      "y": 437.6,
+      "x": -57.6,
+      "y": 594.0,
       "region": 1
     },
     {
@@ -19087,8 +19089,8 @@
           "si siedano"
         ]
       },
-      "x": -826.0,
-      "y": 600.4,
+      "x": -876.4,
+      "y": 679.3,
       "region": 8
     },
     {
@@ -19104,8 +19106,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": 702.2,
-      "y": -428.7,
+      "x": 711.2,
+      "y": -494.8,
       "region": 26
     },
     {
@@ -19171,8 +19173,8 @@
           "comprino"
         ]
       },
-      "x": 483.7,
-      "y": 470.4,
+      "x": 549.9,
+      "y": 479.9,
       "region": 16
     },
     {
@@ -19188,8 +19190,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": 140.7,
-      "y": -674.8,
+      "x": 140.1,
+      "y": -660.4,
       "region": 14
     },
     {
@@ -19205,8 +19207,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -888.0,
-      "y": -86.1,
+      "x": -893.1,
+      "y": -112.5,
       "region": 7
     },
     {
@@ -19272,8 +19274,8 @@
           "aprano"
         ]
       },
-      "x": -636.7,
-      "y": -461.2,
+      "x": -714.7,
+      "y": -404.7,
       "region": 24
     },
     {
@@ -19289,8 +19291,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 123.7,
-      "y": -721.0,
+      "x": 164.2,
+      "y": -613.9,
       "region": 14
     },
     {
@@ -19356,8 +19358,8 @@
           "braccino"
         ]
       },
-      "x": 786.0,
-      "y": 638.4,
+      "x": 805.8,
+      "y": 674.5,
       "region": 12
     },
     {
@@ -19373,8 +19375,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": 464.2,
-      "y": 858.1,
+      "x": 239.5,
+      "y": 889.0,
       "region": 6
     },
     {
@@ -19390,8 +19392,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -729.3,
-      "y": -69.8,
+      "x": -753.5,
+      "y": -15.3,
       "region": 7
     },
     {
@@ -19407,8 +19409,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": 98.1,
-      "y": 592.8,
+      "x": 93.4,
+      "y": 572.0,
       "region": 1
     },
     {
@@ -19474,8 +19476,8 @@
           "scommettano"
         ]
       },
-      "x": -793.7,
-      "y": 945.2,
+      "x": -817.4,
+      "y": 939.1,
       "region": 29
     },
     {
@@ -19491,8 +19493,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": 2.2,
-      "y": 45.4,
+      "x": -209.8,
+      "y": 19.2,
       "region": 9
     },
     {
@@ -19508,8 +19510,8 @@
       "cognate_note": null,
       "tier": 9,
       "level": null,
-      "x": 860.3,
-      "y": 731.0,
+      "x": 763.1,
+      "y": 825.8,
       "region": 12
     },
     {
@@ -19575,8 +19577,8 @@
           "livellino"
         ]
       },
-      "x": -504.8,
-      "y": 950.4,
+      "x": -527.9,
+      "y": 1037.3,
       "region": 30
     },
     {
@@ -19642,8 +19644,8 @@
           "mentano"
         ]
       },
-      "x": 743.9,
-      "y": -415.1,
+      "x": 760.4,
+      "y": -514.8,
       "region": 26
     },
     {
@@ -19659,8 +19661,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": 143.5,
-      "y": 351.3,
+      "x": -35.5,
+      "y": 726.1,
       "region": 1
     },
     {
@@ -19676,8 +19678,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": 1303.3,
-      "y": 724.2,
+      "x": 1062.9,
+      "y": 769.7,
       "region": 10
     },
     {
@@ -19743,8 +19745,8 @@
           "visitino"
         ]
       },
-      "x": 23.5,
-      "y": 972.7,
+      "x": 51.4,
+      "y": 974.9,
       "region": 20
     },
     {
@@ -19760,8 +19762,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": -581.2,
-      "y": 341.2,
+      "x": -580.8,
+      "y": 275.2,
       "region": 3
     },
     {
@@ -19827,8 +19829,8 @@
           "sinistrino"
         ]
       },
-      "x": 1260.3,
-      "y": 683.4,
+      "x": 1100.0,
+      "y": 713.5,
       "region": 10
     },
     {
@@ -19844,8 +19846,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -178.5,
-      "y": -107.9,
+      "x": -89.0,
+      "y": 161.6,
       "region": 9
     },
     {
@@ -19861,8 +19863,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": 626.8,
-      "y": -5.0,
+      "x": 752.5,
+      "y": 86.8,
       "region": 2
     },
     {
@@ -19878,8 +19880,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -374.9,
-      "y": 789.8,
+      "x": -578.5,
+      "y": 664.5,
       "region": 18
     },
     {
@@ -19945,8 +19947,8 @@
           "rendano"
         ]
       },
-      "x": 57.9,
-      "y": 790.9,
+      "x": 25.6,
+      "y": 315.7,
       "region": 1
     },
     {
@@ -19962,8 +19964,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -124.3,
-      "y": -674.6,
+      "x": -148.7,
+      "y": -727.8,
       "region": 27
     },
     {
@@ -19979,8 +19981,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -20.9,
-      "y": 629.5,
+      "x": 72.6,
+      "y": 501.9,
       "region": 1
     },
     {
@@ -19996,8 +19998,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -512.7,
-      "y": 743.7,
+      "x": -501.7,
+      "y": 748.4,
       "region": 18
     },
     {
@@ -20013,8 +20015,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -600.3,
-      "y": 252.7,
+      "x": -564.5,
+      "y": 213.2,
       "region": 3
     },
     {
@@ -20030,8 +20032,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -405.0,
-      "y": -88.8,
+      "x": -405.2,
+      "y": -180.1,
       "region": 17
     },
     {
@@ -20047,8 +20049,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -102.8,
-      "y": -11.9,
+      "x": -119.0,
+      "y": 41.8,
       "region": 9
     },
     {
@@ -20064,8 +20066,8 @@
       "cognate_note": null,
       "tier": 10,
       "level": null,
-      "x": 58.9,
-      "y": 398.9,
+      "x": 3.4,
+      "y": 642.1,
       "region": 1
     },
     {
@@ -20131,8 +20133,8 @@
           "rompano"
         ]
       },
-      "x": -608.0,
-      "y": -536.2,
+      "x": -823.7,
+      "y": -431.9,
       "region": 24
     },
     {
@@ -20148,8 +20150,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": 273.4,
-      "y": 136.6,
+      "x": 274.1,
+      "y": 77.0,
       "region": 11
     },
     {
@@ -20165,8 +20167,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -619.4,
-      "y": 237.0,
+      "x": -568.5,
+      "y": 192.3,
       "region": 3
     },
     {
@@ -20182,8 +20184,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": 996.4,
-      "y": -277.9,
+      "x": 1000.8,
+      "y": -282.6,
       "region": 21
     },
     {
@@ -20199,8 +20201,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -931.2,
-      "y": -193.0,
+      "x": -889.5,
+      "y": -237.6,
       "region": 7
     },
     {
@@ -20266,8 +20268,8 @@
           "attraversino"
         ]
       },
-      "x": -1017.8,
-      "y": 348.9,
+      "x": -1190.1,
+      "y": 66.6,
       "region": 4
     },
     {
@@ -20283,8 +20285,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -549.7,
-      "y": -222.6,
+      "x": -557.3,
+      "y": -165.6,
       "region": 17
     },
     {
@@ -20300,8 +20302,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": 1107.6,
-      "y": 702.8,
+      "x": 1208.9,
+      "y": 575.8,
       "region": 10
     },
     {
@@ -20317,8 +20319,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -32.0,
-      "y": -897.2,
+      "x": -19.2,
+      "y": -913.8,
       "region": 28
     },
     {
@@ -20334,8 +20336,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -40.3,
-      "y": -865.6,
+      "x": -10.2,
+      "y": -872.9,
       "region": 28
     },
     {
@@ -20351,8 +20353,8 @@
       "cognate_note": null,
       "tier": 9,
       "level": null,
-      "x": 76.6,
-      "y": -1171.4,
+      "x": 49.9,
+      "y": -1241.3,
       "region": 25
     },
     {
@@ -20368,8 +20370,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 554.1,
-      "y": 517.9,
+      "x": 570.6,
+      "y": 355.8,
       "region": 16
     },
     {
@@ -20385,8 +20387,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -1104.3,
-      "y": 223.5,
+      "x": -1105.8,
+      "y": 264.9,
       "region": 4
     },
     {
@@ -20402,8 +20404,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -1034.6,
-      "y": 138.9,
+      "x": -1222.9,
+      "y": 312.4,
       "region": 4
     },
     {
@@ -20419,8 +20421,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 169.2,
-      "y": 478.7,
+      "x": 62.7,
+      "y": 671.4,
       "region": 1
     },
     {
@@ -20436,8 +20438,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": 703.0,
-      "y": 685.8,
+      "x": 823.3,
+      "y": 759.9,
       "region": 12
     },
     {
@@ -20503,8 +20505,8 @@
           "internino"
         ]
       },
-      "x": 653.5,
-      "y": -28.1,
+      "x": 712.3,
+      "y": 78.2,
       "region": 2
     },
     {
@@ -20570,8 +20572,8 @@
           "temano"
         ]
       },
-      "x": 328.8,
-      "y": 872.9,
+      "x": 411.1,
+      "y": 901.4,
       "region": 6
     },
     {
@@ -20587,8 +20589,8 @@
       "cognate_note": null,
       "tier": 9,
       "level": null,
-      "x": -424.7,
-      "y": 770.3,
+      "x": -528.5,
+      "y": 668.6,
       "region": 18
     },
     {
@@ -20654,8 +20656,8 @@
           "comandino"
         ]
       },
-      "x": 1089.5,
-      "y": 722.5,
+      "x": 1207.1,
+      "y": 549.9,
       "region": 10
     },
     {
@@ -20671,8 +20673,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -479.9,
-      "y": 169.5,
+      "x": -519.9,
+      "y": 371.0,
       "region": 3
     },
     {
@@ -20688,8 +20690,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": 281.3,
-      "y": -398.5,
+      "x": 474.5,
+      "y": -383.0,
       "region": 5
     },
     {
@@ -20705,8 +20707,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": 1155.5,
-      "y": 639.1,
+      "x": 1168.3,
+      "y": 629.4,
       "region": 10
     },
     {
@@ -20772,8 +20774,8 @@
           "mostrino"
         ]
       },
-      "x": 182.2,
-      "y": 272.8,
+      "x": -61.1,
+      "y": 790.9,
       "region": 1
     },
     {
@@ -20789,8 +20791,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": -33.3,
-      "y": 565.6,
+      "x": 20.2,
+      "y": 518.9,
       "region": 1
     },
     {
@@ -20806,8 +20808,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -26.7,
-      "y": -443.8,
+      "x": -131.2,
+      "y": -340.0,
       "region": 15
     },
     {
@@ -20873,8 +20875,8 @@
           "ringrazino"
         ]
       },
-      "x": 953.3,
-      "y": -342.1,
+      "x": 959.5,
+      "y": -350.6,
       "region": 21
     },
     {
@@ -20890,8 +20892,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": 739.6,
-      "y": -944.5,
+      "x": 589.2,
+      "y": -1062.2,
       "region": 0
     },
     {
@@ -20907,8 +20909,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -1128.0,
-      "y": 314.5,
+      "x": -1096.4,
+      "y": 163.6,
       "region": 4
     },
     {
@@ -20924,8 +20926,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -184.1,
-      "y": -82.0,
+      "x": -79.7,
+      "y": 136.5,
       "region": 9
     },
     {
@@ -20941,8 +20943,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -381.8,
-      "y": -84.9,
+      "x": -384.5,
+      "y": -185.0,
       "region": 17
     },
     {
@@ -20958,8 +20960,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -134.8,
-      "y": -659.3,
+      "x": -171.4,
+      "y": -707.4,
       "region": 27
     },
     {
@@ -20975,8 +20977,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": 106.4,
-      "y": 481.2,
+      "x": 28.6,
+      "y": 633.6,
       "region": 1
     },
     {
@@ -20992,8 +20994,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -784.2,
-      "y": -508.1,
+      "x": -680.4,
+      "y": -562.5,
       "region": 24
     },
     {
@@ -21009,8 +21011,8 @@
       "cognate_note": null,
       "tier": 9,
       "level": null,
-      "x": 440.2,
-      "y": -281.3,
+      "x": 321.3,
+      "y": -209.3,
       "region": 5
     },
     {
@@ -21026,8 +21028,8 @@
       "cognate_note": null,
       "tier": 10,
       "level": null,
-      "x": 953.6,
-      "y": -315.3,
+      "x": 983.3,
+      "y": -358.6,
       "region": 21
     },
     {
@@ -21093,8 +21095,8 @@
           "datino"
         ]
       },
-      "x": 978.5,
-      "y": 451.2,
+      "x": 894.4,
+      "y": 272.2,
       "region": 19
     },
     {
@@ -21160,8 +21162,8 @@
           "radino"
         ]
       },
-      "x": -420.3,
-      "y": 820.8,
+      "x": -545.6,
+      "y": 625.1,
       "region": 18
     },
     {
@@ -21177,8 +21179,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": 87.0,
-      "y": 763.1,
+      "x": -3.8,
+      "y": 325.6,
       "region": 1
     },
     {
@@ -21194,8 +21196,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": 155.7,
-      "y": -662.1,
+      "x": 161.1,
+      "y": -690.0,
       "region": 14
     },
     {
@@ -21261,8 +21263,8 @@
           "imparino"
         ]
       },
-      "x": -159.6,
-      "y": -676.0,
+      "x": -151.5,
+      "y": -675.3,
       "region": 27
     },
     {
@@ -21328,8 +21330,8 @@
           "smettano"
         ]
       },
-      "x": -411.1,
-      "y": -447.7,
+      "x": -418.6,
+      "y": -534.6,
       "region": 22
     },
     {
@@ -21345,8 +21347,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -962.7,
-      "y": -128.2,
+      "x": -828.6,
+      "y": -251.8,
       "region": 7
     },
     {
@@ -21362,8 +21364,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": 727.9,
-      "y": 808.1,
+      "x": 675.9,
+      "y": 741.2,
       "region": 12
     },
     {
@@ -21379,8 +21381,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": -236.6,
-      "y": 151.9,
+      "x": -27.2,
+      "y": -124.8,
       "region": 9
     },
     {
@@ -21396,8 +21398,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -573.5,
-      "y": 228.1,
+      "x": -530.8,
+      "y": 211.3,
       "region": 3
     },
     {
@@ -21413,8 +21415,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -392.7,
-      "y": -587.8,
+      "x": -282.4,
+      "y": -435.0,
       "region": 22
     },
     {
@@ -21481,7 +21483,7 @@
         ]
       },
       "x": -455.4,
-      "y": -935.4,
+      "y": -917.9,
       "region": 23
     },
     {
@@ -21497,8 +21499,8 @@
       "cognate_note": null,
       "tier": 9,
       "level": null,
-      "x": 26.4,
-      "y": 111.2,
+      "x": -243.4,
+      "y": 74.0,
       "region": 9
     },
     {
@@ -21514,8 +21516,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": 323.8,
-      "y": 173.0,
+      "x": 340.8,
+      "y": 147.5,
       "region": 11
     },
     {
@@ -21581,8 +21583,8 @@
           "rischino"
         ]
       },
-      "x": 686.6,
-      "y": -975.3,
+      "x": 648.5,
+      "y": -1032.7,
       "region": 0
     },
     {
@@ -21598,8 +21600,8 @@
       "cognate_note": null,
       "tier": 10,
       "level": null,
-      "x": -489.8,
-      "y": -172.6,
+      "x": -494.3,
+      "y": -134.7,
       "region": 17
     },
     {
@@ -21615,8 +21617,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -540.5,
-      "y": 754.0,
+      "x": -529.0,
+      "y": 762.5,
       "region": 18
     },
     {
@@ -21632,8 +21634,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": 602.9,
-      "y": -893.5,
+      "x": 583.4,
+      "y": -922.6,
       "region": 0
     },
     {
@@ -21699,8 +21701,8 @@
           "combattano"
         ]
       },
-      "x": 821.5,
-      "y": 427.4,
+      "x": 986.3,
+      "y": 395.5,
       "region": 19
     },
     {
@@ -21716,8 +21718,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": 944.5,
-      "y": 310.2,
+      "x": 792.7,
+      "y": 400.1,
       "region": 19
     },
     {
@@ -21733,8 +21735,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": 562.9,
-      "y": -73.0,
+      "x": 828.3,
+      "y": 129.2,
       "region": 2
     },
     {
@@ -21750,8 +21752,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -1385.5,
-      "y": -45.9,
+      "x": -1409.6,
+      "y": -122.9,
       "region": 13
     },
     {
@@ -21767,8 +21769,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": 787.5,
-      "y": 715.3,
+      "x": 760.0,
+      "y": 764.0,
       "region": 12
     },
     {
@@ -21784,8 +21786,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": 1207.1,
-      "y": -413.8,
+      "x": 1222.6,
+      "y": -451.8,
       "region": 31
     },
     {
@@ -21801,8 +21803,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -371.8,
-      "y": -589.6,
+      "x": -281.1,
+      "y": -456.3,
       "region": 22
     },
     {
@@ -21868,8 +21870,8 @@
           "seguano"
         ]
       },
-      "x": -12.6,
-      "y": 385.8,
+      "x": -87.7,
+      "y": 620.0,
       "region": 1
     },
     {
@@ -21935,8 +21937,8 @@
           "nascondano"
         ]
       },
-      "x": 643.3,
-      "y": 541.9,
+      "x": 559.6,
+      "y": 297.3,
       "region": 16
     },
     {
@@ -21952,8 +21954,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -107.4,
-      "y": -664.6,
+      "x": -206.2,
+      "y": -704.5,
       "region": 27
     },
     {
@@ -21969,8 +21971,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": 187.8,
-      "y": -715.6,
+      "x": 206.0,
+      "y": -670.8,
       "region": 14
     },
     {
@@ -21986,8 +21988,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": 974.3,
-      "y": -323.1,
+      "x": 982.6,
+      "y": -337.8,
       "region": 21
     },
     {
@@ -22003,8 +22005,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": 446.7,
-      "y": 386.9,
+      "x": 468.7,
+      "y": 494.8,
       "region": 16
     },
     {
@@ -22020,8 +22022,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": 647.8,
-      "y": -455.0,
+      "x": 706.7,
+      "y": -425.9,
       "region": 26
     },
     {
@@ -22037,8 +22039,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": 1139.3,
-      "y": 632.9,
+      "x": 1194.3,
+      "y": 662.9,
       "region": 10
     },
     {
@@ -22104,8 +22106,8 @@
           "indirizzino"
         ]
       },
-      "x": 649.5,
-      "y": -1159.9,
+      "x": 501.7,
+      "y": -770.2,
       "region": 0
     },
     {
@@ -22171,8 +22173,8 @@
           "ottengano"
         ]
       },
-      "x": 507.3,
-      "y": 433.8,
+      "x": 521.6,
+      "y": 449.0,
       "region": 16
     },
     {
@@ -22188,8 +22190,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -174.9,
-      "y": -680.4,
+      "x": -136.9,
+      "y": -661.0,
       "region": 27
     },
     {
@@ -22205,8 +22207,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": -880.3,
-      "y": 709.7,
+      "x": -839.0,
+      "y": 541.5,
       "region": 8
     },
     {
@@ -22222,8 +22224,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": -749.4,
-      "y": -98.4,
+      "x": -764.3,
+      "y": -52.4,
       "region": 7
     },
     {
@@ -22289,8 +22291,8 @@
           "piangano"
         ]
       },
-      "x": 1039.1,
-      "y": -349.6,
+      "x": 1039.4,
+      "y": -313.2,
       "region": 21
     },
     {
@@ -22306,8 +22308,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 610.2,
-      "y": 520.4,
+      "x": 532.2,
+      "y": 325.6,
       "region": 16
     },
     {
@@ -22373,8 +22375,8 @@
           "scorrano"
         ]
       },
-      "x": 895.2,
-      "y": 685.3,
+      "x": 725.5,
+      "y": 860.3,
       "region": 12
     },
     {
@@ -22390,8 +22392,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -830.1,
-      "y": -516.4,
+      "x": -656.3,
+      "y": -607.1,
       "region": 24
     },
     {
@@ -22407,8 +22409,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -45.0,
-      "y": -388.2,
+      "x": -75.7,
+      "y": -359.3,
       "region": 15
     },
     {
@@ -22424,8 +22426,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": 719.7,
-      "y": -868.4,
+      "x": 517.7,
+      "y": -1017.0,
       "region": 0
     },
     {
@@ -22441,8 +22443,8 @@
       "cognate_note": null,
       "tier": 9,
       "level": null,
-      "x": -1080.4,
-      "y": 194.1,
+      "x": -1143.2,
+      "y": 283.0,
       "region": 4
     },
     {
@@ -22508,8 +22510,8 @@
           "prezzino"
         ]
       },
-      "x": -186.0,
-      "y": 151.4,
+      "x": -13.4,
+      "y": -79.2,
       "region": 9
     },
     {
@@ -22525,8 +22527,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -414.1,
-      "y": -182.8,
+      "x": -435.3,
+      "y": -71.1,
       "region": 17
     },
     {
@@ -22542,8 +22544,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": 118.8,
-      "y": -686.1,
+      "x": 142.7,
+      "y": -638.8,
       "region": 14
     },
     {
@@ -22559,8 +22561,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": -1058.7,
-      "y": 159.8,
+      "x": -1185.9,
+      "y": 306.2,
       "region": 4
     },
     {
@@ -22576,8 +22578,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -66.7,
-      "y": -856.3,
+      "x": 21.9,
+      "y": -882.3,
       "region": 28
     },
     {
@@ -22593,8 +22595,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -613.0,
-      "y": 129.7,
+      "x": -486.3,
+      "y": 123.9,
       "region": 3
     },
     {
@@ -22660,8 +22662,8 @@
           "progettino"
         ]
       },
-      "x": 474.3,
-      "y": -771.7,
+      "x": 814.4,
+      "y": -1034.0,
       "region": 0
     },
     {
@@ -22727,8 +22729,8 @@
           "dannino"
         ]
       },
-      "x": -435.8,
-      "y": -120.2,
+      "x": -431.3,
+      "y": -151.7,
       "region": 17
     },
     {
@@ -22744,8 +22746,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": 608.1,
-      "y": -826.5,
+      "x": 516.2,
+      "y": -889.6,
       "region": 0
     },
     {
@@ -22761,8 +22763,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": 1144.1,
-      "y": 591.7,
+      "x": 1133.9,
+      "y": 598.5,
       "region": 10
     },
     {
@@ -22778,8 +22780,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": -860.4,
-      "y": -225.0,
+      "x": -947.8,
+      "y": -181.4,
       "region": 7
     },
     {
@@ -22795,8 +22797,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": -618.0,
-      "y": 990.6,
+      "x": -559.8,
+      "y": 909.9,
       "region": 30
     },
     {
@@ -22862,8 +22864,8 @@
           "suppongano"
         ]
       },
-      "x": 420.4,
-      "y": -318.2,
+      "x": 299.2,
+      "y": -255.6,
       "region": 5
     },
     {
@@ -22929,8 +22931,8 @@
           "saltino"
         ]
       },
-      "x": 918.7,
-      "y": 32.4,
+      "x": 690.4,
+      "y": -189.6,
       "region": 2
     },
     {
@@ -22996,8 +22998,8 @@
           "freghino"
         ]
       },
-      "x": 716.4,
-      "y": 666.4,
+      "x": 837.1,
+      "y": 751.2,
       "region": 12
     },
     {
@@ -23013,8 +23015,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": -914.7,
-      "y": 670.2,
+      "x": -912.0,
+      "y": 573.8,
       "region": 8
     },
     {
@@ -23030,8 +23032,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": 708.1,
-      "y": 709.8,
+      "x": 813.4,
+      "y": 717.4,
       "region": 12
     },
     {
@@ -23047,8 +23049,8 @@
       "cognate_note": null,
       "tier": 9,
       "level": null,
-      "x": 813.6,
-      "y": -877.6,
+      "x": 478.4,
+      "y": -1090.5,
       "region": 0
     },
     {
@@ -23064,8 +23066,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": 136.2,
-      "y": -708.0,
+      "x": 171.6,
+      "y": -631.4,
       "region": 14
     },
     {
@@ -23081,8 +23083,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": 405.8,
-      "y": -369.6,
+      "x": 252.8,
+      "y": -301.2,
       "region": 5
     },
     {
@@ -23148,8 +23150,8 @@
           "ristorino"
         ]
       },
-      "x": 187.0,
-      "y": 906.6,
+      "x": 543.4,
+      "y": 1014.9,
       "region": 6
     },
     {
@@ -23165,8 +23167,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": 20.7,
-      "y": 67.7,
+      "x": -230.7,
+      "y": 36.3,
       "region": 9
     },
     {
@@ -23182,8 +23184,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": 810.0,
-      "y": -949.1,
+      "x": 535.5,
+      "y": -1111.9,
       "region": 0
     },
     {
@@ -23199,8 +23201,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": -19.8,
-      "y": 922.6,
+      "x": 39.7,
+      "y": 1027.1,
       "region": 20
     },
     {
@@ -23216,8 +23218,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": -301.3,
-      "y": -861.1,
+      "x": -293.5,
+      "y": -856.4,
       "region": 23
     },
     {
@@ -23233,8 +23235,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": -417.3,
-      "y": -967.2,
+      "x": -436.6,
+      "y": -955.7,
       "region": 23
     },
     {
@@ -23250,8 +23252,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": 1021.6,
-      "y": -290.5,
+      "x": 972.5,
+      "y": -287.7,
       "region": 21
     },
     {
@@ -23267,8 +23269,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": -1319.3,
-      "y": -289.6,
+      "x": -1251.5,
+      "y": -26.6,
       "region": 13
     },
     {
@@ -23284,8 +23286,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": -491.6,
-      "y": 745.9,
+      "x": -502.9,
+      "y": 730.1,
       "region": 18
     },
     {
@@ -23351,8 +23353,8 @@
           "murino"
         ]
       },
-      "x": -856.1,
-      "y": 713.7,
+      "x": -884.9,
+      "y": 526.6,
       "region": 8
     },
     {
@@ -23368,8 +23370,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": -229.9,
-      "y": -89.0,
+      "x": -42.2,
+      "y": 152.8,
       "region": 9
     },
     {
@@ -23435,8 +23437,8 @@
           "proteggano"
         ]
       },
-      "x": 812.3,
-      "y": -824.1,
+      "x": 425.9,
+      "y": -1061.4,
       "region": 0
     },
     {
@@ -23452,8 +23454,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": 287.6,
-      "y": 811.2,
+      "x": 509.7,
+      "y": 889.7,
       "region": 6
     },
     {
@@ -23469,8 +23471,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": -246.6,
-      "y": -702.3,
+      "x": -70.2,
+      "y": -592.3,
       "region": 27
     },
     {
@@ -23486,8 +23488,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": 13.7,
-      "y": 94.8,
+      "x": -228.7,
+      "y": 61.6,
       "region": 9
     },
     {
@@ -23503,8 +23505,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": 1147.0,
-      "y": 686.1,
+      "x": 1183.3,
+      "y": 591.5,
       "region": 10
     },
     {
@@ -23520,8 +23522,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": 701.7,
-      "y": -1050.4,
+      "x": 514.4,
+      "y": -911.4,
       "region": 0
     },
     {
@@ -23537,8 +23539,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": 639.0,
-      "y": 684.9,
+      "x": 891.4,
+      "y": 709.9,
       "region": 12
     },
     {
@@ -23554,8 +23556,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": 737.7,
-      "y": -831.8,
+      "x": 487.1,
+      "y": -1041.0,
       "region": 0
     },
     {
@@ -23571,8 +23573,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": -534.2,
-      "y": 336.5,
+      "x": -491.2,
+      "y": 220.2,
       "region": 3
     },
     {
@@ -23638,8 +23640,8 @@
           "preoccupino"
         ]
       },
-      "x": 302.6,
-      "y": 880.2,
+      "x": 435.7,
+      "y": 923.0,
       "region": 6
     },
     {
@@ -23655,8 +23657,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": -175.8,
-      "y": 596.3,
+      "x": 19.3,
+      "y": 401.8,
       "region": 1
     },
     {
@@ -23722,8 +23724,8 @@
           "battaglino"
         ]
       },
-      "x": 851.8,
-      "y": 400.2,
+      "x": 942.4,
+      "y": 413.6,
       "region": 19
     },
     {
@@ -23789,8 +23791,8 @@
           "notino"
         ]
       },
-      "x": 1315.3,
-      "y": 570.0,
+      "x": 1177.2,
+      "y": 809.8,
       "region": 10
     },
     {
@@ -23806,8 +23808,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": -72.6,
-      "y": -63.6,
+      "x": -142.3,
+      "y": -18.8,
       "region": 9
     },
     {
@@ -23873,8 +23875,8 @@
           "evitino"
         ]
       },
-      "x": -396.6,
-      "y": -400.2,
+      "x": -462.2,
+      "y": -504.3,
       "region": 22
     },
     {
@@ -23890,8 +23892,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": 328.2,
-      "y": 953.5,
+      "x": 362.3,
+      "y": 981.0,
       "region": 6
     },
     {
@@ -23907,8 +23909,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": 687.4,
-      "y": 63.6,
+      "x": 655.0,
+      "y": 27.9,
       "region": 2
     },
     {
@@ -23924,8 +23926,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": 1191.3,
-      "y": -370.3,
+      "x": 1178.8,
+      "y": -413.4,
       "region": 31
     },
     {
@@ -23991,8 +23993,8 @@
           "massimino"
         ]
       },
-      "x": -35.5,
-      "y": 341.1,
+      "x": -127.1,
+      "y": 631.3,
       "region": 1
     },
     {
@@ -24008,8 +24010,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": 458.3,
-      "y": -1027.4,
+      "x": 726.7,
+      "y": -808.3,
       "region": 0
     },
     {
@@ -24025,8 +24027,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": 922.3,
-      "y": 383.3,
+      "x": 873.0,
+      "y": 370.2,
       "region": 19
     },
     {
@@ -24042,8 +24044,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": 767.0,
-      "y": 48.3,
+      "x": 673.9,
+      "y": -50.4,
       "region": 2
     },
     {
@@ -24059,8 +24061,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": -643.8,
-      "y": -507.5,
+      "x": -775.1,
+      "y": -442.8,
       "region": 24
     },
     {
@@ -24076,8 +24078,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": -688.2,
-      "y": -451.5,
+      "x": -697.5,
+      "y": -442.7,
       "region": 24
     },
     {
@@ -24093,8 +24095,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": 307.9,
-      "y": 947.8,
+      "x": 384.7,
+      "y": 989.4,
       "region": 6
     },
     {
@@ -24110,8 +24112,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": -407.8,
-      "y": -357.6,
+      "x": -496.1,
+      "y": -540.1,
       "region": 22
     },
     {
@@ -24127,8 +24129,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": -373.9,
-      "y": -513.8,
+      "x": -356.0,
+      "y": -463.8,
       "region": 22
     },
     {
@@ -24144,8 +24146,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": -839.4,
-      "y": 508.5,
+      "x": -715.5,
+      "y": 666.2,
       "region": 8
     },
     {
@@ -24211,8 +24213,8 @@
           "ovvino"
         ]
       },
-      "x": -164.0,
-      "y": 725.8,
+      "x": 148.6,
+      "y": 420.6,
       "region": 1
     },
     {
@@ -24228,8 +24230,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": -112.2,
-      "y": 1052.9,
+      "x": -155.9,
+      "y": 996.1,
       "region": 20
     },
     {
@@ -24245,8 +24247,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": -251.1,
-      "y": -904.7,
+      "x": -233.2,
+      "y": -892.2,
       "region": 23
     },
     {
@@ -24312,8 +24314,8 @@
           "ridano"
         ]
       },
-      "x": 1060.3,
-      "y": -359.2,
+      "x": 1060.7,
+      "y": -310.9,
       "region": 21
     },
     {
@@ -24329,8 +24331,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": -378.8,
-      "y": -475.4,
+      "x": -387.2,
+      "y": -490.4,
       "region": 22
     },
     {
@@ -24346,8 +24348,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": 663.5,
-      "y": 674.3,
+      "x": 875.0,
+      "y": 729.9,
       "region": 12
     },
     {
@@ -24363,8 +24365,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": 770.4,
-      "y": 817.7,
+      "x": 685.7,
+      "y": 701.4,
       "region": 12
     },
     {
@@ -24380,8 +24382,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": -120.9,
-      "y": 9.0,
+      "x": -93.9,
+      "y": 45.7,
       "region": 9
     },
     {
@@ -24447,8 +24449,8 @@
           "costino"
         ]
       },
-      "x": -181.8,
-      "y": 118.6,
+      "x": -41.3,
+      "y": -67.4,
       "region": 9
     },
     {
@@ -24464,8 +24466,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": -418.8,
-      "y": 344.6,
+      "x": -421.9,
+      "y": 321.0,
       "region": 3
     },
     {
@@ -24481,8 +24483,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": -752.5,
-      "y": 706.7,
+      "x": -790.6,
+      "y": 711.5,
       "region": 8
     },
     {
@@ -24548,8 +24550,8 @@
           "alberino"
         ]
       },
-      "x": -818.1,
-      "y": 516.5,
+      "x": -732.4,
+      "y": 675.5,
       "region": 8
     },
     {
@@ -24565,8 +24567,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": 1166.2,
-      "y": 674.2,
+      "x": 1178.4,
+      "y": 614.2,
       "region": 10
     },
     {
@@ -24632,8 +24634,8 @@
           "anellino"
         ]
       },
-      "x": 1062.7,
-      "y": 604.9,
+      "x": 1283.1,
+      "y": 632.7,
       "region": 10
     },
     {
@@ -24649,8 +24651,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": -962.2,
-      "y": -150.3,
+      "x": -820.8,
+      "y": -229.7,
       "region": 7
     },
     {
@@ -24716,8 +24718,8 @@
           "feriscano"
         ]
       },
-      "x": -1018.8,
-      "y": -139.3,
+      "x": -781.9,
+      "y": -283.4,
       "region": 7
     },
     {
@@ -24733,8 +24735,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": 153.8,
-      "y": 759.0,
+      "x": -58.5,
+      "y": 302.9,
       "region": 1
     },
     {
@@ -24750,8 +24752,8 @@
       "cognate_note": null,
       "tier": 9,
       "level": null,
-      "x": 284.6,
-      "y": 914.8,
+      "x": 436.0,
+      "y": 966.2,
       "region": 6
     },
     {
@@ -24817,8 +24819,8 @@
           "arrestino"
         ]
       },
-      "x": -380.1,
-      "y": -452.8,
+      "x": -402.8,
+      "y": -508.6,
       "region": 22
     },
     {
@@ -24834,8 +24836,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": -101.0,
-      "y": 33.0,
+      "x": -104.1,
+      "y": 19.0,
       "region": 9
     },
     {
@@ -24851,8 +24853,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": 0.3,
-      "y": -466.5,
+      "x": -153.7,
+      "y": -312.7,
       "region": 15
     },
     {
@@ -24868,8 +24870,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": -485.7,
-      "y": -111.3,
+      "x": -436.6,
+      "y": -113.5,
       "region": 17
     },
     {
@@ -24885,8 +24887,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": -1030.0,
-      "y": 433.8,
+      "x": -1191.5,
+      "y": 416.7,
       "region": 4
     },
     {
@@ -24902,8 +24904,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": -521.8,
-      "y": 909.4,
+      "x": -562.7,
+      "y": 1064.9,
       "region": 30
     },
     {
@@ -24969,8 +24971,8 @@
           "preferiscano"
         ]
       },
-      "x": 366.0,
-      "y": 129.4,
+      "x": 359.4,
+      "y": 84.4,
       "region": 11
     },
     {
@@ -24986,8 +24988,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": 484.2,
-      "y": -942.8,
+      "x": 769.2,
+      "y": -935.6,
       "region": 0
     },
     {
@@ -25053,8 +25055,8 @@
           "fidanzino"
         ]
       },
-      "x": -1188.6,
-      "y": -45.6,
+      "x": -1175.6,
+      "y": -246.4,
       "region": 13
     },
     {
@@ -25070,8 +25072,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": 300.5,
-      "y": 924.1,
+      "x": 411.1,
+      "y": 967.2,
       "region": 6
     },
     {
@@ -25087,8 +25089,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": 1138.6,
-      "y": 723.0,
+      "x": 1240.3,
+      "y": 585.5,
       "region": 10
     },
     {
@@ -25104,8 +25106,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": -848.5,
-      "y": 584.7,
+      "x": -802.4,
+      "y": 636.2,
       "region": 8
     },
     {
@@ -25171,8 +25173,8 @@
           "obiettivino"
         ]
       },
-      "x": 420.2,
-      "y": -821.9,
+      "x": 769.9,
+      "y": -1107.7,
       "region": 0
     },
     {
@@ -25238,8 +25240,8 @@
           "nascano"
         ]
       },
-      "x": -122.2,
-      "y": 432.1,
+      "x": -123.1,
+      "y": 516.7,
       "region": 1
     },
     {
@@ -25255,8 +25257,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": 480.7,
-      "y": 445.7,
+      "x": 525.4,
+      "y": 475.6,
       "region": 16
     },
     {
@@ -25322,8 +25324,8 @@
           "risolvano"
         ]
       },
-      "x": -133.9,
-      "y": 717.2,
+      "x": 137.3,
+      "y": 442.1,
       "region": 1
     },
     {
@@ -25389,8 +25391,8 @@
           "isolino"
         ]
       },
-      "x": -385.5,
-      "y": -393.4,
+      "x": -466.8,
+      "y": -491.7,
       "region": 22
     },
     {
@@ -25406,8 +25408,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": 126.3,
-      "y": -646.0,
+      "x": 180.1,
+      "y": -711.3,
       "region": 14
     },
     {
@@ -25423,8 +25425,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": -490.3,
-      "y": 346.8,
+      "x": -501.3,
+      "y": 317.5,
       "region": 3
     },
     {
@@ -25490,8 +25492,8 @@
           "affrontino"
         ]
       },
-      "x": 874.0,
-      "y": 405.3,
+      "x": 916.6,
+      "y": 411.4,
       "region": 19
     },
     {
@@ -25557,8 +25559,8 @@
           "operino"
         ]
       },
-      "x": 593.5,
-      "y": -48.0,
+      "x": 794.9,
+      "y": 111.9,
       "region": 2
     },
     {
@@ -25624,8 +25626,8 @@
           "bacino"
         ]
       },
-      "x": 875.0,
-      "y": -324.9,
+      "x": 948.5,
+      "y": -423.9,
       "region": 21
     },
     {
@@ -25691,8 +25693,8 @@
           "bordino"
         ]
       },
-      "x": 1043.7,
-      "y": 632.9,
+      "x": 1279.0,
+      "y": 665.0,
       "region": 10
     },
     {
@@ -25708,8 +25710,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": -124.6,
-      "y": 347.7,
+      "x": -178.1,
+      "y": 563.1,
       "region": 1
     },
     {
@@ -25725,8 +25727,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": -518.5,
-      "y": 768.8,
+      "x": -504.9,
+      "y": 768.5,
       "region": 18
     },
     {
@@ -25742,8 +25744,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -651.0,
-      "y": -442.1,
+      "x": -740.6,
+      "y": -405.4,
       "region": 24
     },
     {
@@ -25809,8 +25811,8 @@
           "improvvisino"
         ]
       },
-      "x": -224.3,
-      "y": 507.1,
+      "x": -121.5,
+      "y": 420.0,
       "region": 1
     },
     {
@@ -25826,8 +25828,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": 30.0,
-      "y": 600.4,
+      "x": 36.7,
+      "y": 500.5,
       "region": 1
     },
     {
@@ -25843,8 +25845,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": 911.6,
-      "y": 50.8,
+      "x": 689.2,
+      "y": -170.2,
       "region": 2
     },
     {
@@ -25910,8 +25912,8 @@
           "accettino"
         ]
       },
-      "x": 450.4,
-      "y": 329.7,
+      "x": 462.9,
+      "y": 522.9,
       "region": 16
     },
     {
@@ -25977,8 +25979,8 @@
           "pesino"
         ]
       },
-      "x": 451.7,
-      "y": -341.4,
+      "x": 262.7,
+      "y": -215.0,
       "region": 5
     },
     {
@@ -25994,8 +25996,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": 789.0,
-      "y": -946.7,
+      "x": 542.5,
+      "y": -1091.8,
       "region": 0
     },
     {
@@ -26011,8 +26013,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": -476.3,
-      "y": 1015.1,
+      "x": -472.0,
+      "y": 994.2,
       "region": 30
     },
     {
@@ -26028,8 +26030,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": 44.3,
-      "y": 572.1,
+      "x": 53.2,
+      "y": 553.3,
       "region": 1
     },
     {
@@ -26045,8 +26047,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": -144.0,
-      "y": 690.9,
+      "x": 116.5,
+      "y": 430.3,
       "region": 1
     },
     {
@@ -26112,8 +26114,8 @@
           "contraggano"
         ]
       },
-      "x": -427.2,
-      "y": -937.1,
+      "x": -412.8,
+      "y": -970.2,
       "region": 23
     },
     {
@@ -26129,8 +26131,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": 208.7,
-      "y": -756.3,
+      "x": 242.5,
+      "y": -631.2,
       "region": 14
     },
     {
@@ -26146,8 +26148,8 @@
       "cognate_note": null,
       "tier": 9,
       "level": null,
-      "x": 640.8,
-      "y": 643.0,
+      "x": 905.3,
+      "y": 749.7,
       "region": 12
     },
     {
@@ -26163,8 +26165,8 @@
       "cognate_note": null,
       "tier": 9,
       "level": null,
-      "x": 434.0,
-      "y": -400.7,
+      "x": 202.2,
+      "y": -290.4,
       "region": 5
     },
     {
@@ -26230,8 +26232,8 @@
           "sveglino"
         ]
       },
-      "x": -904.2,
-      "y": 581.0,
+      "x": -930.7,
+      "y": 671.3,
       "region": 8
     },
     {
@@ -26247,8 +26249,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": -520.3,
-      "y": 348.5,
+      "x": -523.5,
+      "y": 295.6,
       "region": 3
     },
     {
@@ -26314,8 +26316,8 @@
           "creino"
         ]
       },
-      "x": -136.2,
-      "y": 520.9,
+      "x": -64.3,
+      "y": 466.6,
       "region": 1
     },
     {
@@ -26381,8 +26383,8 @@
           "dipendano"
         ]
       },
-      "x": 448.5,
-      "y": 147.6,
+      "x": 451.9,
+      "y": 65.1,
       "region": 11
     },
     {
@@ -26398,8 +26400,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": 1154.1,
-      "y": 558.8,
+      "x": 1101.6,
+      "y": 590.7,
       "region": 10
     },
     {
@@ -26465,8 +26467,8 @@
           "scopino"
         ]
       },
-      "x": -772.6,
-      "y": 995.5,
+      "x": -869.5,
+      "y": 888.9,
       "region": 29
     },
     {
@@ -26482,8 +26484,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": 754.7,
-      "y": 847.6,
+      "x": 651.6,
+      "y": 706.6,
       "region": 12
     },
     {
@@ -26499,8 +26501,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": -79.6,
-      "y": -1210.9,
+      "x": -76.4,
+      "y": -1155.4,
       "region": 25
     },
     {
@@ -26516,8 +26518,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": -367.6,
-      "y": -92.0,
+      "x": -371.1,
+      "y": -179.6,
       "region": 17
     },
     {
@@ -26583,8 +26585,8 @@
           "vendano"
         ]
       },
-      "x": 428.1,
-      "y": 521.5,
+      "x": 588.3,
+      "y": 535.9,
       "region": 16
     },
     {
@@ -26600,8 +26602,8 @@
       "cognate_note": null,
       "tier": 10,
       "level": null,
-      "x": 1075.4,
-      "y": 625.9,
+      "x": 1260.4,
+      "y": 639.9,
       "region": 10
     },
     {
@@ -26617,8 +26619,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": -809.4,
-      "y": -497.7,
+      "x": -654.5,
+      "y": -576.8,
       "region": 24
     },
     {
@@ -26634,8 +26636,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": 75.0,
-      "y": 582.2,
+      "x": 73.8,
+      "y": 565.0,
       "region": 1
     },
     {
@@ -26651,8 +26653,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": -930.5,
-      "y": -43.8,
+      "x": -959.1,
+      "y": -83.0,
       "region": 7
     },
     {
@@ -26668,8 +26670,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": 515.3,
-      "y": 949.6,
+      "x": 233.1,
+      "y": 764.2,
       "region": 6
     },
     {
@@ -26685,8 +26687,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": -661.8,
-      "y": -485.3,
+      "x": -744.0,
+      "y": -443.1,
       "region": 24
     },
     {
@@ -26702,8 +26704,8 @@
       "cognate_note": null,
       "tier": 10,
       "level": null,
-      "x": 107.1,
-      "y": -740.8,
+      "x": 147.9,
+      "y": -591.7,
       "region": 14
     },
     {
@@ -26719,8 +26721,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": -1408.6,
-      "y": -161.4,
+      "x": -1370.5,
+      "y": -70.0,
       "region": 13
     },
     {
@@ -26736,8 +26738,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": -384.9,
-      "y": -935.9,
+      "x": -391.0,
+      "y": -931.5,
       "region": 23
     },
     {
@@ -26803,8 +26805,8 @@
           "stampino"
         ]
       },
-      "x": 249.8,
-      "y": -364.6,
+      "x": 428.6,
+      "y": -438.0,
       "region": 5
     },
     {
@@ -26870,8 +26872,8 @@
           "assistano"
         ]
       },
-      "x": 246.2,
-      "y": 179.3,
+      "x": 246.7,
+      "y": 30.4,
       "region": 11
     },
     {
@@ -26887,8 +26889,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": 211.0,
-      "y": -611.3,
+      "x": 104.2,
+      "y": -735.4,
       "region": 14
     },
     {
@@ -26904,8 +26906,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": 130.5,
-      "y": 607.2,
+      "x": 121.8,
+      "y": 579.2,
       "region": 1
     },
     {
@@ -26921,8 +26923,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": -519.6,
-      "y": -139.9,
+      "x": -483.6,
+      "y": -95.4,
       "region": 17
     },
     {
@@ -26938,8 +26940,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": -897.7,
-      "y": -254.2,
+      "x": -965.3,
+      "y": -232.4,
       "region": 7
     },
     {
@@ -26955,8 +26957,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": -968.2,
-      "y": -213.5,
+      "x": -891.0,
+      "y": -284.2,
       "region": 7
     },
     {
@@ -26972,8 +26974,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": -950.5,
-      "y": -202.7,
+      "x": -889.4,
+      "y": -261.4,
       "region": 7
     },
     {
@@ -26989,8 +26991,8 @@
       "cognate_note": null,
       "tier": 10,
       "level": null,
-      "x": -362.8,
-      "y": 379.6,
+      "x": -364.1,
+      "y": 332.2,
       "region": 3
     },
     {
@@ -27006,8 +27008,8 @@
       "cognate_note": null,
       "tier": 10,
       "level": null,
-      "x": -587.3,
-      "y": 1037.4,
+      "x": -596.8,
+      "y": 952.0,
       "region": 30
     },
     {
@@ -27023,8 +27025,8 @@
       "cognate_note": null,
       "tier": 9,
       "level": null,
-      "x": -1058.6,
-      "y": 268.6,
+      "x": -1113.4,
+      "y": 178.7,
       "region": 4
     },
     {
@@ -27040,8 +27042,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": -442.8,
-      "y": 748.6,
+      "x": -507.7,
+      "y": 684.4,
       "region": 18
     },
     {
@@ -27057,8 +27059,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": 153.3,
-      "y": -571.7,
+      "x": 131.2,
+      "y": -787.6,
       "region": 14
     },
     {
@@ -27074,8 +27076,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": -629.0,
-      "y": 273.4,
+      "x": -597.7,
+      "y": 212.6,
       "region": 3
     },
     {
@@ -27091,8 +27093,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": -872.5,
-      "y": 963.7,
+      "x": -776.7,
+      "y": 1015.5,
       "region": 29
     },
     {
@@ -27108,8 +27110,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": -189.3,
-      "y": 665.8,
+      "x": 95.5,
+      "y": 394.0,
       "region": 1
     },
     {
@@ -27125,8 +27127,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": -1091.0,
-      "y": 356.2,
+      "x": -1127.1,
+      "y": 120.6,
       "region": 4
     },
     {
@@ -27192,8 +27194,8 @@
           "sindachino"
         ]
       },
-      "x": 666.5,
-      "y": -65.7,
+      "x": 762.6,
+      "y": 55.1,
       "region": 2
     },
     {
@@ -27209,8 +27211,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": 1301.4,
-      "y": -420.4,
+      "x": 1269.1,
+      "y": -320.3,
       "region": 31
     },
     {
@@ -27226,8 +27228,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": 1338.2,
-      "y": 598.4,
+      "x": 1143.1,
+      "y": 818.0,
       "region": 10
     },
     {
@@ -27243,8 +27245,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": 677.4,
-      "y": -853.2,
+      "x": 503.2,
+      "y": -946.9,
       "region": 0
     },
     {
@@ -27260,8 +27262,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": -56.1,
-      "y": -902.5,
+      "x": -41.2,
+      "y": -896.2,
       "region": 28
     },
     {
@@ -27327,8 +27329,8 @@
           "distruggano"
         ]
       },
-      "x": 391.0,
-      "y": 892.0,
+      "x": 335.5,
+      "y": 888.6,
       "region": 6
     },
     {
@@ -27344,8 +27346,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": -383.2,
-      "y": -579.3,
+      "x": -291.8,
+      "y": -444.4,
       "region": 22
     },
     {
@@ -27361,8 +27363,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": 280.2,
-      "y": 19.6,
+      "x": 176.9,
+      "y": 180.9,
       "region": 11
     },
     {
@@ -27378,8 +27380,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": 251.1,
-      "y": 55.2,
+      "x": 222.0,
+      "y": 167.3,
       "region": 11
     },
     {
@@ -27395,8 +27397,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": 614.8,
-      "y": -719.7,
+      "x": 441.8,
+      "y": -805.6,
       "region": 0
     },
     {
@@ -27462,8 +27464,8 @@
           "stanchino"
         ]
       },
-      "x": -68.8,
-      "y": 1064.6,
+      "x": -137.6,
+      "y": 1048.4,
       "region": 20
     },
     {
@@ -27479,8 +27481,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": -1080.8,
-      "y": 116.9,
+      "x": -1094.8,
+      "y": 423.3,
       "region": 4
     },
     {
@@ -27546,8 +27548,8 @@
           "mantengano"
         ]
       },
-      "x": -75.5,
-      "y": 416.4,
+      "x": -107.9,
+      "y": 562.7,
       "region": 1
     },
     {
@@ -27563,8 +27565,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": 250.0,
-      "y": 116.2,
+      "x": 230.2,
+      "y": 96.1,
       "region": 11
     },
     {
@@ -27580,8 +27582,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": -823.6,
-      "y": -478.9,
+      "x": -628.9,
+      "y": -576.2,
       "region": 24
     },
     {
@@ -27597,8 +27599,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": -851.4,
-      "y": 484.8,
+      "x": -688.8,
+      "y": 667.9,
       "region": 8
     },
     {
@@ -27664,8 +27666,8 @@
           "insegnino"
         ]
       },
-      "x": -124.7,
-      "y": -693.8,
+      "x": -196.2,
+      "y": -671.6,
       "region": 27
     },
     {
@@ -27681,8 +27683,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": 536.3,
-      "y": -117.0,
+      "x": 853.9,
+      "y": 171.1,
       "region": 2
     },
     {
@@ -27698,8 +27700,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": -438.4,
-      "y": -187.1,
+      "x": -460.0,
+      "y": -76.9,
       "region": 17
     },
     {
@@ -27765,8 +27767,8 @@
           "convincano"
         ]
       },
-      "x": 405.0,
-      "y": -158.1,
+      "x": 474.5,
+      "y": -163.2,
       "region": 5
     },
     {
@@ -27832,8 +27834,8 @@
           "rovinino"
         ]
       },
-      "x": 373.3,
-      "y": 867.5,
+      "x": 366.4,
+      "y": 872.5,
       "region": 6
     },
     {
@@ -27849,8 +27851,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": 296.4,
-      "y": 963.2,
+      "x": 386.1,
+      "y": 1012.8,
       "region": 6
     },
     {
@@ -27866,8 +27868,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": 760.1,
-      "y": 691.5,
+      "x": 788.9,
+      "y": 740.4,
       "region": 12
     },
     {
@@ -27883,8 +27885,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": 637.7,
-      "y": -825.3,
+      "x": 503.9,
+      "y": -911.5,
       "region": 0
     },
     {
@@ -27900,8 +27902,8 @@
       "cognate_note": null,
       "tier": 3,
       "level": null,
-      "x": -74.8,
-      "y": 600.6,
+      "x": 42.4,
+      "y": 482.6,
       "region": 1
     },
     {
@@ -27917,8 +27919,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": 419.2,
-      "y": -260.5,
+      "x": 358.9,
+      "y": -217.0,
       "region": 5
     },
     {
@@ -27934,8 +27936,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": 398.4,
-      "y": 550.6,
+      "x": 611.2,
+      "y": 565.9,
       "region": 16
     },
     {
@@ -27951,8 +27953,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": -206.9,
-      "y": 133.2,
+      "x": -34.9,
+      "y": -93.4,
       "region": 9
     },
     {
@@ -28018,8 +28020,8 @@
           "salgano"
         ]
       },
-      "x": 889.5,
-      "y": 47.8,
+      "x": 712.0,
+      "y": -168.8,
       "region": 2
     },
     {
@@ -28085,8 +28087,8 @@
           "spieghino"
         ]
       },
-      "x": 400.5,
-      "y": -180.0,
+      "x": 455.9,
+      "y": -183.7,
       "region": 5
     },
     {
@@ -28102,8 +28104,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": -898.4,
-      "y": -27.5,
+      "x": -935.0,
+      "y": -53.3,
       "region": 7
     },
     {
@@ -28119,8 +28121,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 1287.3,
-      "y": 615.1,
+      "x": 1149.1,
+      "y": 766.1,
       "region": 10
     },
     {
@@ -28136,8 +28138,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": 23.8,
-      "y": -478.0,
+      "x": -165.2,
+      "y": -289.0,
       "region": 15
     },
     {
@@ -28153,8 +28155,8 @@
       "cognate_note": null,
       "tier": 9,
       "level": null,
-      "x": 765.6,
-      "y": 398.5,
+      "x": 1029.4,
+      "y": 456.9,
       "region": 19
     },
     {
@@ -28220,8 +28222,8 @@
           "buchino"
         ]
       },
-      "x": -1030.8,
-      "y": -137.3,
+      "x": -774.9,
+      "y": -294.9,
       "region": 7
     },
     {
@@ -28237,8 +28239,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": 356.7,
-      "y": -393.2,
+      "x": 443.5,
+      "y": -290.3,
       "region": 5
     },
     {
@@ -28254,8 +28256,8 @@
       "cognate_note": null,
       "tier": 9,
       "level": null,
-      "x": 840.4,
-      "y": -14.2,
+      "x": 707.7,
+      "y": -113.1,
       "region": 2
     },
     {
@@ -28271,8 +28273,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": -199.8,
-      "y": -687.9,
+      "x": -113.6,
+      "y": -637.2,
       "region": 27
     },
     {
@@ -28288,8 +28290,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": -1053.5,
-      "y": 364.3,
+      "x": -1156.4,
+      "y": 87.5,
       "region": 4
     },
     {
@@ -28305,8 +28307,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": 161.4,
-      "y": -601.0,
+      "x": 142.3,
+      "y": -757.4,
       "region": 14
     },
     {
@@ -28322,8 +28324,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": -414.7,
-      "y": 635.4,
+      "x": -409.8,
+      "y": 650.8,
       "region": 18
     },
     {
@@ -28339,8 +28341,8 @@
       "cognate_note": null,
       "tier": 9,
       "level": null,
-      "x": 224.8,
-      "y": -394.3,
+      "x": 445.2,
+      "y": -485.1,
       "region": 5
     },
     {
@@ -28406,8 +28408,8 @@
           "ghiaccino"
         ]
       },
-      "x": -93.1,
-      "y": -274.8,
+      "x": -29.8,
+      "y": -452.9,
       "region": 15
     },
     {
@@ -28423,8 +28425,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": -139.9,
-      "y": 935.8,
+      "x": -56.7,
+      "y": 886.9,
       "region": 20
     },
     {
@@ -28440,8 +28442,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": -1087.4,
-      "y": 318.2,
+      "x": -1043.5,
+      "y": 162.9,
       "region": 4
     },
     {
@@ -28457,8 +28459,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": 713.8,
-      "y": -133.4,
+      "x": 631.5,
+      "y": 88.6,
       "region": 2
     },
     {
@@ -28474,8 +28476,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": -561.5,
-      "y": 201.7,
+      "x": -505.7,
+      "y": 197.5,
       "region": 3
     },
     {
@@ -28541,8 +28543,8 @@
           "tirino"
         ]
       },
-      "x": -338.2,
-      "y": -546.9,
+      "x": -354.8,
+      "y": -413.5,
       "region": 22
     },
     {
@@ -28608,8 +28610,8 @@
           "cadano"
         ]
       },
-      "x": 883.3,
-      "y": 8.2,
+      "x": 750.4,
+      "y": -150.7,
       "region": 2
     },
     {
@@ -28625,8 +28627,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": 778.1,
-      "y": -23.9,
+      "x": 749.4,
+      "y": -47.9,
       "region": 2
     },
     {
@@ -28642,8 +28644,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": -900.2,
-      "y": 965.6,
+      "x": -749.7,
+      "y": 1039.6,
       "region": 29
     },
     {
@@ -28659,8 +28661,8 @@
       "cognate_note": null,
       "tier": 9,
       "level": null,
-      "x": 427.0,
-      "y": -974.4,
+      "x": 785.0,
+      "y": -875.9,
       "region": 0
     },
     {
@@ -28677,7 +28679,7 @@
       "tier": 7,
       "level": null,
       "x": 1324.1,
-      "y": -382.1,
+      "y": -332.9,
       "region": 31
     },
     {
@@ -28693,8 +28695,8 @@
       "cognate_note": null,
       "tier": 1,
       "level": null,
-      "x": 674.1,
-      "y": -502.6,
+      "x": 642.8,
+      "y": -425.9,
       "region": 26
     },
     {
@@ -28710,8 +28712,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": 328.2,
-      "y": 973.6,
+      "x": 350.4,
+      "y": 1002.3,
       "region": 6
     },
     {
@@ -28727,8 +28729,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": -49.0,
-      "y": -54.0,
+      "x": -163.1,
+      "y": -13.8,
       "region": 9
     },
     {
@@ -28744,8 +28746,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": 513.5,
-      "y": -809.6,
+      "x": 753.9,
+      "y": -1042.3,
       "region": 0
     },
     {
@@ -28761,8 +28763,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": -133.4,
-      "y": 1057.7,
+      "x": -175.2,
+      "y": 977.6,
       "region": 20
     },
     {
@@ -28778,8 +28780,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": -902.1,
-      "y": -55.7,
+      "x": -924.1,
+      "y": -84.3,
       "region": 7
     },
     {
@@ -28845,8 +28847,8 @@
           "privino"
         ]
       },
-      "x": 398.7,
-      "y": 876.8,
+      "x": 334.2,
+      "y": 867.4,
       "region": 6
     },
     {
@@ -28862,8 +28864,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": -807.2,
-      "y": 572.4,
+      "x": -718.6,
+      "y": 644.4,
       "region": 8
     },
     {
@@ -28879,8 +28881,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": 658.4,
-      "y": -845.4,
+      "x": 539.6,
+      "y": -970.1,
       "region": 0
     },
     {
@@ -28896,8 +28898,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": 278.9,
-      "y": 825.1,
+      "x": 492.6,
+      "y": 880.7,
       "region": 6
     },
     {
@@ -28963,8 +28965,8 @@
           "accusino"
         ]
       },
-      "x": 1163.9,
-      "y": 612.9,
+      "x": 1142.7,
+      "y": 625.0,
       "region": 10
     },
     {
@@ -28980,8 +28982,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": -13.4,
-      "y": -397.8,
+      "x": -86.4,
+      "y": -329.2,
       "region": 15
     },
     {
@@ -28997,8 +28999,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": 663.0,
-      "y": -1083.8,
+      "x": 524.0,
+      "y": -851.4,
       "region": 0
     },
     {
@@ -29014,8 +29016,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": -1206.0,
-      "y": -94.2,
+      "x": -1217.0,
+      "y": -213.7,
       "region": 13
     },
     {
@@ -29031,8 +29033,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": 645.6,
-      "y": -907.2,
+      "x": 602.7,
+      "y": -984.2,
       "region": 0
     },
     {
@@ -29048,8 +29050,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": -116.5,
-      "y": 960.9,
+      "x": -65.0,
+      "y": 928.4,
       "region": 20
     },
     {
@@ -29065,8 +29067,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": 350.0,
-      "y": 184.2,
+      "x": 369.6,
+      "y": 137.6,
       "region": 11
     },
     {
@@ -29132,8 +29134,8 @@
           "ubriachino"
         ]
       },
-      "x": -1078.9,
-      "y": 305.3,
+      "x": -1057.8,
+      "y": 159.3,
       "region": 4
     },
     {
@@ -29149,8 +29151,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": -119.4,
-      "y": -354.7,
+      "x": -6.0,
+      "y": -314.0,
       "region": 15
     },
     {
@@ -29217,7 +29219,7 @@
         ]
       },
       "x": -311.6,
-      "y": 410.4,
+      "y": 341.4,
       "region": 3
     },
     {
@@ -29233,8 +29235,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": 48.7,
-      "y": 587.9,
+      "x": 41.9,
+      "y": 532.1,
       "region": 1
     },
     {
@@ -29250,8 +29252,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": 814.8,
-      "y": 748.9,
+      "x": 744.5,
+      "y": 720.1,
       "region": 12
     },
     {
@@ -29267,8 +29269,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": -68.1,
-      "y": 42.1,
+      "x": -139.5,
+      "y": 27.2,
       "region": 9
     },
     {
@@ -29284,8 +29286,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": -579.7,
-      "y": 1008.0,
+      "x": -566.6,
+      "y": 951.5,
       "region": 30
     },
     {
@@ -29301,8 +29303,8 @@
       "cognate_note": null,
       "tier": 6,
       "level": null,
-      "x": -831.0,
-      "y": 613.4,
+      "x": -869.0,
+      "y": 664.8,
       "region": 8
     },
     {
@@ -29368,8 +29370,8 @@
           "minaccino"
         ]
       },
-      "x": 369.4,
-      "y": 887.7,
+      "x": 360.4,
+      "y": 896.1,
       "region": 6
     },
     {
@@ -29385,8 +29387,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": -864.8,
-      "y": -268.7,
+      "x": -994.1,
+      "y": -202.5,
       "region": 7
     },
     {
@@ -29402,8 +29404,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": -919.8,
-      "y": 652.3,
+      "x": -914.9,
+      "y": 593.5,
       "region": 8
     },
     {
@@ -29419,8 +29421,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": 225.2,
-      "y": -772.0,
+      "x": 258.6,
+      "y": -614.9,
       "region": 14
     },
     {
@@ -29436,8 +29438,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": -908.4,
-      "y": 691.9,
+      "x": -903.9,
+      "y": 550.3,
       "region": 8
     },
     {
@@ -29453,8 +29455,8 @@
       "cognate_note": null,
       "tier": 9,
       "level": null,
-      "x": -65.9,
-      "y": -414.7,
+      "x": -101.9,
+      "y": -382.0,
       "region": 15
     },
     {
@@ -29470,8 +29472,8 @@
       "cognate_note": null,
       "tier": 9,
       "level": null,
-      "x": 757.7,
-      "y": 724.0,
+      "x": 777.1,
+      "y": 697.1,
       "region": 12
     },
     {
@@ -29487,8 +29489,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": 106.5,
-      "y": 436.1,
+      "x": -8.1,
+      "y": 661.2,
       "region": 1
     },
     {
@@ -29504,8 +29506,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": 836.8,
-      "y": -806.4,
+      "x": 400.6,
+      "y": -1078.1,
       "region": 0
     },
     {
@@ -29571,8 +29573,8 @@
           "occupino"
         ]
       },
-      "x": -132.4,
-      "y": 447.3,
+      "x": -123.2,
+      "y": 508.1,
       "region": 1
     },
     {
@@ -29588,8 +29590,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -1183.2,
-      "y": -82.7,
+      "x": -1193.9,
+      "y": -216.2,
       "region": 13
     },
     {
@@ -29605,8 +29607,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": 148.0,
-      "y": -548.6,
+      "x": 121.0,
+      "y": -810.2,
       "region": 14
     },
     {
@@ -29622,8 +29624,8 @@
       "cognate_note": null,
       "tier": 2,
       "level": null,
-      "x": -322.6,
-      "y": -906.9,
+      "x": -322.1,
+      "y": -905.4,
       "region": 23
     },
     {
@@ -29639,8 +29641,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": -1157.7,
-      "y": -131.7,
+      "x": -1331.3,
+      "y": -244.2,
       "region": 13
     },
     {
@@ -29706,8 +29708,8 @@
           "meritino"
         ]
       },
-      "x": 512.8,
-      "y": 350.6,
+      "x": 456.1,
+      "y": 429.1,
       "region": 16
     },
     {
@@ -29723,8 +29725,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": 31.7,
-      "y": -1141.3,
+      "x": 56.9,
+      "y": -1188.4,
       "region": 25
     },
     {
@@ -29740,8 +29742,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": 716.6,
-      "y": 832.4,
+      "x": 650.3,
+      "y": 743.6,
       "region": 12
     },
     {
@@ -29807,8 +29809,8 @@
           "scendano"
         ]
       },
-      "x": 859.3,
-      "y": 20.9,
+      "x": 730.2,
+      "y": -133.4,
       "region": 2
     },
     {
@@ -29824,8 +29826,8 @@
       "cognate_note": null,
       "tier": 4,
       "level": null,
-      "x": 1122.5,
-      "y": 701.0,
+      "x": 1214.6,
+      "y": 588.7,
       "region": 10
     },
     {
@@ -29841,8 +29843,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": 472.3,
-      "y": -966.1,
+      "x": 688.0,
+      "y": -811.7,
       "region": 0
     },
     {
@@ -29858,8 +29860,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": -812.9,
-      "y": -183.8,
+      "x": -909.1,
+      "y": -111.6,
       "region": 7
     },
     {
@@ -29875,8 +29877,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": -1090.0,
-      "y": 331.3,
+      "x": -1021.5,
+      "y": 163.6,
       "region": 4
     },
     {
@@ -29892,8 +29894,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": -136.3,
-      "y": 1023.2,
+      "x": -141.9,
+      "y": 951.1,
       "region": 20
     },
     {
@@ -29959,8 +29961,8 @@
           "vuotino"
         ]
       },
-      "x": -495.1,
-      "y": -95.5,
+      "x": -422.5,
+      "y": -105.5,
       "region": 17
     },
     {
@@ -29976,8 +29978,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": 26.4,
-      "y": -1238.4,
+      "x": 29.9,
+      "y": -1133.7,
       "region": 25
     },
     {
@@ -29993,8 +29995,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": -451.1,
-      "y": 145.7,
+      "x": -534.8,
+      "y": 399.9,
       "region": 3
     },
     {
@@ -30010,8 +30012,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": -1104.6,
-      "y": 187.0,
+      "x": -1119.7,
+      "y": 302.1,
       "region": 4
     },
     {
@@ -30077,8 +30079,8 @@
           "spiaggino"
         ]
       },
-      "x": -183.4,
-      "y": -140.0,
+      "x": -95.5,
+      "y": 190.0,
       "region": 9
     },
     {
@@ -30144,8 +30146,8 @@
           "ordinino"
         ]
       },
-      "x": 1202.2,
-      "y": 510.3,
+      "x": 1036.6,
+      "y": 611.3,
       "region": 10
     },
     {
@@ -30161,8 +30163,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -653.5,
-      "y": -494.8,
+      "x": -757.7,
+      "y": -442.5,
       "region": 24
     },
     {
@@ -30178,8 +30180,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": 990.0,
-      "y": 361.4,
+      "x": 832.1,
+      "y": 309.0,
       "region": 19
     },
     {
@@ -30195,8 +30197,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": -49.9,
-      "y": 1121.1,
+      "x": -180.8,
+      "y": 1107.5,
       "region": 20
     },
     {
@@ -30212,8 +30214,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": 948.5,
-      "y": 399.2,
+      "x": 870.3,
+      "y": 335.8,
       "region": 19
     },
     {
@@ -30229,8 +30231,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": -812.5,
-      "y": 929.0,
+      "x": -858.0,
+      "y": 968.4,
       "region": 29
     },
     {
@@ -30246,8 +30248,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": -547.9,
-      "y": 235.8,
+      "x": -516.8,
+      "y": 231.7,
       "region": 3
     },
     {
@@ -30263,8 +30265,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": -792.2,
-      "y": 534.2,
+      "x": -744.6,
+      "y": 701.8,
       "region": 8
     },
     {
@@ -30280,8 +30282,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": -715.8,
-      "y": -486.8,
+      "x": -708.7,
+      "y": -490.0,
       "region": 24
     },
     {
@@ -30297,8 +30299,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": -1163.3,
-      "y": 177.1,
+      "x": -1046.9,
+      "y": 334.3,
       "region": 4
     },
     {
@@ -30364,8 +30366,8 @@
           "maledicano"
         ]
       },
-      "x": -403.9,
-      "y": -64.9,
+      "x": -405.6,
+      "y": -201.5,
       "region": 17
     },
     {
@@ -30431,8 +30433,8 @@
           "magnifichino"
         ]
       },
-      "x": -807.7,
-      "y": -90.1,
+      "x": -828.5,
+      "y": -61.7,
       "region": 7
     },
     {
@@ -30448,8 +30450,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": -56.0,
-      "y": -465.2,
+      "x": -152.6,
+      "y": -369.1,
       "region": 15
     },
     {
@@ -30465,8 +30467,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": 719.2,
-      "y": -98.5,
+      "x": 654.4,
+      "y": 62.9,
       "region": 2
     },
     {
@@ -30482,8 +30484,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": -515.5,
-      "y": 322.8,
+      "x": -468.7,
+      "y": 228.5,
       "region": 3
     },
     {
@@ -30499,8 +30501,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": 1089.7,
-      "y": 659.0,
+      "x": 1229.4,
+      "y": 652.9,
       "region": 10
     },
     {
@@ -30566,8 +30568,8 @@
           "paginino"
         ]
       },
-      "x": 218.3,
-      "y": -317.5,
+      "x": 393.5,
+      "y": -480.2,
       "region": 5
     },
     {
@@ -30583,8 +30585,8 @@
       "cognate_note": null,
       "tier": 7,
       "level": null,
-      "x": -826.5,
-      "y": 543.5,
+      "x": -753.9,
+      "y": 661.8,
       "region": 8
     },
     {
@@ -30650,8 +30652,8 @@
           "taglino"
         ]
       },
-      "x": 770.9,
-      "y": 864.5,
+      "x": 630.2,
+      "y": 709.5,
       "region": 12
     },
     {
@@ -30667,8 +30669,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": 729.0,
-      "y": -1022.1,
+      "x": 506.6,
+      "y": -964.7,
       "region": 0
     },
     {
@@ -30684,8 +30686,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": 473.7,
-      "y": 879.4,
+      "x": 239.7,
+      "y": 861.5,
       "region": 6
     },
     {
@@ -30701,8 +30703,8 @@
       "cognate_note": null,
       "tier": 5,
       "level": null,
-      "x": -413.5,
-      "y": -949.5,
+      "x": -419.2,
+      "y": -949.4,
       "region": 23
     },
     {
@@ -30718,8 +30720,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": -114.0,
-      "y": -396.0,
+      "x": -43.9,
+      "y": -295.6,
       "region": 15
     },
     {
@@ -30735,8 +30737,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": 342.0,
-      "y": 925.6,
+      "x": 414.9,
+      "y": 981.6,
       "region": 6
     },
     {
@@ -30802,8 +30804,8 @@
           "tocchino"
         ]
       },
-      "x": 975.5,
-      "y": 314.6,
+      "x": 775.4,
+      "y": 369.6,
       "region": 19
     },
     {
@@ -30869,8 +30871,8 @@
           "colleghino"
         ]
       },
-      "x": -90.7,
-      "y": -1258.1,
+      "x": -84.8,
+      "y": -1108.3,
       "region": 25
     },
     {
@@ -30886,8 +30888,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": -783.8,
-      "y": 985.3,
+      "x": -861.4,
+      "y": 906.8,
       "region": 29
     },
     {
@@ -30903,8 +30905,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": -480.1,
-      "y": -152.5,
+      "x": -475.2,
+      "y": -128.2,
       "region": 17
     },
     {
@@ -30920,8 +30922,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": 235.7,
-      "y": -355.0,
+      "x": 448.8,
+      "y": -436.4,
       "region": 5
     },
     {
@@ -30987,8 +30989,8 @@
           "spaventino"
         ]
       },
-      "x": 344.9,
-      "y": 893.5,
+      "x": 382.7,
+      "y": 915.4,
       "region": 6
     },
     {
@@ -31004,8 +31006,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": -20.7,
-      "y": -504.5,
+      "x": -191.9,
+      "y": -333.2,
       "region": 15
     },
     {
@@ -31071,8 +31073,8 @@
           "coinvolgano"
         ]
       },
-      "x": 391.6,
-      "y": -329.5,
+      "x": 351.6,
+      "y": -264.7,
       "region": 5
     },
     {
@@ -31088,8 +31090,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": 501.2,
-      "y": -323.8,
+      "x": 256.6,
+      "y": -160.4,
       "region": 5
     },
     {
@@ -31105,8 +31107,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": 204.7,
-      "y": 460.0,
+      "x": 72.3,
+      "y": 702.1,
       "region": 1
     },
     {
@@ -31172,8 +31174,8 @@
           "doppino"
         ]
       },
-      "x": -34.6,
-      "y": 370.4,
+      "x": -109.2,
+      "y": 615.8,
       "region": 1
     },
     {
@@ -31189,8 +31191,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": -422.9,
-      "y": -985.4,
+      "x": -451.7,
+      "y": -969.7,
       "region": 23
     },
     {
@@ -31206,8 +31208,8 @@
       "cognate_note": null,
       "tier": 9,
       "level": null,
-      "x": -1190.0,
-      "y": -126.2,
+      "x": -1236.9,
+      "y": -190.9,
       "region": 13
     },
     {
@@ -31273,8 +31275,8 @@
           "preparino"
         ]
       },
-      "x": 555.0,
-      "y": 23.8,
+      "x": 741.1,
+      "y": 164.2,
       "region": 2
     },
     {
@@ -31290,8 +31292,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": -785.7,
-      "y": -526.6,
+      "x": -695.1,
+      "y": -576.4,
       "region": 24
     },
     {
@@ -31307,8 +31309,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": 232.5,
-      "y": 501.1,
+      "x": 112.8,
+      "y": 693.8,
       "region": 1
     },
     {
@@ -31324,8 +31326,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": 484.9,
-      "y": 868.9,
+      "x": 222.3,
+      "y": 867.0,
       "region": 6
     },
     {
@@ -31391,8 +31393,8 @@
           "cantino"
         ]
       },
-      "x": 743.2,
-      "y": 136.8,
+      "x": 593.8,
+      "y": -62.7,
       "region": 2
     },
     {
@@ -31458,8 +31460,8 @@
           "invitino"
         ]
       },
-      "x": 962.4,
-      "y": -293.7,
+      "x": 1004.8,
+      "y": -356.5,
       "region": 21
     },
     {
@@ -31525,8 +31527,8 @@
           "regolino"
         ]
       },
-      "x": 1095.8,
-      "y": 785.4,
+      "x": 1258.6,
+      "y": 514.7,
       "region": 10
     },
     {
@@ -31542,8 +31544,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": -77.2,
-      "y": 427.5,
+      "x": -106.6,
+      "y": 551.0,
       "region": 1
     },
     {
@@ -31559,8 +31561,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": 519.8,
-      "y": 968.5,
+      "x": 238.5,
+      "y": 741.8,
       "region": 6
     },
     {
@@ -31576,8 +31578,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": 164.4,
-      "y": 336.1,
+      "x": -31.4,
+      "y": 746.6,
       "region": 1
     },
     {
@@ -31593,8 +31595,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": 643.9,
-      "y": 50.1,
+      "x": 790.7,
+      "y": 36.4,
       "region": 2
     },
     {
@@ -31610,8 +31612,8 @@
       "cognate_note": null,
       "tier": 8,
       "level": null,
-      "x": -473.3,
-      "y": 196.0,
+      "x": -517.2,
+      "y": 348.4,
       "region": 3
     }
   ],

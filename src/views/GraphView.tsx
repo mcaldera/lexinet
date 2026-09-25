@@ -408,11 +408,19 @@ export default function GraphView({
 
   useEffect(() => {
     // Strong links pull words close; category springs are longer and softer.
+    // Links between categories are long and loose, so each category holds
+    // together as one territory instead of being torn apart by its outside ties.
     fg.current
       ?.d3Force('link')
-      ?.distance((l: L) => (l.category ? 55 : 25 + (1 - l.weight) * 60))
-      .strength((l: L) => (l.category ? 0.08 : 0.15 + l.weight * 0.6));
+      ?.distance((l: L) =>
+        l.category ? 55 : (25 + (1 - l.weight) * 60) * (crossRegion(l) ? 2 : 1),
+      )
+      .strength((l: L) =>
+        l.category ? 0.08 : (0.15 + l.weight * 0.6) * (crossRegion(l) ? 0.3 : 1),
+      );
     fg.current?.d3Force('charge')?.strength(-90);
+    // Set once: a page shows one graph, and its regions never change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Territories: every visible word of a region, named once you've conquered one of them.

@@ -50,7 +50,8 @@ export type Edge = {
   reason: EdgeReason;
   components?: Components;
   /** tree: needed to keep the graph connected; bonus: one of a word's top partners. */
-  via?: 'tree' | 'bonus';
+  /** theme: keeps a category in one piece (per-category tree or a lenient in-category link). */
+  via?: 'tree' | 'bonus' | 'theme';
 };
 /** A root shared by 2+ words, drawn as a hub node linked to its descendants. */
 export type RootHub = {
@@ -76,6 +77,9 @@ export type Graph = {
     weights: Components;
     bonus_k: number;
     bonus_threshold: number;
+    /** In-category links (lists with themes): top partners and their bar. */
+    theme_k?: number;
+    theme_threshold?: number;
     tiers?: number;
     tier_names?: Record<string, string> | null;
   };

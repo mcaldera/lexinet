@@ -280,6 +280,48 @@ def edge_reason(semantic: float, morphological: float, etymological: float, them
     return "thematic"
 
 
+def assign_themes(df: pd.DataFrame, total: np.ndarray) -> list[str] | None:
+    """Region theme per word when most words have one (curated lists), else None.
+
+    Untagged words join the theme they are most strongly linked to on average.
+    """
+    theme_of = [str(t) for t in df["theme"]]
+    if sum(bool(t) for t in theme_of) < 0.5 * len(theme_of):
+        return None
+    members: dict[str, list[int]] = {}
+    for i, t in enumerate(theme_of):
+        if t:
+            members.setdefault(t, []).append(i)
+    for i, t in enumerate(theme_of):
+        if not t:
+            theme_of[i] = max(members, key=lambda m: float(np.mean(total[i, members[m]])))
+    return theme_of
+
+
+def theme_edges(
+    total: np.ndarray, tiers: list[int], theme_of: list[str], k: int, threshold: float
+) -> set[tuple[int, int]]:
+    """Links that keep each theme in one piece: a tier-respecting spanning tree
+    per theme, plus each word's top-k partners within its theme (a lower bar
+    than across themes, so categories don't fall apart on the map)."""
+    out: set[tuple[int, int]] = set()
+    by_theme: dict[str, list[int]] = {}
+    for i, t in enumerate(theme_of):
+        by_theme.setdefault(t, []).append(i)
+    for idx in by_theme.values():
+        if len(idx) < 2:
+            continue
+        sub = total[np.ix_(idx, idx)]
+        for a, b in tiered_spanning_tree(sub, [tiers[i] for i in idx]):
+            out.add(tuple(sorted((idx[a], idx[b]))))
+        for a, i in enumerate(idx):
+            partners = sorted((b for b in range(len(idx)) if b != a), key=lambda b: -sub[a, b])
+            for b in partners[:k]:
+                if sub[a, b] >= threshold:
+                    out.add(tuple(sorted((i, idx[b]))))
+    return out
+
+
 def build_graph(
     df: pd.DataFrame,
     embed: Embedder,
@@ -289,6 +331,8 @@ def build_graph(
     ranks: dict[str, int] | None = None,
     english: Callable[[str], list[str]] | None = None,
     conjugate: Callable[[str], dict[str, list[str]] | None] | None = None,
+    theme_k: int = 2,
+    theme_threshold: float = 0.3,
 ) -> dict:
     df = df.assign(**{c: "" for c in OPTIONAL_COLUMNS if c not in df.columns})
     ids: list[str] = []
@@ -297,6 +341,13 @@ def build_graph(
         ids.append(base if base not in ids else f"{base}-{len(ids)}")
     comps = score_components(df, embed)
     total = sum(WEIGHTS[k] * m for k, m in comps.items())
+    # Regions first: untagged words join a theme, and then count as part of it.
+    theme_of = assign_themes(df, total)
+    if theme_of is not None:
+        v = np.array([t.lower() for t in theme_of])
+        comps["thematic"] = (v[:, None] == v[None, :]).astype(float)
+        np.fill_diagonal(comps["thematic"], 0.0)
+        total = sum(WEIGHTS[k] * m for k, m in comps.items())
 
     n = len(ids)
     words = df["italian"].tolist()
@@ -313,6 +364,12 @@ def build_graph(
         for j in ranked[i][:bonus_k]:
             if total[i, j] >= bonus_threshold:
                 chosen.add(tuple(sorted((i, j))))
+    in_theme = (
+        theme_edges(total, tiers, theme_of, theme_k, theme_threshold) - chosen
+        if theme_of is not None
+        else set()
+    )
+    chosen |= in_theme
 
     def breakdown(i: int, j: int) -> dict:
         return {k: round(float(m[i, j]), 3) for k, m in comps.items()}
@@ -327,7 +384,7 @@ def build_graph(
             "weight": strength(i, j),
             "reason": edge_reason(*(float(comps[k][i, j]) for k in WEIGHTS)),
             "components": breakdown(i, j),
-            "via": "tree" if (i, j) in tree else "bonus",
+            "via": "tree" if (i, j) in tree else "theme" if (i, j) in in_theme else "bonus",
         }
         for i, j in sorted(chosen)
     ]
@@ -406,18 +463,9 @@ def build_graph(
     G = nx.Graph()
     G.add_nodes_from(ids)
     G.add_edges_from((e["source"], e["target"], {"weight": e["weight"]}) for e in edges)
-    # Regions: the list's own themes when most words have one (curated lists),
-    # else communities of the link graph. Untagged words join the theme they
-    # are most strongly linked to on average.
-    theme_of = list(df["theme"])
-    if sum(bool(t) for t in theme_of) >= 0.5 * n:
-        members: dict[str, list[int]] = {}
-        for i, t in enumerate(theme_of):
-            if t:
-                members.setdefault(t, []).append(i)
-        for i, t in enumerate(theme_of):
-            if not t:
-                theme_of[i] = max(members, key=lambda m: float(np.mean(total[i, members[m]])))
+    # Regions: the list's own themes (assigned above) when it has them, else
+    # communities of the link graph.
+    if theme_of is not None:
         names = sorted(set(theme_of), key=lambda t: -theme_of.count(t))
         comms = [{ids[i] for i in range(n) if theme_of[i] == t} for t in names]
     else:
@@ -450,6 +498,8 @@ def build_graph(
             "weights": WEIGHTS,
             "bonus_k": bonus_k,
             "bonus_threshold": bonus_threshold,
+            "theme_k": theme_k,
+            "theme_threshold": theme_threshold,
             "tiers": max(tiers),
             # Display names per tier, e.g. CEFR levels from a "level" column.
             "tier_names": {
