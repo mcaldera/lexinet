@@ -31,7 +31,12 @@
       "level": null,
       "x": 163.6,
       "y": 368.7,
-      "region": 5
+      "region": 5,
+      "example": {
+        "it": "Vedo il cane.",
+        "en": "I see the dog.",
+        "blank": "cane"
+      }
     },
     {
       "id": "il-gatto",
@@ -48,7 +53,12 @@
       "level": null,
       "x": 211.0,
       "y": 328.0,
-      "region": 5
+      "region": 5,
+      "example": {
+        "it": "Trovi il gatto.",
+        "en": "Find the cat.",
+        "blank": "gatto"
+      }
     },
     {
       "id": "abbaiare",
@@ -115,7 +125,12 @@
       },
       "x": 218.5,
       "y": 364.6,
-      "region": 5
+      "region": 5,
+      "example": {
+        "it": "Il cane iniziò ad abbaiare.",
+        "en": "The dog started barking.",
+        "blank": "abbaiare"
+      }
     },
     {
       "id": "l-uccello",
@@ -132,7 +147,12 @@
       "level": null,
       "x": 233.5,
       "y": 300.2,
-      "region": 5
+      "region": 5,
+      "example": {
+        "it": "È un uccello?",
+        "en": "Is that a bird?",
+        "blank": "uccello"
+      }
     },
     {
       "id": "volare",
@@ -199,7 +219,12 @@
       },
       "x": 249.2,
       "y": 257.9,
-      "region": 5
+      "region": 5,
+      "example": {
+        "it": "Io so volare.",
+        "en": "I know how to fly.",
+        "blank": "volare"
+      }
     },
     {
       "id": "il-pesce",
@@ -216,7 +241,12 @@
       "level": null,
       "x": 262.1,
       "y": 285.0,
-      "region": 5
+      "region": 5,
+      "example": {
+        "it": "Amo il pesce.",
+        "en": "I love fish.",
+        "blank": "pesce"
+      }
     },
     {
       "id": "nuotare",
@@ -283,7 +313,12 @@
       },
       "x": 280.4,
       "y": 247.9,
-      "region": 5
+      "region": 5,
+      "example": {
+        "it": "Io so nuotare.",
+        "en": "I can swim.",
+        "blank": "nuotare"
+      }
     },
     {
       "id": "il-cavallo",
@@ -300,7 +335,12 @@
       "level": null,
       "x": 176.3,
       "y": 329.2,
-      "region": 5
+      "region": 5,
+      "example": {
+        "it": "Il cavallo è mio.",
+        "en": "The horse is mine.",
+        "blank": "cavallo"
+      }
     },
     {
       "id": "la-mucca",
@@ -317,7 +357,12 @@
       "level": null,
       "x": 131.5,
       "y": 358.9,
-      "region": 5
+      "region": 5,
+      "example": {
+        "it": "È una mucca.",
+        "en": "It's a cow.",
+        "blank": "mucca"
+      }
     },
     {
       "id": "il-latte",
@@ -334,7 +379,12 @@
       "level": null,
       "x": 7.7,
       "y": 162.3,
-      "region": 0
+      "region": 0,
+      "example": {
+        "it": "Odio il latte.",
+        "en": "I hate milk.",
+        "blank": "latte"
+      }
     },
     {
       "id": "il-formaggio",
@@ -351,7 +401,12 @@
       "level": null,
       "x": 11.6,
       "y": 120.6,
-      "region": 0
+      "region": 0,
+      "example": {
+        "it": "Amo il formaggio.",
+        "en": "I love cheese.",
+        "blank": "formaggio"
+      }
     },
     {
       "id": "il-pane",
@@ -368,7 +423,12 @@
       "level": null,
       "x": 45.5,
       "y": 134.2,
-      "region": 0
+      "region": 0,
+      "example": {
+        "it": "Il pane è duro.",
+        "en": "The bread is hard.",
+        "blank": "pane"
+      }
     },
     {
       "id": "la-pasta",
@@ -385,7 +445,12 @@
       "level": null,
       "x": 39.8,
       "y": 192.9,
-      "region": 0
+      "region": 0,
+      "example": {
+        "it": "Mangi la pasta?",
+        "en": "Do you eat pasta?",
+        "blank": "pasta"
+      }
     },
     {
       "id": "mangiare",
@@ -452,7 +517,12 @@
       },
       "x": -61.1,
       "y": 212.8,
-      "region": 0
+      "region": 0,
+      "example": {
+        "it": "Io devo mangiare.",
+        "en": "I have to eat.",
+        "blank": "mangiare"
+      }
     },
     {
       "id": "mangiato",
@@ -469,7 +539,12 @@
       "level": null,
       "x": -17.2,
       "y": 87.7,
-      "region": 0
+      "region": 0,
+      "example": {
+        "it": "Tu hai mangiato?",
+        "en": "Have you eaten?",
+        "blank": "mangiato"
+      }
     },
     {
       "id": "bere",
@@ -536,7 +611,12 @@
       },
       "x": -31.8,
       "y": 188.3,
-      "region": 0
+      "region": 0,
+      "example": {
+        "it": "Non bere altro.",
+        "en": "Don't drink any more.",
+        "blank": "bere"
+      }
     },
     {
       "id": "l-acqua",
@@ -553,7 +633,12 @@
       "level": null,
       "x": -30.8,
       "y": 151.0,
-      "region": 0
+      "region": 0,
+      "example": {
+        "it": "Non è acqua.",
+        "en": "That's not water.",
+        "blank": "acqua"
+      }
     },
     {
       "id": "il-vino",
@@ -570,7 +655,12 @@
       "level": null,
       "x": -39.4,
       "y": 124.2,
-      "region": 0
+      "region": 0,
+      "example": {
+        "it": "Ho il vino.",
+        "en": "I have wine.",
+        "blank": "vino"
+      }
     },
     {
       "id": "la-mela",
@@ -587,7 +677,12 @@
       "level": null,
       "x": 15.7,
       "y": 83.5,
-      "region": 0
+      "region": 0,
+      "example": {
+        "it": "La mela è rossa?",
+        "en": "Is the apple red?",
+        "blank": "mela"
+      }
     },
     {
       "id": "cucinare",
@@ -654,7 +749,12 @@
       },
       "x": -10.6,
       "y": 233.2,
-      "region": 0
+      "region": 0,
+      "example": {
+        "it": "Tom sa cucinare?",
+        "en": "Can Tom cook?",
+        "blank": "cucinare"
+      }
     },
     {
       "id": "la-cucina",
@@ -671,7 +771,12 @@
       "level": null,
       "x": 140.0,
       "y": -7.1,
-      "region": 2
+      "region": 2,
+      "example": {
+        "it": "Ecco la cucina.",
+        "en": "Here's the kitchen.",
+        "blank": "cucina"
+      }
     },
     {
       "id": "il-cuoco",
@@ -688,7 +793,12 @@
       "level": null,
       "x": 87.8,
       "y": 215.5,
-      "region": 0
+      "region": 0,
+      "example": {
+        "it": "Sono il cuoco.",
+        "en": "I'm the cook.",
+        "blank": "cuoco"
+      }
     },
     {
       "id": "la-colazione",
@@ -705,7 +815,12 @@
       "level": null,
       "x": -111.8,
       "y": 193.9,
-      "region": 0
+      "region": 0,
+      "example": {
+        "it": "Vuoi la colazione?",
+        "en": "Do you want breakfast?",
+        "blank": "colazione"
+      }
     },
     {
       "id": "la-cena",
@@ -722,7 +837,12 @@
       "level": null,
       "x": -71.7,
       "y": 133.8,
-      "region": 0
+      "region": 0,
+      "example": {
+        "it": "La cena è alle sei.",
+        "en": "Dinner's at six.",
+        "blank": "cena"
+      }
     },
     {
       "id": "cenare",
@@ -789,7 +909,12 @@
       },
       "x": -113.8,
       "y": 245.6,
-      "region": 0
+      "region": 0,
+      "example": {
+        "it": "Io vorrei cenare.",
+        "en": "I would like to have dinner.",
+        "blank": "cenare"
+      }
     },
     {
       "id": "la-casa",
@@ -806,7 +931,12 @@
       "level": null,
       "x": 192.2,
       "y": 2.2,
-      "region": 2
+      "region": 2,
+      "example": {
+        "it": "È una casa.",
+        "en": "It's a house.",
+        "blank": "casa"
+      }
     },
     {
       "id": "la-porta",
@@ -823,7 +953,12 @@
       "level": null,
       "x": 160.9,
       "y": 16.9,
-      "region": 2
+      "region": 2,
+      "example": {
+        "it": "Qualcuno è sulla porta.",
+        "en": "Someone is at the door.",
+        "blank": "porta"
+      }
     },
     {
       "id": "la-finestra",
@@ -840,7 +975,12 @@
       "level": null,
       "x": 124.4,
       "y": -29.2,
-      "region": 2
+      "region": 2,
+      "example": {
+        "it": "Apri la finestra.",
+        "en": "Open the window.",
+        "blank": "finestra"
+      }
     },
     {
       "id": "il-letto",
@@ -857,7 +997,12 @@
       "level": null,
       "x": 217.0,
       "y": -26.5,
-      "region": 2
+      "region": 2,
+      "example": {
+        "it": "È sotto il letto.",
+        "en": "It's under the bed.",
+        "blank": "letto"
+      }
     },
     {
       "id": "dormire",
@@ -924,7 +1069,12 @@
       },
       "x": 274.6,
       "y": 12.3,
-      "region": 2
+      "region": 2,
+      "example": {
+        "it": "Vai a dormire.",
+        "en": "Go to sleep.",
+        "blank": "dormire"
+      }
     },
     {
       "id": "il-sonno",
@@ -941,7 +1091,12 @@
       "level": null,
       "x": 274.3,
       "y": -64.3,
-      "region": 2
+      "region": 2,
+      "example": {
+        "it": "Tom ha il sonno pesante, vero?",
+        "en": "Tom is a heavy sleeper, isn't he?",
+        "blank": "sonno"
+      }
     },
     {
       "id": "la-sedia",
@@ -958,7 +1113,12 @@
       "level": null,
       "x": 189.7,
       "y": -64.9,
-      "region": 2
+      "region": 2,
+      "example": {
+        "it": "È sotto la sedia.",
+        "en": "He's under the chair.",
+        "blank": "sedia"
+      }
     },
     {
       "id": "il-tavolo",
@@ -975,7 +1135,12 @@
       "level": null,
       "x": 137.6,
       "y": -66.9,
-      "region": 2
+      "region": 2,
+      "example": {
+        "it": "Il tavolo è bianco.",
+        "en": "The table is white.",
+        "blank": "tavolo"
+      }
     },
     {
       "id": "la-camera",
@@ -992,7 +1157,12 @@
       "level": null,
       "x": 165.9,
       "y": -34.2,
-      "region": 2
+      "region": 2,
+      "example": {
+        "it": "Ha lasciato la camera.",
+        "en": "He left the room.",
+        "blank": "camera"
+      }
     },
     {
       "id": "parlare",
@@ -1059,7 +1229,12 @@
       },
       "x": -458.2,
       "y": -349.9,
-      "region": 1
+      "region": 1,
+      "example": {
+        "it": "Lui vuole parlare.",
+        "en": "He wants to speak.",
+        "blank": "parlare"
+      }
     },
     {
       "id": "parlato",
@@ -1076,7 +1251,12 @@
       "level": null,
       "x": -471.4,
       "y": -312.2,
-      "region": 1
+      "region": 1,
+      "example": {
+        "it": "Lui ha parlato.",
+        "en": "He spoke.",
+        "blank": "parlato"
+      }
     },
     {
       "id": "la-parola",
@@ -1093,7 +1273,12 @@
       "level": null,
       "x": -504.7,
       "y": -363.9,
-      "region": 1
+      "region": 1,
+      "example": {
+        "it": "È la parola.",
+        "en": "That's the word.",
+        "blank": "parola"
+      }
     },
     {
       "id": "dire",
@@ -1160,7 +1345,12 @@
       },
       "x": -510.5,
       "y": -326.3,
-      "region": 1
+      "region": 1,
+      "example": {
+        "it": "Mai dire mai.",
+        "en": "Never say never.",
+        "blank": "dire"
+      }
     },
     {
       "id": "chiedere",
@@ -1227,7 +1417,12 @@
       },
       "x": -517.6,
       "y": -277.1,
-      "region": 1
+      "region": 1,
+      "example": {
+        "it": "So a chi chiedere.",
+        "en": "I know who to ask.",
+        "blank": "chiedere"
+      }
     },
     {
       "id": "la-domanda",
@@ -1244,7 +1439,12 @@
       "level": null,
       "x": -532.4,
       "y": -301.5,
-      "region": 1
+      "region": 1,
+      "example": {
+        "it": "È la domanda.",
+        "en": "That's the question.",
+        "blank": "domanda"
+      }
     },
     {
       "id": "rispondere",
@@ -1311,7 +1511,12 @@
       },
       "x": -498.5,
       "y": -233.3,
-      "region": 1
+      "region": 1,
+      "example": {
+        "it": "Mi può rispondere?",
+        "en": "Can you answer me?",
+        "blank": "rispondere"
+      }
     },
     {
       "id": "la-risposta",
@@ -1328,7 +1533,12 @@
       "level": null,
       "x": -568.3,
       "y": -249.8,
-      "region": 1
+      "region": 1,
+      "example": {
+        "it": "Ho la risposta.",
+        "en": "I have the answer.",
+        "blank": "risposta"
+      }
     },
     {
       "id": "scrivere",
@@ -1395,7 +1605,12 @@
       },
       "x": -544.4,
       "y": -413.3,
-      "region": 1
+      "region": 1,
+      "example": {
+        "it": "Io amo scrivere.",
+        "en": "I love to write.",
+        "blank": "scrivere"
+      }
     },
     {
       "id": "la-lettera",
@@ -1412,7 +1627,12 @@
       "level": null,
       "x": -539.0,
       "y": -378.9,
-      "region": 1
+      "region": 1,
+      "example": {
+        "it": "Ricordo la lettera.",
+        "en": "I remember the letter.",
+        "blank": "lettera"
+      }
     },
     {
       "id": "leggere",
@@ -1479,7 +1699,12 @@
       },
       "x": -538.8,
       "y": -350.7,
-      "region": 1
+      "region": 1,
+      "example": {
+        "it": "Io so leggere.",
+        "en": "I can read.",
+        "blank": "leggere"
+      }
     },
     {
       "id": "il-libro",
@@ -1496,7 +1721,12 @@
       "level": null,
       "x": -563.6,
       "y": -386.4,
-      "region": 1
+      "region": 1,
+      "example": {
+        "it": "Vedo il libro.",
+        "en": "I see the book.",
+        "blank": "libro"
+      }
     },
     {
       "id": "la-madre",
@@ -1513,7 +1743,12 @@
       "level": null,
       "x": 371.7,
       "y": 88.9,
-      "region": 6
+      "region": 6,
+      "example": {
+        "it": "È una madre?",
+        "en": "Are you a mother?",
+        "blank": "madre"
+      }
     },
     {
       "id": "il-padre",
@@ -1530,7 +1765,12 @@
       "level": null,
       "x": 380.6,
       "y": 156.4,
-      "region": 6
+      "region": 6,
+      "example": {
+        "it": "Chi è il padre?",
+        "en": "Who's the father?",
+        "blank": "padre"
+      }
     },
     {
       "id": "il-fratello",
@@ -1547,7 +1787,12 @@
       "level": null,
       "x": 443.2,
       "y": 168.5,
-      "region": 6
+      "region": 6,
+      "example": {
+        "it": "È mio fratello.",
+        "en": "He is my brother.",
+        "blank": "fratello"
+      }
     },
     {
       "id": "la-sorella",
@@ -1564,7 +1809,12 @@
       "level": null,
       "x": 434.0,
       "y": 70.9,
-      "region": 6
+      "region": 6,
+      "example": {
+        "it": "È mia sorella.",
+        "en": "She's my sister.",
+        "blank": "sorella"
+      }
     },
     {
       "id": "il-figlio",
@@ -1581,7 +1831,12 @@
       "level": null,
       "x": 412.6,
       "y": 214.8,
-      "region": 6
+      "region": 6,
+      "example": {
+        "it": "Lui è il figlio più grande.",
+        "en": "He's the oldest son.",
+        "blank": "figlio"
+      }
     },
     {
       "id": "la-figlia",
@@ -1598,7 +1853,12 @@
       "level": null,
       "x": 431.7,
       "y": 114.5,
-      "region": 6
+      "region": 6,
+      "example": {
+        "it": "È mia figlia.",
+        "en": "She's my daughter.",
+        "blank": "figlia"
+      }
     },
     {
       "id": "il-nonno",
@@ -1615,7 +1875,12 @@
       "level": null,
       "x": 322.3,
       "y": 96.3,
-      "region": 6
+      "region": 6,
+      "example": {
+        "it": "Sono un nonno.",
+        "en": "I'm a grandfather.",
+        "blank": "nonno"
+      }
     },
     {
       "id": "la-nonna",
@@ -1632,7 +1897,12 @@
       "level": null,
       "x": 326.6,
       "y": 159.8,
-      "region": 6
+      "region": 6,
+      "example": {
+        "it": "Sono la nonna di Tom.",
+        "en": "I'm Tom's grandmother.",
+        "blank": "nonna"
+      }
     },
     {
       "id": "la-famiglia",
@@ -1649,7 +1919,12 @@
       "level": null,
       "x": 392.9,
       "y": 120.2,
-      "region": 6
+      "region": 6,
+      "example": {
+        "it": "Come sta la famiglia?",
+        "en": "How is the family doing?",
+        "blank": "famiglia"
+      }
     },
     {
       "id": "la-testa",
@@ -1666,7 +1941,12 @@
       "level": null,
       "x": -323.4,
       "y": -135.0,
-      "region": 3
+      "region": 3,
+      "example": {
+        "it": "Dove ha la testa?",
+        "en": "Where's your head at?",
+        "blank": "testa"
+      }
     },
     {
       "id": "la-mano",
@@ -1683,7 +1963,12 @@
       "level": null,
       "x": -300.4,
       "y": -152.3,
-      "region": 3
+      "region": 3,
+      "example": {
+        "it": "Le ho dato la mano.",
+        "en": "I shook hands with her.",
+        "blank": "mano"
+      }
     },
     {
       "id": "il-piede",
@@ -1700,7 +1985,12 @@
       "level": null,
       "x": -268.5,
       "y": -160.9,
-      "region": 3
+      "region": 3,
+      "example": {
+        "it": "Cosa ti è successo al piede?",
+        "en": "What happened to your foot?",
+        "blank": "piede"
+      }
     },
     {
       "id": "camminare",
@@ -1767,7 +2057,12 @@
       },
       "x": -236.2,
       "y": -170.2,
-      "region": 3
+      "region": 3,
+      "example": {
+        "it": "Tom sa camminare.",
+        "en": "Tom can walk.",
+        "blank": "camminare"
+      }
     },
     {
       "id": "l-occhio",
@@ -1784,7 +2079,12 @@
       "level": null,
       "x": -358.4,
       "y": -174.7,
-      "region": 3
+      "region": 3,
+      "example": {
+        "it": "Quale occhio ti fa male?",
+        "en": "Which eye is hurting you?",
+        "blank": "occhio"
+      }
     },
     {
       "id": "vedere",
@@ -1851,7 +2151,12 @@
       },
       "x": -330.0,
       "y": -121.1,
-      "region": 3
+      "region": 3,
+      "example": {
+        "it": "Lo devo vedere.",
+        "en": "I need to see that.",
+        "blank": "vedere"
+      }
     },
     {
       "id": "guardare",
@@ -1918,7 +2223,12 @@
       },
       "x": -378.4,
       "y": -149.6,
-      "region": 3
+      "region": 3,
+      "example": {
+        "it": "Non mi guardare.",
+        "en": "Don't look at me.",
+        "blank": "guardare"
+      }
     },
     {
       "id": "l-orecchio",
@@ -1935,7 +2245,12 @@
       "level": null,
       "x": -354.9,
       "y": -128.3,
-      "region": 3
+      "region": 3,
+      "example": {
+        "it": "Suona il piano ad orecchio.",
+        "en": "She plays the piano by ear.",
+        "blank": "orecchio"
+      }
     },
     {
       "id": "sentire",
@@ -2002,7 +2317,12 @@
       },
       "x": -351.7,
       "y": -87.9,
-      "region": 3
+      "region": 3,
+      "example": {
+        "it": "Può sentire tutto.",
+        "en": "You can hear everything.",
+        "blank": "sentire"
+      }
     },
     {
       "id": "la-bocca",
@@ -2019,7 +2339,12 @@
       "level": null,
       "x": -329.5,
       "y": -161.7,
-      "region": 3
+      "region": 3,
+      "example": {
+        "it": "Ha una bocca grande.",
+        "en": "He has a big mouth.",
+        "blank": "bocca"
+      }
     },
     {
       "id": "il-sole",
@@ -2036,7 +2361,12 @@
       "level": null,
       "x": -265.2,
       "y": 143.5,
-      "region": 8
+      "region": 8,
+      "example": {
+        "it": "Amo il sole.",
+        "en": "I love the sun.",
+        "blank": "sole"
+      }
     },
     {
       "id": "la-pioggia",
@@ -2053,7 +2383,12 @@
       "level": null,
       "x": -297.6,
       "y": 109.1,
-      "region": 8
+      "region": 8,
+      "example": {
+        "it": "Odio la pioggia.",
+        "en": "I hate rain.",
+        "blank": "pioggia"
+      }
     },
     {
       "id": "piovere",
@@ -2120,7 +2455,12 @@
       },
       "x": -268.5,
       "y": 200.4,
-      "region": 8
+      "region": 8,
+      "example": {
+        "it": "Sta per piovere.",
+        "en": "It's about to rain.",
+        "blank": "piovere"
+      }
     },
     {
       "id": "la-neve",
@@ -2137,7 +2477,12 @@
       "level": null,
       "x": -368.3,
       "y": 138.9,
-      "region": 8
+      "region": 8,
+      "example": {
+        "it": "Amo la neve.",
+        "en": "I love snow.",
+        "blank": "neve"
+      }
     },
     {
       "id": "nevicare",
@@ -2204,7 +2549,12 @@
       },
       "x": -337.4,
       "y": 213.8,
-      "region": 8
+      "region": 8,
+      "example": {
+        "it": "Sta per nevicare.",
+        "en": "It is going to snow.",
+        "blank": "nevicare"
+      }
     },
     {
       "id": "il-vento",
@@ -2221,7 +2571,12 @@
       "level": null,
       "x": -214.8,
       "y": 153.8,
-      "region": 8
+      "region": 8,
+      "example": {
+        "it": "Il vento è forte.",
+        "en": "The wind is strong.",
+        "blank": "vento"
+      }
     },
     {
       "id": "freddo",
@@ -2238,7 +2593,12 @@
       "level": null,
       "x": -310.9,
       "y": 156.9,
-      "region": 8
+      "region": 8,
+      "example": {
+        "it": "Tom è freddo.",
+        "en": "Tom is cold.",
+        "blank": "freddo"
+      }
     },
     {
       "id": "caldo",
@@ -2255,7 +2615,12 @@
       "level": null,
       "x": -261.8,
       "y": 87.5,
-      "region": 8
+      "region": 8,
+      "example": {
+        "it": "Io ho caldo.",
+        "en": "I'm hot.",
+        "blank": "caldo"
+      }
     },
     {
       "id": "il-treno",
@@ -2272,7 +2637,12 @@
       "level": null,
       "x": 335.5,
       "y": -244.7,
-      "region": 4
+      "region": 4,
+      "example": {
+        "it": "Ecco il treno.",
+        "en": "Here comes the train.",
+        "blank": "treno"
+      }
     },
     {
       "id": "la-stazione",
@@ -2289,7 +2659,12 @@
       "level": null,
       "x": 281.4,
       "y": -182.3,
-      "region": 4
+      "region": 4,
+      "example": {
+        "it": "La stazione è qui vicino.",
+        "en": "The station is nearby.",
+        "blank": "stazione"
+      }
     },
     {
       "id": "il-biglietto",
@@ -2306,7 +2681,12 @@
       "level": null,
       "x": 369.1,
       "y": -276.3,
-      "region": 4
+      "region": 4,
+      "example": {
+        "it": "È il biglietto.",
+        "en": "That's the ticket.",
+        "blank": "biglietto"
+      }
     },
     {
       "id": "viaggiare",
@@ -2373,7 +2753,12 @@
       },
       "x": 385.7,
       "y": -234.1,
-      "region": 4
+      "region": 4,
+      "example": {
+        "it": "Io amo viaggiare.",
+        "en": "I love traveling.",
+        "blank": "viaggiare"
+      }
     },
     {
       "id": "il-viaggio",
@@ -2390,7 +2775,12 @@
       "level": null,
       "x": 399.4,
       "y": -212.4,
-      "region": 4
+      "region": 4,
+      "example": {
+        "it": "Come è stato il viaggio?",
+        "en": "How was the trip?",
+        "blank": "viaggio"
+      }
     },
     {
       "id": "la-strada",
@@ -2407,7 +2797,12 @@
       "level": null,
       "x": 331.6,
       "y": -163.7,
-      "region": 4
+      "region": 4,
+      "example": {
+        "it": "Che strada è questa?",
+        "en": "What street is this?",
+        "blank": "strada"
+      }
     },
     {
       "id": "la-macchina",
@@ -2424,7 +2819,12 @@
       "level": null,
       "x": 369.2,
       "y": -193.8,
-      "region": 4
+      "region": 4,
+      "example": {
+        "it": "Non ho la macchina.",
+        "en": "I don't have a car.",
+        "blank": "macchina"
+      }
     },
     {
       "id": "guidare",
@@ -2491,7 +2891,12 @@
       },
       "x": 341.9,
       "y": -200.9,
-      "region": 4
+      "region": 4,
+      "example": {
+        "it": "Tom sa guidare.",
+        "en": "Tom can drive.",
+        "blank": "guidare"
+      }
     },
     {
       "id": "arrivare",
@@ -2558,7 +2963,12 @@
       },
       "x": 432.6,
       "y": -249.6,
-      "region": 4
+      "region": 4,
+      "example": {
+        "it": "Dovrebbe arrivare domani.",
+        "en": "He is due to arrive tomorrow.",
+        "blank": "arrivare"
+      }
     },
     {
       "id": "partire",
@@ -2625,7 +3035,12 @@
       },
       "x": 437.3,
       "y": -199.7,
-      "region": 4
+      "region": 4,
+      "example": {
+        "it": "Io devo partire.",
+        "en": "I must leave.",
+        "blank": "partire"
+      }
     },
     {
       "id": "il-giorno",
@@ -2642,7 +3057,12 @@
       "level": null,
       "x": -59.8,
       "y": -141.6,
-      "region": 7
+      "region": 7,
+      "example": {
+        "it": "Lavoro tutto il giorno.",
+        "en": "I work all day.",
+        "blank": "giorno"
+      }
     },
     {
       "id": "la-notte",
@@ -2659,7 +3079,12 @@
       "level": null,
       "x": -93.9,
       "y": -179.1,
-      "region": 7
+      "region": 7,
+      "example": {
+        "it": "Non lavoro la notte.",
+        "en": "I don't work at night.",
+        "blank": "notte"
+      }
     },
     {
       "id": "la-mattina",
@@ -2676,7 +3101,12 @@
       "level": null,
       "x": -70.8,
       "y": -94.8,
-      "region": 7
+      "region": 7,
+      "example": {
+        "it": "Lavoro la mattina.",
+        "en": "I work in the morning.",
+        "blank": "mattina"
+      }
     },
     {
       "id": "la-sera",
@@ -2693,7 +3123,12 @@
       "level": null,
       "x": -4.6,
       "y": -164.7,
-      "region": 7
+      "region": 7,
+      "example": {
+        "it": "Aiuto mia madre la sera.",
+        "en": "I help my mother in the evening.",
+        "blank": "sera"
+      }
     },
     {
       "id": "oggi",
@@ -2710,7 +3145,12 @@
       "level": null,
       "x": -126.5,
       "y": -103.8,
-      "region": 7
+      "region": 7,
+      "example": {
+        "it": "Che fa oggi?",
+        "en": "What're you doing today?",
+        "blank": "oggi"
+      }
     },
     {
       "id": "domani",
@@ -2727,7 +3167,12 @@
       "level": null,
       "x": -138.0,
       "y": -39.5,
-      "region": 7
+      "region": 7,
+      "example": {
+        "it": "Che fa domani?",
+        "en": "What are you doing tomorrow?",
+        "blank": "domani"
+      }
     },
     {
       "id": "ieri",
@@ -2744,7 +3189,12 @@
       "level": null,
       "x": -75.3,
       "y": -26.1,
-      "region": 7
+      "region": 7,
+      "example": {
+        "it": "Era lì ieri.",
+        "en": "It was there yesterday.",
+        "blank": "ieri"
+      }
     },
     {
       "id": "la-settimana",
@@ -2761,7 +3211,12 @@
       "level": null,
       "x": -23.5,
       "y": -60.9,
-      "region": 7
+      "region": 7,
+      "example": {
+        "it": "Sono stato qui per tutta la settimana.",
+        "en": "I've been here all week.",
+        "blank": "settimana"
+      }
     }
   ],
   "edges": [

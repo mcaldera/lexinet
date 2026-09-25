@@ -368,6 +368,7 @@ def build_graph(
     ranks: dict[str, int] | None = None,
     english: Callable[[str], list[str]] | None = None,
     conjugate: Callable[[str], dict[str, list[str]] | None] | None = None,
+    example: Callable[[str, str], dict | None] | None = None,
     theme_k: int = 2,
     theme_threshold: float = 0.3,
 ) -> dict:
@@ -505,6 +506,13 @@ def build_graph(
                 if table:
                     node["conjugations"] = table
 
+    # Example sentences for fill-the-gap reviews (see examples.py).
+    if example:
+        for node in nodes:
+            ex = example(node["it"], node["en"])
+            if ex:
+                node["example"] = ex
+
     # Fixed map: communities become named, coloured territories (see layout.py).
     G = nx.Graph()
     G.add_nodes_from(ids)
@@ -595,6 +603,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("-t", "--bonus-threshold", type=float, default=0.25)
     p.add_argument("--no-english", action="store_true", help="skip English root examples (needs a ~500 MB download once)")
     p.add_argument("--no-conjugations", action="store_true", help="skip verb conjugation tables")
+    p.add_argument("--no-examples", action="store_true", help="skip example sentences (Tatoeba, ~9 MB once)")
     args = p.parse_args(argv)
 
     df = load_words(args.csv)
@@ -610,6 +619,11 @@ def main(argv: list[str] | None = None) -> int:
 
         verbs = cj.load_verbs(cj.CACHE / "kaikki.org-dictionary-Italian.jsonl.gz")
         conjugate = lambda v: cj.conjugations(verbs[v], v) if v in verbs else None  # noqa: E731
+    example = None
+    if not args.no_examples:
+        import examples as exm
+
+        example = exm.Examples(exm.load_pairs(), load_frequency_ranks()).pick
     graph = build_graph(
         df,
         make_embedder(args.model),
@@ -619,6 +633,7 @@ def main(argv: list[str] | None = None) -> int:
         load_frequency_ranks(),
         english,
         conjugate,
+        example,
     )
     graph["params"]["model"] = args.model
     validate_graph(graph)
