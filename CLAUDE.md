@@ -63,10 +63,11 @@ data/words*.csv ─ pipeline/build_graph.py ─► data/graph*.json ─► app (
 
 ### src/views
 
-- `GraphView`: the canvas. The white ring (`activeId`) is always the word the side panel is about (`panelId` in App: verb drill > word card > root quiz > review card); the dashed yellow ring is the keyboard cursor when it differs. Nodes, links, chevron particles, energy bands, cohesion glow, metaball territories (`drawRegions`), keyboard cursor, attention ripples, edge arrows to off-screen attention words (`drawPointers`, clickable) and the jump bar.
+- `GraphView`: the canvas. The white ring (`activeId`) is always the word the side panel is about (`panelId` in App: wait card > verb drill > word card > root quiz > review card); the dashed yellow ring is the keyboard cursor when it differs. Nodes, links, chevron particles, energy bands, cohesion glow, metaball territories (`drawRegions`), keyboard cursor, attention ripples, edge arrows to off-screen attention words (`drawPointers`, clickable) and the jump bar.
 - `ReviewView`: the typed card, with the claim step indicator while conquering.
 - `VerbDrill`, `RootQuiz`: conjugation drill and root unlock quiz.
 - `WordInfo`: card for a solid conquered word.
+- `WaitCard`: the selected word can't be worked on right now (out of reach, locked after a miss, next claim step not open, sealed/unlocked root). The panel stays on it with a live countdown and offers a button once it's possible. A miss lands here too instead of jumping to the next card.
 - `NodeDetails`: status panel under the main card (health, control, trend, per-neighbour breakdown, claim steps, verb, etymology).
 - `VerbGoals`: which verbs count for the next tier.
 - `InspectPanel`: spoiler view of the whole network.

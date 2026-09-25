@@ -33,6 +33,7 @@ import ReviewView from './views/ReviewView';
 import RootQuiz from './views/RootQuiz';
 import VerbDrill from './views/VerbDrill';
 import WordInfo from './views/WordInfo';
+import WaitCard from './views/WaitCard';
 import NodeDetails from './views/NodeDetails';
 import VerbGoals, { type VerbGoal } from './views/VerbGoals';
 
@@ -60,6 +61,15 @@ export default function App() {
   const [showVerbGoals, setShowVerbGoals] = useState(false);
   /** A conquered word opened for viewing (it isn't due): meaning, etymology, tenses. */
   const [info, setInfo] = useState<{ nodeId: string; status: string } | null>(null);
+  /**
+   * A selected word that can't be worked on right now: the panel stays on it and
+   * says why (out of reach, locked after a miss, next claim step not open).
+   */
+  const [waitOn, setWaitOn] = useState<{
+    nodeId: string;
+    reason: 'reach' | 'locked' | 'claim' | 'root';
+    note?: string;
+  } | null>(null);
   const [verbDrill, setVerbDrill] = useState<{
     nodeId: string;
     tense: Tense;
@@ -250,18 +260,24 @@ export default function App() {
 
   // Details panel: the word being worked on, else the last one selected.
   const detailsId =
-    activeDrill?.nodeId ?? info?.nodeId ?? session?.nodeId ?? selectedId ?? current?.nodeId;
+    waitOn?.nodeId ??
+    activeDrill?.nodeId ??
+    info?.nodeId ??
+    session?.nodeId ??
+    selectedId ??
+    current?.nodeId;
   const detailsWord = data.nodes.find((n) => n.id === detailsId);
   // The word the side panel is about, in the order the panel picks its card: the
   // map rings exactly this one (a due card waits while you look at another word).
   const panelId =
+    waitOn?.nodeId ??
     (activeDrill && !rootQuiz ? activeDrill.nodeId : undefined) ??
     (info && !rootQuiz ? info.nodeId : undefined) ??
     rootQuiz ??
     current?.nodeId;
   // The word whose Italian name is the answer being asked: hidden everywhere meanwhile.
   const answerId =
-    !activeDrill && !info && !rootQuiz && current?.direction === 'en-it'
+    !waitOn && !activeDrill && !info && !rootQuiz && current?.direction === 'en-it'
       ? current.nodeId
       : undefined;
   const nameOf = (id: string) => {
@@ -375,6 +391,14 @@ export default function App() {
                 : ''),
       );
       setSession((s) => (s?.nodeId === row.nodeId ? null : s));
+      // Stay on the missed word (locked) instead of jumping to the next card.
+      setWaitOn({
+        nodeId: row.nodeId,
+        reason: 'locked',
+        note: firstSight
+          ? 'New word: recognise it from memory when the lock ends.'
+          : 'It turned against you; win it back when the lock ends.',
+      });
       return;
     }
     if (outcome.conquered)
@@ -402,6 +426,7 @@ export default function App() {
     if (drill.kind === 'learn' || drill.kind === 'defend') {
       setSession(null);
       setInfo(null);
+      setWaitOn(null);
       setVerbDrill({ nodeId, tense: drill.tense, kind: drill.kind });
     }
   };
@@ -435,49 +460,108 @@ export default function App() {
         b.level - a.level || Number(b.state === 'conquered') - Number(a.state === 'conquered'),
     );
 
+  /** What the wait card says about a word that can't be worked on right now. */
+  const waitCard = (w: NonNullable<typeof waitOn>) => {
+    const hub = data.graph.roots?.find((r) => r.id === w.nodeId);
+    const word = data.nodes.find((n) => n.id === w.nodeId);
+    const st = data.states.get(w.nodeId);
+    const title = hub ? hub.root : nameOf(w.nodeId) || '?';
+    const subtitle = hub
+      ? `${hub.lang ?? ''} root`
+      : [word?.pos, st === 'claimed' ? 'claimed' : st === 'frontier' ? 'unknown word' : null]
+          .filter(Boolean)
+          .join(' · ');
+    const retry = (label: string) => ({ label, onClick: () => selectNode(w.nodeId) });
+    const left = Math.ceil(((cooldowns.get(w.nodeId) ?? 0) - appMs()) / 1000);
+    const lockText = `Locked after a wrong answer: ${left} s left.${w.note ? ` ${w.note}` : ''}`;
+    if (w.reason === 'root') {
+      if (hub && data.unlockedRoots.has(hub.id)) {
+        return {
+          title,
+          subtitle,
+          tone: 'info' as const,
+          message: `${hub.root} = “${hub.meaning}”${hub.english?.length ? ` → ${hub.english.join(', ')}` : ''}`,
+        };
+      }
+      return left > 0
+        ? { title, subtitle, tone: 'locked' as const, message: lockText }
+        : {
+            title,
+            subtitle,
+            tone: 'waiting' as const,
+            message: 'Ready.',
+            action: retry('Name its meaning'),
+          };
+    }
+    if (w.reason === 'reach') {
+      const r = sighted.get(w.nodeId);
+      return r !== undefined
+        ? {
+            title,
+            subtitle,
+            tone: 'reach' as const,
+            message: `Reach ${Math.round((r / REACH.open) * 100)}%. Win words around it: their push adds up and opens it at 100%.`,
+          }
+        : {
+            title,
+            subtitle,
+            tone: 'waiting' as const,
+            message: 'It is in reach now!',
+            action: retry('Conquer it'),
+          };
+    }
+    if (w.reason === 'locked') {
+      return left > 0
+        ? { title, subtitle, tone: 'locked' as const, message: lockText }
+        : {
+            title,
+            subtitle,
+            tone: 'waiting' as const,
+            message: 'The lock is over.',
+            action: retry('Try again'),
+          };
+    }
+    const claim = data.game.nodes.get(w.nodeId)?.claim;
+    const next = claimNext(claim, CLAIM_GAPS);
+    return next && next.opensAt > appMs()
+      ? { title, subtitle, tone: 'waiting' as const, message: claimNotice(claim ?? {}, appMs()) }
+      : {
+          title,
+          subtitle,
+          tone: 'waiting' as const,
+          message: 'The next step is open.',
+          action: retry(next ? `Continue: ${CLAIM_STEP_NAMES[next.step - 1]}` : 'Open'),
+        };
+  };
+
   const selectNode = (nodeId: string) => {
     if (inspect) return setInspectId(nodeId);
     setInfo(null);
+    setWaitOn(null);
     setSelectedId(nodeId);
     if (fresh.has(nodeId)) setFresh((f) => new Set([...f].filter((id) => id !== nodeId)));
     const hub = data.graph.roots?.find((r) => r.id === nodeId);
     if (hub) {
       const until = cooldowns.get(nodeId);
-      if (data.unlockedRoots.has(nodeId)) {
-        setNotice(
-          `${hub.root} = “${hub.meaning}”${hub.english?.length ? ` → ${hub.english.join(', ')}` : ''}`,
-        );
-      } else if (until && until > appMs()) {
-        setNotice(`${hub.root} is still locked (${Math.ceil((until - appMs()) / 1000)} s).`);
+      if (data.unlockedRoots.has(nodeId) || (until && until > appMs())) {
+        setWaitOn({ nodeId, reason: 'root' });
       } else {
         setSession(null);
         setRootQuiz(nodeId);
       }
       return;
     }
-    const inSight = sighted.get(nodeId);
-    if (inSight !== undefined) {
-      setNotice(
-        `Beyond your reach (${Math.round((inSight / REACH.open) * 100)}%). Conquer words around it to push your horizon here.`,
-      );
-      return;
-    }
+    if (sighted.has(nodeId)) return setWaitOn({ nodeId, reason: 'reach' });
     if (!data.states.has(nodeId) || data.states.get(nodeId) === 'locked') return; // roots, hidden
     const until = cooldowns.get(nodeId);
-    if (until && until > appMs()) {
-      setNotice(`${wordOf(nodeId)} is still locked (${Math.ceil((until - appMs()) / 1000)} s).`);
-      return;
-    }
+    if (until && until > appMs()) return setWaitOn({ nodeId, reason: 'locked' });
     const st = data.states.get(nodeId);
     if (st === 'frontier' || st === 'claimed') {
       // Conquering goes one step at a time (core/claim.ts): recognise, produce, lock in.
       const claim = data.game.nodes.get(nodeId)?.claim;
       const next = claimNext(claim, CLAIM_GAPS);
       if (!next) return;
-      if (next.opensAt > now.getTime()) {
-        setNotice(claimNotice(claim ?? {}, now.getTime()));
-        return;
-      }
+      if (next.opensAt > appMs()) return setWaitOn({ nodeId, reason: 'claim' });
       const dir = next.directions[Math.floor(Math.random() * next.directions.length)];
       setSession({ nodeId, cardIds: [cardId(nodeId, dir)], mode: 'conquer' });
       setTurn((t) => t + 1);
@@ -668,7 +752,13 @@ export default function App() {
                   {notice}
                 </div>
               )}
-              {activeDrill && !rootQuiz ? (
+              {waitOn ? (
+                <WaitCard
+                  key={`${waitOn.nodeId}:${waitOn.reason}`}
+                  {...waitCard(waitOn)}
+                  onClose={() => setWaitOn(null)}
+                />
+              ) : activeDrill && !rootQuiz ? (
                 <VerbDrill
                   key={`${activeDrill.nodeId}:${activeDrill.tense}:${turn}`}
                   word={data.nodes.find((n) => n.id === activeDrill.nodeId)!}
@@ -689,6 +779,7 @@ export default function App() {
                     if (lv) setLevelUp(lv);
                     if (grade === Rating.Again) {
                       setCooldowns((m) => new Map(m).set(nodeId, appMs() + COOLDOWN_MS));
+                      setWaitOn({ nodeId, reason: 'locked', note: 'Missed a form of this verb.' });
                       setNotice(
                         `Missed a form: ${wordOf(nodeId)} is locked for ${COOLDOWN_MS / 1000} s.`,
                       );
@@ -725,6 +816,7 @@ export default function App() {
                       );
                     } else {
                       setCooldowns((m) => new Map(m).set(id, appMs() + COOLDOWN_MS));
+                      setWaitOn({ nodeId: id, reason: 'root' });
                     }
                   }}
                 />
