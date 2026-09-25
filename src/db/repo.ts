@@ -11,8 +11,10 @@ import {
 import { tierAllows, tierMap } from '../core/tiers';
 import type { Tense, TenseCard } from '../core/verbs';
 import type { Game, GameNode } from '../core/influence';
-import { neighbourMap, repairStates, type NodeState, type StateChange } from '../core/unlock';
-import { computeProgress } from '../progress';
+import { neighbourMap, type NodeState, type StateChange } from '../core/unlock';
+import { revealChanges } from '../core/reach';
+import { REACH } from '../config';
+import { computeProgress, computeReach } from '../progress';
 import { SCHEMA } from './schema';
 import type { SqlDb, SqlValue } from './types';
 
@@ -166,7 +168,11 @@ export async function syncGraph(db: SqlDb, graph: Graph, now: Date) {
   }>("SELECT id, node_id, direction, fsrs_json FROM cards WHERE direction LIKE 'tense:%'");
   const open = computeProgress(graph.nodes, states, tenseRows.map(toTenseCard), now).tier;
   const allowed = tierAllows(tiers, open);
-  for (const c of repairStates(states, neighbourMap(graph.edges), graph.seed, allowed)) {
+  // Reveal what the territory reaches (new words, changed links, an empty map's seed).
+  const gameRow = await db.select<{ value: string }>("SELECT value FROM meta WHERE key = 'game'");
+  const claims = new Map([...parseGame(gameRow[0]?.value).nodes].map(([id, g]) => [id, g.claim]));
+  const reach = computeReach(graph.nodes, neighbourMap(graph.edges), states, claims, graph.seed);
+  for (const c of revealChanges(states, reach, REACH, allowed)) {
     await db.execute('UPDATE nodes SET state = ? WHERE id = ?', [c.state, c.id]);
   }
 }

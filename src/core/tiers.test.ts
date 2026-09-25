@@ -1,4 +1,4 @@
-import { tierAllows, tierProgress } from './tiers';
+import { tierAllows, tierProgress, verbLevelFor } from './tiers';
 import type { NodeState } from './unlock';
 
 const tiers = new Map([
@@ -68,4 +68,11 @@ test('verbs gate tiers: tier 2 needs verbs at level 1, capped by verbs available
   ).toBe(2);
   // Only one verb exists in tier 1: requirement shrinks to 1.
   expect(tierProgress(tiers, done, 0.75, gate([['a', 1]])).tier).toBe(2);
+});
+
+test('verb levels follow tiers, spread out when there are more tiers than tenses', () => {
+  expect([1, 2, 3, 4, 5].map((t) => verbLevelFor(t, 6, 6))).toEqual([1, 2, 3, 4, 5]);
+  expect([1, 2, 3, 4, 5, 6, 7, 8, 9].map((t) => verbLevelFor(t, 10, 6))).toEqual([
+    1, 2, 2, 3, 4, 4, 5, 6, 6,
+  ]);
 });

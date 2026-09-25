@@ -1,4 +1,6 @@
-import { TIER_UNLOCK_FRACTION, VERBS_PER_TIER } from './config';
+import { REACH, TIER_UNLOCK_FRACTION, VERBS_PER_TIER } from './config';
+import type { Claim } from './core/claim';
+import { reachMap } from './core/reach';
 import { tierMap, tierProgress, type TierProgress } from './core/tiers';
 import type { NodeState } from './core/unlock';
 import { TENSES, verbLevel, type TenseCard } from './core/verbs';
@@ -25,5 +27,24 @@ export function computeProgress(
     levels,
     perTier: VERBS_PER_TIER,
     maxLevel: TENSES.length,
+  });
+}
+
+/** Reach of every word (core/reach.ts), from the current states and claims. */
+export function computeReach(
+  nodes: WordNode[],
+  neighbours: Map<string, string[]>,
+  states: Map<string, NodeState>,
+  claims: Map<string, Claim | undefined>,
+  seed: string,
+): Map<string, number> {
+  const region = new Map(nodes.map((n) => [n.id, n.region ?? undefined]));
+  return reachMap({
+    states,
+    claims,
+    neighbours,
+    regionOf: (id) => region.get(id),
+    seed,
+    rules: REACH,
   });
 }

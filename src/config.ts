@@ -34,3 +34,22 @@ export const CLAIM_RECALL_GAP_MS = 10 * 60_000;
 export const CLAIM_GAPS = { step: CLAIM_STEP_GAP_MS, recall: CLAIM_RECALL_GAP_MS };
 /** An unfinished claim slips back to "?" after this long (app time). */
 export const CLAIM_EXPIRY_MS = 24 * 3_600_000;
+
+/** Reach (core/reach.ts): how conquered and claimed words push the horizon. */
+export const REACH = {
+  /** Share of a word's push arriving 1, 2 and 3 links away. */
+  decay: [1, 0.5, 0.1],
+  conquered: 1,
+  /** A claimed word pushes this much per finished step (1-2 of 3). */
+  claimedPerStep: 0.25,
+  home: 1,
+  /** Reach to see a word (as a ghost) and to be able to conquer it. */
+  sight: 0.25,
+  open: 1,
+  /** Crossing into another region weakens the push by 30% (less once you know that region). */
+  border: 0.7,
+  /** A region is familiar after this many conquered words... */
+  familiarAt: 5,
+  /** ...and then carries push 50% further per link. */
+  familiarBoost: 0.5,
+};

@@ -21,57 +21,25 @@ export function neighbourMap(edges: { source: string; target: string }[]): Map<s
   return m;
 }
 
-const anyNode = () => true;
-
 /**
- * State changes caused by rating one of `nodeId`'s cards. A frontier node rated
- * Hard or better is claimed (conquering it takes a few more steps), and its
- * locked neighbours become frontier if `allowed` (e.g. their tier is open).
+ * State change caused by rating one of `nodeId`'s cards: a frontier node rated
+ * Hard or better is claimed (conquering it takes a few more steps). Which words
+ * that reveals is up to reach (core/reach.ts).
  */
 export function unlockChanges(
   nodeId: string,
   grade: Grade,
   states: Map<string, NodeState>,
-  neighbours: Map<string, string[]>,
-  allowed: (id: string) => boolean = anyNode,
 ): StateChange[] {
   // Anything but "Again" counts: near misses (typo, article) are graded Hard.
   if (states.get(nodeId) !== 'frontier' || grade < Rating.Hard) return [];
-  const changes: StateChange[] = [{ id: nodeId, state: 'claimed' }];
-  for (const n of neighbours.get(nodeId) ?? []) {
-    if (states.get(n) === 'locked' && allowed(n)) changes.push({ id: n, state: 'frontier' });
-  }
-  return changes;
+  return [{ id: nodeId, state: 'claimed' }];
 }
 
 export function applyChanges(states: Map<string, NodeState>, changes: StateChange[]) {
   const next = new Map(states);
   for (const c of changes) next.set(c.id, c.state);
   return next;
-}
-
-/**
- * Reveal what should be visible: locked, `allowed` nodes next to conquered ones
- * become frontier (after a graph change or a tier opening), and an empty map
- * restarts at the seed.
- */
-export function repairStates(
-  states: Map<string, NodeState>,
-  neighbours: Map<string, string[]>,
-  seed: string,
-  allowed: (id: string) => boolean = anyNode,
-): StateChange[] {
-  const changes: StateChange[] = [];
-  for (const [id, state] of states) {
-    if (state !== 'locked' || !allowed(id)) continue;
-    const revealer = (n: string) => states.get(n) === 'conquered' || states.get(n) === 'claimed';
-    if ((neighbours.get(id) ?? []).some(revealer)) {
-      changes.push({ id, state: 'frontier' });
-    }
-  }
-  const started = [...states.values()].some((s) => s !== 'locked');
-  if (!started && states.has(seed)) changes.push({ id: seed, state: 'frontier' });
-  return changes;
 }
 
 /** A real miss on `nodeId`: it and its claimed neighbours slip back to "?". */

@@ -19,8 +19,9 @@ export type VerbGate = { levels: Map<string, number>; perTier: number; maxLevel:
 
 /**
  * Tier k+1 opens once `fraction` of the words in tiers 1..k are conquered and,
- * if verbs are given, enough of their verbs have reached level k (presente for
- * tier 2, passato prossimo for tier 3, ...). Derived from state, never stored.
+ * if verbs are given, enough of their verbs have reached `verbLevelFor(k)`
+ * (presente for tier 2, passato prossimo for tier 3, ...). Derived from state,
+ * never stored.
  */
 export function tierProgress(
   tiers: Map<string, number>,
@@ -39,7 +40,7 @@ export function tierProgress(
       if (states.get(id) === 'conquered') conquered++;
     }
     const needed = Math.ceil(total * fraction);
-    const verbLevel = Math.min(tier, verbs?.maxLevel ?? 0);
+    const verbLevel = verbs ? verbLevelFor(tier, maxTier, verbs.maxLevel) : 0;
     const pool = verbs ? [...verbs.levels].filter(([id]) => (tiers.get(id) ?? 1) <= tier) : [];
     const verbsNeed = verbs ? Math.min(verbs.perTier, pool.length) : 0;
     const verbsHave = pool.filter(([, lvl]) => lvl >= verbLevel).length;
@@ -48,6 +49,15 @@ export function tierProgress(
     if (conquered < needed || verbsHave < verbsNeed) return { ...base, needed };
     tier++;
   }
+}
+
+/**
+ * Verb level needed to leave `tier`: one tense per tier, or spread evenly over
+ * the tiers when there are more tiers than tenses (the last tense by the end).
+ */
+export function verbLevelFor(tier: number, maxTier: number, maxLevel: number): number {
+  const spread = Math.max(1, (maxTier - 1) / maxLevel);
+  return Math.min(maxLevel, Math.ceil(tier / spread - 1e-9));
 }
 
 /** Whether a node may be revealed at the given open tier. */

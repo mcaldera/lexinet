@@ -6,7 +6,8 @@ Usage:
 Pages are fetched politely (robots.txt allows it; 1 request/second) and cached
 in ~/.cache/sprawl/oic/. The site's lessons become themes/regions. Levels
 (A1..C1) come from the site's course pages; each word gets the easier of its
-lesson's level and its frequency level, so common words come early. The output
+lesson's level and its frequency level, so common words come early, and
+split_levels.py then splits them into ~10 even sub-levels. The output
 is the site's content: keep it for personal study (it is git-ignored).
 """
 
@@ -250,7 +251,10 @@ def main(argv: list[str] | None = None) -> int:
     by_level = {lvl: sum(r["level"] == lvl for r in out) for lvl in LEVELS}
     themes = len({r["theme"] for r in out if r["theme"]})
     print(f"{len(out)} words, {themes} themes, levels {by_level} -> {args.out}", file=sys.stderr)
-    return 0
+    # Mostly A1: deal the levels out into ~10 evenly sized sub-levels (A1.1, A1.2, ...).
+    import split_levels
+
+    return split_levels.main([str(args.out)])
 
 
 if __name__ == "__main__":

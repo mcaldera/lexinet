@@ -16,7 +16,7 @@ Italian vocabulary trainer as a territory game. Words are nodes in a graph; answ
 - `npm run dev` (port 1420, forwarded by VS Code) · `npm test` · `npm run typecheck` · `npm run lint` · `npm run build`
 - `pipeline/.venv/bin/pytest -q pipeline/tests`
 - Build a graph: `pipeline/.venv/bin/python pipeline/build_graph.py data/words.csv -o data/graph.json` (also `words_1000.csv → graph_1000.json`, `words_oic.csv → graph_oic.json`). Flags: `--seed`, `--model` (default `numberbatch`), `-k`, `-t`, `--no-english`, `--no-conjugations`. Takes ~10–50 s.
-- Word lists: `make_wordlist.py data/words.csv -n 1000 -o data/words_1000.csv`; `scrape_oic.py -o data/words_oic.csv`, then `cd pipeline && ../pipeline/.venv/bin/python enrich_etymology.py ../data/words_oic.csv`
+- Word lists: `make_wordlist.py data/words.csv -n 1000 -o data/words_1000.csv`; `scrape_oic.py -o data/words_oic.csv` (ends by running `split_levels.py`, which deals CEFR levels into ~10 even sub-levels A1.1… by frequency; rerun it alone with `-n`), then `cd pipeline && ../pipeline/.venv/bin/python enrich_etymology.py ../data/words_oic.csv`
 - Node is 18 on the dev box: keep deps Node-18 compatible (Vite 5, Vitest 2, ts-fsrs 4; ts-fsrs 5 needs Node 20).
 
 ## Verifying changes (how past sessions did it)
@@ -49,13 +49,14 @@ data/words*.csv ─ pipeline/build_graph.py ─► data/graph*.json ─► app (
 | `clock` | app time = real time + debug day offset. Never `new Date()` in logic. |
 | `scheduler` | ts-fsrs wrapper, card (de)serialisation, `cardId(node, dir)` = `node:it-en` / `node:en-it` |
 | `answer` | typed-answer checking: exact → Good; article/accent/small typo → Hard ("almost", still counts); else Again. `checkMeaning` is the lenient version for roots. |
-| `unlock` | node states `locked \| frontier \| claimed \| conquered`; `unlockChanges` (frontier → claimed, reveals neighbours), `repairStates`, `slipChanges` |
+| `unlock` | node states `locked \| frontier \| claimed \| conquered`; `unlockChanges` (frontier → claimed), `slipChanges` |
+| `reach` | the horizon: conquered words push 1, claimed 0.25 per step, the seed always 1. Push fades over links (`REACH.decay` 1 / 0.5 / 0.1) and pushes add up. Inside a familiar region (≥ `familiarAt` conquered) each link carries up to 1.5×; a link into another region carries 0.7× (more once that region is familiar). Reach ≥ `sight` → ghost (`sightedWords`), ≥ `open` → "?" (`revealChanges`, which also opens the best ghost if nothing is left to do). Computed, never stored. |
 | `claim` | conquest in 3 fixed steps: 1 Recognise (it→en, right away), 2 Produce (en→it, ≥ `CLAIM_STEP_GAP_MS` later), 3 Lock in (either way, ≥ `CLAIM_RECALL_GAP_MS` later). `claimNext` says which card is open when; answers out of turn add nothing. `unseen` = no card ever answered (first sight). |
 | `attention` | words that need the player, most urgent first: `ready` (claim step open), `threat` (hostile, rebelling, fading), `new` (revealed this visit, not opened yet) |
 | `queue` | automatic queue: due reviews (weakest first), then the unreviewed 2nd direction, then learning cards. Untouched frontier words never appear automatically. |
 | `health`, `fade` | health = mean retrievability; names erode letter by letter from 90% to 50%, then show "?" |
 | `strength` | FSRS stability → level 0–5; `nextPractice` (no cramming: practice only when due) |
-| `tiers` | tier k+1 opens at `TIER_UNLOCK_FRACTION` of tiers 1..k conquered plus `VERBS_PER_TIER` verbs at level k |
+| `tiers` | tier k+1 opens at `TIER_UNLOCK_FRACTION` of tiers 1..k conquered plus `VERBS_PER_TIER` verbs at `verbLevelFor(k)` (level k, spread out when there are more tiers than tenses) |
 | `verbs` | tense levels (presente → passato prossimo → imperfetto → futuro → condizionale → congiuntivo), one new tense per 20 h, `nextDrill`, `checkConjugation` |
 | `influence` | game layer: `control` per conquered word, hostile frontier (after 24 h grace or a wrong answer), rebels, lost words; `simulate` (1 h steps), `afterAnswer`, `pressureBreakdown`, `cohesion` |
 
@@ -81,7 +82,8 @@ data/words*.csv ─ pipeline/build_graph.py ─► data/graph*.json ─► app (
 
 ## Game rules (current)
 
-- **Claiming:** click a "?" (or move to it with the arrow keys) to get step 1, Italian → English. A correct answer makes it **claimed**: fragile, and it reveals its neighbours. Step 2 (English → Italian) opens 1 min later and step 3 (either way) 10 min after that. Clicks and the automatic queue only offer the open step. A never-seen word offers "Show me", which is not penalised.
+- **Claiming:** click a "?" (or move to it with the arrow keys) to get step 1, Italian → English. A correct answer makes it **claimed** (fragile). Step 2 (English → Italian) opens 1 min later and step 3 (either way) 10 min after that. Clicks and the automatic queue only offer the open step. A never-seen word offers "Show me", which is not penalised.
+- **Reach and ghosts:** words are revealed by reach (see `core/reach.ts`), not by simply being next to a claimed word. Hidden words with a little reach show as ghosts with a ring filling towards conquerable. Clicking one says how far it is. A claimed word waiting for its next step has a white countdown ring.
 - **Names are earned:** a word's Italian name appears on the map only once it is conquered. It is also hidden (map, tooltip, status panel) while it is the answer being asked. Claimed words show "?" with a 3-segment ring.
 - **Attention:** ready claim steps (green), threats (red) and newly revealed words (light blue) ripple. Off-screen ones get arrows at the view edge, and the top-right jump bar or `N` cycles through them. A due card for an off-screen word pans the camera to it.
 - **Misses:** a real miss locks the word for 60 s, makes it hostile, and makes claimed neighbours slip back to "?". Unfinished claims expire after 24 h.

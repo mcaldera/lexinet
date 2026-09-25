@@ -4,7 +4,8 @@ import ForceGraph2D, {
   type LinkObject,
   type NodeObject,
 } from 'react-force-graph-2d';
-import { COOLDOWN_MS, INFLUENCE } from '../config';
+import { COOLDOWN_MS, INFLUENCE, REACH } from '../config';
+import { appNow } from '../core/clock';
 import { fadedName, FULL_NAME } from '../core/fade';
 import { edgeOpacity, healthBand } from '../core/health';
 import { MAX_STRENGTH } from '../core/strength';
@@ -76,6 +77,10 @@ type Props = {
   nowMs: number;
   /** Claim progress of claimed words. */
   claims: Map<string, Claim | undefined>;
+  /** Claimed words waiting for their next step: when it opens and the whole wait (app ms). */
+  claimWaits: Map<string, { opensAt: number; total: number }>;
+  /** Hidden words in sight (reach below what conquering needs): drawn as ghosts. */
+  sighted: Map<string, number>;
   /** Words that need attention, most urgent first: ripples, edge arrows, jump bar. */
   attention: Attention[];
   /** Word whose Italian name is the answer being asked: its name is hidden. */
@@ -100,6 +105,8 @@ export default function GraphView({
   graceUntil,
   nowMs,
   claims,
+  claimWaits,
+  sighted,
   attention,
   answerId,
   inspect,
@@ -129,7 +136,9 @@ export default function GraphView({
   const hubs = useMemo(() => (showRoots ? (data.graph.roots ?? []) : []), [showRoots, data.graph]);
   // A root appears once you've conquered one of its words (always in inspect mode).
   const visibleKey = [
-    ...data.nodes.filter((n) => inspect || data.states.get(n.id) !== 'locked').map((n) => n.id),
+    ...data.nodes
+      .filter((n) => inspect || data.states.get(n.id) !== 'locked' || sighted.has(n.id))
+      .map((n) => n.id),
     ...hubs
       .filter((h) => inspect || h.words.some((w) => data.states.get(w) === 'conquered'))
       .map((h) => h.id),
@@ -164,7 +173,9 @@ export default function GraphView({
     return out.join(',');
   }, [data.edges, data.states, hostile, control]);
   // Something moves on screen: keep redrawing (energy bands, arrows, breathing glow).
-  const animate = !inspect && (cohesionOf.size > 0 || flowKey !== '' || attentionOf.size > 0);
+  const animate =
+    !inspect &&
+    (cohesionOf.size > 0 || flowKey !== '' || attentionOf.size > 0 || claimWaits.size > 0);
 
   const graphData = useMemo(() => {
     const visible = new Set(visibleKey.split(',').filter(Boolean));
@@ -426,6 +437,31 @@ export default function GraphView({
       ctx.fillText(text, x, y + r + 2.5);
     };
 
+    const reach = inspect ? undefined : sighted.get(node.id);
+    if (reach !== undefined) {
+      // Beyond the horizon: a faint ghost, its ring filling as your reach grows.
+      shapePath(ctx, shape, x, y, r);
+      ctx.fillStyle = 'rgba(71, 85, 105, 0.15)';
+      ctx.fill();
+      ctx.setLineDash([1, 2]);
+      ctx.strokeStyle = 'rgba(148, 163, 184, 0.45)';
+      ctx.lineWidth = 0.8;
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.arc(
+        x,
+        y,
+        r + 2.5,
+        -Math.PI / 2,
+        -Math.PI / 2 + Math.min(1, reach / REACH.open) * 2 * Math.PI,
+      );
+      ctx.strokeStyle = 'rgba(125, 211, 252, 0.55)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.restore();
+      return;
+    }
     if (state === 'claimed') {
       // Freshly won but fragile: pale, one ring segment per conquest step. The
       // name stays hidden ("?") until conquered, so producing it is real recall.
@@ -445,6 +481,16 @@ export default function GraphView({
         ctx.arc(x, y, r + 2.5, a0, a0 + seg - 0.36);
         ctx.strokeStyle = i < steps ? 'rgba(52, 211, 153, 0.95)' : 'rgba(148, 163, 184, 0.35)';
         ctx.lineWidth = 1.6;
+        ctx.stroke();
+      }
+      const wait = claimWaits.get(node.id);
+      if (wait) {
+        // Time until the next step opens: a light ring that runs down.
+        const left = Math.max(0, (wait.opensAt - appNow(data.offsetDays).getTime()) / wait.total);
+        ctx.beginPath();
+        ctx.arc(x, y, r + 5, -Math.PI / 2, -Math.PI / 2 + left * 2 * Math.PI);
+        ctx.strokeStyle = 'rgba(226, 232, 240, 0.8)';
+        ctx.lineWidth = 1.2;
         ctx.stroke();
       }
       ctx.fillStyle = '#e2e8f0';
@@ -579,6 +625,7 @@ export default function GraphView({
     const dim = crossRegion(l) || l.descends ? (inspect ? 0.12 : 0.35) : 1;
     if (inspect) return (activeId === undefined ? 0.8 : 0.15) * dim;
     const [a, b] = [endId(l.source), endId(l.target)];
+    if (sighted.has(a) || sighted.has(b)) return 0.12 * dim; // towards the horizon
     if (hidden(a) || hidden(b)) return 0.3 * dim;
     return Math.max(0.15, edgeOpacity(health.get(a) ?? null, health.get(b) ?? null)) * dim;
   };
@@ -670,6 +717,10 @@ export default function GraphView({
           const until = cooldowns.get(n.id);
           if (until && until > Date.now()) {
             return `${hidden(n.id) ? 'Unknown word' : n.word.it} · locked ${Math.ceil((until - Date.now()) / 1000)} s`;
+          }
+          const inSight = inspect ? undefined : sighted.get(n.id);
+          if (inSight !== undefined) {
+            return `Beyond your reach (${Math.round((inSight / REACH.open) * 100)}%): conquer words around it`;
           }
           if (!inspect && state === 'frontier') {
             return `Unknown ${n.word.pos ?? 'word'}: click to conquer`;
@@ -916,6 +967,8 @@ function Legend() {
         <span className="text-amber-300">◔ time until hostile</span>
         <span className="text-emerald-300">◌ claimed (fragile, steps 1-3)</span>
         <span className="text-sky-300">◎ ripple / edge arrow: needs you</span>
+        <span className="text-slate-300">◯ white ring: next step opens</span>
+        <span className="text-slate-400">◌ ghost: in sight, not in reach yet</span>
         <span className="text-pink-300">⬢ shared root</span>
       </div>
       <div className="flex gap-3">

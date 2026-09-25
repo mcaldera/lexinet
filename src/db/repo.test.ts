@@ -43,7 +43,8 @@ test('first sync seeds nodes, edges and two cards per node; resync is idempotent
     'abbaiare:en-it',
   ]);
   expect(data.states.get('il-cane')).toBe('frontier');
-  expect(data.states.get('abbaiare')).toBe('locked');
+  // The seed pushes from the start (core/reach.ts): its neighbours are in reach.
+  expect(data.states.get('abbaiare')).toBe('frontier');
   expect(data.offsetDays).toBe(0);
 });
 
@@ -101,7 +102,16 @@ test('the real graph.json syncs cleanly', async () => {
   await syncGraph(db, g, t0);
   const data = await loadAll(db, g);
   expect(data.cards.length).toBe(g.nodes.length * 2);
-  expect([...data.states.values()].filter((s) => s === 'frontier')).toEqual(['frontier']);
+  // A fresh map opens the seed and the tier-1 words next to it, nothing else.
+  const seedNeighbours = new Set(
+    g.edges.flatMap((e) =>
+      e.source === g.seed ? [e.target] : e.target === g.seed ? [e.source] : [],
+    ),
+  );
+  const tier1 = (id: string) => (g.nodes.find((n) => n.id === id)?.tier ?? 1) <= 1;
+  const open = [...data.states].filter(([, s]) => s === 'frontier').map(([id]) => id);
+  expect(open).toContain(g.seed);
+  expect(open.every((id) => id === g.seed || (seedNeighbours.has(id) && tier1(id)))).toBe(true);
 });
 
 test('unlocked roots and the words they reveal persist; reset clears them', async () => {

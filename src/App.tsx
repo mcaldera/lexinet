@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { CLAIM_GAPS, COOLDOWN_MS, INFLUENCE } from './config';
+import { CLAIM_GAPS, COOLDOWN_MS, INFLUENCE, REACH } from './config';
 import { attentionList, newlyRevealed } from './core/attention';
 import { claimNext, CLAIM_STEP_NAMES, CLAIM_STEPS, unseen, type Claim } from './core/claim';
 import { FULL_NAME, fadedName } from './core/fade';
@@ -7,9 +7,11 @@ import { cohesion, isHostile, neighbourWeights, pressureBreakdown } from './core
 import { appNow, startOfDay } from './core/clock';
 import { nodeHealth } from './core/health';
 import { buildQueue } from './core/queue';
-import type { TierProgress } from './core/tiers';
+import { tierAllows, tierMap, type TierProgress } from './core/tiers';
+import { sightedWords } from './core/reach';
+import { neighbourMap } from './core/unlock';
 import { nextDrill, TENSES, type Tense } from './core/verbs';
-import { computeProgress, verbLevels as computeVerbLevels } from './progress';
+import { computeProgress, computeReach, verbLevels as computeVerbLevels } from './progress';
 import { cardId, DIRECTIONS, Rating, type Grade } from './core/scheduler';
 import type { NodeState } from './core/unlock';
 import { nextPractice, nodeStrength } from './core/strength';
@@ -78,6 +80,14 @@ export default function App() {
     return () => clearInterval(t);
   }, [cooldowns]);
 
+  // While a claimed word waits for its next step, count down every second.
+  const claiming = !!data && [...data.states.values()].includes('claimed');
+  useEffect(() => {
+    if (!claiming) return;
+    const t = setInterval(() => setSecond((s) => s + 1), 1000);
+    return () => clearInterval(t);
+  }, [claiming]);
+
   useEffect(() => {
     if (!lost || !data) return;
     const names = lost.ids.map((id) => data.nodes.find((n) => n.id === id)?.it ?? id);
@@ -136,6 +146,28 @@ export default function App() {
     [data, now],
   );
   const weights = useMemo(() => neighbourWeights(data?.edges ?? []), [data?.edges]);
+  const neighbours = useMemo(() => neighbourMap(data?.edges ?? []), [data?.edges]);
+  // How far the territory pushes: all reach, and the hidden words it lets you see.
+  const reach = useMemo(
+    () =>
+      data
+        ? computeReach(
+            data.nodes,
+            neighbours,
+            data.states,
+            new Map([...data.game.nodes].map(([id, g]) => [id, g.claim])),
+            data.graph.seed,
+          )
+        : new Map<string, number>(),
+    [data, neighbours],
+  );
+  const sighted = useMemo(
+    () =>
+      data && progress
+        ? sightedWords(data.states, reach, REACH, tierAllows(tierMap(data.nodes), progress.tier))
+        : new Map<string, number>(),
+    [data, reach, progress],
+  );
   const hostileSet = useMemo(
     () =>
       new Set(
@@ -225,6 +257,15 @@ export default function App() {
           }));
 
   const claims = new Map([...data.game.nodes].map(([id, g]) => [id, g.claim]));
+  // Claimed words waiting for their next step: when it opens and how long the wait is.
+  const claimWaits = new Map(
+    [...claims].flatMap(([id, c]) => {
+      const next = data.states.get(id) === 'claimed' ? claimNext(c, CLAIM_GAPS) : null;
+      if (!next || next.opensAt <= now.getTime()) return [];
+      const total = next.step === 2 ? CLAIM_GAPS.step : CLAIM_GAPS.recall;
+      return [[id, { opensAt: next.opensAt, total }] as const];
+    }),
+  );
   const attention = attentionList({
     states: data.states,
     claims,
@@ -343,6 +384,13 @@ export default function App() {
       }
       return;
     }
+    const inSight = sighted.get(nodeId);
+    if (inSight !== undefined) {
+      setNotice(
+        `Beyond your reach (${Math.round((inSight / REACH.open) * 100)}%). Conquer words around it to push your horizon here.`,
+      );
+      return;
+    }
     if (!data.states.has(nodeId) || data.states.get(nodeId) === 'locked') return; // roots, hidden
     const until = cooldowns.get(nodeId);
     if (until && until > Date.now()) {
@@ -419,7 +467,7 @@ export default function App() {
         <h1 className="text-lg font-semibold tracking-wide text-emerald-400">Sprawl</h1>
         <span className="text-sm text-slate-400">
           {conquered}/{data.nodes.length} conquered · {claimed > 0 && `${claimed} claimed · `}
-          {frontier} frontier
+          {frontier} frontier{sighted.size > 0 && ` · ${sighted.size} in sight`}
           {avg !== null && ` · territory health ${Math.round(avg * 100)}%`}
         </span>
         {progress && (
@@ -495,6 +543,8 @@ export default function App() {
             hostile={hostileSet}
             nowMs={now.getTime()}
             claims={claims}
+            claimWaits={claimWaits}
+            sighted={sighted}
             attention={attention}
             answerId={answerId}
             graceUntil={
@@ -644,7 +694,7 @@ export default function App() {
                   now.getTime()) /
                 3_600_000
               }
-              nowMs={now.getTime()}
+              nowMs={appNow(data.offsetDays).getTime()}
               claimStep={claimNext(data.game.nodes.get(detailsWord.id)?.claim, CLAIM_GAPS)}
               verb={
                 detailsWord.conjugations && data.states.get(detailsWord.id) === 'conquered'
