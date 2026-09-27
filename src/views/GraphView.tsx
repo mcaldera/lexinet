@@ -1,3 +1,4 @@
+import { forceCollide } from 'd3-force-3d';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import ForceGraph2D, {
   type ForceGraphMethods,
@@ -459,12 +460,18 @@ export default function GraphView({
     fg.current
       ?.d3Force('link')
       ?.distance((l: L) =>
-        l.hint ? 14 : l.category ? 55 : (25 + (1 - l.weight) * 60) * (crossRegion(l) ? 2 : 1),
+        l.hint ? 14 : l.category ? 70 : (40 + (1 - l.weight) * 60) * (crossRegion(l) ? 2 : 1),
       )
       .strength((l: L) =>
-        l.hint ? 1 : l.category ? 0.08 : (0.15 + l.weight * 0.6) * (crossRegion(l) ? 0.3 : 1),
+        l.hint ? 1 : l.category ? 0.05 : (0.15 + l.weight * 0.5) * (crossRegion(l) ? 0.3 : 1),
       );
-    fg.current?.d3Force('charge')?.strength(-90);
+    fg.current?.d3Force('charge')?.strength(-150);
+    // Words keep their distance (room for the name under each), so a category
+    // spreads out instead of piling up in its middle.
+    fg.current?.d3Force(
+      'collide',
+      forceCollide<N>((n) => (n.hintOf ? 6 : n.hub ? 14 : 20)).iterations(2),
+    );
     fg.current?.d3Force('cluster', clusterForce());
     // Set once: a page shows one graph, and its regions never change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -966,21 +973,11 @@ export default function GraphView({
     if (hidden(a) || hidden(b)) {
       return `<span style="color:${color}">● ${REASON_LABEL[l.reason]}</span>`;
     }
-    const c = l.components;
-    const tick = (v: number | undefined) => (v ? '✓' : '✗');
-    const detail = c
-      ? `<div style="opacity:.8;margin-top:2px">meaning ${Math.round(c.semantic * 100)}% · family ${tick(
-          c.morphological,
-        )} · root ${tick(c.etymological)} · theme ${tick(c.thematic)}</div>`
-      : '';
     if (l.via === 'user') {
       return `<b>${shownName(a) || '?'} ↔ ${shownName(b) || '?'}</b><div style="color:rgb(52,211,153)">🌱 planted by you</div>`;
     }
-    const weak = isWeakBridge(l)
-      ? '<div style="opacity:.8">weak link: only here to connect two groups</div>'
-      : '';
-    return `<b>${shownName(a) || '?'} ↔ ${shownName(b) || '?'}</b><div style="color:${color}">● ${reasonText(l, wa, wb)}</div>
-      <div>strength ${Math.round(l.weight * 100)}%</div>${detail}${weak}`;
+    // Just the two words and why they belong together: less is more.
+    return `<b>${shownName(a) || '?'} ↔ ${shownName(b) || '?'}</b><div style="color:${color}">● ${reasonText(l, wa, wb)}</div>`;
   };
 
   /** A link between two conquered words: carries a moving band of light. */
@@ -1464,7 +1461,7 @@ function shake(nodes: N[]): boolean {
   return strays > 0;
 }
 
-function clusterForce(pull = 0.08, gap = 50) {
+function clusterForce(pull = 0.05, gap = 60) {
   let nodes: N[] = [];
   const force = (alpha: number) => {
     const groups = new Map<number, { x: number; y: number; members: N[] }>();
@@ -1481,7 +1478,7 @@ function clusterForce(pull = 0.08, gap = 50) {
       ...g,
       cx: g.x / g.members.length,
       cy: g.y / g.members.length,
-      radius: 16 * Math.sqrt(g.members.length) + 24,
+      radius: 24 * Math.sqrt(g.members.length) + 30,
     }));
     for (const g of list) {
       for (const m of g.members) {

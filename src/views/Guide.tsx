@@ -99,7 +99,12 @@ export default function Guide({ onClose }: { onClose: () => void }) {
             each dot takes {Math.round(INFLUENCE.strengthArmour * 100)}% off hostile pressure. Gold
             ★ are a verb's tenses.
           </p>
-          <p>Names fade letter by letter as memory weakens: practise when a word is due.</p>
+          <p>
+            A word is <b>due</b> when you would likely start to forget it (recall down to about
+            90%). The first review comes a few days after you conquer it; each right answer makes
+            the next gap longer (a week, a month…), a miss makes it short again. Names fade letter
+            by letter as memory weakens: practise when a word is due.
+          </p>
           <p>
             🏰 Hold {Math.round(LANDMARK.share * 100)}% of a category (at most {LANDMARK.max} words)
             and it builds a landmark: its words take less hostile pressure while it stands (+

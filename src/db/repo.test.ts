@@ -1,6 +1,6 @@
 import initSqlJs from 'sql.js';
 import { newCard, rate, Rating } from '../core/scheduler';
-import graphJson from '../../data/graph.json';
+import graphJson from './test-graph.json';
 import {
   loadAll,
   migrate,
@@ -96,7 +96,7 @@ test('adding a word next to a conquered one keeps progress and opens it as front
   expect(data.cards).toHaveLength(6);
 });
 
-test('the real graph.json syncs cleanly', async () => {
+test('a real graph syncs cleanly', async () => {
   const db = await freshDb();
   const g = graphJson as unknown as Graph;
   await syncGraph(db, g, t0);

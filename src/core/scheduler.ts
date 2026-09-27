@@ -6,7 +6,10 @@ export type { Card, Grade };
 export type Direction = 'it-en' | 'en-it';
 export const DIRECTIONS: Direction[] = ['it-en', 'en-it'];
 
-const f = fsrs({ enable_fuzz: false });
+// No short-term learning steps (FSRS's 1 / 10 min re-asks): conquering already
+// spaces the steps (core/claim.ts), so a right answer schedules the next review
+// in days. With them, a word came back "due" minutes after being conquered.
+const f = fsrs({ enable_fuzz: false, enable_short_term: false });
 
 export function cardId(nodeId: string, direction: Direction): string {
   return `${nodeId}:${direction}`;

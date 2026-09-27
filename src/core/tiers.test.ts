@@ -102,3 +102,22 @@ test('a campaign measures levels by the home category, counting words from anywh
   // g is home (tier 3) and counts already at tier 2.
   expect(tierProgress(tiers, states(['b', 'g']), 0.6, undefined, campaign).tier).toBe(3);
 });
+
+test("the home category's verbs count for the verb requirement at any level", () => {
+  const tiers = new Map([
+    ['a', 1],
+    ['v', 3],
+  ]);
+  const states = new Map<string, 'conquered'>([['a', 'conquered']]);
+  const verbs = { levels: new Map([['v', 0]]), perTier: 1, maxLevel: 6 };
+  // A tier-3 verb elsewhere asks for nothing yet: the level moves on.
+  const away = tierProgress(tiers, states, 0.5, verbs, { home: new Set(['a']), minPerTier: 1 });
+  expect(away.tier).toBeGreaterThan(1);
+  // The same verb at home is in reach, so it is what the next level asks for.
+  const home = tierProgress(tiers, states, 0.5, verbs, {
+    home: new Set(['a', 'v']),
+    minPerTier: 1,
+  });
+  expect(home.tier).toBe(1);
+  expect([home.verbsHave, home.verbsNeed]).toEqual([0, 1]);
+});

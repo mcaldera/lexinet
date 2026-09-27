@@ -44,18 +44,21 @@ export default function VerbGoals({
   nowMs,
 }: Props) {
   const done = goals.filter((g) => g.level >= level).length;
+  // Undiscovered verbs are only counted: listing them spoils nothing and helps nobody.
+  const shown = goals.filter((g) => g.state !== 'locked');
+  const hidden = goals.length - shown.length;
   return (
     <div className="rounded-lg border border-amber-500/40 bg-slate-900 p-4 text-sm">
       <div className="mb-3 flex justify-between text-xs text-amber-300/90">
-        <span>
-          {nextTier}: {done}/{need} verbs in the {TENSES[level - 1]}
+        <span title="Conquer a verb, then conjugate it (one new tense per day)">
+          To reach {nextTier}: {done}/{need} verbs conjugated in the {TENSES[level - 1]}
         </span>
         <button className="text-slate-500 hover:text-slate-200" onClick={onClose}>
           ✕
         </button>
       </div>
       <ul className="space-y-1.5">
-        {goals.map((g) => (
+        {shown.map((g) => (
           <li key={g.id} className="flex items-center justify-between gap-2">
             <button
               className="text-left hover:underline disabled:no-underline"
@@ -79,6 +82,12 @@ export default function VerbGoals({
           </li>
         ))}
       </ul>
+      {hidden > 0 && (
+        <p className="mt-2 text-xs text-slate-500">
+          {shown.length ? '+' : ''}
+          {hidden} not found yet
+        </p>
+      )}
     </div>
   );
 }

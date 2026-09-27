@@ -632,7 +632,9 @@ export default function App() {
 
   // Verbs that can satisfy the next tier's requirement (open tiers, conjugable).
   const verbGoals: VerbGoal[] = data.nodes
-    .filter((n) => n.conjugations && (n.tier ?? 1) <= (progress?.tier ?? 1))
+    .filter(
+      (n) => n.conjugations && ((n.tier ?? 1) <= (progress?.tier ?? 1) || data.home.has(n.id)),
+    )
     .map((n) => {
       const st = data.states.get(n.id) ?? 'locked';
       return {
@@ -654,9 +656,12 @@ export default function App() {
             : null,
       };
     })
+    // Furthest first: conjugated, conquered, discovered; undiscovered ones last.
     .sort(
       (a, b) =>
-        b.level - a.level || Number(b.state === 'conquered') - Number(a.state === 'conquered'),
+        b.level - a.level ||
+        Number(b.state === 'conquered') - Number(a.state === 'conquered') ||
+        Number(b.state !== 'locked') - Number(a.state !== 'locked'),
     );
 
   /** What the wait card says about a word that can't be worked on right now. */

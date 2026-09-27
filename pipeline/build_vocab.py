@@ -42,7 +42,7 @@ import vocab as V  # noqa: E402
 TIERS = 10
 WITHIN_K = 2  # closest partners linked inside a category
 WITHIN_MIN = 0.35
-BRIDGE_MIN = 0.62  # rescaled meaning similarity for a link across categories
+BRIDGE_MIN = 0.55  # rescaled meaning similarity for a link across categories
 FAMILY = 0.5  # weight of a family link (same stem or root)
 STEM_MIN_SEM = 0.25  # a shared stem only counts when the meanings relate this much
 CANDIDATES = 8
@@ -76,7 +76,7 @@ rest kind mean lie light second watch ring play match present fair spring fall c
 free sound set book park bank date letter fire type key note time way line run turn stick trip ball board
 change check club cross cut dish fan file glass ground hand head iron land last leave long miss object place
 plant port post press row scale seal sink slip square stamp star state step table tap tie tip wave pass lot
-count face fit form get hold keep lead let make put stand take""".split())
+count face fit form get hold keep lead let make put stand take found""".split())
 
 
 def assign_tiers(words: list[dict], ranks: dict[str, int], verb_forms: dict, n: int = TIERS) -> list[tuple[int, str]]:

@@ -49,19 +49,19 @@ test('due reviews come first, weakest first', () => {
   expect(q.map((c) => c.id)).toEqual(['w:it-en', 's:it-en']);
 });
 
-test('a card failed just now is included but not shown twice in a row', () => {
+test('a failed card comes back (a day later, no minute re-asks) but not twice in a row', () => {
   const failed = rate(newCard(t0), Rating.Again, t0);
   const q = buildQueue({
     cards: [qc('a', 'it-en', failed), qc('a', 'en-it')],
     states: states({ a: 'frontier' }),
-    now: new Date(t0.getTime() + 5 * 60_000),
+    now: new Date(t0.getTime() + 25 * 3_600_000),
     lastCardId: 'a:it-en',
   });
   expect(q.map((c) => c.id)).toEqual(['a:en-it', 'a:it-en']);
 });
 
 test('learning cards wait until they are actually due', () => {
-  const learning = rate(newCard(t0), Rating.Good, t0); // due again in minutes
+  const learning = rate(newCard(t0), Rating.Good, t0); // due again in days
   const q = buildQueue({
     cards: [qc('a', 'it-en', learning)],
     states: states({ a: 'conquered' }),

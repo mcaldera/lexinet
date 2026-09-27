@@ -74,14 +74,7 @@
       "tier": 6,
       "level": null,
       "conjugations": {
-        "presente": [
-          "abbaio",
-          "abbai",
-          "abbaia",
-          "abbaiamo",
-          "abbaiate",
-          "abbaiano"
-        ],
+        "presente": ["abbaio", "abbai", "abbaia", "abbaiamo", "abbaiate", "abbaiano"],
         "passato prossimo": [
           "ho abbaiato",
           "hai abbaiato",
@@ -98,14 +91,7 @@
           "abbaiavate",
           "abbaiavano"
         ],
-        "futuro": [
-          "abbaierò",
-          "abbaierai",
-          "abbaierà",
-          "abbaieremo",
-          "abbaierete",
-          "abbaieranno"
-        ],
+        "futuro": ["abbaierò", "abbaierai", "abbaierà", "abbaieremo", "abbaierete", "abbaieranno"],
         "condizionale": [
           "abbaierei",
           "abbaieresti",
@@ -114,14 +100,7 @@
           "abbaiereste",
           "abbaierebbero"
         ],
-        "congiuntivo": [
-          "abbai",
-          "abbai",
-          "abbai",
-          "abbaiamo",
-          "abbaiate",
-          "abbaino"
-        ]
+        "congiuntivo": ["abbai", "abbai", "abbai", "abbaiamo", "abbaiate", "abbaino"]
       },
       "x": 218.5,
       "y": 364.6,
@@ -168,14 +147,7 @@
       "tier": 5,
       "level": null,
       "conjugations": {
-        "presente": [
-          "volo",
-          "voli",
-          "vola",
-          "voliamo",
-          "volate",
-          "volano"
-        ],
+        "presente": ["volo", "voli", "vola", "voliamo", "volate", "volano"],
         "passato prossimo": [
           "ho volato",
           "hai volato",
@@ -184,22 +156,8 @@
           "avete volato",
           "hanno volato"
         ],
-        "imperfetto": [
-          "volavo",
-          "volavi",
-          "volava",
-          "volavamo",
-          "volavate",
-          "volavano"
-        ],
-        "futuro": [
-          "volerò",
-          "volerai",
-          "volerà",
-          "voleremo",
-          "volerete",
-          "voleranno"
-        ],
+        "imperfetto": ["volavo", "volavi", "volava", "volavamo", "volavate", "volavano"],
+        "futuro": ["volerò", "volerai", "volerà", "voleremo", "volerete", "voleranno"],
         "condizionale": [
           "volerei",
           "voleresti",
@@ -208,14 +166,7 @@
           "volereste",
           "volerebbero"
         ],
-        "congiuntivo": [
-          "voli",
-          "voli",
-          "voli",
-          "voliamo",
-          "voliate",
-          "volino"
-        ]
+        "congiuntivo": ["voli", "voli", "voli", "voliamo", "voliate", "volino"]
       },
       "x": 249.2,
       "y": 257.9,
@@ -262,14 +213,7 @@
       "tier": 6,
       "level": null,
       "conjugations": {
-        "presente": [
-          "nuoto",
-          "nuoti",
-          "nuota",
-          "nuotiamo",
-          "nuotate",
-          "nuotano"
-        ],
+        "presente": ["nuoto", "nuoti", "nuota", "nuotiamo", "nuotate", "nuotano"],
         "passato prossimo": [
           "ho nuotato",
           "hai nuotato",
@@ -278,22 +222,8 @@
           "avete nuotato",
           "hanno nuotato"
         ],
-        "imperfetto": [
-          "nuotavo",
-          "nuotavi",
-          "nuotava",
-          "nuotavamo",
-          "nuotavate",
-          "nuotavano"
-        ],
-        "futuro": [
-          "nuoterò",
-          "nuoterai",
-          "nuoterà",
-          "nuoteremo",
-          "nuoterete",
-          "nuoteranno"
-        ],
+        "imperfetto": ["nuotavo", "nuotavi", "nuotava", "nuotavamo", "nuotavate", "nuotavano"],
+        "futuro": ["nuoterò", "nuoterai", "nuoterà", "nuoteremo", "nuoterete", "nuoteranno"],
         "condizionale": [
           "nuoterei",
           "nuoteresti",
@@ -302,14 +232,7 @@
           "nuotereste",
           "nuoterebbero"
         ],
-        "congiuntivo": [
-          "nuoti",
-          "nuoti",
-          "nuoti",
-          "nuotiamo",
-          "nuotiate",
-          "nuotino"
-        ]
+        "congiuntivo": ["nuoti", "nuoti", "nuoti", "nuotiamo", "nuotiate", "nuotino"]
       },
       "x": 280.4,
       "y": 247.9,
@@ -466,14 +389,7 @@
       "tier": 2,
       "level": null,
       "conjugations": {
-        "presente": [
-          "mangio",
-          "mangi",
-          "mangia",
-          "mangiamo",
-          "mangiate",
-          "mangiano"
-        ],
+        "presente": ["mangio", "mangi", "mangia", "mangiamo", "mangiate", "mangiano"],
         "passato prossimo": [
           "ho mangiato",
           "hai mangiato",
@@ -490,14 +406,7 @@
           "mangiavate",
           "mangiavano"
         ],
-        "futuro": [
-          "mangerò",
-          "mangerai",
-          "mangerà",
-          "mangeremo",
-          "mangerete",
-          "mangeranno"
-        ],
+        "futuro": ["mangerò", "mangerai", "mangerà", "mangeremo", "mangerete", "mangeranno"],
         "condizionale": [
           "mangerei",
           "mangeresti",
@@ -506,14 +415,7 @@
           "mangereste",
           "mangerebbero"
         ],
-        "congiuntivo": [
-          "mangi",
-          "mangi",
-          "mangi",
-          "mangiamo",
-          "mangiate",
-          "mangino"
-        ]
+        "congiuntivo": ["mangi", "mangi", "mangi", "mangiamo", "mangiate", "mangino"]
       },
       "x": -61.1,
       "y": 212.8,
@@ -560,14 +462,7 @@
       "tier": 2,
       "level": null,
       "conjugations": {
-        "presente": [
-          "bevo",
-          "bevi",
-          "beve",
-          "beviamo",
-          "bevete",
-          "bevono"
-        ],
+        "presente": ["bevo", "bevi", "beve", "beviamo", "bevete", "bevono"],
         "passato prossimo": [
           "ho bevuto",
           "hai bevuto",
@@ -576,38 +471,10 @@
           "avete bevuto",
           "hanno bevuto"
         ],
-        "imperfetto": [
-          "bevevo",
-          "bevevi",
-          "beveva",
-          "bevevamo",
-          "bevevate",
-          "bevevano"
-        ],
-        "futuro": [
-          "berrò",
-          "berrai",
-          "berrà",
-          "berremo",
-          "berrete",
-          "berranno"
-        ],
-        "condizionale": [
-          "berrei",
-          "berresti",
-          "berrebbe",
-          "berremmo",
-          "berreste",
-          "berrebbero"
-        ],
-        "congiuntivo": [
-          "beva",
-          "beva",
-          "beva",
-          "beviamo",
-          "beviate",
-          "bevano"
-        ]
+        "imperfetto": ["bevevo", "bevevi", "beveva", "bevevamo", "bevevate", "bevevano"],
+        "futuro": ["berrò", "berrai", "berrà", "berremo", "berrete", "berranno"],
+        "condizionale": ["berrei", "berresti", "berrebbe", "berremmo", "berreste", "berrebbero"],
+        "congiuntivo": ["beva", "beva", "beva", "beviamo", "beviate", "bevano"]
       },
       "x": -31.8,
       "y": 188.3,
@@ -698,14 +565,7 @@
       "tier": 5,
       "level": null,
       "conjugations": {
-        "presente": [
-          "cucino",
-          "cucini",
-          "cucina",
-          "cuciniamo",
-          "cucinate",
-          "cucinano"
-        ],
+        "presente": ["cucino", "cucini", "cucina", "cuciniamo", "cucinate", "cucinano"],
         "passato prossimo": [
           "ho cucinato",
           "hai cucinato",
@@ -722,14 +582,7 @@
           "cucinavate",
           "cucinavano"
         ],
-        "futuro": [
-          "cucinerò",
-          "cucinerai",
-          "cucinerà",
-          "cucineremo",
-          "cucinerete",
-          "cucineranno"
-        ],
+        "futuro": ["cucinerò", "cucinerai", "cucinerà", "cucineremo", "cucinerete", "cucineranno"],
         "condizionale": [
           "cucinerei",
           "cucineresti",
@@ -738,14 +591,7 @@
           "cucinereste",
           "cucinerebbero"
         ],
-        "congiuntivo": [
-          "cucini",
-          "cucini",
-          "cucini",
-          "cuciniamo",
-          "cuciniate",
-          "cucinino"
-        ]
+        "congiuntivo": ["cucini", "cucini", "cucini", "cuciniamo", "cuciniate", "cucinino"]
       },
       "x": -10.6,
       "y": 233.2,
@@ -858,14 +704,7 @@
       "tier": 6,
       "level": null,
       "conjugations": {
-        "presente": [
-          "ceno",
-          "ceni",
-          "cena",
-          "ceniamo",
-          "cenate",
-          "cenano"
-        ],
+        "presente": ["ceno", "ceni", "cena", "ceniamo", "cenate", "cenano"],
         "passato prossimo": [
           "ho cenato",
           "hai cenato",
@@ -874,22 +713,8 @@
           "avete cenato",
           "hanno cenato"
         ],
-        "imperfetto": [
-          "cenavo",
-          "cenavi",
-          "cenava",
-          "cenavamo",
-          "cenavate",
-          "cenavano"
-        ],
-        "futuro": [
-          "cenerò",
-          "cenerai",
-          "cenerà",
-          "ceneremo",
-          "cenerete",
-          "ceneranno"
-        ],
+        "imperfetto": ["cenavo", "cenavi", "cenava", "cenavamo", "cenavate", "cenavano"],
+        "futuro": ["cenerò", "cenerai", "cenerà", "ceneremo", "cenerete", "ceneranno"],
         "condizionale": [
           "cenerei",
           "ceneresti",
@@ -898,14 +723,7 @@
           "cenereste",
           "cenerebbero"
         ],
-        "congiuntivo": [
-          "ceni",
-          "ceni",
-          "ceni",
-          "ceniamo",
-          "ceniate",
-          "cenino"
-        ]
+        "congiuntivo": ["ceni", "ceni", "ceni", "ceniamo", "ceniate", "cenino"]
       },
       "x": -113.8,
       "y": 245.6,
@@ -1018,14 +836,7 @@
       "tier": 3,
       "level": null,
       "conjugations": {
-        "presente": [
-          "dormo",
-          "dormi",
-          "dorme",
-          "dormiamo",
-          "dormite",
-          "dormono"
-        ],
+        "presente": ["dormo", "dormi", "dorme", "dormiamo", "dormite", "dormono"],
         "passato prossimo": [
           "ho dormito",
           "hai dormito",
@@ -1034,22 +845,8 @@
           "avete dormito",
           "hanno dormito"
         ],
-        "imperfetto": [
-          "dormivo",
-          "dormivi",
-          "dormiva",
-          "dormivamo",
-          "dormivate",
-          "dormivano"
-        ],
-        "futuro": [
-          "dormirò",
-          "dormirai",
-          "dormirà",
-          "dormiremo",
-          "dormirete",
-          "dormiranno"
-        ],
+        "imperfetto": ["dormivo", "dormivi", "dormiva", "dormivamo", "dormivate", "dormivano"],
+        "futuro": ["dormirò", "dormirai", "dormirà", "dormiremo", "dormirete", "dormiranno"],
         "condizionale": [
           "dormirei",
           "dormiresti",
@@ -1058,14 +855,7 @@
           "dormireste",
           "dormirebbero"
         ],
-        "congiuntivo": [
-          "dorma",
-          "dorma",
-          "dorma",
-          "dormiamo",
-          "dormiate",
-          "dormano"
-        ]
+        "congiuntivo": ["dorma", "dorma", "dorma", "dormiamo", "dormiate", "dormano"]
       },
       "x": 274.6,
       "y": 12.3,
@@ -1178,14 +968,7 @@
       "tier": 1,
       "level": null,
       "conjugations": {
-        "presente": [
-          "parlo",
-          "parli",
-          "parla",
-          "parliamo",
-          "parlate",
-          "parlano"
-        ],
+        "presente": ["parlo", "parli", "parla", "parliamo", "parlate", "parlano"],
         "passato prossimo": [
           "ho parlato",
           "hai parlato",
@@ -1194,22 +977,8 @@
           "avete parlato",
           "hanno parlato"
         ],
-        "imperfetto": [
-          "parlavo",
-          "parlavi",
-          "parlava",
-          "parlavamo",
-          "parlavate",
-          "parlavano"
-        ],
-        "futuro": [
-          "parlerò",
-          "parlerai",
-          "parlerà",
-          "parleremo",
-          "parlerete",
-          "parleranno"
-        ],
+        "imperfetto": ["parlavo", "parlavi", "parlava", "parlavamo", "parlavate", "parlavano"],
+        "futuro": ["parlerò", "parlerai", "parlerà", "parleremo", "parlerete", "parleranno"],
         "condizionale": [
           "parlerei",
           "parleresti",
@@ -1218,14 +987,7 @@
           "parlereste",
           "parlerebbero"
         ],
-        "congiuntivo": [
-          "parli",
-          "parli",
-          "parli",
-          "parliamo",
-          "parliate",
-          "parlino"
-        ]
+        "congiuntivo": ["parli", "parli", "parli", "parliamo", "parliate", "parlino"]
       },
       "x": -458.2,
       "y": -349.9,
@@ -1294,14 +1056,7 @@
       "tier": 1,
       "level": null,
       "conjugations": {
-        "presente": [
-          "dico",
-          "dici",
-          "dice",
-          "diciamo",
-          "dite",
-          "dicono"
-        ],
+        "presente": ["dico", "dici", "dice", "diciamo", "dite", "dicono"],
         "passato prossimo": [
           "ho detto",
           "hai detto",
@@ -1310,38 +1065,10 @@
           "avete detto",
           "hanno detto"
         ],
-        "imperfetto": [
-          "dicevo",
-          "dicevi",
-          "diceva",
-          "dicevamo",
-          "dicevate",
-          "dicevano"
-        ],
-        "futuro": [
-          "dirò",
-          "dirai",
-          "dirà",
-          "diremo",
-          "direte",
-          "diranno"
-        ],
-        "condizionale": [
-          "direi",
-          "diresti",
-          "direbbe",
-          "diremmo",
-          "direste",
-          "direbbero"
-        ],
-        "congiuntivo": [
-          "dica",
-          "dica",
-          "dica",
-          "diciamo",
-          "diciate",
-          "dicano"
-        ]
+        "imperfetto": ["dicevo", "dicevi", "diceva", "dicevamo", "dicevate", "dicevano"],
+        "futuro": ["dirò", "dirai", "dirà", "diremo", "direte", "diranno"],
+        "condizionale": ["direi", "diresti", "direbbe", "diremmo", "direste", "direbbero"],
+        "congiuntivo": ["dica", "dica", "dica", "diciamo", "diciate", "dicano"]
       },
       "x": -510.5,
       "y": -326.3,
@@ -1366,14 +1093,7 @@
       "tier": 3,
       "level": null,
       "conjugations": {
-        "presente": [
-          "chiedo",
-          "chiedi",
-          "chiede",
-          "chiediamo",
-          "chiedete",
-          "chiedono"
-        ],
+        "presente": ["chiedo", "chiedi", "chiede", "chiediamo", "chiedete", "chiedono"],
         "passato prossimo": [
           "ho chiesto",
           "hai chiesto",
@@ -1390,14 +1110,7 @@
           "chiedevate",
           "chiedevano"
         ],
-        "futuro": [
-          "chiederò",
-          "chiederai",
-          "chiederà",
-          "chiederemo",
-          "chiederete",
-          "chiederanno"
-        ],
+        "futuro": ["chiederò", "chiederai", "chiederà", "chiederemo", "chiederete", "chiederanno"],
         "condizionale": [
           "chiederei",
           "chiederesti",
@@ -1406,14 +1119,7 @@
           "chiedereste",
           "chiederebbero"
         ],
-        "congiuntivo": [
-          "chieda",
-          "chieda",
-          "chieda",
-          "chiediamo",
-          "chiediate",
-          "chiedano"
-        ]
+        "congiuntivo": ["chieda", "chieda", "chieda", "chiediamo", "chiediate", "chiedano"]
       },
       "x": -517.6,
       "y": -277.1,
@@ -1460,14 +1166,7 @@
       "tier": 4,
       "level": null,
       "conjugations": {
-        "presente": [
-          "rispondo",
-          "rispondi",
-          "risponde",
-          "rispondiamo",
-          "rispondete",
-          "rispondono"
-        ],
+        "presente": ["rispondo", "rispondi", "risponde", "rispondiamo", "rispondete", "rispondono"],
         "passato prossimo": [
           "ho risposto",
           "hai risposto",
@@ -1554,14 +1253,7 @@
       "tier": 4,
       "level": null,
       "conjugations": {
-        "presente": [
-          "scrivo",
-          "scrivi",
-          "scrive",
-          "scriviamo",
-          "scrivete",
-          "scrivono"
-        ],
+        "presente": ["scrivo", "scrivi", "scrive", "scriviamo", "scrivete", "scrivono"],
         "passato prossimo": [
           "ho scritto",
           "hai scritto",
@@ -1578,14 +1270,7 @@
           "scrivevate",
           "scrivevano"
         ],
-        "futuro": [
-          "scriverò",
-          "scriverai",
-          "scriverà",
-          "scriveremo",
-          "scriverete",
-          "scriveranno"
-        ],
+        "futuro": ["scriverò", "scriverai", "scriverà", "scriveremo", "scriverete", "scriveranno"],
         "condizionale": [
           "scriverei",
           "scriveresti",
@@ -1594,14 +1279,7 @@
           "scrivereste",
           "scriverebbero"
         ],
-        "congiuntivo": [
-          "scriva",
-          "scriva",
-          "scriva",
-          "scriviamo",
-          "scriviate",
-          "scrivano"
-        ]
+        "congiuntivo": ["scriva", "scriva", "scriva", "scriviamo", "scriviate", "scrivano"]
       },
       "x": -544.4,
       "y": -413.3,
@@ -1648,14 +1326,7 @@
       "tier": 4,
       "level": null,
       "conjugations": {
-        "presente": [
-          "leggo",
-          "leggi",
-          "legge",
-          "leggiamo",
-          "leggete",
-          "leggono"
-        ],
+        "presente": ["leggo", "leggi", "legge", "leggiamo", "leggete", "leggono"],
         "passato prossimo": [
           "ho letto",
           "hai letto",
@@ -1664,22 +1335,8 @@
           "avete letto",
           "hanno letto"
         ],
-        "imperfetto": [
-          "leggevo",
-          "leggevi",
-          "leggeva",
-          "leggevamo",
-          "leggevate",
-          "leggevano"
-        ],
-        "futuro": [
-          "leggerò",
-          "leggerai",
-          "leggerà",
-          "leggeremo",
-          "leggerete",
-          "leggeranno"
-        ],
+        "imperfetto": ["leggevo", "leggevi", "leggeva", "leggevamo", "leggevate", "leggevano"],
+        "futuro": ["leggerò", "leggerai", "leggerà", "leggeremo", "leggerete", "leggeranno"],
         "condizionale": [
           "leggerei",
           "leggeresti",
@@ -1688,14 +1345,7 @@
           "leggereste",
           "leggerebbero"
         ],
-        "congiuntivo": [
-          "legga",
-          "legga",
-          "legga",
-          "leggiamo",
-          "leggiate",
-          "leggano"
-        ]
+        "congiuntivo": ["legga", "legga", "legga", "leggiamo", "leggiate", "leggano"]
       },
       "x": -538.8,
       "y": -350.7,
@@ -2006,14 +1656,7 @@
       "tier": 5,
       "level": null,
       "conjugations": {
-        "presente": [
-          "cammino",
-          "cammini",
-          "cammina",
-          "camminiamo",
-          "camminate",
-          "camminano"
-        ],
+        "presente": ["cammino", "cammini", "cammina", "camminiamo", "camminate", "camminano"],
         "passato prossimo": [
           "ho camminato",
           "hai camminato",
@@ -2046,14 +1689,7 @@
           "camminereste",
           "camminerebbero"
         ],
-        "congiuntivo": [
-          "cammini",
-          "cammini",
-          "cammini",
-          "camminiamo",
-          "camminiate",
-          "camminino"
-        ]
+        "congiuntivo": ["cammini", "cammini", "cammini", "camminiamo", "camminiate", "camminino"]
       },
       "x": -236.2,
       "y": -170.2,
@@ -2100,14 +1736,7 @@
       "tier": 1,
       "level": null,
       "conjugations": {
-        "presente": [
-          "vedo",
-          "vedi",
-          "vede",
-          "vediamo",
-          "vedete",
-          "vedono"
-        ],
+        "presente": ["vedo", "vedi", "vede", "vediamo", "vedete", "vedono"],
         "passato prossimo": [
           "ho visto",
           "hai visto",
@@ -2116,38 +1745,10 @@
           "avete visto",
           "hanno visto"
         ],
-        "imperfetto": [
-          "vedevo",
-          "vedevi",
-          "vedeva",
-          "vedevamo",
-          "vedevate",
-          "vedevano"
-        ],
-        "futuro": [
-          "vedrò",
-          "vedrai",
-          "vedrà",
-          "vedremo",
-          "vedrete",
-          "vedranno"
-        ],
-        "condizionale": [
-          "vedrei",
-          "vedresti",
-          "vedrebbe",
-          "vedremmo",
-          "vedreste",
-          "vedrebbero"
-        ],
-        "congiuntivo": [
-          "veda",
-          "veda",
-          "veda",
-          "vediamo",
-          "vediate",
-          "vedano"
-        ]
+        "imperfetto": ["vedevo", "vedevi", "vedeva", "vedevamo", "vedevate", "vedevano"],
+        "futuro": ["vedrò", "vedrai", "vedrà", "vedremo", "vedrete", "vedranno"],
+        "condizionale": ["vedrei", "vedresti", "vedrebbe", "vedremmo", "vedreste", "vedrebbero"],
+        "congiuntivo": ["veda", "veda", "veda", "vediamo", "vediate", "vedano"]
       },
       "x": -330.0,
       "y": -121.1,
@@ -2172,14 +1773,7 @@
       "tier": 3,
       "level": null,
       "conjugations": {
-        "presente": [
-          "guardo",
-          "guardi",
-          "guarda",
-          "guardiamo",
-          "guardate",
-          "guardano"
-        ],
+        "presente": ["guardo", "guardi", "guarda", "guardiamo", "guardate", "guardano"],
         "passato prossimo": [
           "ho guardato",
           "hai guardato",
@@ -2196,14 +1790,7 @@
           "guardavate",
           "guardavano"
         ],
-        "futuro": [
-          "guarderò",
-          "guarderai",
-          "guarderà",
-          "guarderemo",
-          "guarderete",
-          "guarderanno"
-        ],
+        "futuro": ["guarderò", "guarderai", "guarderà", "guarderemo", "guarderete", "guarderanno"],
         "condizionale": [
           "guarderei",
           "guarderesti",
@@ -2212,14 +1799,7 @@
           "guardereste",
           "guarderebbero"
         ],
-        "congiuntivo": [
-          "guardi",
-          "guardi",
-          "guardi",
-          "guardiamo",
-          "guardiate",
-          "guardino"
-        ]
+        "congiuntivo": ["guardi", "guardi", "guardi", "guardiamo", "guardiate", "guardino"]
       },
       "x": -378.4,
       "y": -149.6,
@@ -2266,14 +1846,7 @@
       "tier": 2,
       "level": null,
       "conjugations": {
-        "presente": [
-          "sento",
-          "senti",
-          "sente",
-          "sentiamo",
-          "sentite",
-          "sentono"
-        ],
+        "presente": ["sento", "senti", "sente", "sentiamo", "sentite", "sentono"],
         "passato prossimo": [
           "ho sentito",
           "hai sentito",
@@ -2282,22 +1855,8 @@
           "avete sentito",
           "hanno sentito"
         ],
-        "imperfetto": [
-          "sentivo",
-          "sentivi",
-          "sentiva",
-          "sentivamo",
-          "sentivate",
-          "sentivano"
-        ],
-        "futuro": [
-          "sentirò",
-          "sentirai",
-          "sentirà",
-          "sentiremo",
-          "sentirete",
-          "sentiranno"
-        ],
+        "imperfetto": ["sentivo", "sentivi", "sentiva", "sentivamo", "sentivate", "sentivano"],
+        "futuro": ["sentirò", "sentirai", "sentirà", "sentiremo", "sentirete", "sentiranno"],
         "condizionale": [
           "sentirei",
           "sentiresti",
@@ -2306,14 +1865,7 @@
           "sentireste",
           "sentirebbero"
         ],
-        "congiuntivo": [
-          "senta",
-          "senta",
-          "senta",
-          "sentiamo",
-          "sentiate",
-          "sentano"
-        ]
+        "congiuntivo": ["senta", "senta", "senta", "sentiamo", "sentiate", "sentano"]
       },
       "x": -351.7,
       "y": -87.9,
@@ -2404,14 +1956,7 @@
       "tier": 6,
       "level": null,
       "conjugations": {
-        "presente": [
-          "piovo",
-          "piovi",
-          "piove",
-          "pioviamo",
-          "piovete",
-          "piovono"
-        ],
+        "presente": ["piovo", "piovi", "piove", "pioviamo", "piovete", "piovono"],
         "passato prossimo": [
           "sono piovuto",
           "sei piovuto",
@@ -2420,22 +1965,8 @@
           "siete piovuti",
           "sono piovuti"
         ],
-        "imperfetto": [
-          "piovevo",
-          "piovevi",
-          "pioveva",
-          "piovevamo",
-          "piovevate",
-          "piovevano"
-        ],
-        "futuro": [
-          "pioverò",
-          "pioverai",
-          "pioverà",
-          "pioveremo",
-          "pioverete",
-          "pioveranno"
-        ],
+        "imperfetto": ["piovevo", "piovevi", "pioveva", "piovevamo", "piovevate", "piovevano"],
+        "futuro": ["pioverò", "pioverai", "pioverà", "pioveremo", "pioverete", "pioveranno"],
         "condizionale": [
           "pioverei",
           "pioveresti",
@@ -2444,14 +1975,7 @@
           "piovereste",
           "pioverebbero"
         ],
-        "congiuntivo": [
-          "piova",
-          "piova",
-          "piova",
-          "pioviamo",
-          "pioviate",
-          "piovano"
-        ]
+        "congiuntivo": ["piova", "piova", "piova", "pioviamo", "pioviate", "piovano"]
       },
       "x": -268.5,
       "y": 200.4,
@@ -2498,14 +2022,7 @@
       "tier": 6,
       "level": null,
       "conjugations": {
-        "presente": [
-          "-",
-          "-",
-          "nevica",
-          "-",
-          "-",
-          "nevicano"
-        ],
+        "presente": ["-", "-", "nevica", "-", "-", "nevicano"],
         "passato prossimo": [
           "sono nevicato",
           "sei nevicato",
@@ -2514,38 +2031,10 @@
           "siete nevicati",
           "sono nevicati"
         ],
-        "imperfetto": [
-          "-",
-          "-",
-          "nevicava",
-          "-",
-          "-",
-          "nevicavano"
-        ],
-        "futuro": [
-          "-",
-          "-",
-          "nevicherà",
-          "-",
-          "-",
-          "nevicheranno"
-        ],
-        "condizionale": [
-          "-",
-          "-",
-          "nevicherebbe",
-          "-",
-          "-",
-          "nevicherebbero"
-        ],
-        "congiuntivo": [
-          "-",
-          "-",
-          "nevichi",
-          "-",
-          "-",
-          "nevichino"
-        ]
+        "imperfetto": ["-", "-", "nevicava", "-", "-", "nevicavano"],
+        "futuro": ["-", "-", "nevicherà", "-", "-", "nevicheranno"],
+        "condizionale": ["-", "-", "nevicherebbe", "-", "-", "nevicherebbero"],
+        "congiuntivo": ["-", "-", "nevichi", "-", "-", "nevichino"]
       },
       "x": -337.4,
       "y": 213.8,
@@ -2702,14 +2191,7 @@
       "tier": 6,
       "level": null,
       "conjugations": {
-        "presente": [
-          "viaggio",
-          "viaggi",
-          "viaggia",
-          "viaggiamo",
-          "viaggiate",
-          "viaggiano"
-        ],
+        "presente": ["viaggio", "viaggi", "viaggia", "viaggiamo", "viaggiate", "viaggiano"],
         "passato prossimo": [
           "ho viaggiato",
           "hai viaggiato",
@@ -2726,14 +2208,7 @@
           "viaggiavate",
           "viaggiavano"
         ],
-        "futuro": [
-          "viaggerò",
-          "viaggerai",
-          "viaggerà",
-          "viaggeremo",
-          "viaggerete",
-          "viaggeranno"
-        ],
+        "futuro": ["viaggerò", "viaggerai", "viaggerà", "viaggeremo", "viaggerete", "viaggeranno"],
         "condizionale": [
           "viaggerei",
           "viaggeresti",
@@ -2742,14 +2217,7 @@
           "viaggereste",
           "viaggerebbero"
         ],
-        "congiuntivo": [
-          "viaggi",
-          "viaggi",
-          "viaggi",
-          "viaggiamo",
-          "viaggiate",
-          "viaggino"
-        ]
+        "congiuntivo": ["viaggi", "viaggi", "viaggi", "viaggiamo", "viaggiate", "viaggino"]
       },
       "x": 385.7,
       "y": -234.1,
@@ -2840,14 +2308,7 @@
       "tier": 5,
       "level": null,
       "conjugations": {
-        "presente": [
-          "guido",
-          "guidi",
-          "guida",
-          "guidiamo",
-          "guidate",
-          "guidano"
-        ],
+        "presente": ["guido", "guidi", "guida", "guidiamo", "guidate", "guidano"],
         "passato prossimo": [
           "ho guidato",
           "hai guidato",
@@ -2856,22 +2317,8 @@
           "avete guidato",
           "hanno guidato"
         ],
-        "imperfetto": [
-          "guidavo",
-          "guidavi",
-          "guidava",
-          "guidavamo",
-          "guidavate",
-          "guidavano"
-        ],
-        "futuro": [
-          "guiderò",
-          "guiderai",
-          "guiderà",
-          "guideremo",
-          "guiderete",
-          "guideranno"
-        ],
+        "imperfetto": ["guidavo", "guidavi", "guidava", "guidavamo", "guidavate", "guidavano"],
+        "futuro": ["guiderò", "guiderai", "guiderà", "guideremo", "guiderete", "guideranno"],
         "condizionale": [
           "guiderei",
           "guideresti",
@@ -2880,14 +2327,7 @@
           "guidereste",
           "guiderebbero"
         ],
-        "congiuntivo": [
-          "guidi",
-          "guidi",
-          "guidi",
-          "guidiamo",
-          "guidiate",
-          "guidino"
-        ]
+        "congiuntivo": ["guidi", "guidi", "guidi", "guidiamo", "guidiate", "guidino"]
       },
       "x": 341.9,
       "y": -200.9,
@@ -2912,14 +2352,7 @@
       "tier": 3,
       "level": null,
       "conjugations": {
-        "presente": [
-          "arrivo",
-          "arrivi",
-          "arriva",
-          "arriviamo",
-          "arrivate",
-          "arrivano"
-        ],
+        "presente": ["arrivo", "arrivi", "arriva", "arriviamo", "arrivate", "arrivano"],
         "passato prossimo": [
           "sono arrivato",
           "sei arrivato",
@@ -2936,14 +2369,7 @@
           "arrivavate",
           "arrivavano"
         ],
-        "futuro": [
-          "arriverò",
-          "arriverai",
-          "arriverà",
-          "arriveremo",
-          "arriverete",
-          "arriveranno"
-        ],
+        "futuro": ["arriverò", "arriverai", "arriverà", "arriveremo", "arriverete", "arriveranno"],
         "condizionale": [
           "arriverei",
           "arriveresti",
@@ -2952,14 +2378,7 @@
           "arrivereste",
           "arriverebbero"
         ],
-        "congiuntivo": [
-          "arrivi",
-          "arrivi",
-          "arrivi",
-          "arriviamo",
-          "arriviate",
-          "arrivino"
-        ]
+        "congiuntivo": ["arrivi", "arrivi", "arrivi", "arriviamo", "arriviate", "arrivino"]
       },
       "x": 432.6,
       "y": -249.6,
@@ -2984,14 +2403,7 @@
       "tier": 4,
       "level": null,
       "conjugations": {
-        "presente": [
-          "parto",
-          "parti",
-          "parte",
-          "partiamo",
-          "partite",
-          "partono"
-        ],
+        "presente": ["parto", "parti", "parte", "partiamo", "partite", "partono"],
         "passato prossimo": [
           "sono partito",
           "sei partito",
@@ -3000,22 +2412,8 @@
           "siete partiti",
           "sono partiti"
         ],
-        "imperfetto": [
-          "partivo",
-          "partivi",
-          "partiva",
-          "partivamo",
-          "partivate",
-          "partivano"
-        ],
-        "futuro": [
-          "partirò",
-          "partirai",
-          "partirà",
-          "partiremo",
-          "partirete",
-          "partiranno"
-        ],
+        "imperfetto": ["partivo", "partivi", "partiva", "partivamo", "partivate", "partivano"],
+        "futuro": ["partirò", "partirai", "partirà", "partiremo", "partirete", "partiranno"],
         "condizionale": [
           "partirei",
           "partiresti",
@@ -3024,14 +2422,7 @@
           "partireste",
           "partirebbero"
         ],
-        "congiuntivo": [
-          "parta",
-          "parta",
-          "parta",
-          "partiamo",
-          "partiate",
-          "partano"
-        ]
+        "congiuntivo": ["parta", "parta", "parta", "partiamo", "partiate", "partano"]
       },
       "x": 437.3,
       "y": -199.7,
@@ -5554,39 +4945,23 @@
       "root": "manducare",
       "lang": "Latin",
       "meaning": "to chew, to munch",
-      "words": [
-        "mangiare",
-        "mangiato"
-      ],
-      "english": [
-        "manger"
-      ]
+      "words": ["mangiare", "mangiato"],
+      "english": ["manger"]
     },
     {
       "id": "root:coquere",
       "root": "coquere",
       "lang": "Latin",
       "meaning": "to cook",
-      "words": [
-        "cucinare",
-        "la-cucina",
-        "il-cuoco"
-      ],
-      "english": [
-        "cook",
-        "kitchen",
-        "curry"
-      ]
+      "words": ["cucinare", "la-cucina", "il-cuoco"],
+      "english": ["cook", "kitchen", "curry"]
     },
     {
       "id": "root:cena",
       "root": "cena",
       "lang": "Latin",
       "meaning": "dinner",
-      "words": [
-        "la-cena",
-        "cenare"
-      ],
+      "words": ["la-cena", "cenare"],
       "english": []
     },
     {
@@ -5594,66 +4969,39 @@
       "root": "parabola",
       "lang": "Late Latin",
       "meaning": "speech, parable",
-      "words": [
-        "parlare",
-        "parlato",
-        "la-parola"
-      ],
-      "english": [
-        "parley",
-        "parable",
-        "parole"
-      ]
+      "words": ["parlare", "parlato", "la-parola"],
+      "english": ["parley", "parable", "parole"]
     },
     {
       "id": "root:respondere",
       "root": "respondere",
       "lang": "Latin",
       "meaning": "to answer",
-      "words": [
-        "rispondere",
-        "la-risposta"
-      ],
-      "english": [
-        "respond",
-        "response"
-      ]
+      "words": ["rispondere", "la-risposta"],
+      "english": ["respond", "response"]
     },
     {
       "id": "root:filius",
       "root": "filius",
       "lang": "Latin",
       "meaning": "son",
-      "words": [
-        "il-figlio",
-        "la-figlia"
-      ],
-      "english": [
-        "filial"
-      ]
+      "words": ["il-figlio", "la-figlia"],
+      "english": ["filial"]
     },
     {
       "id": "root:nonnus",
       "root": "nonnus",
       "lang": "Late Latin",
       "meaning": "old man, monk",
-      "words": [
-        "il-nonno",
-        "la-nonna"
-      ],
-      "english": [
-        "nun"
-      ]
+      "words": ["il-nonno", "la-nonna"],
+      "english": ["nun"]
     },
     {
       "id": "root:pluere",
       "root": "pluere",
       "lang": "Latin",
       "meaning": "to rain",
-      "words": [
-        "la-pioggia",
-        "piovere"
-      ],
+      "words": ["la-pioggia", "piovere"],
       "english": []
     },
     {
@@ -5661,10 +5009,7 @@
       "root": "nix",
       "lang": "Latin",
       "meaning": "snow",
-      "words": [
-        "la-neve",
-        "nevicare"
-      ],
+      "words": ["la-neve", "nevicare"],
       "english": []
     },
     {
@@ -5672,13 +5017,8 @@
       "root": "viaticum",
       "lang": "Latin",
       "meaning": "provisions for a journey (from via, \"road\")",
-      "words": [
-        "viaggiare",
-        "il-viaggio"
-      ],
-      "english": [
-        "voyage"
-      ]
+      "words": ["viaggiare", "il-viaggio"],
+      "english": ["voyage"]
     }
   ],
   "regions": [

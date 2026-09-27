@@ -56,7 +56,10 @@ export function tierProgress(
       ? Math.min(total, Math.max(campaign.minPerTier * tier, Math.ceil(homeTotal * fraction)))
       : Math.ceil(total * fraction);
     const verbLevel = verbs ? verbLevelFor(tier, maxTier, verbs.maxLevel) : 0;
-    const pool = verbs ? [...verbs.levels].filter(([id]) => (tiers.get(id) ?? 1) <= tier) : [];
+    // Verbs of the open tiers, plus the home category's (open at every level, like its words).
+    const pool = verbs
+      ? [...verbs.levels].filter(([id]) => (tiers.get(id) ?? 1) <= tier || !!campaign?.home.has(id))
+      : [];
     const verbsNeed = verbs ? Math.min(verbs.perTier, pool.length) : 0;
     const verbsHave = pool.filter(([, lvl]) => lvl >= verbLevel).length;
     const base = { tier, maxTier, conquered, verbsHave, verbsNeed, verbLevel };
