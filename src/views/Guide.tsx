@@ -52,10 +52,10 @@ export default function Guide({ onClose }: { onClose: () => void }) {
           <p>
             Click a <b>?</b> to claim it: say what it means. Then produce the Italian (
             {CLAIM_STEP_GAP_MS / 60_000} min later) and recall it once more (
-            {CLAIM_RECALL_GAP_MS / 60_000} min after that) to conquer it. A new word comes one of
-            two ways: ⚡ Type or ☰ Choose from four meanings (switch under the word before
-            answering; your pick sticks). Typed right at first sight, without the options showing,
-            it skips the waits: produce it straight away and it is yours.
+            {CLAIM_RECALL_GAP_MS / 60_000} min after that) to conquer it. A new word asks you to
+            type its meaning; typed right at first sight, it skips the waits: produce it straight
+            away and it is yours. Not sure? ☰ Choose instead shows four meanings (no fast track,
+            and no going back to typing).
           </p>
           <p>
             Reviews of your words sometimes fill the gap in a sentence. 🔊 says a word aloud (the
