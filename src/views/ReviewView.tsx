@@ -10,6 +10,23 @@ import Etymology from './Etymology';
 
 const ACCENTS = ['à', 'è', 'é', 'ì', 'ò', 'ù'];
 
+/** How new words start: typed (the fast track) or as choices. Your last pick sticks. */
+const NEW_WORDS_KEY = 'sprawl.newWords';
+const startsTyped = () => {
+  try {
+    return localStorage.getItem(NEW_WORDS_KEY) === 'type';
+  } catch {
+    return false;
+  }
+};
+const rememberStart = (typed: boolean) => {
+  try {
+    localStorage.setItem(NEW_WORDS_KEY, typed ? 'type' : 'choices');
+  } catch {
+    // private mode: the switch still works for this card
+  }
+};
+
 const VERDICT = {
   correct: { text: 'Correct', cls: 'border-emerald-500/50 bg-emerald-500/10 text-emerald-300' },
   almost: { text: 'Almost', cls: 'border-amber-500/50 bg-amber-500/10 text-amber-300' },
@@ -60,8 +77,15 @@ export default function ReviewView(props: Props) {
       ? meaningChoices(word, data.nodes)
       : null,
   );
-  const [choosing, setChoosing] = useState(!!choices);
+  const [choosing, setChoosing] = useState(!!choices && !startsTyped());
   const [picked, setPicked] = useState<string | null>(null);
+  /** The options were on screen: typing after that is no proof you knew it (no fast track). */
+  const [sawOptions, setSawOptions] = useState(choosing);
+  const switchTo = (choose: boolean) => {
+    setChoosing(choose);
+    if (choose) setSawOptions(true);
+    rememberStart(!choose);
+  };
 
   useEffect(() => {
     if (current) props.onShow?.(current);
@@ -128,7 +152,7 @@ export default function ReviewView(props: Props) {
     if (!current || busy) return;
     setBusy(true);
     try {
-      await onRate(current, grade, !picked);
+      await onRate(current, grade, !picked && !sawOptions);
     } finally {
       setBusy(false);
     }
@@ -209,6 +233,31 @@ export default function ReviewView(props: Props) {
             {toItalian ? 'in Italian' : 'in English'}
             {word.pos && ` · ${word.pos}`}
           </div>
+          {choices && !check && (
+            // Pick before anything shows: typing it right at first sight is the fast track.
+            <div className="mb-2 flex justify-center text-xs">
+              <div className="flex overflow-hidden rounded border border-slate-700">
+                <button
+                  onClick={() => switchTo(false)}
+                  title={
+                    sawOptions
+                      ? 'Type it (no fast track: the options were shown)'
+                      : 'Type the meaning: right at first sight, the word goes on the fast track'
+                  }
+                  className={`px-2.5 py-0.5 ${!choosing ? 'bg-emerald-800 text-emerald-100' : 'text-slate-400 hover:text-slate-200'}`}
+                >
+                  ⚡ Type
+                </button>
+                <button
+                  onClick={() => switchTo(true)}
+                  title="Choose from 4 meanings"
+                  className={`px-2.5 py-0.5 ${choosing ? 'bg-slate-700 text-slate-100' : 'text-slate-400 hover:text-slate-200'}`}
+                >
+                  ☰ Choose
+                </button>
+              </div>
+            </div>
+          )}
 
           {choosing && choices ? (
             <div className="space-y-1.5">
@@ -233,14 +282,7 @@ export default function ReviewView(props: Props) {
                 );
               })}
               {!check && (
-                <div className="flex justify-between pt-1 text-xs">
-                  <button
-                    onClick={() => setChoosing(false)}
-                    className="text-emerald-300 hover:text-emerald-200"
-                    title="Type the meaning: right at first sight, the word goes on the fast track"
-                  >
-                    ⚡ type it
-                  </button>
+                <div className="flex justify-end pt-1 text-xs">
                   <button
                     onClick={() => answer && setCheck(checkAnswer('', answer, 'en'))}
                     className="text-slate-400 hover:text-slate-200"

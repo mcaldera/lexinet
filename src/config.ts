@@ -28,6 +28,8 @@ export const INFLUENCE = {
   wrongAnswerHit: 0.35,
   /** A bought hint (English cousin) halves hostile pressure on its word. */
   hintShield: 0.5,
+  /** Each level of memory strength (0-5) takes 10% off hostile pressure: 5 levels halve it. */
+  strengthArmour: 0.1,
 };
 
 /** A claimed word's English -> Italian step opens this long after Italian -> English. */

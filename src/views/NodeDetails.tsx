@@ -5,6 +5,7 @@ import type { NodeState } from '../core/unlock';
 import type { WordNode } from '../db/repo';
 import Etymology from './Etymology';
 import { StepDots, timeLeft } from './ReviewView';
+import { MAX_STRENGTH } from '../core/strength';
 
 type Props = {
   word: WordNode;
@@ -13,6 +14,8 @@ type Props = {
   name: string;
   health: number | null;
   control: number;
+  /** Conquered words: memory strength (0-5), how many days it lasts, and recall right now (0-1). */
+  memory?: { level: number; days: number; recall: number | null };
   /** Conquered: who pushes its control up or down. Frontier: whom it attacks. */
   influences: Influence[];
   nameOf: (id: string) => string;
@@ -51,6 +54,39 @@ type Props = {
 };
 
 const pct = (v: number) => `${Math.round(v * 100)}%`;
+
+/** "3 d", "2 wk", "4 mo": how long a memory lasts. */
+const span = (days: number) =>
+  days < 1
+    ? 'under a day'
+    : days < 14
+      ? `${Math.round(days)} d`
+      : days < 60
+        ? `${Math.round(days / 7)} wk`
+        : `${Math.round(days / 30)} mo`;
+
+/**
+ * Memory strength: how long you'll remember the word (FSRS stability), as dots.
+ * Only spaced reviews raise it. Stars are for verb tenses, not this.
+ */
+export function MemoryDots({ level, days }: { level: number; days: number }) {
+  return (
+    <span
+      className="flex items-center gap-1.5 text-slate-500"
+      title={`Memory strength ${level}/${MAX_STRENGTH}: you should still recall it after ~${span(days)}. It grows only with spaced reviews; the stronger it is, the slower the memory part of Hold fades, and each level takes 10% off hostile pressure.`}
+    >
+      <span className="flex gap-0.5">
+        {Array.from({ length: MAX_STRENGTH }, (_, i) => (
+          <span
+            key={i}
+            className={`h-1.5 w-1.5 rounded-full ${i < level ? 'bg-sky-300' : 'bg-slate-700'}`}
+          />
+        ))}
+      </span>
+      <span>lasts ~{span(days)}</span>
+    </span>
+  );
+}
 const perDay = (v: number) => `${v > 0 ? '+' : ''}${Math.round(v * 100)}%/d`;
 const KIND = {
   attack: { text: 'hostile', cls: 'text-red-300' },
@@ -148,7 +184,13 @@ export default function NodeDetails(props: Props) {
         {props.showEtymology && <span className="text-xs text-slate-500">{word.en}</span>}
       </div>
       <div className="flex items-center gap-2">
-        <div className="h-1.5 flex-1 overflow-hidden rounded bg-slate-800" title="Health">
+        <span
+          className="text-slate-500"
+          title={`Hold: the weaker of memory (${props.memory?.recall == null ? '—' : pct(props.memory.recall)} chance you recall it now) and control (${pct(control)}, worn down by hostile neighbours). A right answer restores both.`}
+        >
+          Hold
+        </span>
+        <div className="h-1.5 flex-1 overflow-hidden rounded bg-slate-800">
           <div
             className={`h-full ${h >= 0.9 ? 'bg-emerald-400' : h >= 0.5 ? 'bg-amber-400' : 'bg-red-400'}`}
             style={{ width: pct(h) }}
@@ -157,6 +199,11 @@ export default function NodeDetails(props: Props) {
         <span className="w-9 text-right text-slate-300">{pct(h)}</span>
         {Math.abs(total) > 0.001 && <span className={trendCls}>{perDay(total)}</span>}
       </div>
+      {props.memory && (
+        <div className="mt-1 text-xs">
+          <MemoryDots level={props.memory.level} days={props.memory.days} />
+        </div>
+      )}
       {daysLeft !== null && (
         <p className="mt-1 text-red-300">
           Lost in ~
@@ -221,7 +268,8 @@ export default function NodeDetails(props: Props) {
           </ul>
         )}
         <p>
-          Memory {health === null ? '—' : pct(health)} · control {pct(control)}
+          Recall {props.memory?.recall == null ? '—' : pct(props.memory.recall)} · control{' '}
+          {pct(control)}
         </p>
         <p>
           Cohesion {cohesion.links.toFixed(1)} · {cohesion.cluster}-word territory

@@ -28,6 +28,8 @@ export type InfluenceRules = {
   wrongAnswerHit: number;
   /** Hostile and rebel pressure on a word with a bought hint is multiplied by this. */
   hintShield: number;
+  /** Each level of memory strength (core/strength.ts) takes this share off hostile pressure. */
+  strengthArmour: number;
 };
 
 export type Link = { source: string; target: string; weight: number };
@@ -56,7 +58,8 @@ export type Influence = { id: string; kind: 'attack' | 'rebel' | 'support'; perD
 
 /**
  * Each neighbour's effect on a conquered word's control, per day. Words in
- * `shielded` (a bought hint) take only part of the hostile pressure.
+ * `shielded` (a bought hint) take only part of the hostile pressure, and so do
+ * well-learned words: each level of memory `strength` is armour.
  */
 export function pressureBreakdown(
   id: string,
@@ -67,9 +70,12 @@ export function pressureBreakdown(
   t: number,
   rules: InfluenceRules,
   shielded: Set<string> = new Set(),
+  strength: Map<string, number> = new Map(),
 ): Influence[] {
   const out: Influence[] = [];
-  const shield = shielded.has(id) ? rules.hintShield : 1;
+  const shield =
+    (shielded.has(id) ? rules.hintShield : 1) *
+    Math.max(0, 1 - rules.strengthArmour * (strength.get(id) ?? 0));
   for (const { id: n, weight } of neighbours.get(id) ?? []) {
     const g = game.get(n);
     const s = states.get(n);
@@ -99,11 +105,19 @@ export function pressureOn(
   t: number,
   rules: InfluenceRules,
   shielded: Set<string> = new Set(),
+  strength: Map<string, number> = new Map(),
 ): number {
-  return pressureBreakdown(id, game, states, neighbours, verbLevels, t, rules, shielded).reduce(
-    (a, b) => a + b.perDay,
-    0,
-  );
+  return pressureBreakdown(
+    id,
+    game,
+    states,
+    neighbours,
+    verbLevels,
+    t,
+    rules,
+    shielded,
+    strength,
+  ).reduce((a, b) => a + b.perDay, 0);
 }
 
 /**
@@ -158,6 +172,8 @@ export function simulate(
   rules: InfluenceRules,
   /** Words with a bought hint: they take less hostile pressure. */
   shielded: Set<string> = new Set(),
+  /** Memory strength per word (armour, see pressureBreakdown). */
+  strength: Map<string, number> = new Map(),
 ): { game: Game; lost: StateChange[] } {
   const nodes = new Map(game.nodes);
   const st = new Map(states);
@@ -175,7 +191,7 @@ export function simulate(
     const updates: [string, number][] = [];
     for (const [id, s] of st) {
       if (s !== 'conquered') continue;
-      const rate = pressureOn(id, nodes, st, neighbours, verbLevels, t, rules, shielded);
+      const rate = pressureOn(id, nodes, st, neighbours, verbLevels, t, rules, shielded, strength);
       if (rate !== 0) updates.push([id, (nodes.get(id)?.control ?? 1) + rate * days]);
     }
     t += dt;

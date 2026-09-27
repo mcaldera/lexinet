@@ -52,9 +52,10 @@ export default function Guide({ onClose }: { onClose: () => void }) {
           <p>
             Click a <b>?</b> to claim it: say what it means. Then produce the Italian (
             {CLAIM_STEP_GAP_MS / 60_000} min later) and recall it once more (
-            {CLAIM_RECALL_GAP_MS / 60_000} min after that) to conquer it. A new word first comes as
-            multiple choice; ⚡ type it instead and, if you knew it, it skips the waits: produce it
-            straight away and it is yours.
+            {CLAIM_RECALL_GAP_MS / 60_000} min after that) to conquer it. A new word comes one of
+            two ways: ⚡ Type or ☰ Choose from four meanings (switch under the word before
+            answering; your pick sticks). Typed right at first sight, without the options showing,
+            it skips the waits: produce it straight away and it is yours.
           </p>
           <p>
             Reviews of your words sometimes fill the gap in a sentence. 🔊 says a word aloud (the
@@ -88,6 +89,15 @@ export default function Guide({ onClose }: { onClose: () => void }) {
             A miss locks the word for a minute and puts fragile claims next to it in danger for{' '}
             {DANGER_MS / 60_000} min: win it back in time or they fall. Anything lost can be won
             back with one right answer for {RECLAIM_MS / 86_400_000} days.
+          </p>
+          <p>
+            Each word shows two things. <b>Hold</b> (the bar) is today: the weaker of your memory
+            (the chance you'd recall it now) and its control on the map. It drains between reviews
+            and a right answer fills it again. <b>Memory strength</b> (the dots, and the word's size
+            on the map) is the long run: how long you'll remember it. It grows only with spaced
+            reviews, never by cramming; the more dots, the slower Hold's memory part drains, and
+            each dot takes {Math.round(INFLUENCE.strengthArmour * 100)}% off hostile pressure. Gold
+            ★ are a verb's tenses.
           </p>
           <p>Names fade letter by letter as memory weakens: practise when a word is due.</p>
           <p>

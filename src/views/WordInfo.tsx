@@ -1,11 +1,11 @@
-import { MAX_STRENGTH } from '../core/strength';
+import { MemoryDots } from './NodeDetails';
 import { PRONOUNS, TENSES, type TenseCard } from '../core/verbs';
 import type { WordNode } from '../db/repo';
 import { ExampleLine, SpeakButton } from './ReviewView';
 
 type Props = {
   word: WordNode;
-  strength: number;
+  strength: { level: number; days: number };
   /** Why the word can't be practised right now, e.g. "come back in ~2 days". */
   status: string;
   verbLevel?: number;
@@ -31,10 +31,7 @@ export default function WordInfo(props: Props) {
         </button>
       </div>
       <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
-        <span className="text-amber-300" title="Strength">
-          {'★'.repeat(strength)}
-          <span className="text-slate-700">{'★'.repeat(MAX_STRENGTH - strength)}</span>
-        </span>
+        <MemoryDots {...strength} />
         {word.pos && <span>{word.pos}</span>}
       </div>
       <p className="mt-2 text-xs text-slate-500">{status}</p>

@@ -167,3 +167,22 @@ test('a word with a bought hint takes only part of the hostile pressure', () => 
   const shielded = simulate(g2, states, nb, new Map(), t0 + 24 * H, INFLUENCE, new Set(['b']));
   expect(shielded.game.nodes.get('b')!.control).toBeGreaterThan(plain.game.nodes.get('b')!.control);
 });
+
+test('memory strength is armour: each level takes a share off hostile pressure', () => {
+  const game: Game = { simAt: t0, nodes: new Map([['c', { control: 0, since: t0 - 48 * H }]]) };
+  const states = st({ a: 'frontier', b: 'conquered', c: 'frontier' });
+  const at = (level: number) =>
+    pressureBreakdown(
+      'b',
+      game.nodes,
+      states,
+      nb,
+      new Map(),
+      t0,
+      INFLUENCE,
+      new Set(),
+      new Map([['b', level]]),
+    ).find((p) => p.id === 'c')!.perDay;
+  expect(at(0)).toBeCloseTo(-INFLUENCE.hostilePressure);
+  expect(at(5)).toBeCloseTo(-INFLUENCE.hostilePressure * (1 - 5 * INFLUENCE.strengthArmour));
+});

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { appNow } from './core/clock';
-import { newCard, rate, Rating, State, type Grade } from './core/scheduler';
+import { newCard, rate, Rating, State, type Card, type Grade } from './core/scheduler';
+import { nodeStrength } from './core/strength';
 import { tierAllows, tierMap } from './core/tiers';
 import { tenseCardId, type Tense, type TenseCard } from './core/verbs';
 import { computeProgress, computeReach, verbLevels } from './progress';
@@ -142,6 +143,13 @@ export function useSprawl() {
   const weights = useMemo(() => neighbourWeights(data?.edges ?? []), [data?.edges]);
   const [lost, setLost] = useState<LostEvent | null>(null);
   const [event, setEvent] = useState<GameEvent | null>(null);
+  /** Memory strength per word (0-5, core/strength.ts): armour against hostile pressure. */
+  const armour = useMemo(() => {
+    const byNode = new Map<string, Card[]>();
+    for (const c of data?.cards ?? [])
+      byNode.set(c.nodeId, [...(byNode.get(c.nodeId) ?? []), c.card]);
+    return new Map([...byNode].map(([id, cards]) => [id, nodeStrength(cards).level]));
+  }, [data?.cards]);
   /** Words shielded from hostile pressure: bought hints and standing landmarks' categories. */
   const shielded = useMemo(() => {
     if (!data) return new Set<string>();
@@ -254,6 +262,7 @@ export function useSprawl() {
       now.getTime(),
       INFLUENCE,
       shielded,
+      armour,
     );
     // Unfinished claims slip back after a day: finish what you start.
     const expired: StateChange[] = [];
@@ -291,7 +300,7 @@ export function useSprawl() {
           unlockedRoots: moved?.unlocked ?? d.unlockedRoots,
         },
     );
-  }, [db, data, now, weights, horizon, shielded]);
+  }, [db, data, now, weights, horizon, shielded, armour]);
 
   // A raid whose time ran out hits every word left undefended.
   useEffect(() => {

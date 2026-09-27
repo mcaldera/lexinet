@@ -441,6 +441,7 @@ export default function App() {
           now.getTime(),
           INFLUENCE,
           shielded,
+          strength,
         )
       : (weights.get(detailsWord.id) ?? [])
           .filter((n) => data.states.get(n.id) === 'conquered')
@@ -1136,7 +1137,7 @@ export default function App() {
                 <WordInfo
                   key={info.nodeId}
                   word={data.nodes.find((n) => n.id === info.nodeId)!}
-                  strength={strength.get(info.nodeId) ?? 0}
+                  strength={nodeStrength((cardsByNode.get(info.nodeId) ?? []).map((c) => c.card))}
                   status={info.status}
                   verbLevel={verbLevels.get(info.nodeId)}
                   tenseCards={data.tenseCards.filter((c) => c.nodeId === info.nodeId)}
@@ -1179,6 +1180,17 @@ export default function App() {
               state={data.states.get(detailsWord.id) ?? 'locked'}
               name={nameOf(detailsWord.id)}
               health={health.get(detailsWord.id) ?? null}
+              memory={
+                data.states.get(detailsWord.id) === 'conquered'
+                  ? {
+                      ...nodeStrength((cardsByNode.get(detailsWord.id) ?? []).map((c) => c.card)),
+                      recall: nodeHealth(
+                        (cardsByNode.get(detailsWord.id) ?? []).map((c) => c.card),
+                        now,
+                      ),
+                    }
+                  : undefined
+              }
               control={data.game.nodes.get(detailsWord.id)?.control ?? 1}
               influences={detailsInfluences}
               nameOf={nameOf}
