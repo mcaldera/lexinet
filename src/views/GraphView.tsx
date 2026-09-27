@@ -74,8 +74,10 @@ type Props = {
   strength: Map<string, number>;
   /** Verb level (tenses mastered) per conjugable verb; drawn as gold rings. */
   verbLevels: Map<string, number>;
-  /** Root hubs unlocked by naming their meaning. */
+  /** Root hubs that opened (core/roots.ts). */
   unlockedRoots: Set<string>;
+  /** Sealed root hub -> how far it is from opening (0..1), drawn as a filling ring. */
+  rootCharge?: Map<string, number>;
   /** Word id -> real time (ms) its wrong-answer lock ends. */
   cooldowns: Map<string, number>;
   /** Influence game: control (0..1) of conquered words. */
@@ -122,6 +124,7 @@ export default function GraphView({
   strength,
   verbLevels,
   unlockedRoots,
+  rootCharge,
   cooldowns,
   control,
   hostile,
@@ -647,6 +650,7 @@ export default function GraphView({
         node.id === activeId,
         inspect || unlockedRoots.has(node.id),
         inspect,
+        inspect ? undefined : rootCharge?.get(node.id),
       );
       ctx.restore();
       return;
@@ -1091,7 +1095,7 @@ export default function GraphView({
             return `💡 Hint: English cousin “${n.word.it}” · shields its word (hostile pressure halved)`;
           }
           if (n.hub && !inspect && !unlockedRoots.has(n.id)) {
-            return `${n.hub.lang ?? ''} root ${n.hub.root}: click to unlock it and reveal its words`;
+            return `${n.hub.lang ?? ''} root ${n.hub.root}: opens by itself once enough of its words are in reach, and reveals them all`;
           }
           if (n.hub) {
             const known = n.hub.words.filter((w) => !hidden(w) && shownName(w)).map(shownName);
@@ -1373,6 +1377,8 @@ function drawHub(
   unlocked: boolean,
   /** Galaxy view: a small marker, named only when zoomed in (or selected). */
   compact = false,
+  /** Sealed: how far it is from opening (0..1). */
+  charge?: number,
 ) {
   const small = compact && !active && scale < 1.6;
   const r = small ? 3.5 : 7;
@@ -1384,11 +1390,19 @@ function drawHub(
   ctx.closePath();
   ctx.fillStyle = unlocked ? 'rgba(244, 114, 182, 0.45)' : 'rgba(244, 114, 182, 0.1)';
   ctx.fill();
-  if (!unlocked) ctx.setLineDash([2, 1.5]); // sealed: name its meaning to unlock
+  if (!unlocked) ctx.setLineDash([2, 1.5]); // sealed: opens once its words are in reach
   ctx.strokeStyle = active ? '#f8fafc' : 'rgba(244, 114, 182, 0.9)';
   ctx.lineWidth = active ? 1.5 : 1;
   ctx.stroke();
   ctx.setLineDash([]);
+  if (!unlocked && charge !== undefined && !small) {
+    // Charging: the ring fills as more of its words come into reach.
+    ctx.beginPath();
+    ctx.arc(x, y, r + 3, -Math.PI / 2, -Math.PI / 2 + Math.min(1, charge) * 2 * Math.PI);
+    ctx.strokeStyle = 'rgba(244, 114, 182, 0.75)';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+  }
   if (small) return;
   const fontSize = Math.max(3, 11 / scale);
   ctx.textAlign = 'center';

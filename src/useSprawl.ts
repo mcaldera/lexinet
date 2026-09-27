@@ -17,6 +17,7 @@ import {
   HINT_COST,
   LANDMARK,
   RAID,
+  ROOTS,
 } from './config';
 import { landmarks, landmarkWords } from './core/landmark';
 import { expeditionStatus, planExpedition } from './core/expedition';
@@ -25,6 +26,7 @@ import { dayKey } from './core/streak';
 import type { Achievement } from './core/achievements';
 import type { PlantOption } from './core/plant';
 import { recedeChanges, revealChanges } from './core/reach';
+import { rootOpenings } from './core/roots';
 import { dangerFalls, missed, rescue } from './core/danger';
 import { reclaim, reclaimable, recordFalls, type Fallen } from './core/fallen';
 import {
@@ -53,7 +55,6 @@ import {
   saveMeta,
   saveReview,
   saveGame,
-  saveRootUnlock,
   saveTenseReview,
   setOffsetDays,
   syncGraph,
@@ -93,6 +94,8 @@ export type ReviewOutcome = {
   opened?: number;
   /** A lost word won back with one answer, and what it was restored to. */
   reclaimed?: Fallen;
+  /** Root hubs that opened (core/roots.ts): their names and the words they revealed. */
+  roots?: { names: string[]; revealed: number };
 };
 /** Words lost to hostile pressure in the latest simulation step. */
 export type LostEvent = { at: number; ids: string[] };
@@ -169,18 +172,48 @@ export function useSprawl() {
   /**
    * Move the horizon (core/reach.ts): hidden words the territory now reaches
    * become "?" (their grace period starts now), and untried "?" that lost their
-   * reach go back to ghosts.
+   * reach go back to ghosts. Root hubs with enough of their words in reach open
+   * (core/roots.ts) and reveal all their words, at any level.
    */
   const horizon = useCallback(
-    (states: Map<string, NodeState>, game: Game, tier: number, t: number) => {
-      if (!data) return { changes: [] as StateChange[], game, opened: 0 };
+    (
+      states: Map<string, NodeState>,
+      game: Game,
+      tier: number,
+      t: number,
+    ): {
+      changes: StateChange[];
+      game: Game;
+      opened: number;
+      /** The new set of open roots, when some opened. */
+      unlocked?: Set<string>;
+      roots?: { names: string[]; revealed: number };
+    } => {
+      if (!data) return { changes: [], game, opened: 0 };
       const claims = new Map([...game.nodes].map(([id, g]) => [id, g.claim]));
       const levels = verbLevels(data.nodes, data.tenseCards, appNow(data.offsetDays));
       const reach = computeReach(data.nodes, neighbours, states, claims, data.seed, levels);
-      const opened = revealChanges(states, reach, REACH, tierAllows(tiers, tier, home));
+      const revealed = revealChanges(states, reach, REACH, tierAllows(tiers, tier, home));
+      // A root shows on the map once one of its words is conquered; only then can it open.
+      const hubs = rootOpenings(
+        (data.graph.roots ?? []).filter((r) => r.words.some((w) => states.get(w) === 'conquered')),
+        reach,
+        data.unlockedRoots,
+        ROOTS.open,
+      );
+      const unlocked = hubs.length
+        ? new Set([...data.unlockedRoots, ...hubs.map((h) => h.id)])
+        : undefined;
+      const viaRoots = [...new Set(hubs.flatMap((h) => h.words))]
+        .filter((w) => states.get(w) === 'locked' && !revealed.some((c) => c.id === w))
+        .map((id) => ({ id, state: 'frontier' as const }));
+      const opened = [...revealed, ...viaRoots];
+      const roots = hubs.length
+        ? { names: hubs.map((h) => h.root), revealed: viaRoots.length }
+        : undefined;
       const rootWords = new Set(
         (data.graph.roots ?? [])
-          .filter((r) => data.unlockedRoots.has(r.id))
+          .filter((r) => (unlocked ?? data.unlockedRoots).has(r.id))
           .flatMap((r) => r.words),
       );
       const started = new Set(
@@ -197,11 +230,11 @@ export function useSprawl() {
           isHostile(game.nodes.get(id), 'frontier', t, INFLUENCE),
       );
       const changes = [...opened, ...receded];
-      if (!changes.length) return { changes, game, opened: 0 };
+      if (!changes.length) return { changes, game, opened: 0, unlocked, roots };
       const nodes = new Map(game.nodes);
       for (const c of opened) nodes.set(c.id, { control: 0, since: t });
       for (const c of receded) nodes.delete(c.id); // grace restarts if it comes back
-      return { changes, game: { ...game, nodes }, opened: opened.length };
+      return { changes, game: { ...game, nodes }, opened: opened.length, unlocked, roots };
     },
     [data, neighbours, tiers, home],
   );
@@ -247,8 +280,17 @@ export function useSprawl() {
     const game = moved?.game ?? remembered;
     const changes = [...fallen, ...(moved?.changes ?? [])];
     void saveGame(db, game, changes);
+    if (moved?.unlocked) void saveMeta(db, 'unlocked_roots', [...moved.unlocked]);
     if (fallen.length) setLost({ at: t, ids: fallen.map((l) => l.id) });
-    setData((d) => d && { ...d, game, states: applyChanges(d.states, changes) });
+    setData(
+      (d) =>
+        d && {
+          ...d,
+          game,
+          states: applyChanges(d.states, changes),
+          unlockedRoots: moved?.unlocked ?? d.unlockedRoots,
+        },
+    );
   }, [db, data, now, weights, horizon, shielded]);
 
   // A raid whose time ran out hits every word left undefended.
@@ -412,6 +454,7 @@ export function useSprawl() {
       await saveReview(db, row.id, card, grade, at, changes);
       if (graduated) await saveCard(db, graduated.id, graduated.card);
       await saveGame(db, game);
+      if (revealed.unlocked) await saveMeta(db, 'unlocked_roots', [...revealed.unlocked]);
       // Raids: a right answer defends a raided word; now and then a new raid strikes.
       let raid = data.raid;
       let raidEvent: GameEvent | null = null;
@@ -457,6 +500,7 @@ export function useSprawl() {
             c.id === row.id ? { ...c, card } : c.id === graduated?.id ? graduated : c,
           ),
           states: applyChanges(d.states, changes),
+          unlockedRoots: revealed.unlocked ?? d.unlockedRoots,
           firstReview,
           game,
           coins,
@@ -470,6 +514,7 @@ export function useSprawl() {
         endangered,
         claim: claimed,
         opened: revealed.opened,
+        roots: revealed.roots,
         reclaimed: success && wasWon ? wasWon : undefined,
       };
     },
@@ -514,14 +559,17 @@ export function useSprawl() {
       let changes: StateChange[] = [];
       let levelUp: LevelUp | null = null;
       let game = hit([]);
+      let unlocked: Set<string> | undefined;
       if (after > before) {
         const revealed = horizon(data.states, game, after, at.getTime());
         changes = revealed.changes;
         game = revealed.game;
+        unlocked = revealed.unlocked;
         levelUp = { tier: after, revealed: changes.length };
       }
       await saveTenseReview(db, tc, grade, at, changes);
       await saveGame(db, game);
+      if (unlocked) await saveMeta(db, 'unlocked_roots', [...unlocked]);
       setData(
         (d) =>
           d && {
@@ -529,36 +577,13 @@ export function useSprawl() {
             tenseCards,
             game,
             states: applyChanges(d.states, changes),
+            unlockedRoots: unlocked ?? d.unlockedRoots,
             activity: counted(d.activity, at),
           },
       );
       return levelUp;
     },
     [db, data, horizon],
-  );
-
-  /** Unlock a root hub: its words all become frontier (a shortcut across the map). */
-  const unlockRoot = useCallback(
-    async (hubId: string): Promise<number> => {
-      const hub = data?.graph.roots?.find((r) => r.id === hubId);
-      if (!db || !data || !hub) return 0;
-      const changes = hub.words
-        .filter((w) => data.states.get(w) === 'locked')
-        .map((id) => ({ id, state: 'frontier' as const }));
-      const unlocked = new Set(data.unlockedRoots).add(hubId);
-      const at = appNow(data.offsetDays).getTime();
-      const nodes = new Map(data.game.nodes);
-      for (const c of changes) nodes.set(c.id, { control: 0, since: at }); // grace starts now
-      const game = { ...data.game, nodes };
-      await saveRootUnlock(db, unlocked, changes);
-      await saveGame(db, game);
-      setData(
-        (d) =>
-          d && { ...d, game, unlockedRoots: unlocked, states: applyChanges(d.states, changes) },
-      );
-      return changes.length;
-    },
-    [db, data],
   );
 
   /** Record newly earned achievements and pay out their coins. */
@@ -662,7 +687,6 @@ export function useSprawl() {
     lost,
     review,
     reviewTense,
-    unlockRoot,
     earnAchievements,
     plant,
     buyHint,

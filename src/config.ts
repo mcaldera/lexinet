@@ -42,6 +42,12 @@ export const RECLAIM_MS = 3 * 24 * 3_600_000;
 /** An unfinished claim slips back to "?" after this long (app time). */
 export const CLAIM_EXPIRY_MS = 24 * 3_600_000;
 
+/**
+ * Root hubs (core/roots.ts) open by themselves once this many of their words
+ * are in reach (a word counts its reach up to 1; smaller families need all).
+ */
+export const ROOTS = { open: 3 };
+
 /** Reach (core/reach.ts): how conquered and claimed words push the horizon. */
 export const REACH = {
   /** Share of a word's push arriving 1, 2 and 3 links away. */

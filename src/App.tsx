@@ -11,6 +11,7 @@ import {
   PLANT_COST_PER_TIER,
   REACH,
   RECLAIM_MS,
+  ROOTS,
 } from './config';
 import { dangers } from './core/danger';
 import { reclaimable } from './core/fallen';
@@ -20,9 +21,10 @@ import { FULL_NAME, fadedName } from './core/fade';
 import { cohesion, isHostile, neighbourWeights, pressureBreakdown } from './core/influence';
 import { appNow } from './core/clock';
 import { nodeHealth } from './core/health';
-import { buildQueue, closest, nearby } from './core/queue';
+import { buildQueue, closest, nearby, openOrder } from './core/queue';
 import { tierAllows, tierMap, type TierProgress } from './core/tiers';
 import { pushOf, reachMap, reachSources, sightedWords } from './core/reach';
+import { rootCharge, rootNeed } from './core/roots';
 import { neighbourMap } from './core/unlock';
 import { nextDrill, TENSES, type Tense } from './core/verbs';
 import { computeProgress, reachInput, verbLevels as computeVerbLevels } from './progress';
@@ -43,7 +45,6 @@ import { dbName } from './db';
 import GraphView from './views/GraphView';
 import InspectPanel from './views/InspectPanel';
 import ReviewView from './views/ReviewView';
-import RootQuiz from './views/RootQuiz';
 import VerbDrill from './views/VerbDrill';
 import WordInfo from './views/WordInfo';
 import WaitCard from './views/WaitCard';
@@ -68,7 +69,6 @@ export default function App() {
     lost,
     review,
     reviewTense,
-    unlockRoot,
     earnAchievements,
     plant,
     buyHint,
@@ -92,7 +92,6 @@ export default function App() {
   /** Node id -> real time (ms) until which it is locked after a wrong answer. */
   const [cooldowns, setCooldowns] = useState<Map<string, number>>(new Map());
   const [notice, setNotice] = useState<string | null>(null);
-  const [rootQuiz, setRootQuiz] = useState<string | null>(null);
   /** Last word clicked or reached with the arrow keys: shown in the details panel. */
   const [selectedId, setSelectedId] = useState<string>();
   const [showVerbGoals, setShowVerbGoals] = useState(false);
@@ -127,6 +126,8 @@ export default function App() {
   /** Words revealed during this visit and not opened yet: flagged as new on the map. */
   const [fresh, setFresh] = useState<Set<string>>(new Set());
   const prevStates = useRef<Map<string, NodeState> | null>(null);
+  /** Word id -> the card whose prompt is on show, not answered yet (core/queue.openOrder). */
+  const shown = useRef(new Map<string, string>());
 
   useEffect(() => {
     if (!data) return;
@@ -352,6 +353,15 @@ export default function App() {
     [data, reach, progress],
   );
 
+  /** Charge of each sealed root: its words' reach, each up to 1 (core/roots.ts). */
+  const rootCharges = useMemo(
+    () =>
+      data
+        ? rootCharge(data.graph.roots ?? [], reach, data.unlockedRoots)
+        : new Map<string, number>(),
+    [data, reach],
+  );
+
   const queue = useMemo(() => {
     if (!data) return [];
     // Words being conquered only offer the card of their open claim step.
@@ -407,16 +417,13 @@ export default function App() {
   const panelId =
     planting ??
     waitOn?.nodeId ??
-    (activeDrill && !rootQuiz ? activeDrill.nodeId : undefined) ??
-    (info && !rootQuiz ? info.nodeId : undefined) ??
-    rootQuiz ??
+    activeDrill?.nodeId ??
+    info?.nodeId ??
     current?.nodeId ??
     selectedId;
   // The word whose Italian name is the answer being asked: hidden everywhere meanwhile.
   const answerId =
-    !waitOn && !activeDrill && !info && !rootQuiz && current?.direction === 'en-it'
-      ? current.nodeId
-      : undefined;
+    !waitOn && !activeDrill && !info && current?.direction === 'en-it' ? current.nodeId : undefined;
   const nameOf = (id: string) => {
     if (data.states.get(id) !== 'conquered' || id === answerId) return '';
     const w = data.nodes.find((n) => n.id === id);
@@ -559,6 +566,7 @@ export default function App() {
   const onRate = async (row: CardRow, grade: Grade, typed = true) => {
     const firstSight = unseen(cardsByNode.get(row.nodeId) ?? []);
     const outcome = await review(row, grade, typed);
+    shown.current.delete(row.nodeId);
     if (outcome.levelUp) setLevelUp(outcome.levelUp);
     sfx(
       grade === Rating.Again
@@ -586,6 +594,10 @@ export default function App() {
       setWaitOn({ nodeId: row.nodeId, reason: 'locked', note: firstSight ? 'new' : 'missed' });
       return;
     }
+    if (outcome.roots) {
+      setNotice(`⬢ ${outcome.roots.names.join(', ')} opened · +${outcome.roots.revealed} ?`);
+      setTimeout(() => sfx('conquer'), 450);
+    }
     const opened = outcome.opened && !outcome.levelUp ? `+${outcome.opened} ?` : '';
     const said = outcome.reclaimed
       ? 'Won back'
@@ -594,7 +606,7 @@ export default function App() {
         : outcome.claim
           ? claimNotice(outcome.claim, appNow(data.offsetDays).getTime())
           : '';
-    if (said || opened) setNotice([said, opened].filter(Boolean).join(' · '));
+    if ((said || opened) && !outcome.roots) setNotice([said, opened].filter(Boolean).join(' · '));
     setSession((s) => {
       if (!s) return s;
       const rest = s.cardIds.filter((id) => id !== row.id);
@@ -661,17 +673,24 @@ export default function App() {
       message: `${w.note === 'new' ? 'New word · ' : ''}back in ${left} s`,
       progress: 1 - (left * 1000) / COOLDOWN_MS,
     };
-    if (w.reason === 'root') {
-      if (hub && data.unlockedRoots.has(hub.id)) {
+    if (w.reason === 'root' && hub) {
+      const english = hub.english?.length ? ` · ≈ ${hub.english.join(', ')}` : '';
+      if (data.unlockedRoots.has(hub.id)) {
         return {
           ...base,
           tone: 'info' as const,
-          message: `“${hub.meaning}”${hub.english?.length ? ` · ${hub.english.join(', ')}` : ''}`,
+          message: `${hub.meaning ? `“${hub.meaning}”` : ''}${english}`,
         };
       }
-      return left > 0
-        ? locked
-        : { ...base, tone: 'waiting' as const, message: '', action: retry('Name its meaning') };
+      // Sealed: it opens by itself once enough of its words are in reach (core/roots.ts).
+      const need = rootNeed(hub, ROOTS.open);
+      const charge = rootCharges.get(hub.id) ?? 0;
+      return {
+        ...base,
+        tone: 'reach' as const,
+        message: `Opens with ${need} of its ${hub.words.length} words in reach`,
+        progress: charge / need,
+      };
     }
     if (w.reason === 'reach') {
       const r = sighted.get(w.nodeId);
@@ -731,17 +750,8 @@ export default function App() {
     if (verbDrill && verbDrill.nodeId !== nodeId) setVerbDrill(null);
     setSelectedId(nodeId);
     if (fresh.has(nodeId)) setFresh((f) => new Set([...f].filter((id) => id !== nodeId)));
-    const hub = data.graph.roots?.find((r) => r.id === nodeId);
-    if (hub) {
-      const until = cooldowns.get(nodeId);
-      if (data.unlockedRoots.has(nodeId) || (until && until > appMs())) {
-        wait({ nodeId, reason: 'root' });
-      } else {
-        setSession(null);
-        setRootQuiz(nodeId);
-      }
-      return;
-    }
+    // A root isn't asked: it opens by itself (core/roots.ts). The card says how far it is.
+    if (data.graph.roots?.some((r) => r.id === nodeId)) return wait({ nodeId, reason: 'root' });
     if (sighted.has(nodeId)) return wait({ nodeId, reason: 'reach' });
     if (!data.states.has(nodeId) || data.states.get(nodeId) === 'locked') return; // roots, hidden
     const until = cooldowns.get(nodeId);
@@ -753,8 +763,12 @@ export default function App() {
       const next = claimNext(claim, CLAIM_GAPS);
       if (!next) return;
       if (next.opensAt > appMs()) return wait({ nodeId, reason: 'claim' });
-      const dir = next.directions[Math.floor(Math.random() * next.directions.length)];
-      setSession({ nodeId, cardIds: [cardId(nodeId, dir)], mode: 'conquer' });
+      // Either way at step 3, but once a prompt is on show it stays (no peeking by reclicking).
+      const dirs = next.directions.map((d) => ({ id: cardId(nodeId, d), nodeId }));
+      const pick =
+        dirs.find((c) => c.id === shown.current.get(nodeId)) ??
+        dirs[Math.floor(Math.random() * dirs.length)];
+      setSession({ nodeId, cardIds: [pick.id], mode: 'conquer' });
       setTurn((t) => t + 1);
       return;
     }
@@ -802,11 +816,15 @@ export default function App() {
       });
       return;
     }
-    // Only what is actually due (in random order); a fading word that isn't
-    // due yet is defended with its weakest card. Asking the other, not-due
-    // direction right after felt like the same question again.
+    // Only what is actually due; a fading word that isn't due yet is defended
+    // with its weakest card. Asking the other, not-due direction right after
+    // felt like the same question again. The order is fixed (openOrder): a
+    // reshuffle on every click let you peek at the answer.
     const own = cardsByNode.get(nodeId) ?? [];
-    const due = own.filter((c) => c.card.due <= now).sort(() => Math.random() - 0.5);
+    const due = openOrder(
+      own.filter((c) => c.card.due <= now),
+      shown.current.get(nodeId),
+    );
     const weakest = [...own].sort(
       (a, b) => (retrievability(a.card, now) ?? 0) - (retrievability(b.card, now) ?? 0),
     )[0];
@@ -994,6 +1012,14 @@ export default function App() {
               )
             }
             unlockedRoots={data.unlockedRoots}
+            rootCharge={
+              new Map(
+                [...rootCharges].map(([id, c]) => {
+                  const hub = data.graph.roots!.find((r) => r.id === id)!;
+                  return [id, c / rootNeed(hub, ROOTS.open)] as const;
+                }),
+              )
+            }
             cooldowns={cooldowns}
             inspect={inspect}
             showRoots={showRoots}
@@ -1070,7 +1096,7 @@ export default function App() {
                   {...waitCard(waitOn)}
                   onClose={() => setWaitOn(null)}
                 />
-              ) : activeDrill && !rootQuiz ? (
+              ) : activeDrill ? (
                 <VerbDrill
                   key={`${activeDrill.nodeId}:${activeDrill.tense}:${turn}`}
                   word={data.nodes.find((n) => n.id === activeDrill.nodeId)!}
@@ -1106,7 +1132,7 @@ export default function App() {
                     }
                   }}
                 />
-              ) : info && !rootQuiz && data.nodes.some((n) => n.id === info.nodeId) ? (
+              ) : info && data.nodes.some((n) => n.id === info.nodeId) ? (
                 <WordInfo
                   key={info.nodeId}
                   word={data.nodes.find((n) => n.id === info.nodeId)!}
@@ -1116,29 +1142,10 @@ export default function App() {
                   tenseCards={data.tenseCards.filter((c) => c.nodeId === info.nodeId)}
                   onClose={() => setInfo(null)}
                 />
-              ) : rootQuiz && data.graph.roots?.some((r) => r.id === rootQuiz) ? (
-                <RootQuiz
-                  key={rootQuiz}
-                  data={data}
-                  hub={data.graph.roots.find((r) => r.id === rootQuiz)!}
-                  onCancel={() => setRootQuiz(null)}
-                  onDone={async (correct) => {
-                    const id = rootQuiz;
-                    setRootQuiz(null);
-                    if (correct) {
-                      const n = await unlockRoot(id);
-                      sfx('conquer');
-                      setNotice(`⬢ unlocked${n ? ` · +${n} ?` : ''}`);
-                    } else {
-                      setCooldowns((m) => new Map(m).set(id, appMs() + COOLDOWN_MS));
-                      setWaitOn({ nodeId: id, reason: 'root' });
-                      sfx('miss');
-                    }
-                  }}
-                />
               ) : (
                 <ReviewView
                   key={turn}
+                  onShow={(row) => shown.current.set(row.nodeId, row.id)}
                   data={data}
                   current={current}
                   mode={mode}

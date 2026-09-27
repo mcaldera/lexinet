@@ -34,6 +34,8 @@ type Props = {
   /** `typed`: false when the answer was picked from choices (no fast track). */
   onRate: (row: CardRow, grade: Grade, typed: boolean) => Promise<void>;
   onCancel: () => void;
+  /** A card's prompt is on screen (reopening the word must not switch direction). */
+  onShow?: (row: CardRow) => void;
 };
 
 export default function ReviewView(props: Props) {
@@ -60,6 +62,11 @@ export default function ReviewView(props: Props) {
   );
   const [choosing, setChoosing] = useState(!!choices);
   const [picked, setPicked] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (current) props.onShow?.(current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current?.id]);
 
   // Italian on screen is said aloud (never the answer before it's revealed).
   useEffect(() => {

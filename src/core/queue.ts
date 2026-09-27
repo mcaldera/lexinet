@@ -40,11 +40,49 @@ export function buildQueue<T extends QueueCard>(input: QueueInput<T>): T[] {
 
   // The second direction of a started word comes before relearning, so English ->
   // Italian cards don't get stuck behind a stream of Italian -> English retries.
-  const queue = [...reviews, ...fresh, ...learning];
+  const queue = productionFirst([...reviews, ...fresh, ...learning]);
   if (input.lastCardId && queue.length > 1 && queue[0].id === input.lastCardId) {
     queue.push(queue.shift()!);
   }
   return queue;
+}
+
+const producing = (c: { id: string }) => c.id.endsWith(':en-it');
+
+/**
+ * When both directions of a word are waiting, English -> Italian goes first:
+ * the other way round, the Italian prompt would give its answer away.
+ */
+export function productionFirst<T extends { id: string; nodeId: string }>(cards: T[]): T[] {
+  const production = new Map(cards.filter(producing).map((c) => [c.nodeId, c]));
+  const out: T[] = [];
+  const done = new Set<T>();
+  for (const c of cards) {
+    if (done.has(c)) continue;
+    const p = production.get(c.nodeId);
+    if (p && !done.has(p)) {
+      out.push(p);
+      done.add(p);
+    }
+    if (!done.has(c)) out.push(c);
+    done.add(c);
+  }
+  return out;
+}
+
+/**
+ * The order to ask a word's cards in when it's opened: a card whose prompt is
+ * already on show (`shownId`) stays first, so reopening the word can't switch
+ * to the other direction and reveal the answer; then English -> Italian.
+ */
+export function openOrder<T extends { id: string; nodeId: string }>(
+  cards: T[],
+  shownId?: string,
+): T[] {
+  const ordered = productionFirst(cards);
+  const shown = ordered.findIndex((c) => c.id === shownId);
+  if (shown > 0) ordered.unshift(...ordered.splice(shown, 1));
+  return ordered;
 }
 
 /**

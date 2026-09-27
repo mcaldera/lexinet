@@ -12,6 +12,7 @@ import {
   INFLUENCE,
   PLANT_COST,
   RECLAIM_MS,
+  ROOTS,
 } from '../config';
 import { BAND_COLOR, REASON_LABEL, REASON_RGB } from './visuals';
 
@@ -69,6 +70,11 @@ export default function Guide({ onClose }: { onClose: () => void }) {
           <p>
             Won words push the horizon: words close enough appear as ghosts, then as <b>?</b>. Verbs
             push further, adjectives less; a familiar category carries further.
+          </p>
+          <p>
+            ⬢ A shared root appears once you conquer one of its words. It charges as more of its
+            words come into reach and opens by itself at {ROOTS.open} (all of a smaller family):
+            then every word of the family becomes a <b>?</b>, wherever it lies and at any level.
           </p>
         </Section>
 

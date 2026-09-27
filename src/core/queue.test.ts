@@ -1,5 +1,5 @@
 import { appNow } from './clock';
-import { buildQueue, closest, nearby, type QueueCard } from './queue';
+import { buildQueue, closest, nearby, openOrder, productionFirst, type QueueCard } from './queue';
 import { cardId, newCard, rate, Rating, type Direction } from './scheduler';
 import type { NodeState } from './unlock';
 
@@ -131,4 +131,21 @@ test('closest: the nearest candidate, penalties added to the distance', () => {
       ]),
     ),
   ).toBe('d');
+});
+
+describe('productionFirst / openOrder', () => {
+  const c = (node: string, dir: Direction) => ({ id: cardId(node, dir), nodeId: node });
+
+  it('asks English -> Italian before Italian -> English of the same word', () => {
+    const order = productionFirst([c('a', 'it-en'), c('b', 'it-en'), c('a', 'en-it')]);
+    expect(order.map((x) => x.id)).toEqual(['a:en-it', 'a:it-en', 'b:it-en']);
+  });
+
+  it('keeps a card whose prompt is already shown first, whatever the order', () => {
+    const cards = [c('a', 'en-it'), c('a', 'it-en')];
+    expect(openOrder(cards, 'a:it-en')[0].id).toBe('a:it-en');
+    expect(openOrder(cards)[0].id).toBe('a:en-it');
+    // Opening the same word again gives the same card (no reshuffling).
+    expect(openOrder(cards)[0].id).toBe(openOrder([...cards].reverse())[0].id);
+  });
 });
