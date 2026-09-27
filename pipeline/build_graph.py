@@ -338,13 +338,50 @@ def theme_edges(
     return out
 
 
-def pick_cognate(italian: str, english_words: list[str]) -> str | None:
+# A cousin has to evoke the meaning too: "panzer" looks like pancia (both from
+# Latin pantex) but says nothing about a belly, and "test" says nothing about a head.
+COGNATE_MIN_RELATED = 0.18
+# English words shown on a root hub must relate to the root or one of its words.
+HUB_MIN_RELATED = 0.2
+
+Related = Callable[[str, str], float]
+
+
+def gloss_head(english: str) -> str:
+    """The first meaning of a gloss, bare: "to hold / to keep" -> "hold"."""
+    head = re.split(r"[/,;(]", english)[0].strip()
+    return EN_PREFIX_RE.sub("", head).strip().lower()
+
+
+def relatedness(embed: Embedder, texts: set[str]) -> Related:
+    """Cosine similarity between any two of `texts` (0 for unknown ones)."""
+    keys = sorted({t.lower() for t in texts if t})
+    if not keys:
+        return lambda a, b: 0.0
+    vecs = np.asarray(embed(keys), dtype=float)
+    vecs = vecs / (np.linalg.norm(vecs, axis=1, keepdims=True) + 1e-9)
+    at = {k: i for i, k in enumerate(keys)}
+
+    def related(a: str, b: str) -> float:
+        i, j = at.get(a.lower()), at.get(b.lower())
+        return 0.0 if i is None or j is None else float(vecs[i] @ vecs[j])
+
+    return related
+
+
+def pick_cognate(
+    italian: str,
+    english_words: list[str],
+    gloss: str | None = None,
+    related: Related | None = None,
+) -> str | None:
     """The English descendant of a word's root that looks most like the word
     itself (pane -> pantry, sorella -> sorority): a memorable cousin, or None.
 
     A hint has to look like the word: clearly similar overall, or starting the
     same and fairly similar. Precision over coverage (prosciutto -> paramount
-    shares a root family entry but helps nobody).
+    shares a root family entry but helps nobody). With `related`, it also has
+    to relate to the meaning (`gloss`) without being the meaning itself.
     """
     it = lemma(italian)
 
@@ -356,7 +393,79 @@ def pick_cognate(italian: str, english_words: list[str]) -> str | None:
         for w in english_words
         if score(w) >= 0.6 or (score(w) >= 0.4 and w.lower()[:2] == it[:2])
     ]
-    return max(good, key=score, default=None)
+    if related is None or not gloss:
+        return max(good, key=score, default=None)
+    head = gloss_head(gloss)
+    good = [w for w in good if w.lower() != head and related(w, head) >= COGNATE_MIN_RELATED]
+    return max(good, key=lambda w: related(w, head) + 0.5 * score(w), default=None)
+
+
+def add_cognates(
+    nodes: list[dict],
+    english: Callable[[str], list[str]],
+    embed: Embedder | None = None,
+    only: Callable[[dict], bool] = lambda node: not node.get("cognate"),
+) -> None:
+    """Words with a root get the root's best English cousin (bought as a hint in
+    the app). `only` picks the words to (re)do; `embed` adds the meaning check."""
+    todo = [(node, english(node["root"])) for node in nodes if node.get("root") and only(node)]
+    related = (
+        relatedness(embed, {gloss_head(n["en"]) for n, _ in todo} | {w for _, ws in todo for w in ws})
+        if embed
+        else None
+    )
+    for node, words in todo:
+        cousin = pick_cognate(node["it"], words, node["en"], related)
+        node["cognate"] = cousin
+        node["cognate_note"] = (
+            f"shares the {node.get('root_lang') or ''} root {node['root']}".replace("  ", " ") if cousin else None
+        )
+
+
+def root_hubs(
+    nodes: list[dict],
+    english: Callable[[str], list[str]] | None = None,
+    embed: Embedder | None = None,
+) -> list[dict]:
+    """Roots shared by 2+ words become hub nodes in the app ("descends from" links),
+    with English words from the same root: the words' own cousins first, then
+    common English derivatives from Wiktionary (see english_roots.py) that relate
+    to the root's meaning or one of its words."""
+    by_root: dict[str, list[dict]] = {}
+    for node in nodes:
+        if node.get("root"):
+            by_root.setdefault(root_key(node["root"]), []).append(node)
+    families = [m for m in by_root.values() if len(m) >= 2]
+    found = {m[0]["root"]: english(m[0]["root"]) if english else [] for m in families}
+    related = None
+    if embed and english:
+        texts = {w for ws in found.values() for w in ws}
+        texts |= {gloss_head(n["en"]) for m in families for n in m}
+        texts |= {gloss_head(m[0].get("root_meaning") or "") for m in families}
+        related = relatedness(embed, texts)
+
+    def fits(w: str, members: list[dict]) -> bool:
+        if related is None:
+            return True
+        heads = [gloss_head(members[0].get("root_meaning") or "")] + [gloss_head(n["en"]) for n in members]
+        return max(related(w, h) for h in heads if h) >= HUB_MIN_RELATED
+
+    return [
+        {
+            "id": f"root:{slug(m[0]['root'])}",
+            "root": m[0]["root"],
+            "lang": m[0].get("root_lang") or None,
+            "meaning": m[0].get("root_meaning") or None,
+            "words": [n["id"] for n in m],
+            "english": list(
+                dict.fromkeys(
+                    [n["cognate"] for n in m if n.get("cognate")]
+                    + [w for w in found[m[0]["root"]] if fits(w, m)]
+                )
+            )[:6],
+        }
+        for m in families
+    ]
 
 
 def build_graph(
@@ -465,38 +574,10 @@ def build_graph(
         for i, r in enumerate(df.itertuples(index=False))
     ]
     # Words with a known root but no curated English cousin get the root's most
-    # similar English descendant (bought as a hint in the app).
+    # similar English descendant that relates to the meaning (a hint in the app).
     if english:
-        for node in nodes:
-            if node.get("root") and not node.get("cognate"):
-                cousin = pick_cognate(node["it"], english(node["root"]))
-                if cousin:
-                    node["cognate"] = cousin
-                    node["cognate_note"] = f"shares the {node.get('root_lang') or ''} root {node['root']}".replace("  ", " ")
-    # Roots shared by 2+ words become hub nodes in the app ("descends from" links).
-    by_root: dict[str, list[int]] = {}
-    for i, r in enumerate(df["root"]):
-        if r:
-            by_root.setdefault(root_key(r), []).append(i)
-    roots = [
-        {
-            "id": f"root:{slug(df['root'][members[0]])}",
-            "root": df["root"][members[0]],
-            "lang": df["root_lang"][members[0]] or None,
-            "meaning": df["root_meaning"][members[0]] or None,
-            "words": [ids[i] for i in members],
-            # English words from the same root: the word list's own cognates first,
-            # then common English derivatives from Wiktionary (see english_roots.py).
-            "english": list(
-                dict.fromkeys(
-                    [df["cognate"][i] for i in members if df["cognate"][i]]
-                    + (english(df["root"][members[0]]) if english else [])
-                )
-            )[:6],
-        }
-        for members in by_root.values()
-        if len(members) >= 2
-    ]
+        add_cognates(nodes, english, embed)
+    roots = root_hubs(nodes, english, embed)
 
     # Verbs get conjugation tables: each tense is a level to earn (see conjugate.py).
     if conjugate:

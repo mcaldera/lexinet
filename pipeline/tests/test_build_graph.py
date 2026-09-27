@@ -184,8 +184,9 @@ def test_shared_roots_become_hub_entries(df):
 
 
 def test_root_english_examples_merge_cognates_and_lookup(df):
-    graph = bg.build_graph(df, fake_embedder, english=lambda root: ["parable", "parole"])
-    assert graph["roots"][0]["english"] == ["parley", "parable", "parole"]
+    graph = bg.build_graph(df, fake_embedder, english=lambda root: ["parable", "parole", "free speech"])
+    # "parole" says nothing about speech or its words: left out.
+    assert graph["roots"][0]["english"] == ["parley", "parable", "free speech"]
 
 
 def test_every_word_gets_map_position_and_region(df):
@@ -231,6 +232,16 @@ def test_pick_cognate_prefers_the_lookalike_descendant():
     assert bg.pick_cognate("il prosciutto", ["paramount"]) is None  # no help as a hint
     assert bg.pick_cognate("avere", ["behavior"]) is None
     assert bg.pick_cognate("il cane", []) is None
+
+
+def test_pick_cognate_needs_a_cousin_that_evokes_the_meaning():
+    related = bg.relatedness(fake_embedder, {"stomach", "panzer", "paunch stomach", "head", "test"})
+    assert bg.pick_cognate("la pancia", ["panzer"], "stomach", related) is None
+    assert bg.pick_cognate("la pancia", ["panzer", "paunch stomach"], "stomach", related) == "paunch stomach"
+    assert bg.pick_cognate("la testa", ["test"], "head", related) is None
+    # The meaning itself is no hint.
+    assert bg.pick_cognate("la testa", ["head"], "head", bg.relatedness(fake_embedder, {"head"})) is None
+    assert bg.gloss_head("to hold / to keep") == "hold"
 
 
 def test_untagged_words_that_fit_nowhere_stay_independent(df):
