@@ -10,7 +10,7 @@ export const GRAPH_NAMES = Object.keys(loaders).map(nameOf).sort();
 
 const LABELS: Record<string, string> = {
   default: 'My words',
-  oic: 'Online Italian Club',
+  oic: 'Italian vocabulary',
   '1000': '1000 frequent words',
 };
 export const graphLabel = (name: string) => LABELS[name] ?? `${name} words`;

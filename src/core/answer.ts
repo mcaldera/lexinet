@@ -79,9 +79,11 @@ function checkItalian(input: string, expected: string): AnswerCheck {
 function checkEnglish(input: string, expected: string): AnswerCheck {
   const core = (s: string) => s.replace(EN_PREFIX, '');
   const a = core(input);
-  // Glosses may list alternatives: "to look at / to watch".
+  // Glosses may list alternatives ("to look at / to watch") and carry notes
+  // that need not be typed ("clubs (card suit)", "to spend (time)").
   const options = expected
     .split(/\s*[/;,]\s*/)
+    .flatMap((o) => [o, o.replace(/\s*\([^)]*\)\s*/g, ' ').trim()])
     .map(core)
     .filter(Boolean);
   if (options.includes(a)) return result('correct');

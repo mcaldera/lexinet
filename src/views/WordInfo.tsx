@@ -24,6 +24,7 @@ export default function WordInfo(props: Props) {
           <div className="flex items-center gap-2 text-2xl font-medium">
             {word.it} <SpeakButton text={word.it} />
           </div>
+          {word.pl && <div className="text-xs text-slate-500">pl. {word.pl}</div>}
           <div className="text-slate-300">{word.en}</div>
         </div>
         <button className="text-xs text-slate-500 hover:text-slate-200" onClick={onClose}>

@@ -13,3 +13,5 @@ data/words_oic.csv
 data/graph_oic.json
 data/fixes_oic.csv
 data/review_oic.csv
+data/vocab/
+data/sources/

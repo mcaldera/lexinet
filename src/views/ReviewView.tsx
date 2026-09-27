@@ -107,6 +107,13 @@ export default function ReviewView(props: Props) {
       const inGap = checkAnswer(typed, word.example!.blank, 'it');
       if (inGap.verdict !== 'wrong') result = inGap;
     }
+    if (result.verdict === 'wrong' && toItalian && word.pl) {
+      // The plural is the same word: close, but we asked for the singular.
+      const plural = checkAnswer(typed, word.pl, 'it');
+      if (plural.verdict !== 'wrong') {
+        return setCheck({ verdict: 'almost', grade: Rating.Hard, notes: [`Singular: ${word.it}`] });
+      }
+    }
     if (result.verdict === 'wrong' && toItalian) {
       // Another word with the same English gloss is a valid answer too.
       const same = data.nodes.find(
@@ -320,6 +327,9 @@ export default function ReviewView(props: Props) {
                 </div>
                 <div className="mt-0.5 flex items-center gap-2 text-xl text-slate-100">
                   {answer}
+                  {word.pl && toItalian && (
+                    <span className="text-sm text-slate-400">· pl. {word.pl}</span>
+                  )}
                   <SpeakButton text={word.it} />
                 </div>
               </div>

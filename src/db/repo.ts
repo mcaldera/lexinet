@@ -48,6 +48,8 @@ export type WordNode = {
   region?: number | null;
   /** Verbs only: six persons per tense (see pipeline/conjugate.py). */
   conjugations?: Record<string, string[]>;
+  /** Nouns: the plural ("gli occhi"), accepted as an answer and shown with the word. */
+  pl?: string | null;
 };
 /** A territory on the map: a community of closely linked words. */
 export type Region = { id: number; name: string; color: number; words: string[] };
@@ -62,7 +64,8 @@ export type Edge = {
    * theme: keeps a category in one piece (per-category tree or a lenient
    * in-category link). user: planted by the player (stored in meta, not the graph).
    */
-  via?: 'tree' | 'bonus' | 'theme' | 'user';
+  /** How the pipeline chose the link (build_vocab.py), or `user` for a planted one. */
+  via?: 'tree' | 'bonus' | 'theme' | 'family' | 'bridge' | 'manual' | 'user';
 };
 /** A root shared by 2+ words, drawn as a hub node linked to its descendants. */
 export type RootHub = {

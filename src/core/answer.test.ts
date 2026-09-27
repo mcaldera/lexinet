@@ -59,3 +59,10 @@ test('root meanings accept a matching content word', () => {
   expect(checkMeaning('the sea', 'to cook').verdict).toBe('wrong');
   expect(checkMeaning('for', 'provisions for a journey').verdict).toBe('wrong');
 });
+
+test('notes in brackets need not be typed', () => {
+  expect(en('clubs', 'clubs (card suit)').verdict).toBe('correct');
+  expect(en('to spend', 'to spend (time)').verdict).toBe('correct');
+  expect(en('clubs (card suit)', 'clubs (card suit)').verdict).toBe('correct');
+  expect(en('table', 'table (for eating)').verdict).toBe('correct');
+});
