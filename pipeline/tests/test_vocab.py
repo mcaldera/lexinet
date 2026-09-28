@@ -128,6 +128,13 @@ def test_male_and_female_pairs_share_their_links():
     assert pair[at["il figliastro"]] == at["la figliastra"]  # stepson / stepdaughter
     assert pair[at["il cugino"]] == at["la cugina"]  # same English, Italian -o / -a
     assert at["il caso"] not in pair  # la casa is in the list, but "case" isn't "house"
+    kids = [
+        {"it": "il bambino", "en": "child / little boy", "pos": "noun", "cat": "people", "level": "A1"},
+        {"it": "la bambina", "en": "little girl", "pos": "noun", "cat": "people", "level": "A1"},
+        {"it": "il ragazzino", "en": "little boy / kid", "pos": "noun", "cat": "people", "level": "A2"},
+    ]
+    kp = bv.counterparts(kids, np.zeros((3, 3)))
+    assert kp[0] == 1  # ending and meaning together beat a meaning alone
     links = pairs(g)
     assert frozenset(("il-figlio", "la-figlia")) in links
     # Whatever la figlia links to in its category, il figlio links to the counterpart.

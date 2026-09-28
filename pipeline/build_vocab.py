@@ -116,33 +116,47 @@ GENDER_RE = re.compile("|".join(sorted(GENDER_SWAP, key=len, reverse=True)))
 IT_GENDER = [("o", "a"), ("e", "a"), ("tore", "trice"), ("e", "essa")]
 
 
-def gender_swap(en: str) -> str:
-    return GENDER_RE.sub(lambda m: GENDER_SWAP[m.group(0)], head(en).lower())
+def meanings(en: str) -> set[str]:
+    """Every meaning of a gloss, bare: "child / little boy" -> {"child", "little boy"}."""
+    return {head(m).lower() for m in en.split("/") if head(m)}
+
+
+def gender_swap(meaning: str) -> str:
+    return GENDER_RE.sub(lambda m: GENDER_SWAP[m.group(0)], meaning)
 
 
 def counterparts(words: list[dict], sem: np.ndarray) -> dict[int, int]:
     """Male/female pairs in one category (il figlio / la figlia, la madre / il
     padre), both ways. Their links are mirrored so a pair reads the same on the
-    map. By Italian ending only when English says the same ("cousin"): il pasto
-    / la pasta or il caso / la casa are different words, not a pair."""
-    by_head: dict[tuple[str, str, str], list[int]] = {}
+    map. Evidence: a meaning that swaps into one of the other's ("little boy" ->
+    "little girl"), and an Italian ending pair (-o / -a) with the same main
+    meaning or a swapped one; both together win (il bambino "child / little boy" pairs
+    with la bambina "little girl", not il ragazzino "little boy"). An ending
+    alone is no pair: il pasto / la pasta, il raccolto "harvest" / la raccolta
+    "collection"."""
+    mean = [meanings(w["en"]) for w in words]
+    swapped = [{gender_swap(m) for m in ms} - ms for ms in mean]
+    by_cat: dict[tuple[str, str], list[int]] = {}
     for i, w in enumerate(words):
-        by_head.setdefault((w["cat"], w["pos"], head(w["en"]).lower()), []).append(i)
-    by_lemma = {(w["cat"], w["pos"], V.lemma(w["it"])): i for i, w in enumerate(words)}
+        if w["pos"] in ("noun", "adj"):
+            by_cat.setdefault((w["cat"], w["pos"]), []).append(i)
+
+    def ending_pair(a: str, b: str) -> bool:
+        return any(
+            a.endswith(m) and len(a) > len(m) + 2 and b == a[: -len(m)] + f for m, f in IT_GENDER
+        )
+
     found: list[tuple[float, int, int]] = []
-    for i, w in enumerate(words):
-        if w["pos"] not in ("noun", "adj"):
-            continue
-        swapped = gender_swap(w["en"])
-        if swapped != head(w["en"]).lower():
-            for j in by_head.get((w["cat"], w["pos"], swapped), []):
-                found.append((1.0 + sem[i, j], i, j))
-        lem = V.lemma(w["it"])
-        for m, f in IT_GENDER:
-            if lem.endswith(m) and len(lem) > len(m) + 2:
-                j = by_lemma.get((w["cat"], w["pos"], lem[: -len(m)] + f))
-                if j is not None and j != i and head(words[j]["en"]) == head(w["en"]):
-                    found.append((0.5 + sem[i, j], i, j))
+    for idx in by_cat.values():
+        for i in idx:
+            for j in idx:
+                if i == j:
+                    continue
+                english = bool(swapped[i] & mean[j])
+                ending = ending_pair(V.lemma(words[i]["it"]), V.lemma(words[j]["it"]))
+                same = head(words[i]["en"]) == head(words[j]["en"])  # main meaning, "cousin"
+                if english or (ending and same):
+                    found.append((english + ending + sem[i, j], i, j))
     pair: dict[int, int] = {}
     for _, i, j in sorted(found, reverse=True):
         if i not in pair and j not in pair:
@@ -243,14 +257,17 @@ def build(words: list[dict], embed: bg.Embedder, ranks: dict[str, int], verb_for
     for i, j in pair.items():
         if i < j:
             add(i, j, "family" if fam[i, j] else "theme")
-    # A link to a word without a counterpart is shared only inside the category:
-    # la sorella's root link to la suora is hers alone (il fratello - la suora no).
+    # A family link to a word without a counterpart is not shared: la sorella's
+    # root link to la suora is hers alone (il fratello - la suora no). Meaning
+    # links are (il bambino - il genitore, so la bambina - il genitore), unless
+    # that word is gendered itself (la figlia - la signorina "miss / young lady").
+    gendered = [any(t in GENDER_SWAP for m in meanings(w["en"]) for t in re.findall(r"[a-z]+", m)) for w in words]
     for (i, j), via in list(chosen.items()):
         for a, b in ((i, j), (j, i)):
             if a in pair and pair[a] != b:
                 if b in pair:
                     add(pair[a], pair[b], via)
-                elif via in ("tree", "theme") and cat[a] == cat[b]:
+                elif via != "family" and not gendered[b]:
                     add(pair[a], b, via)
 
     # 4. One map: join categories by their best low-level bridges.
