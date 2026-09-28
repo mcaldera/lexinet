@@ -1,4 +1,4 @@
-import { fadedName } from './fade';
+import { fadedName, hintedName } from './fade';
 
 test('healthy and unreviewed words keep their full name', () => {
   expect(fadedName('la famiglia', 0.95)).toBe('la famiglia');
@@ -21,4 +21,13 @@ test('letters erode gradually and stably as health falls', () => {
 test('badly faded words lose their name entirely', () => {
   expect(fadedName('la famiglia', 0.5)).toBe('');
   expect(fadedName('la famiglia', 0.2)).toBe('');
+});
+
+test('a word about to be asked into Italian shows only a few letters', () => {
+  const name = hintedName('il marito', null, true);
+  const shown = [...name].filter((c) => /\p{L}/u.test(c)).length;
+  expect(shown).toBeGreaterThan(0);
+  expect(shown).toBeLessThan(4);
+  expect(hintedName('il marito', 0.3, true)).toBe(''); // fading further still wins
+  expect(hintedName('il marito', 0.95, false)).toBe('il marito');
 });

@@ -29,3 +29,14 @@ export function fadedName(word: string, health: number | null): string {
   const hidden = new Set(order.slice(0, Math.round(order.length * (1 - keep))));
   return [...word].map((ch, i) => (hidden.has(i) ? '·' : ch)).join('');
 }
+
+/**
+ * Health a name is shown at while the word waits to be asked into Italian (an
+ * en→it card due, or a raid): about a third of its letters, a nudge, not the answer.
+ */
+export const RECALL_NAME = 0.62;
+
+/** The name as the map may show it: eroded further when it is about to be the answer. */
+export function hintedName(word: string, health: number | null, recall: boolean): string {
+  return fadedName(word, recall ? Math.min(health ?? 1, RECALL_NAME) : health);
+}

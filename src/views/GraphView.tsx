@@ -7,7 +7,7 @@ import ForceGraph2D, {
 } from 'react-force-graph-2d';
 import { COOLDOWN_MS, DANGER_MS, INFLUENCE, REACH, RECLAIM_MS } from '../config';
 import { appNow } from '../core/clock';
-import { fadedName, FULL_NAME } from '../core/fade';
+import { hintedName, FULL_NAME } from '../core/fade';
 import { edgeOpacity, healthBand } from '../core/health';
 import { MAX_STRENGTH } from '../core/strength';
 import { TENSES } from '../core/verbs';
@@ -109,6 +109,8 @@ type Props = {
   attention: Attention[];
   /** Word whose Italian name is the answer being asked: its name is hidden. */
   answerId?: string;
+  /** Words about to be asked into Italian: their names show only a few letters. */
+  recall?: Set<string>;
   /** Show every word and edge (spoilers) for inspecting the network. */
   inspect: boolean;
   /** Draw shared roots as hub nodes (replaces word-to-word "shared root" links). */
@@ -141,6 +143,7 @@ export default function GraphView({
   pushSources,
   attention,
   answerId,
+  recall,
   inspect,
   showRoots,
   landmarks,
@@ -565,7 +568,7 @@ export default function GraphView({
     if (inspect) return word;
     // A name is earned by conquering the word, and hidden while it is the answer.
     if (data.states.get(id) !== 'conquered' || id === answerId) return '';
-    return fadedName(word, health.get(id) ?? null);
+    return hintedName(word, health.get(id) ?? null, recall?.has(id) ?? false);
   };
   const won = (id: string) => ['conquered', 'claimed'].includes(data.states.get(id) ?? '');
   const hidden = (id: string) => !inspect && !isHub(id) && !won(id);

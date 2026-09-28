@@ -17,7 +17,7 @@ import { dangers } from './core/danger';
 import { reclaimable } from './core/fallen';
 import { attentionList, newlyRevealed } from './core/attention';
 import { claimNext, CLAIM_STEPS, claimSteps, unseen, type Claim } from './core/claim';
-import { FULL_NAME, fadedName } from './core/fade';
+import { FULL_NAME, hintedName } from './core/fade';
 import { cohesion, isHostile, neighbourWeights, pressureBreakdown } from './core/influence';
 import { appNow } from './core/clock';
 import { nodeHealth } from './core/health';
@@ -31,7 +31,7 @@ import { computeProgress, reachInput, verbLevels as computeVerbLevels } from './
 import { cardId, Rating, retrievability, type Grade } from './core/scheduler';
 import type { NodeState } from './core/unlock';
 import { nextPractice, nodeStrength } from './core/strength';
-import type { CardRow } from './db/repo';
+import type { AppData, CardRow } from './db/repo';
 import { useSprawl, type GameEvent, type LevelUp } from './useSprawl';
 import Menu from './views/Menu';
 import Guide from './views/Guide';
@@ -372,7 +372,11 @@ export default function App() {
       return !!next && next.directions.includes(c.direction) && next.opensAt <= now.getTime();
     };
     return buildQueue({ cards: data.cards, states: data.states, now, lastCardId }).filter(
-      (c) => !cooldowns.has(c.nodeId) && stepOpen(c),
+      (c) =>
+        !cooldowns.has(c.nodeId) &&
+        stepOpen(c) &&
+        // The raid bar names raided words in English: they wait for their en→it card.
+        !(c.direction === 'it-en' && isRaided(data, c.nodeId)),
     );
   }, [data, now, lastCardId, cooldowns]);
 
@@ -424,10 +428,24 @@ export default function App() {
   // The word whose Italian name is the answer being asked: hidden everywhere meanwhile.
   const answerId =
     !waitOn && !activeDrill && !info && current?.direction === 'en-it' ? current.nodeId : undefined;
+  /** Raided words still to defend (core/raid.ts). */
+  const raided = new Set(
+    (data.raid.active?.targets ?? []).filter((id) => !data.raid.active?.defended.includes(id)),
+  );
+  // Conquered words about to be asked into Italian (an en→it card due, or raided,
+  // which is defended that way): their names show only a few letters until then,
+  // so the map doesn't hand out the answer before the card opens.
+  const recall = new Set([
+    ...raided,
+    ...(data.cards ?? [])
+      .filter((c) => c.direction === 'en-it' && c.card.due <= now)
+      .map((c) => c.nodeId)
+      .filter((id) => data.states.get(id) === 'conquered'),
+  ]);
   const nameOf = (id: string) => {
     if (data.states.get(id) !== 'conquered' || id === answerId) return '';
     const w = data.nodes.find((n) => n.id === id);
-    return w ? fadedName(w.it, health.get(id) ?? null) : '';
+    return w ? hintedName(w.it, health.get(id) ?? null, recall.has(id)) : '';
   };
   const detailsInfluences = !detailsWord
     ? []
@@ -452,10 +470,6 @@ export default function App() {
           }));
 
   const claims = new Map([...data.game.nodes].map(([id, g]) => [id, g.claim]));
-  /** Raided words still to defend (core/raid.ts). */
-  const raided = new Set(
-    (data.raid.active?.targets ?? []).filter((id) => !data.raid.active?.defended.includes(id)),
-  );
   const days = streak(data.activity, now);
   const landmarkSet = builtLandmarks(data.graph.regions ?? [], data.states, LANDMARK);
   const expedition = data.expedition && {
@@ -641,7 +655,7 @@ export default function App() {
         id: n.id,
         name:
           st === 'conquered'
-            ? fadedName(n.it, health.get(n.id) ?? null)
+            ? hintedName(n.it, health.get(n.id) ?? null, recall.has(n.id))
             : st === 'locked'
               ? ''
               : '?',
@@ -826,7 +840,10 @@ export default function App() {
     // with its weakest card. Asking the other, not-due direction right after
     // felt like the same question again. The order is fixed (openOrder): a
     // reshuffle on every click let you peek at the answer.
-    const own = cardsByNode.get(nodeId) ?? [];
+    // A raid is defended into Italian: the raid bar shows the English meaning.
+    const own = (cardsByNode.get(nodeId) ?? []).filter(
+      (c) => !raided.has(nodeId) || c.direction === 'en-it',
+    );
     const due = openOrder(
       own.filter((c) => c.card.due <= now),
       shown.current.get(nodeId),
@@ -956,6 +973,7 @@ export default function App() {
             raid={data.raid.active}
             nowMs={appMs()}
             wordName={(id) => nameOf(id) || '?'}
+            meaning={(id) => data.nodes.find((n) => n.id === id)?.en ?? '?'}
             onRaidWord={(id) => selectNode(id)}
           />
           {notice && (
@@ -1010,6 +1028,7 @@ export default function App() {
             }
             attention={attention}
             answerId={answerId}
+            recall={recall}
             graceUntil={
               new Map(
                 [...data.game.nodes]
@@ -1401,6 +1420,8 @@ function Missions(props: {
   raid?: { targets: string[]; defended: string[]; until: number };
   nowMs: number;
   wordName: (id: string) => string;
+  /** Raided words are asked into Italian, so the bar names them in English. */
+  meaning: (id: string) => string;
   onRaidWord: (id: string) => void;
 }) {
   const { expedition, raid, nowMs } = props;
@@ -1441,7 +1462,7 @@ function Missions(props: {
                   onClick={() => props.onRaidWord(id)}
                   className="rounded bg-orange-800/70 px-1.5 hover:bg-orange-700"
                 >
-                  {props.wordName(id)}
+                  {props.meaning(id)}
                 </button>
               ),
             )}
@@ -1508,4 +1529,10 @@ function eventText(e: GameEvent, regionName: (r: number) => string): [string, st
         'amber',
       ];
   }
+}
+
+/** A raid target not defended yet (core/raid.ts). */
+function isRaided(data: AppData, id: string) {
+  const raid = data.raid.active;
+  return !!raid && raid.targets.includes(id) && !raid.defended.includes(id);
 }
