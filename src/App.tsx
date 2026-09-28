@@ -869,13 +869,15 @@ export default function App() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex items-center gap-4 border-b border-slate-800 px-4 py-1.5">
-        <h1 className="text-lg font-semibold tracking-wide text-emerald-400">Sprawl</h1>
+      <header className="relative z-10 flex items-center gap-2.5 border-b border-white/[0.06] bg-slate-950/80 px-4 py-2 shadow-[0_8px_30px_-20px_rgba(0,0,0,0.9)] backdrop-blur">
+        <h1 className="mr-2 flex select-none items-center gap-2">
+          <Logo />
+          <span className="font-title text-lg font-bold tracking-[0.16em] text-emerald-200 [text-shadow:0_0_18px_rgba(52,211,153,0.5)]">
+            Sprawl
+          </span>
+        </h1>
         {progress && (
-          <button
-            onClick={() => setShowVerbGoals((v) => !v)}
-            className="rounded px-1.5 py-0.5 hover:bg-slate-800"
-          >
+          <button onClick={() => setShowVerbGoals((v) => !v)} className="chip py-1">
             <TierBadge
               p={progress}
               names={data.graph.params?.tier_names}
@@ -893,7 +895,7 @@ export default function App() {
         {inspect && (
           <button
             onClick={() => setInspect(false)}
-            className="rounded bg-pink-700 px-2.5 py-0.5 text-sm text-white hover:bg-pink-600"
+            className="btn rounded-full bg-gradient-to-b from-pink-500 to-pink-700 px-3 py-0.5 text-sm text-white shadow-[0_6px_20px_-8px_rgba(236,72,153,0.9)] hover:from-pink-400"
           >
             Whole network ✕
           </button>
@@ -906,22 +908,22 @@ export default function App() {
           }}
           disabled={!!data.expedition || !data.started}
           title={`Expedition: take ${EXPEDITION.goal} words of one category in ${EXPEDITION.minutes} min for 🪙${EXPEDITION.coins}`}
-          className="ml-auto rounded px-2 py-0.5 text-sm text-sky-300 hover:bg-slate-800 disabled:opacity-40"
+          className="chip ml-auto text-sky-300 disabled:opacity-40"
         >
           ⚑
         </button>
         <button
           onClick={() => setShowProgress((v) => !v)}
           title={`Streak: ${days.current} ${days.current === 1 ? 'day' : 'days'}${days.playedToday ? '' : ' (play today to keep it)'} · best ${days.best}`}
-          className={`rounded px-2 py-0.5 text-sm ${days.playedToday ? 'text-orange-300' : 'text-slate-500'} hover:bg-slate-800`}
+          className={`chip ${days.playedToday ? 'text-orange-300' : 'text-slate-500'}`}
         >
           🔥 {days.current}
         </button>
         <button
           onClick={() => setShowProgress((v) => !v)}
           title="Score and achievements"
-          className={`rounded px-2 py-0.5 text-sm ${
-            showProgress ? 'bg-amber-700/50 text-amber-100' : 'text-amber-300 hover:bg-slate-800'
+          className={`chip ${
+            showProgress ? 'border-amber-400/40 bg-amber-500/20 text-amber-100' : 'text-amber-300'
           }`}
         >
           🏆 {score.toLocaleString()} <span className="ml-1.5 text-slate-300">🪙 {data.coins}</span>
@@ -957,8 +959,8 @@ export default function App() {
       <main className="flex min-h-0 flex-1">
         <section className="relative min-w-0 flex-1">
           {levelUp && (
-            <div className="absolute left-1/2 top-4 z-10 -translate-x-1/2 rounded-lg border border-amber-400/60 bg-amber-500/15 px-5 py-3 text-center shadow-lg backdrop-blur">
-              <div className="text-lg font-semibold text-amber-300">
+            <div className="rise-in absolute left-1/2 top-4 z-10 -translate-x-1/2 rounded-xl border border-amber-300/60 bg-gradient-to-b from-amber-500/25 to-amber-950/50 px-6 py-3 text-center shadow-[0_0_40px_rgba(251,191,36,0.35)] backdrop-blur-md">
+              <div className="font-title text-xl font-bold tracking-wider text-amber-200">
                 {data.graph.params?.tier_names?.[String(levelUp.tier)] ?? `Tier ${levelUp.tier}`}{' '}
                 open
               </div>
@@ -977,7 +979,7 @@ export default function App() {
             onRaidWord={(id) => selectNode(id)}
           />
           {notice && (
-            <div className="pointer-events-none absolute bottom-4 left-1/2 z-10 -translate-x-1/2 rounded-full bg-slate-800/90 px-4 py-1.5 text-sm text-slate-100 shadow-lg">
+            <div className="glass rise-in pointer-events-none absolute bottom-5 left-1/2 z-10 -translate-x-1/2 rounded-full px-4 py-1.5 text-sm text-slate-100">
               {notice}
             </div>
           )}
@@ -1053,7 +1055,7 @@ export default function App() {
           />
         </section>
         <aside
-          className={`flex w-80 flex-col gap-3 overflow-y-auto border-l border-slate-800 p-4 ${data.started ? '' : 'invisible'}`}
+          className={`flex w-80 flex-col gap-3 overflow-y-auto border-l border-white/[0.06] bg-gradient-to-b from-slate-950 to-[#050a1a] p-4 ${data.started ? '' : 'invisible'}`}
         >
           {showProgress && !inspect && (
             <ProgressPanel
@@ -1318,12 +1320,49 @@ function claimNotice(claim: Claim, nowMs: number): string {
   return `step ${next.step}/${CLAIM_STEPS} in ${when}`;
 }
 
+/** The mark: a hex territory holding three linked words (also public/favicon.svg). */
+function Logo() {
+  return (
+    <svg
+      viewBox="0 0 32 32"
+      className="h-6 w-6 drop-shadow-[0_0_6px_rgba(52,211,153,0.6)]"
+      aria-hidden
+    >
+      <defs>
+        <radialGradient id="logo-orb" cx="38%" cy="32%" r="75%">
+          <stop offset="0" stopColor="#d1fae5" />
+          <stop offset="0.45" stopColor="#34d399" />
+          <stop offset="1" stopColor="#065f46" />
+        </radialGradient>
+      </defs>
+      <path
+        d="M16 2 28.1 9v14L16 30 3.9 23V9Z"
+        fill="#052e2b"
+        stroke="#34d399"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M16 10.5 10 20.5M16 10.5l6 10M10 20.5h12"
+        stroke="#6ee7b7"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+      <circle cx="16" cy="10.5" r="3.6" fill="url(#logo-orb)" />
+      <circle cx="10" cy="20.5" r="2.9" fill="url(#logo-orb)" />
+      <circle cx="22" cy="20.5" r="2.9" fill="url(#logo-orb)" />
+    </svg>
+  );
+}
+
 /** A verb mastered a new tense: a moment to be proud of. */
 function VerbUpBanner({ word, level }: { word: string; level: number }) {
   return (
-    <div className="pointer-events-none absolute left-1/2 top-4 z-10 -translate-x-1/2 rounded-xl border-2 border-amber-300/80 bg-gradient-to-b from-amber-500/30 to-amber-900/40 px-6 py-3 text-center shadow-[0_0_40px_rgba(251,191,36,0.45)] backdrop-blur">
-      <div className="text-xs uppercase tracking-[0.2em] text-amber-200/80">Verb level up</div>
-      <div className="text-2xl font-bold text-amber-200">{word}</div>
+    <div className="rise-in pointer-events-none absolute left-1/2 top-4 z-10 -translate-x-1/2 rounded-xl border border-amber-300/70 bg-gradient-to-b from-amber-500/30 to-amber-950/60 px-6 py-3 text-center shadow-[0_0_50px_rgba(251,191,36,0.45)] backdrop-blur-md">
+      <div className="font-title text-xs font-semibold uppercase tracking-[0.25em] text-amber-200/80">
+        Verb level up
+      </div>
+      <div className="text-2xl font-bold text-amber-100">{word}</div>
       <div className="mt-1 text-sm text-amber-100">
         {level > 1 ? TENSES[level - 2] : 'infinitive'} →{' '}
         <b className="text-amber-300">{TENSES[level - 1]}</b>
@@ -1351,7 +1390,7 @@ function VerbUpBanner({ word, level }: { word: string; level: number }) {
 function AchievementBanner({ earned }: { earned: Achievement[] }) {
   const coins = earned.reduce((n, a) => n + a.coins, 0);
   return (
-    <div className="pointer-events-none absolute left-1/2 top-4 z-10 -translate-x-1/2 rounded-xl border border-amber-300/60 bg-slate-900/90 px-5 py-2 text-center shadow-[0_0_30px_rgba(251,191,36,0.3)] backdrop-blur">
+    <div className="glass rise-in pointer-events-none absolute left-1/2 top-4 z-10 -translate-x-1/2 rounded-xl border-amber-300/50 px-5 py-2 text-center shadow-[0_0_40px_rgba(251,191,36,0.3)]">
       <div className="text-lg font-semibold text-amber-200">
         🏆 {earned.map((a) => a.title).join(' · ')}
       </div>
@@ -1392,8 +1431,11 @@ function TierBadge({
       </span>
       {p.needed > 0 && (
         <>
-          <span className="flex h-1 w-24 overflow-hidden rounded bg-slate-800">
-            <span className="block h-full bg-amber-400" style={{ width: `${pct * 100}%` }} />
+          <span className="flex h-1.5 w-24 overflow-hidden rounded-full bg-white/[0.08]">
+            <span
+              className="block h-full rounded-full bg-gradient-to-r from-amber-500 to-amber-300 shadow-[0_0_8px_rgba(251,191,36,0.8)]"
+              style={{ width: `${pct * 100}%` }}
+            />
             {/* Claimed words: striped, on their way to being counted. */}
             <span
               className="block h-full"
@@ -1434,7 +1476,7 @@ function Missions(props: {
     <div className="absolute left-3 top-3 z-10 space-y-1.5 text-xs">
       {expedition && (
         <div
-          className="rounded bg-slate-900/85 px-2.5 py-1.5 text-sky-200"
+          className="glass rounded-lg px-2.5 py-1.5 text-sky-200"
           title="Expedition: claim or conquer words of this category before time runs out"
         >
           ⚑ {expedition.name}{' '}
@@ -1446,7 +1488,7 @@ function Missions(props: {
       )}
       {raid && (
         <div
-          className="rounded border border-orange-500/50 bg-orange-950/80 px-2.5 py-1.5 text-orange-200"
+          className="rounded-lg border border-orange-500/50 bg-orange-950/80 px-2.5 py-1.5 text-orange-200 shadow-[0_0_30px_-8px_rgba(249,115,22,0.6)] backdrop-blur-md"
           title="Raid: answer each raided word right before time runs out, or it loses control"
         >
           ⚔ Raid <span className="font-mono text-orange-300">{clock(raid.until)}</span>
@@ -1501,7 +1543,7 @@ function EventBanner({
   }[tone as 'orange' | 'emerald' | 'slate' | 'amber'];
   return (
     <div
-      className={`pointer-events-none absolute left-1/2 top-16 z-10 -translate-x-1/2 rounded-xl border bg-slate-900/90 px-5 py-2 text-center shadow-lg backdrop-blur ${cls}`}
+      className={`glass rise-in pointer-events-none absolute left-1/2 top-16 z-10 -translate-x-1/2 rounded-xl px-5 py-2 text-center ${cls}`}
     >
       <div className="text-lg font-semibold">{title}</div>
       <div className="text-xs opacity-80">{sub}</div>

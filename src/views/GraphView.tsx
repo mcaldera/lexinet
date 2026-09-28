@@ -14,10 +14,15 @@ import { TENSES } from '../core/verbs';
 import { CLAIM_STEPS, claimSteps, type Claim } from '../core/claim';
 import { ATTENTION_ORDER, type Attention, type AttentionKind } from '../core/attention';
 import type { AppData, Edge, RootHub, WordNode } from '../db/repo';
+import { densityField, isoLines, levelAt, traceLoops, type Blob } from './contours';
 import { stepCursor, useKeyboardCamera } from './useKeyboardCamera';
 import {
-  BAND_COLOR,
+  BAND_RGB,
+  FONT_LATIN,
+  FONT_TITLE,
+  FONT_UI,
   isWeakBridge,
+  mixRgb,
   REGION_RGB,
   regionColors,
   REASON_LABEL,
@@ -45,6 +50,19 @@ type GLink = Edge & {
 };
 type N = NodeObject<GNode>;
 type L = LinkObject<GNode, GLink>;
+
+/** Map backgrounds: night ground for your territory, deep space for the whole network. */
+const GROUND_BG =
+  'radial-gradient(ellipse 80% 70% at 50% 45%, #0b1430 0%, #050a1c 55%, #02040d 100%)';
+const SPACE_BG =
+  'radial-gradient(ellipse 90% 80% at 50% 50%, #0a0c24 0%, #03040f 60%, #010208 100%)';
+
+/** A stable small number from a string (per-link pulse pace and phase). */
+function hashOf(s: string) {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
+  return h >>> 0;
+}
 
 /** Ripple colours (RGB) for words that need attention. */
 const ATTENTION_RGB: Record<AttentionKind, string> = {
@@ -152,6 +170,23 @@ export default function GraphView({
   const wrap = useRef<HTMLDivElement>(null);
   const fg = useRef<ForceGraphMethods<N, L>>(undefined);
   const [size, setSize] = useState({ width: 800, height: 600 });
+  /** Names collected while drawing the words, drawn last where they fit (drawLabels). */
+  const labels = useRef<Label[]>([]);
+  // The canvas draws with the bundled fonts only once they have loaded: redraw then.
+  const [, setFontsReady] = useState(false);
+  useEffect(() => {
+    let live = true;
+    Promise.all(
+      [`600 16px ${FONT_UI}`, `700 16px ${FONT_TITLE}`, `italic 600 16px ${FONT_LATIN}`].map((f) =>
+        document.fonts?.load(f),
+      ),
+    )
+      .catch(() => undefined)
+      .then(() => live && setFontsReady(true));
+    return () => {
+      live = false;
+    };
+  }, []);
   /** Keyboard cursor: arrows move it along links, Enter/Space opens it. */
   const [cursorId, setCursorId] = useState<string | undefined>(activeId ?? data.seed);
   useEffect(() => {
@@ -592,12 +627,40 @@ export default function GraphView({
     const vl = verbLevels.get(node.id) ?? 0;
     // Stronger words are bigger; every tense a verb masters makes it bigger still.
     const r = state === 'conquered' ? 5 + (strength.get(node.id) ?? 0) * 0.8 + vl * 0.9 : 6;
+    const active = node.id === activeId;
+    /** Queue a name under the word; drawLabels places it last, where it fits. */
+    const label = (lines: LabelLine[], priority: number, below = r + 2.5) => {
+      // Zoomed far out, word labels give way to region names.
+      const fade = active ? 1 : Math.min(1, Math.max(0, (scale - 0.3) / 0.12));
+      if (fade > 0) {
+        labels.current.push({ x, y: y + below, lines, fade, priority: active ? 1e6 : priority });
+      }
+    };
     if (inspect && !node.hub) {
       // Galaxy view: every word a small star in its category's colour.
-      drawStar(ctx, x, y, scale, starRgb.get(node.id) ?? '203, 213, 225', node.word.it, {
-        active: node.id === activeId,
-        linked: activeId !== undefined && activeNeighbours.has(node.id),
+      const linked = activeId !== undefined && activeNeighbours.has(node.id);
+      const glow = drawStar(ctx, x, y, scale, starRgb.get(node.id) ?? '203, 213, 225', {
+        active,
+        linked,
       });
+      if (active || linked || scale > 1.4) {
+        const a = active ? 1 : linked ? 0.85 : Math.min(0.8, (scale - 1.4) * 1.5);
+        labels.current.push({
+          x,
+          y: y + glow * 0.6,
+          fade: 1,
+          priority: active ? 1e6 : linked ? 1000 : 0,
+          lines: [
+            {
+              text: node.word.it,
+              px: 10,
+              rgb: '226, 232, 240',
+              alpha: a,
+              weight: active ? 600 : 450,
+            },
+          ],
+        });
+      }
       return;
     }
     ctx.save();
@@ -617,11 +680,7 @@ export default function GraphView({
       ctx.lineWidth = 1.2;
       ctx.stroke();
       ctx.setLineDash([]);
-      ctx.font = `bold ${Math.max(3, 10 / scale)}px sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'bottom';
-      ctx.fillStyle = 'rgba(125, 211, 252, 0.95)';
-      ctx.fillText(`+${Math.round(src * 100)}%`, x, y - r - 7);
+      badge(ctx, `+${Math.round(src * 100)}%`, x, y - r - 7, scale, '125, 211, 252');
     }
     const attn = attentionOf.get(node.id);
     if (attn) drawRipple(ctx, x, y, r, scale, ATTENTION_RGB[attn]);
@@ -636,7 +695,7 @@ export default function GraphView({
       ctx.lineWidth = 2;
       ctx.stroke();
     }
-    if (node.id === cursorId && node.id !== activeId) {
+    if (node.id === cursorId && !active) {
       ctx.beginPath();
       ctx.arc(x, y, r + 5, 0, 2 * Math.PI);
       ctx.setLineDash([2, 2]);
@@ -646,44 +705,45 @@ export default function GraphView({
       ctx.setLineDash([]);
     }
     if (node.hintOf) {
-      drawHint(ctx, node, x, y, scale);
+      drawHint(ctx, x, y);
+      if (scale >= 0.6) {
+        label(
+          [{ text: `≈ ${node.word.it}`, px: 11.5, rgb: '253, 230, 138', alpha: 0.9, latin: true }],
+          30,
+          4.5,
+        );
+      }
       ctx.restore();
       return;
     }
     if (node.hub) {
-      drawHub(
+      const unlocked = inspect || unlockedRoots.has(node.id);
+      const lines = drawHub(
         ctx,
         node,
         x,
         y,
         scale,
-        node.id === activeId,
-        inspect || unlockedRoots.has(node.id),
+        active,
+        unlocked,
         inspect,
         inspect ? undefined : rootCharge?.get(node.id),
       );
+      if (lines.length) label(lines, 40, 9);
       ctx.restore();
       return;
     }
-    if (node.id === activeId) {
+    if (active) {
+      // The word the side panel is about: a bright ring with a soft halo.
       ctx.beginPath();
       ctx.arc(x, y, r + 4, 0, 2 * Math.PI);
+      ctx.strokeStyle = 'rgba(248, 250, 252, 0.25)';
+      ctx.lineWidth = 4;
+      ctx.stroke();
       ctx.strokeStyle = '#f8fafc';
-      ctx.lineWidth = 1.5;
+      ctx.lineWidth = 1.4;
       ctx.stroke();
     }
-    const label = (alpha: number, text = node.word.it) => {
-      // Zoomed far out, word labels give way to region names.
-      const fade = node.id === activeId ? 1 : Math.min(1, Math.max(0, (scale - 0.35) / 0.35));
-      if (fade === 0) return;
-      alpha *= fade;
-      const fontSize = Math.max(3, 11 / scale);
-      ctx.font = `${fontSize}px sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'top';
-      ctx.fillStyle = `rgba(226, 232, 240, ${alpha})`;
-      ctx.fillText(text, x, y + r + 2.5);
-    };
 
     const reach = inspect ? undefined : sighted.get(node.id);
     if (reach !== undefined) {
@@ -704,11 +764,11 @@ export default function GraphView({
         -Math.PI / 2,
         -Math.PI / 2 + Math.min(1, reach / REACH.open) * 2 * Math.PI,
       );
-      ctx.strokeStyle = 'rgba(125, 211, 252, 0.55)';
+      ctx.strokeStyle = 'rgba(125, 211, 252, 0.6)';
       ctx.lineWidth = 1;
       ctx.stroke();
       if (scale > 0.9) {
-        ctx.font = `${Math.max(3, 9 / scale)}px sans-serif`;
+        ctx.font = `500 ${Math.max(3, 9 / scale)}px ${FONT_UI}`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
         ctx.fillStyle = 'rgba(125, 211, 252, 0.7)';
@@ -718,11 +778,12 @@ export default function GraphView({
       return;
     }
     if (state === 'claimed') {
-      // Freshly won but fragile: pale, one ring segment per conquest step. The
+      // Freshly won but fragile: glassy, one ring segment per conquest step. The
       // name stays hidden ("?") until conquered, so producing it is real recall.
       const steps = claimSteps(claims.get(node.id));
+      softGlow(ctx, x, y, r, r + 7, '52, 211, 153', 0.22);
       shapePath(ctx, shape, x, y, r);
-      ctx.fillStyle = 'rgba(52, 211, 153, 0.3)';
+      ctx.fillStyle = orbGradient(ctx, x, y, r, '52, 211, 153', 0.45);
       ctx.fill();
       ctx.setLineDash([1.5, 1.5]);
       ctx.strokeStyle = 'rgba(110, 231, 183, 0.9)';
@@ -730,14 +791,16 @@ export default function GraphView({
       ctx.stroke();
       ctx.setLineDash([]);
       const seg = (2 * Math.PI) / CLAIM_STEPS;
+      ctx.lineCap = 'round';
       for (let i = 0; i < CLAIM_STEPS; i++) {
-        const a0 = -Math.PI / 2 + i * seg + 0.18;
+        const a0 = -Math.PI / 2 + i * seg + 0.22;
         ctx.beginPath();
-        ctx.arc(x, y, r + 2.5, a0, a0 + seg - 0.36);
+        ctx.arc(x, y, r + 2.8, a0, a0 + seg - 0.44);
         ctx.strokeStyle = i < steps ? 'rgba(52, 211, 153, 0.95)' : 'rgba(148, 163, 184, 0.35)';
-        ctx.lineWidth = 1.6;
+        ctx.lineWidth = 1.7;
         ctx.stroke();
       }
+      ctx.lineCap = 'butt';
       const d = danger.get(node.id);
       if (d && !inspect) {
         // In danger: a pulsing rose ring running down to the moment it falls.
@@ -755,7 +818,7 @@ export default function GraphView({
         ctx.strokeStyle = `rgba(244, 63, 94, ${0.7 + 0.3 * pulse})`;
         ctx.lineWidth = 2;
         ctx.stroke();
-        ctx.font = `bold ${Math.max(4, 11 / scale)}px sans-serif`;
+        ctx.font = `800 ${Math.max(4, 11 / scale)}px ${FONT_UI}`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'bottom';
         ctx.fillStyle = `rgba(253, 164, 175, ${pulse})`;
@@ -766,28 +829,25 @@ export default function GraphView({
         // Time until the next step opens: a light ring that runs down.
         const left = Math.max(0, (wait.opensAt - appNow(data.offsetDays).getTime()) / wait.total);
         ctx.beginPath();
-        ctx.arc(x, y, r + 5, -Math.PI / 2, -Math.PI / 2 + left * 2 * Math.PI);
+        ctx.arc(x, y, r + 5.5, -Math.PI / 2, -Math.PI / 2 + left * 2 * Math.PI);
         ctx.strokeStyle = 'rgba(226, 232, 240, 0.8)';
         ctx.lineWidth = 1.2;
         ctx.stroke();
       }
-      ctx.fillStyle = '#e2e8f0';
-      ctx.font = 'bold 8px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('?', x, y + (shape === 'triangle' ? 2 : 0.5));
+      glyph(ctx, '?', x, y, shape, '#ecfdf5');
       ctx.restore();
       return;
     }
     if (state !== 'conquered') {
       const angry = hostile.has(node.id);
+      const rgb = state === 'locked' ? '100, 116, 139' : angry ? '220, 38, 38' : '71, 85, 105';
+      if (angry) {
+        // Hostile: smouldering, attacking its conquered neighbours.
+        const flicker = 0.8 + 0.2 * Math.sin(Date.now() / 300 + x);
+        softGlow(ctx, x, y, r * 0.6, r + 9, '239, 68, 68', 0.4 * flicker);
+      }
       shapePath(ctx, shape, x, y, r);
-      ctx.fillStyle =
-        state === 'locked'
-          ? 'rgba(100, 116, 139, 0.7)'
-          : angry
-            ? 'rgba(185, 28, 28, 0.6)' // hostile: attacking its conquered neighbours
-            : 'rgba(71, 85, 105, 0.6)';
+      ctx.fillStyle = orbGradient(ctx, x, y, r, rgb, angry ? 0.85 : 0.8);
       ctx.fill();
       ctx.setLineDash([2, 2]);
       ctx.strokeStyle =
@@ -815,11 +875,14 @@ export default function GraphView({
         ctx.strokeStyle = 'rgba(45, 212, 191, 0.9)';
         ctx.lineWidth = 1.6;
         ctx.stroke();
-        ctx.font = `bold ${Math.max(4, 10 / scale)}px sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'bottom';
-        ctx.fillStyle = 'rgba(94, 234, 212, 0.95)';
-        ctx.fillText(back.was === 'conquered' ? '↺ ★' : `↺ ${back.steps}/3`, x, y - r - 7);
+        badge(
+          ctx,
+          back.was === 'conquered' ? '↺ ★' : `↺ ${back.steps}/3`,
+          x,
+          y - r - 7,
+          scale,
+          '94, 234, 212',
+        );
       }
       const grace = graceUntil.get(node.id);
       if (state === 'frontier' && !angry && grace && !inspect) {
@@ -831,36 +894,27 @@ export default function GraphView({
         ctx.lineWidth = 1.2;
         ctx.stroke();
       }
-      if (inspect) {
-        label(state === 'locked' ? 0.6 : 0.8);
-      } else {
-        ctx.fillStyle = '#e2e8f0';
-        ctx.font = 'bold 8px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('?', x, y + (shape === 'triangle' ? 2 : 0.5));
-      }
+      glyph(ctx, '?', x, y, shape, angry ? '#fee2e2' : '#e2e8f0');
       ctx.restore();
       return;
     }
 
     const h = health.get(node.id) ?? 1;
     const band = healthBand(h);
-    const coh = cohesionOf.get(node.id) ?? 0;
-    if (coh > 0 && !inspect) {
-      // Embedded words glow: bigger and brighter the more strongly they are
-      // tied into conquered territory, breathing slowly.
-      const breath = 0.85 + 0.15 * Math.sin(Date.now() / 900 + x * 0.01);
-      const glow = r + 3 + Math.min(10, coh * 3);
-      const g = ctx.createRadialGradient(x, y, r * 0.8, x, y, glow);
-      const a = Math.min(0.45, 0.15 + coh * 0.12) * (control.get(node.id) ?? 1) * breath;
-      g.addColorStop(0, `rgba(52, 211, 153, ${a})`);
-      g.addColorStop(1, 'rgba(52, 211, 153, 0)');
-      ctx.beginPath();
-      ctx.arc(x, y, glow, 0, 2 * Math.PI);
-      ctx.fillStyle = g;
-      ctx.fill();
-    }
+    const rgb = BAND_RGB[band];
+    const coh = inspect ? 0 : (cohesionOf.get(node.id) ?? 0);
+    // Every word glows a little; embedded words glow bigger and brighter the more
+    // strongly they are tied into conquered territory, breathing slowly.
+    const breath = coh > 0 ? 0.85 + 0.15 * Math.sin(Date.now() / 900 + x * 0.01) : 1;
+    softGlow(
+      ctx,
+      x,
+      y,
+      r * 0.7,
+      r + 5 + Math.min(10, coh * 3),
+      rgb,
+      (0.2 + Math.min(0.3, coh * 0.12)) * (control.get(node.id) ?? 1) * breath,
+    );
     if (hostile.has(node.id)) {
       // Rebelling: control collapsed, now pressuring its own neighbours.
       ctx.beginPath();
@@ -871,13 +925,7 @@ export default function GraphView({
     }
     // One gold ring per tense mastered: verbs are the strongholds of a territory.
     if (vl > 0 && !inspect) {
-      const glow = ctx.createRadialGradient(x, y, r, x, y, r + 6 + vl * 2.5);
-      glow.addColorStop(0, `rgba(251, 191, 36, ${0.15 + 0.05 * vl})`);
-      glow.addColorStop(1, 'rgba(251, 191, 36, 0)');
-      ctx.beginPath();
-      ctx.arc(x, y, r + 6 + vl * 2.5, 0, 2 * Math.PI);
-      ctx.fillStyle = glow;
-      ctx.fill();
+      softGlow(ctx, x, y, r, r + 6 + vl * 2.5, '251, 191, 36', 0.15 + 0.05 * vl);
     }
     for (let i = 0; i < vl; i++) {
       ctx.beginPath();
@@ -887,8 +935,11 @@ export default function GraphView({
       ctx.stroke();
     }
     shapePath(ctx, shape, x, y, r);
-    ctx.fillStyle = BAND_COLOR[band];
+    ctx.fillStyle = orbGradient(ctx, x, y, r, rgb, band === 'faded' ? 0.8 : 1);
     ctx.fill();
+    ctx.strokeStyle = `rgba(${mixRgb(rgb, '255, 255, 255', 0.5)}, 0.55)`;
+    ctx.lineWidth = 0.6;
+    ctx.stroke();
     if (vl > 0) {
       ctx.strokeStyle = vl >= TENSES.length ? '#fde047' : 'rgba(251, 191, 36, 0.95)';
       ctx.lineWidth = 1 + vl * 0.25;
@@ -915,30 +966,32 @@ export default function GraphView({
     }
     const name = shownName(node.id);
     if (name) {
-      label(Math.max(0.35, h), name);
-      const fontSize = Math.max(3, 11 / scale);
-      let below = y + r + 2.5 + fontSize * 1.1;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'top';
+      const lines: LabelLine[] = [
+        { text: name, px: 11.5, rgb: '241, 245, 249', alpha: Math.max(0.4, h), weight: 550 },
+      ];
+      // The verb's rank: stars and the tense it has reached.
       if (vl > 0 && scale > 0.5) {
-        // The verb's rank: stars and the tense it has reached.
-        ctx.font = `bold ${fontSize * 0.8}px sans-serif`;
-        ctx.fillStyle = 'rgba(251, 191, 36, 0.95)';
-        ctx.fillText(`${'★'.repeat(vl)} ${TENSES[vl - 1]}`, x, below);
-        below += fontSize;
+        lines.push({
+          text: `${'★'.repeat(vl)} ${TENSES[vl - 1]}`,
+          px: 9,
+          rgb: '251, 191, 36',
+          alpha: 0.95,
+          weight: 700,
+        });
       }
       if (node.word.root && scale > 1.3 && h >= FULL_NAME) {
-        ctx.font = `italic ${fontSize * 0.8}px serif`;
-        ctx.fillStyle = 'rgba(249, 168, 212, 0.75)';
-        ctx.fillText(`‹ ${node.word.root}`, x, below);
+        lines.push({
+          text: `‹ ${node.word.root}`,
+          px: 10.5,
+          rgb: '249, 168, 212',
+          alpha: 0.8,
+          latin: true,
+        });
       }
+      label(lines, 100 + 10 * (strength.get(node.id) ?? 0) + 20 * vl);
     } else {
       // Faded out completely: the word must be recalled to see it again.
-      ctx.fillStyle = '#f8fafc';
-      ctx.font = 'bold 8px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('?', x, y + (shape === 'triangle' ? 2 : 0.5));
+      glyph(ctx, '?', x, y, shape, '#f8fafc');
     }
     ctx.restore();
   };
@@ -957,7 +1010,7 @@ export default function GraphView({
     const [a, b] = [endId(l.source), endId(l.target)];
     if (sighted.has(a) || sighted.has(b)) return 0.12 * dim; // towards the horizon
     if (hidden(a) || hidden(b)) return 0.3 * dim;
-    return Math.max(0.15, edgeOpacity(health.get(a) ?? null, health.get(b) ?? null)) * dim;
+    return 0.6 * Math.max(0.2, edgeOpacity(health.get(a) ?? null, health.get(b) ?? null)) * dim;
   };
 
   const linkTooltip = (l: L) => {
@@ -1050,21 +1103,42 @@ export default function GraphView({
     ctx.restore();
   };
 
+  /**
+   * A link between two conquered words carries pulses of light, each link at its
+   * own pace and phase (from the words' ids), so the network hums instead of
+   * every link crawling in step.
+   */
   const drawEnergy = (ctx: CanvasRenderingContext2D, l: L) => {
-    const a = l.source as N;
-    const b = l.target as N;
-    if (a.x === undefined || b.x === undefined) return;
-    const strength = Math.min(control.get(a.id) ?? 1, control.get(b.id) ?? 1);
+    const s = l.source as N;
+    const e = l.target as N;
+    if (s.x === undefined || e.x === undefined || s.y === undefined || e.y === undefined) return;
+    const strength = Math.min(control.get(s.id) ?? 1, control.get(e.id) ?? 1);
+    const seed = hashOf(`${s.id}|${e.id}`);
+    // Half the links pulse one way, half the other.
+    const [ax, ay, bx, by] = seed & 1 ? [e.x, e.y, s.x, s.y] : [s.x, s.y, e.x, e.y];
+    const len = Math.hypot(bx - ax, by - ay);
+    if (len < 1) return;
+    const period = 2400 + (seed % 2000);
+    const tail = Math.min(0.5, 30 / len);
+    const head = (((Date.now() + seed) % period) / period) * (1 + tail);
+    const t1 = Math.min(1, head);
+    const t0 = Math.max(0, head - tail);
+    if (t1 - t0 < 0.01) return;
+    const [x0, y0] = [ax + (bx - ax) * t0, ay + (by - ay) * t0];
+    const [x1, y1] = [ax + (bx - ax) * t1, ay + (by - ay) * t1];
+    const rank = weightRank(l.weight);
     ctx.save();
-    ctx.setLineDash([3, 9]);
-    ctx.lineDashOffset = -Date.now() / 60; // flows along the link
+    const g = ctx.createLinearGradient(x0, y0, x1, y1);
+    g.addColorStop(0, 'rgba(167, 243, 208, 0)');
+    g.addColorStop(1, `rgba(209, 250, 229, ${0.45 + 0.5 * strength})`);
+    ctx.strokeStyle = g;
     ctx.lineCap = 'round';
-    ctx.strokeStyle = `rgba(167, 243, 208, ${0.25 + 0.55 * strength * l.weight})`;
-    ctx.lineWidth = 0.6 + 3 * weightRank(l.weight) ** 2 * strength;
+    ctx.lineWidth = 0.8 + 2.4 * rank ** 2 * strength;
     ctx.beginPath();
-    ctx.moveTo(a.x, a.y!);
-    ctx.lineTo(b.x, b.y!);
+    ctx.moveTo(x0, y0);
+    ctx.lineTo(x1, y1);
     ctx.stroke();
+    if (head < 1) softGlow(ctx, x1, y1, 0, 2.5 + 3 * rank, '209, 250, 229', 0.6 * strength);
     ctx.restore();
   };
 
@@ -1082,7 +1156,8 @@ export default function GraphView({
         width={size.width}
         height={size.height}
         graphData={graphData}
-        backgroundColor={inspect ? '#01030b' : '#020617'}
+        // A CSS background (force-graph sets it on the canvas): deep space, lighter at the centre.
+        backgroundColor={inspect ? SPACE_BG : GROUND_BG}
         nodeRelSize={6}
         nodeCanvasObject={drawNode}
         nodePointerAreaPaint={(node, color, ctx) => {
@@ -1168,7 +1243,7 @@ export default function GraphView({
               : 0.35 // galaxy view: thin hyperlanes, the selected word's lanes lit
             : l.hint
               ? 0.6
-              : 0.3 + 5 * weightRank(l.weight) ** 2.5 + (touchesActive(l) ? 1 : 0)
+              : 0.35 + 3 * weightRank(l.weight) ** 2.2 + (touchesActive(l) ? 1 : 0)
         }
         linkLineDash={(l) =>
           l.hint
@@ -1195,12 +1270,19 @@ export default function GraphView({
           dangerLink(l) ? drawDanger(ctx, l) : isEnergy(l) ? drawEnergy(ctx, l) : drawPush(ctx, l)
         }
         onRenderFramePre={(ctx) => {
-          if (inspect) drawStarfield(ctx);
-          drawRegions(ctx, livePoints(), inspect);
+          labels.current = [];
+          if (inspect) {
+            drawStarfield(ctx);
+            drawNebulae(ctx, livePoints());
+          } else {
+            drawBackdrop(ctx);
+            drawTerritories(ctx, livePoints());
+          }
         }}
         onRenderFramePost={(ctx, scale) => {
           // Names on top, so links and words never cover them.
-          drawRegionNames(ctx, scale, livePoints(), inspect);
+          const names = drawRegionNames(ctx, scale, livePoints(), inspect);
+          drawLabels(ctx, scale, labels.current, names);
           pointers.current = drawPointers(
             ctx,
             size.width,
@@ -1246,8 +1328,10 @@ export default function GraphView({
           fitView();
         }}
       />
+      {/* Darker corners draw the eye to the middle of the map. */}
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_55%,rgba(0,0,0,0.5)_100%)]" />
       {!inspect && attention.length > 0 && (
-        <div className="absolute right-3 top-3 flex items-center gap-1.5 rounded bg-slate-900/85 px-2 py-1.5 text-xs">
+        <div className="glass absolute right-3 top-3 flex items-center gap-1 rounded-full px-1.5 py-1 text-xs">
           {ATTENTION_ORDER.map((k) => {
             const n = attention.filter((a) => a.kind === k).length;
             if (!n) return null;
@@ -1256,7 +1340,7 @@ export default function GraphView({
                 key={k}
                 onClick={() => jumpNext(k)}
                 title={`Jump to the next ${ATTENTION_LABEL[k]} word`}
-                className="flex items-center gap-1 rounded px-2 py-0.5 hover:bg-slate-800"
+                className="flex items-center gap-1.5 rounded-full px-2 py-0.5 hover:bg-white/[0.08]"
                 style={{ color: `rgb(${ATTENTION_RGB[k]})` }}
               >
                 <span
@@ -1368,6 +1452,7 @@ function drawPointers(
   return out;
 }
 
+/** A root hub: a pink hexagon. Returns its label lines (root, meaning, English cousins). */
 function drawHub(
   ctx: CanvasRenderingContext2D,
   node: N,
@@ -1380,19 +1465,22 @@ function drawHub(
   compact = false,
   /** Sealed: how far it is from opening (0..1). */
   charge?: number,
-) {
+): LabelLine[] {
   const small = compact && !active && scale < 1.6;
   const r = small ? 3.5 : 7;
+  if (!small) softGlow(ctx, x, y, r * 0.5, r + 9, '244, 114, 182', unlocked ? 0.32 : 0.12);
   ctx.beginPath();
   for (let i = 0; i < 6; i++) {
     const a = (Math.PI / 3) * i + Math.PI / 6;
     ctx.lineTo(x + r * Math.cos(a), y + r * Math.sin(a));
   }
   ctx.closePath();
-  ctx.fillStyle = unlocked ? 'rgba(244, 114, 182, 0.45)' : 'rgba(244, 114, 182, 0.1)';
+  ctx.fillStyle = unlocked
+    ? orbGradient(ctx, x, y, r, '236, 72, 153', 0.6)
+    : 'rgba(244, 114, 182, 0.1)';
   ctx.fill();
   if (!unlocked) ctx.setLineDash([2, 1.5]); // sealed: opens once its words are in reach
-  ctx.strokeStyle = active ? '#f8fafc' : 'rgba(244, 114, 182, 0.9)';
+  ctx.strokeStyle = active ? '#f8fafc' : 'rgba(249, 168, 212, 0.9)';
   ctx.lineWidth = active ? 1.5 : 1;
   ctx.stroke();
   ctx.setLineDash([]);
@@ -1404,31 +1492,32 @@ function drawHub(
     ctx.lineWidth = 1.2;
     ctx.stroke();
   }
-  if (small) return;
-  const fontSize = Math.max(3, 11 / scale);
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'top';
-  ctx.font = `italic ${fontSize}px serif`;
-  ctx.fillStyle = 'rgba(251, 207, 232, 0.95)';
-  ctx.fillText(unlocked ? node.word.it : `${node.word.it} ?`, x, y + r + 2);
-  if (!unlocked) return;
-  ctx.font = `${fontSize * 0.8}px sans-serif`;
-  ctx.fillStyle = 'rgba(251, 207, 232, 0.6)';
-  if (node.word.en) ctx.fillText(`“${node.word.en}”`, x, y + r + 3 + fontSize);
+  if (small) return [];
+  const lines: LabelLine[] = [
+    {
+      text: unlocked ? node.word.it : `${node.word.it} ?`,
+      px: 12.5,
+      rgb: '251, 207, 232',
+      alpha: 0.95,
+      latin: true,
+    },
+  ];
+  if (!unlocked) return lines;
+  if (node.word.en) {
+    lines.push({ text: `“${node.word.en}”`, px: 9, rgb: '251, 207, 232', alpha: 0.65 });
+  }
   const english = node.hub?.english ?? [];
   if (english.length) {
-    ctx.fillStyle = 'rgba(226, 232, 240, 0.55)';
-    ctx.fillText(`≈ ${english.slice(0, 3).join(' · ')}`, x, y + r + 4 + fontSize * 1.8);
+    lines.push({
+      text: `≈ ${english.slice(0, 3).join(' · ')}`,
+      px: 9,
+      rgb: '226, 232, 240',
+      alpha: 0.55,
+    });
   }
+  return lines;
 }
 
-/** Muted territory colours (RGB); neighbouring regions never share one. */
-/**
- * Keeps categories together and apart: pulls each word towards its region's
- * centre, and pushes regions whose circles overlap away from each other, so
- * territories and their names don't pile up. Words without a region (hubs,
- * hints, independent words) are left to the other forces.
- */
 /** Rounds of `shake` the whole network gets after settling. */
 const SHAKES = 3;
 
@@ -1465,6 +1554,12 @@ function shake(nodes: N[]): boolean {
   return strays > 0;
 }
 
+/**
+ * Keeps categories together and apart: pulls each word towards its region's
+ * centre, and pushes regions whose circles overlap away from each other, so
+ * territories and their names don't pile up. Words without a region (hubs,
+ * hints, independent words) are left to the other forces.
+ */
 function clusterForce(pull = 0.05, gap = 60) {
   let nodes: N[] = [];
   const force = (alpha: number) => {
@@ -1526,85 +1621,220 @@ type Territory = {
   landmark?: boolean;
 };
 
-/** Offscreen buffer for the territory field (a fraction of the screen resolution). */
-const fieldCanvas = typeof document !== 'undefined' ? document.createElement('canvas') : null;
-const FIELD_DOWNSCALE = 2;
-const FIELD_THRESHOLD = 0.42;
-const FIELD_BORDER = 0.06;
-/** Width of the anti-aliased ramp at the blob edge (fraction of full alpha). */
-const FIELD_SOFT = 0.035;
+/** Device pixels per CSS pixel of the map canvas. */
+const dprOf = (ctx: CanvasRenderingContext2D) =>
+  Math.max(1, ctx.canvas.width / (ctx.canvas.clientWidth || ctx.canvas.width));
+
+/** Where a word's territory ends: a lone word's reaches 0.6 × its field radius. */
+const TERRITORY_EDGE = levelAt(0.6);
+/** Denser ground inside: contour lines towards a territory's core, like a relief map. */
+const TERRACES = [TERRITORY_EDGE * 3, TERRITORY_EDGE * 7];
 
 /**
- * Territories as metaballs: every word paints a soft radial gradient in its
- * region colour (bigger for practised words); where they overlap the density
- * adds up, and a threshold turns the field into smooth, fused blobs with a
- * border. Denser, stronger areas are drawn more vividly. Names scale with zoom.
+ * A region's words as soft circles in device pixels, and the part of the view
+ * (plus a margin, so borders cut by the edge still close off screen) they cover.
  */
-function drawRegions(ctx: CanvasRenderingContext2D, regions: Territory[], galaxy = false) {
-  const W = ctx.canvas.width;
-  const H = ctx.canvas.height;
-  const off = fieldCanvas;
-  const octx = off?.getContext('2d', { willReadFrequently: true });
-  if (off && octx && W > 0 && H > 0) {
-    const w = Math.ceil(W / FIELD_DOWNSCALE);
-    const h = Math.ceil(H / FIELD_DOWNSCALE);
-    if (off.width !== w || off.height !== h) {
-      off.width = w;
-      off.height = h;
-    }
-    octx.setTransform(1, 0, 0, 1, 0, 0);
-    octx.clearRect(0, 0, w, h);
-    const T = ctx.getTransform();
-    const d = FIELD_DOWNSCALE;
-    octx.setTransform(T.a / d, T.b / d, T.c / d, T.d / d, T.e / d, T.f / d);
-    for (const t of regions) {
-      for (const [x, y, r] of t.pts) {
-        const reach = r * 2;
-        const g = octx.createRadialGradient(x, y, 0, x, y, reach);
-        g.addColorStop(0, `rgba(${t.color}, 1)`);
-        g.addColorStop(0.35, `rgba(${t.color}, 0.8)`);
-        g.addColorStop(1, `rgba(${t.color}, 0)`);
-        octx.fillStyle = g;
-        octx.beginPath();
-        octx.arc(x, y, reach, 0, 2 * Math.PI);
-        octx.fill();
-      }
-    }
-    // Threshold the density field: outside -> clear, rim -> border, inside ->
-    // a tint that deepens with density.
-    const img = octx.getImageData(0, 0, w, h);
-    const px = img.data;
-    const t0 = FIELD_THRESHOLD * 255;
-    const band = FIELD_BORDER * 255;
-    const soft = FIELD_SOFT * 255;
-    // Galaxy view: softer, nebula-like areas with a faint rim.
-    const BORDER = galaxy ? 95 : 150;
-    const INNER = galaxy ? 75 : 95;
-    for (let i = 3; i < px.length; i += 4) {
-      const a = px[i];
-      if (a < t0 - soft) px[i] = 0;
-      else if (a < t0)
-        px[i] = (BORDER * (a - t0 + soft)) / soft; // anti-aliased outer edge
-      else if (a < t0 + band) px[i] = BORDER;
-      else {
-        // Inner edge of the border blends into a tint that deepens with density.
-        const inner = Math.min(INNER, (galaxy ? 30 : 18) + (a - t0 - band) * 0.9);
-        const k = Math.min(1, (a - t0 - band) / soft);
-        px[i] = BORDER + (inner - BORDER) * k;
-      }
-    }
-    octx.putImageData(img, 0, 0);
-    ctx.save();
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.imageSmoothingEnabled = true;
-    ctx.drawImage(off, 0, 0, W, H);
-    ctx.restore();
+function screenBlobs(ctx: CanvasRenderingContext2D, t: Territory, spread: number, margin: number) {
+  const T = ctx.getTransform();
+  const s = Math.hypot(T.a, T.b);
+  const blobs: Blob[] = [];
+  let [x0, y0, x1, y1] = [Infinity, Infinity, -Infinity, -Infinity];
+  for (const [x, y, r] of t.pts) {
+    const b = { x: T.a * x + T.c * y + T.e, y: T.b * x + T.d * y + T.f, r: spread * r * s };
+    blobs.push(b);
+    x0 = Math.min(x0, b.x - b.r);
+    y0 = Math.min(y0, b.y - b.r);
+    x1 = Math.max(x1, b.x + b.r);
+    y1 = Math.max(y1, b.y + b.r);
   }
+  const { width: W, height: H } = ctx.canvas;
+  const bounds = {
+    x0: Math.max(x0, -margin),
+    y0: Math.max(y0, -margin),
+    x1: Math.min(x1, W + margin),
+    y1: Math.min(y1, H + margin),
+  };
+  return { blobs, bounds, empty: bounds.x0 >= bounds.x1 || bounds.y0 >= bounds.y1 };
 }
 
 /**
- * Region names: big, letter-spaced and outlined so they read over anything.
- * Bold when zoomed out, faint when zoomed in on words.
+ * Territories: every word spreads a soft field in its region's colour (wider
+ * for practised words); where fields overlap they add up, and the contour at
+ * TERRITORY_EDGE is the border. Contours are traced as vector paths at full
+ * resolution: a faint wash, terraces towards dense cores, a glow along the
+ * border and a crisp rim.
+ */
+function drawTerritories(ctx: CanvasRenderingContext2D, regions: Territory[]) {
+  const { width: W, height: H } = ctx.canvas;
+  if (!W || !H) return;
+  const dpr = dprOf(ctx);
+  // About 4 CSS px per sample, coarser on huge canvases (the curves hide the grid).
+  const cell = Math.max(4 * dpr, Math.sqrt((W * H) / 90000));
+  // Read the map transform before drawing in device pixels.
+  const blobsOf = regions.map((t) => screenBlobs(ctx, t, 2, 3 * cell));
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.lineJoin = 'round';
+  regions.forEach((t, k) => {
+    const { blobs, bounds, empty } = blobsOf[k];
+    if (empty || !blobs.length) return;
+    const field = densityField(blobs, bounds, cell, true);
+    const edge = isoLines(field, TERRITORY_EDGE);
+    if (!edge.length) return;
+    const c = t.color;
+    const outline = new Path2D();
+    traceLoops(outline, edge);
+    ctx.fillStyle = `rgba(${c}, 0.07)`;
+    ctx.fill(outline, 'evenodd');
+    for (const level of TERRACES) {
+      const loops = isoLines(field, level);
+      if (!loops.length) break;
+      const p = new Path2D();
+      traceLoops(p, loops);
+      ctx.fillStyle = `rgba(${c}, 0.045)`;
+      ctx.fill(p, 'evenodd');
+      ctx.strokeStyle = `rgba(${c}, 0.2)`;
+      ctx.lineWidth = 0.8 * dpr;
+      ctx.stroke(p);
+    }
+    // A glow along the border (no clip: clipping to curved paths is costly per frame).
+    ctx.strokeStyle = `rgba(${c}, 0.08)`;
+    ctx.lineWidth = 14 * dpr;
+    ctx.stroke(outline);
+    ctx.strokeStyle = `rgba(${c}, 0.14)`;
+    ctx.lineWidth = 5 * dpr;
+    ctx.stroke(outline);
+    ctx.strokeStyle = `rgba(${mixRgb(c, '255, 255, 255', 0.25)}, 0.85)`;
+    ctx.lineWidth = 1.5 * dpr;
+    ctx.stroke(outline);
+  });
+  ctx.restore();
+}
+
+/** Low-resolution buffers for the nebulae (smooth by nature, so upscaling can't show). */
+const nebulaCanvas = typeof document !== 'undefined' ? document.createElement('canvas') : null;
+let nebulaSum = new Float32Array(0);
+let nebulaClear = new Float32Array(0);
+
+/**
+ * Galaxy view: each category a glowing nebula in its colour, brighter where its
+ * stars crowd. The field is summed on a coarse grid into a small image, which
+ * the browser scales up smoothly.
+ */
+function drawNebulae(ctx: CanvasRenderingContext2D, regions: Territory[]) {
+  const { width: W, height: H } = ctx.canvas;
+  const octx = nebulaCanvas?.getContext('2d');
+  if (!nebulaCanvas || !octx || !W || !H) return;
+  const dpr = dprOf(ctx);
+  const cell = 6 * dpr;
+  const cols = Math.ceil(W / cell) + 2;
+  const rows = Math.ceil(H / cell) + 2;
+  const n = cols * rows;
+  if (nebulaClear.length < n) {
+    nebulaSum = new Float32Array(n * 4);
+    nebulaClear = new Float32Array(n);
+  }
+  nebulaSum.fill(0, 0, n * 4);
+  nebulaClear.fill(1, 0, n);
+  for (const t of regions) {
+    const { blobs, bounds, empty } = screenBlobs(ctx, t, 3.6, cell);
+    if (empty || !blobs.length) continue;
+    // Align the region's grid with the image grid.
+    const gx0 = Math.max(0, Math.floor(bounds.x0 / cell) - 1);
+    const gy0 = Math.max(0, Math.floor(bounds.y0 / cell) - 1);
+    const gx1 = Math.min(cols - 1, Math.ceil(bounds.x1 / cell) + 1);
+    const gy1 = Math.min(rows - 1, Math.ceil(bounds.y1 / cell) + 1);
+    if (gx0 >= gx1 || gy0 >= gy1) continue;
+    const f = densityField(
+      blobs,
+      { x0: gx0 * cell, y0: gy0 * cell, x1: gx1 * cell, y1: gy1 * cell },
+      cell,
+      true,
+    );
+    const [cr, cg, cb] = t.color.split(',').map(Number);
+    for (let j = 0; j < f.rows; j++) {
+      const gj = gy0 + j;
+      if (gj >= rows) break;
+      for (let i = 0; i < f.cols; i++) {
+        const d = f.v[j * f.cols + i];
+        if (d < 0.002) continue;
+        const gi = gx0 + i;
+        if (gi >= cols) break;
+        const a = 0.62 * (1 - Math.exp(-1.2 * d));
+        const k = gj * cols + gi;
+        nebulaSum[4 * k] += a * cr;
+        nebulaSum[4 * k + 1] += a * cg;
+        nebulaSum[4 * k + 2] += a * cb;
+        nebulaSum[4 * k + 3] += a;
+        nebulaClear[k] *= 1 - a;
+      }
+    }
+  }
+  if (nebulaCanvas.width !== cols || nebulaCanvas.height !== rows) {
+    nebulaCanvas.width = cols;
+    nebulaCanvas.height = rows;
+  }
+  const img = octx.createImageData(cols, rows);
+  const px = img.data;
+  for (let k = 0; k < n; k++) {
+    const a = nebulaSum[4 * k + 3];
+    if (a <= 0) continue;
+    px[4 * k] = nebulaSum[4 * k] / a;
+    px[4 * k + 1] = nebulaSum[4 * k + 1] / a;
+    px[4 * k + 2] = nebulaSum[4 * k + 2] / a;
+    px[4 * k + 3] = 255 * (1 - nebulaClear[k]);
+  }
+  octx.putImageData(img, 0, 0);
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalCompositeOperation = 'screen';
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  // Grid point i sits at i·cell: centre the image's pixels on them.
+  ctx.drawImage(nebulaCanvas, -cell / 2, -cell / 2, cols * cell, rows * cell);
+  ctx.restore();
+}
+
+/** A dot for the backdrop grid, redrawn only when its spacing changes. */
+const gridTile = typeof document !== 'undefined' ? document.createElement('canvas') : null;
+
+/**
+ * Territory view: a faint grid of dots fixed to the map, so panning and zooming
+ * feel like moving over ground. Dots stay 22–44 px apart at any zoom.
+ */
+function drawBackdrop(ctx: CanvasRenderingContext2D) {
+  const tctx = gridTile?.getContext('2d');
+  if (!gridTile || !tctx) return;
+  const T = ctx.getTransform();
+  const s = Math.hypot(T.a, T.b);
+  const dpr = dprOf(ctx);
+  let step = 40; // map units
+  while (step * s < 22 * dpr) step *= 2;
+  const size = Math.max(4, Math.round(step * s));
+  if (gridTile.width !== size) {
+    gridTile.width = gridTile.height = size;
+    tctx.fillStyle = 'rgba(148, 163, 184, 1)';
+    tctx.beginPath();
+    tctx.arc(size / 2, size / 2, 0.9 * dpr, 0, 2 * Math.PI);
+    tctx.fill();
+  }
+  const pattern = ctx.createPattern(gridTile, 'repeat');
+  if (!pattern) return;
+  const k = (step * s) / size;
+  pattern.setTransform(new DOMMatrix([k, 0, 0, k, T.e - (size * k) / 2, T.f - (size * k) / 2]));
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  // Sparser dots fade in as they come, so doubling the step doesn't pop.
+  ctx.globalAlpha = 0.07 + 0.05 * Math.min(1, (step * s) / (40 * dpr) - 0.55);
+  ctx.fillStyle = pattern;
+  ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  ctx.restore();
+}
+
+/**
+ * Region names: big, letter-spaced Roman capitals (Cinzel) on a dark halo with
+ * a glow in the region's colour, so they read over anything. Bold when zoomed
+ * out, faint when zoomed in on words.
  */
 function drawRegionNames(
   ctx: CanvasRenderingContext2D,
@@ -1612,7 +1842,8 @@ function drawRegionNames(
   regions: Territory[],
   galaxy = false,
 ) {
-  const alpha = Math.min(galaxy ? 0.95 : 0.85, Math.max(0.12, 1.1 - 0.45 * scale));
+  const alpha = Math.min(galaxy ? 0.95 : 0.9, Math.max(0.12, 1.1 - 0.45 * scale));
+  const dpr = dprOf(ctx);
   ctx.save();
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
@@ -1620,18 +1851,19 @@ function drawRegionNames(
   const c = ctx as CanvasRenderingContext2D & { letterSpacing?: string };
   // Bigger territories claim their spot first; a name that would overlap one
   // already placed is nudged above or below it.
-  const placed: { x0: number; x1: number; y0: number; y1: number }[] = [];
-  const hits = (b: (typeof placed)[number]) =>
+  const placed: Box[] = [];
+  const hits = (b: Box) =>
     placed.some((p) => b.x0 < p.x1 && b.x1 > p.x0 && b.y0 < p.y1 && b.y1 > p.y0);
   for (const t of [...regions].sort((a, b) => b.pts.length - a.pts.length)) {
     if (!t.name || !t.pts.length) continue;
     const cx = t.pts.reduce((a, p) => a + p[0], 0) / t.pts.length;
     let cy = t.pts.reduce((a, p) => a + p[1], 0) / t.pts.length;
-    const px = Math.min(24, Math.max(12, 8 + 2.5 * Math.sqrt(t.pts.length))); // screen pixels
-    ctx.font = `${galaxy ? 600 : 800} ${px / scale}px sans-serif`;
-    if (galaxy) c.letterSpacing = `${(px * 0.25) / scale}px`;
-    const half = ctx.measureText(t.name.toUpperCase()).width / 2;
-    const lh = (px * 1.2) / scale;
+    const px = Math.min(26, Math.max(13, 9 + 2.5 * Math.sqrt(t.pts.length))); // screen pixels
+    const text = t.name.toUpperCase();
+    ctx.font = `${galaxy ? 600 : 700} ${px / scale}px ${FONT_TITLE}`;
+    c.letterSpacing = `${(px * (galaxy ? 0.3 : 0.14)) / scale}px`;
+    const half = ctx.measureText(text).width / 2;
+    const lh = (px * 1.25) / scale;
     const box = (y: number) => ({ x0: cx - half, x1: cx + half, y0: y - lh / 2, y1: y + lh / 2 });
     for (const dy of [0, 1, -1, 2, -2, 3, -3]) {
       if (!hits(box(cy + dy * lh))) {
@@ -1640,101 +1872,303 @@ function drawRegionNames(
       }
     }
     placed.push(box(cy));
-    ctx.lineWidth = 4 / scale;
-    ctx.strokeStyle = `rgba(1, 3, 11, ${0.8 * alpha})`;
-    ctx.strokeText(t.name.toUpperCase(), cx, cy);
-    ctx.fillStyle = t.landmark
-      ? `rgba(252, 211, 77, ${Math.max(alpha, 0.7)})`
-      : `rgba(${t.color}, ${alpha})`;
-    ctx.fillText(t.name.toUpperCase(), cx, cy);
-    if (t.landmark) drawTower(ctx, cx, cy - lh * 1.1, (px * 1.1) / scale);
+    const rgb = t.landmark ? '252, 211, 77' : t.color;
+    const a = t.landmark ? Math.max(alpha, 0.75) : alpha;
+    ctx.lineWidth = 5 / scale;
+    ctx.strokeStyle = `rgba(1, 3, 11, ${0.7 * a})`;
+    ctx.strokeText(text, cx, cy);
+    ctx.shadowColor = `rgba(${rgb}, ${0.55 * a})`;
+    ctx.shadowBlur = 14 * dpr;
+    ctx.fillStyle = `rgba(${mixRgb(rgb, '255, 255, 255', 0.12)}, ${a})`;
+    ctx.fillText(text, cx, cy);
+    ctx.shadowBlur = 0;
+    if (t.landmark) {
+      const h = (px * 1.2) / scale;
+      drawTower(ctx, cx, cy - lh * 1.15, h, t.color);
+      placed.push({ x0: cx - h / 2, x1: cx + h / 2, y0: cy - lh * 1.15 - h, y1: cy - lh / 2 });
+    }
   }
   ctx.restore();
+  // While bold, the names are in the way of word labels (see drawLabels).
+  return alpha > 0.4 ? placed : [];
 }
 
-/** A landmark: a small crenellated gold tower of height `h`, standing on (x, y + h/2). */
-function drawTower(ctx: CanvasRenderingContext2D, x: number, y: number, h: number) {
-  const w = h * 0.7;
+/**
+ * A landmark: a crenellated gold tower of height `h` standing on (x, y + h/2),
+ * with a pennant in its region's colour.
+ */
+function drawTower(ctx: CanvasRenderingContext2D, x: number, y: number, h: number, rgb: string) {
+  const w = h * 0.62;
   const top = y - h / 2;
+  const base = y + h / 2;
   const m = w / 5; // merlon width
+  softGlow(ctx, x, y, 0, h * 1.2, '252, 211, 77', 0.28);
   ctx.beginPath();
-  ctx.moveTo(x - w / 2, y + h / 2);
+  ctx.moveTo(x - w / 2 - h * 0.05, base);
   // Along the top: merlons (even) and gaps (odd), left to right.
   for (let i = 0; i < 5; i++) {
     const yy = i % 2 ? top + m : top;
     ctx.lineTo(x - w / 2 + i * m, yy);
     ctx.lineTo(x - w / 2 + (i + 1) * m, yy);
   }
-  ctx.lineTo(x + w / 2, y + h / 2);
+  ctx.lineTo(x + w / 2 + h * 0.05, base);
   ctx.closePath();
-  ctx.fillStyle = 'rgba(252, 211, 77, 0.95)';
-  ctx.strokeStyle = 'rgba(1, 3, 11, 0.8)';
-  ctx.lineWidth = h / 12;
+  const g = ctx.createLinearGradient(x - w / 2, 0, x + w / 2, 0);
+  g.addColorStop(0, '#fde68a');
+  g.addColorStop(0.55, '#fbbf24');
+  g.addColorStop(1, '#b45309');
+  ctx.fillStyle = g;
+  ctx.strokeStyle = 'rgba(1, 3, 11, 0.85)';
+  ctx.lineWidth = h / 14;
   ctx.stroke();
   ctx.fill();
-  // The door.
-  ctx.fillStyle = 'rgba(120, 53, 15, 0.9)';
-  ctx.fillRect(x - w / 8, y + h / 2 - h * 0.35, w / 4, h * 0.35);
+  // The door and a window slit.
+  ctx.fillStyle = 'rgba(69, 26, 3, 0.9)';
+  ctx.beginPath();
+  ctx.moveTo(x - w / 7, base);
+  ctx.lineTo(x - w / 7, base - h * 0.22);
+  ctx.arc(x, base - h * 0.22, w / 7, Math.PI, 0);
+  ctx.lineTo(x + w / 7, base);
+  ctx.fill();
+  ctx.fillRect(x - w / 24, top + m * 1.9, w / 12, h * 0.16);
+  // The pennant.
+  ctx.strokeStyle = 'rgba(253, 230, 138, 0.95)';
+  ctx.lineWidth = h / 28;
+  ctx.beginPath();
+  ctx.moveTo(x, top);
+  ctx.lineTo(x, top - h * 0.42);
+  ctx.stroke();
+  ctx.fillStyle = `rgba(${rgb}, 0.95)`;
+  ctx.beginPath();
+  ctx.moveTo(x, top - h * 0.42);
+  ctx.lineTo(x + h * 0.34, top - h * 0.33);
+  ctx.lineTo(x, top - h * 0.24);
+  ctx.closePath();
+  ctx.fill();
 }
 
-/** Far stars behind the galaxy view (fixed to the screen). */
-const STARFIELD = Array.from({ length: 260 }, (_, i) => {
-  const h = Math.sin(i * 12.9898) * 43758.5453;
+/** Far stars behind the galaxy view, in three layers that drift at different speeds. */
+const STARFIELD = Array.from({ length: 300 }, (_, i) => {
   const r = (k: number) => {
     const v = Math.sin(i * 78.233 + k * 37.719) * 43758.5453;
     return v - Math.floor(v);
   };
-  return { x: h - Math.floor(h), y: r(1), size: 0.4 + r(2) * 1.1, alpha: 0.15 + r(3) * 0.55 };
+  const layer = i % 3;
+  return {
+    x: r(0),
+    y: r(1),
+    layer,
+    size: (0.35 + r(2) * 0.6) * (1 + layer * 0.45),
+    alpha: 0.12 + r(3) * 0.45 + layer * 0.08,
+    warm: r(4) > 0.8,
+  };
 });
+/** How much each starfield layer follows the camera (parallax). */
+const STAR_DEPTH = [0.015, 0.04, 0.09];
 
 function drawStarfield(ctx: CanvasRenderingContext2D) {
-  const W = ctx.canvas.width;
-  const H = ctx.canvas.height;
-  const dpr = Math.max(1, W / (ctx.canvas.clientWidth || W));
+  const { width: W, height: H } = ctx.canvas;
+  const T = ctx.getTransform();
+  const dpr = dprOf(ctx);
   ctx.save();
   ctx.setTransform(1, 0, 0, 1, 0, 0);
+  const wrap = (v: number, m: number) => ((v % m) + m) % m;
   for (const s of STARFIELD) {
-    ctx.fillStyle = `rgba(226, 232, 255, ${s.alpha})`;
+    const d = STAR_DEPTH[s.layer];
+    const x = wrap(s.x * W + T.e * d, W);
+    const y = wrap(s.y * H + T.f * d, H);
+    ctx.fillStyle = s.warm ? `rgba(255, 228, 196, ${s.alpha})` : `rgba(220, 230, 255, ${s.alpha})`;
     ctx.beginPath();
-    ctx.arc(s.x * W, s.y * H, s.size * dpr, 0, 2 * Math.PI);
+    ctx.arc(x, y, s.size * dpr, 0, 2 * Math.PI);
     ctx.fill();
   }
   ctx.restore();
 }
 
-/** A word in the galaxy view: a glowing star, named when zoomed in. */
+/** A word in the galaxy view: a glowing star. Returns its glow radius (for the label). */
 function drawStar(
   ctx: CanvasRenderingContext2D,
   x: number,
   y: number,
   scale: number,
   rgb: string,
-  name: string,
   { active, linked }: { active: boolean; linked: boolean },
 ) {
   const core = (active ? 3 : 1.8) / Math.sqrt(scale);
-  const glow = core * (active ? 5 : 3.2);
+  const glow = core * (active ? 5 : 3.4);
   ctx.save();
   const g = ctx.createRadialGradient(x, y, 0, x, y, glow);
-  g.addColorStop(0, `rgba(${rgb}, ${active || linked ? 0.85 : 0.55})`);
+  g.addColorStop(0, `rgba(${rgb}, ${active || linked ? 0.9 : 0.6})`);
+  g.addColorStop(0.35, `rgba(${rgb}, ${active || linked ? 0.35 : 0.2})`);
   g.addColorStop(1, `rgba(${rgb}, 0)`);
   ctx.fillStyle = g;
   ctx.beginPath();
   ctx.arc(x, y, glow, 0, 2 * Math.PI);
   ctx.fill();
-  ctx.fillStyle = active ? '#ffffff' : 'rgba(241, 245, 255, 0.95)';
+  ctx.fillStyle = active ? '#ffffff' : `rgba(${mixRgb(rgb, '255, 255, 255', 0.75)}, 0.95)`;
   ctx.beginPath();
   ctx.arc(x, y, core, 0, 2 * Math.PI);
   ctx.fill();
-  if (active || linked || scale > 1.4) {
-    const fontSize = Math.max(3, 10 / scale);
-    ctx.font = `${active ? 'bold ' : ''}${fontSize}px sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'top';
-    ctx.fillStyle = `rgba(226, 232, 240, ${active ? 1 : linked ? 0.85 : Math.min(0.8, (scale - 1.4) * 1.5)})`;
-    ctx.fillText(name, x, y + glow * 0.6);
+  if (active) {
+    // A four-pointed glint on the selected star.
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+    ctx.lineWidth = core * 0.35;
+    ctx.beginPath();
+    ctx.moveTo(x - glow * 1.2, y);
+    ctx.lineTo(x + glow * 1.2, y);
+    ctx.moveTo(x, y - glow * 1.2);
+    ctx.lineTo(x, y + glow * 1.2);
+    ctx.stroke();
   }
   ctx.restore();
+  return glow;
+}
+
+type Box = { x0: number; x1: number; y0: number; y1: number };
+
+/** A line of a word's label; `px` is its size on screen. */
+type LabelLine = {
+  text: string;
+  px: number;
+  rgb: string;
+  alpha: number;
+  weight?: number;
+  /** Latin roots and English cousins: an italic book face. */
+  latin?: boolean;
+};
+/** A label under a word (x, y: its top centre in map units), placed by priority. */
+type Label = { x: number; y: number; lines: LabelLine[]; fade: number; priority: number };
+
+const labelFont = (l: LabelLine, scale: number) => {
+  // Constant size on screen, except far zoomed in, where names grow with the map.
+  const size = Math.max(l.px * 0.27, l.px / scale);
+  return l.latin
+    ? `italic 600 ${size * 1.15}px ${FONT_LATIN}`
+    : `${l.weight ?? 500} ${size}px ${FONT_UI}`;
+};
+
+/**
+ * Word names, drawn after everything so links and words never cover them, each
+ * on a dark halo. The most important go first (the selected word, then stronger
+ * words); a name that would overlap one already placed is left out, so a
+ * crowded map zoomed out shows fewer names instead of a smudge.
+ */
+function drawLabels(
+  ctx: CanvasRenderingContext2D,
+  scale: number,
+  labels: Label[],
+  /** Space already taken (region names). */
+  taken: Box[] = [],
+) {
+  const placed = [...taken];
+  const pad = 3 / scale;
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.lineJoin = 'round';
+  for (const l of [...labels].sort((a, b) => b.priority - a.priority)) {
+    let w = 0;
+    const heights = l.lines.map((line) => {
+      ctx.font = labelFont(line, scale);
+      w = Math.max(w, ctx.measureText(line.text).width);
+      return Math.max(line.px * 0.27, line.px / scale) * 1.2;
+    });
+    const box = {
+      x0: l.x - w / 2 - pad,
+      x1: l.x + w / 2 + pad,
+      y0: l.y,
+      y1: l.y + heights.reduce((a, b) => a + b, 0),
+    };
+    if (placed.some((p) => box.x0 < p.x1 && box.x1 > p.x0 && box.y0 < p.y1 && box.y1 > p.y0)) {
+      continue;
+    }
+    placed.push(box);
+    let y = l.y;
+    l.lines.forEach((line, i) => {
+      const a = line.alpha * l.fade;
+      ctx.font = labelFont(line, scale);
+      ctx.lineWidth = heights[i] * 0.28;
+      ctx.strokeStyle = `rgba(2, 6, 23, ${0.8 * a})`;
+      ctx.strokeText(line.text, l.x, y);
+      ctx.fillStyle = `rgba(${line.rgb}, ${a})`;
+      ctx.fillText(line.text, l.x, y);
+      y += heights[i];
+    });
+  }
+  ctx.restore();
+}
+
+/** A radial glow: full `alpha` at r0, gone at r1. */
+function softGlow(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  r0: number,
+  r1: number,
+  rgb: string,
+  alpha: number,
+) {
+  if (alpha <= 0.01 || r1 <= r0) return;
+  const g = ctx.createRadialGradient(x, y, r0, x, y, r1);
+  g.addColorStop(0, `rgba(${rgb}, ${alpha})`);
+  g.addColorStop(0.4, `rgba(${rgb}, ${alpha * 0.4})`);
+  g.addColorStop(1, `rgba(${rgb}, 0)`);
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(x, y, r1, 0, 2 * Math.PI);
+  ctx.fill();
+}
+
+/** A lit sphere in `rgb`: a highlight up and left, a darker rim. */
+function orbGradient(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  r: number,
+  rgb: string,
+  alpha: number,
+) {
+  const g = ctx.createRadialGradient(x - r * 0.35, y - r * 0.4, r * 0.05, x, y, r * 1.3);
+  g.addColorStop(0, `rgba(${mixRgb(rgb, '255, 255, 255', 0.6)}, ${alpha})`);
+  g.addColorStop(0.45, `rgba(${rgb}, ${alpha})`);
+  g.addColorStop(1, `rgba(${mixRgb(rgb, '2, 6, 23', 0.55)}, ${alpha})`);
+  return g;
+}
+
+/** A glyph ("?") centred in a word's shape (triangles sit lower). */
+function glyph(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  shape: Shape,
+  color: string,
+) {
+  ctx.fillStyle = color;
+  ctx.font = `700 8px ${FONT_UI}`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, x, y + (shape === 'triangle' ? 2 : 0.6));
+}
+
+/** A small tag above a word (push share, win-back), on a dark halo. */
+function badge(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  scale: number,
+  rgb: string,
+) {
+  ctx.font = `700 ${Math.max(4, 10 / scale)}px ${FONT_UI}`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = 3 / scale;
+  ctx.strokeStyle = 'rgba(2, 6, 23, 0.8)';
+  ctx.strokeText(text, x, y);
+  ctx.fillStyle = `rgba(${rgb}, 0.95)`;
+  ctx.fillText(text, x, y);
 }
 
 /** A glowing chevron pointing along the link: the direction influence travels. */
@@ -1806,21 +2240,15 @@ function drawBurst(
   ctx.restore();
 }
 
-/** A bought hint: a small amber dot with its English cousin, tied to one word. */
-function drawHint(ctx: CanvasRenderingContext2D, node: N, x: number, y: number, scale: number) {
+/** A bought hint: a small amber dot tied to its word (the cousin is its label). */
+function drawHint(ctx: CanvasRenderingContext2D, x: number, y: number) {
   const r = 3;
+  softGlow(ctx, x, y, r * 0.5, r + 5, '251, 191, 36', 0.3);
   ctx.beginPath();
   ctx.arc(x, y, r, 0, 2 * Math.PI);
-  ctx.fillStyle = 'rgba(251, 191, 36, 0.35)';
+  ctx.fillStyle = orbGradient(ctx, x, y, r, '251, 191, 36', 0.55);
   ctx.fill();
   ctx.strokeStyle = 'rgba(251, 191, 36, 0.9)';
   ctx.lineWidth = 0.8;
   ctx.stroke();
-  if (scale < 0.6) return; // zoomed out: just the dot
-  const fontSize = Math.max(3, 10.5 / scale);
-  ctx.font = `italic ${fontSize}px serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'top';
-  ctx.fillStyle = 'rgba(253, 230, 138, 0.9)';
-  ctx.fillText(`≈ ${node.word.it}`, x, y + r + 1.5);
 }

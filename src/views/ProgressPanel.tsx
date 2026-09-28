@@ -24,7 +24,7 @@ export default function ProgressPanel(props: Props) {
   const { score, clusters, regionName, achievements, coins, counts, onClose } = props;
   const earned = ACHIEVEMENTS.filter((a) => a.id in achievements).length;
   return (
-    <div className="rounded-lg border border-amber-500/30 bg-slate-900 p-4 text-sm">
+    <div className="panel border-amber-500/30 p-4 text-sm">
       <div className="flex items-baseline justify-between">
         <span className="text-3xl font-bold text-amber-300">{score.toLocaleString()}</span>
         <span className="text-slate-400">🪙 {coins}</span>

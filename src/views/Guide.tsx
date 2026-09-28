@@ -38,7 +38,7 @@ export default function Guide({ onClose }: { onClose: () => void }) {
       onClick={onClose}
     >
       <div
-        className="max-h-full w-full max-w-2xl overflow-y-auto rounded-xl border border-slate-700 bg-slate-900 p-5 text-sm text-slate-300 shadow-2xl"
+        className="panel max-h-full w-full max-w-2xl overflow-y-auto bg-slate-900/90 p-5 text-sm text-slate-300 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-3 flex items-baseline justify-between">

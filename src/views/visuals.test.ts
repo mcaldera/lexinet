@@ -1,4 +1,5 @@
-import { REGION_RGB, regionColors } from './visuals';
+import { describe, expect, it } from 'vitest';
+import { mixRgb, REGION_RGB, regionColors } from './visuals';
 
 test('regions tied by many links get different colours', () => {
   const regions = [0, 1, 2].map((id) => ({ id, words: [`${id}a`, `${id}b`] }));
@@ -28,4 +29,11 @@ test('colours are spread over the palette, not piled on the first few', () => {
   const regions = Array.from({ length: 32 }, (_, id) => ({ id, words: [`${id}`] }));
   const c = regionColors(regions, [], (w) => Number(w));
   expect(new Set(c.values()).size).toBe(REGION_RGB.length);
+});
+
+describe('mixRgb', () => {
+  it('moves one colour towards another', () => {
+    expect(mixRgb('0, 0, 0', '255, 255, 255', 0.5)).toBe('128, 128, 128');
+    expect(mixRgb('10, 20, 30', '0, 0, 0', 0)).toBe('10, 20, 30');
+  });
 });

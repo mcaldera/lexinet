@@ -93,7 +93,7 @@ const KIND = {
   rebel: { text: 'rebel', cls: 'text-red-300' },
   support: { text: 'support', cls: 'text-emerald-300' },
 } as const;
-const btn = 'rounded px-2 py-1 text-xs text-white disabled:opacity-40';
+const btn = 'btn rounded-md px-2 py-1 text-xs text-white disabled:opacity-40';
 
 /** The selected word's status: a line or two, with the breakdown one click away. */
 export default function NodeDetails(props: Props) {
@@ -190,7 +190,7 @@ export default function NodeDetails(props: Props) {
         >
           Hold
         </span>
-        <div className="h-1.5 flex-1 overflow-hidden rounded bg-slate-800">
+        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/[0.08]">
           <div
             className={`h-full ${h >= 0.9 ? 'bg-emerald-400' : h >= 0.5 ? 'bg-amber-400' : 'bg-red-400'}`}
             style={{ width: pct(h) }}

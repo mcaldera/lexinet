@@ -48,7 +48,7 @@ export default function VerbGoals({
   const shown = goals.filter((g) => g.state !== 'locked');
   const hidden = goals.length - shown.length;
   return (
-    <div className="rounded-lg border border-amber-500/40 bg-slate-900 p-4 text-sm">
+    <div className="panel border-amber-500/40 p-4 text-sm">
       <div className="mb-3 flex justify-between text-xs text-amber-300/90">
         <span title="Conquer a verb, then conjugate it (one new tense per day)">
           To reach {nextTier}: {done}/{need} verbs conjugated in the {TENSES[level - 1]}

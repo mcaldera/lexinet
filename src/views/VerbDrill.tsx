@@ -32,7 +32,7 @@ export default function VerbDrill({ word, tense, kind, onDone, onCancel }: Props
   const passed = result && !result.rows.includes('wrong');
 
   return (
-    <div className="rounded-lg border border-amber-500/40 bg-slate-900 p-4 text-sm">
+    <div className="panel border-amber-500/40 p-4 text-sm">
       <div className="mb-3 flex justify-between text-xs text-amber-300/90">
         <span>
           {tense}

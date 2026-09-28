@@ -18,7 +18,7 @@ export default function WordInfo(props: Props) {
   const { word, strength, status, verbLevel, tenseCards, onClose } = props;
   const learned = TENSES.filter((t) => tenseCards.some((c) => c.tense === t));
   return (
-    <div className="rounded-lg border border-emerald-500/30 bg-slate-900 p-4 text-sm">
+    <div className="panel border-emerald-500/30 p-4 text-sm">
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-2 text-2xl font-medium">

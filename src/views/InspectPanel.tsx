@@ -42,7 +42,7 @@ export default function InspectPanel({ data, health, selectedId, onSelect }: Pro
 
   if (hub) {
     return (
-      <div className="rounded-lg border border-pink-500/40 bg-slate-900 p-4 text-sm">
+      <div className="panel border-pink-500/40 p-4 text-sm">
         <div className="mb-2 text-xs uppercase tracking-wider text-pink-300/80">Shared root</div>
         <div className="text-xl">
           <i className="text-pink-200">{hub.root}</i>
@@ -84,7 +84,7 @@ export default function InspectPanel({ data, health, selectedId, onSelect }: Pro
       {},
     );
     return (
-      <div className="rounded-lg border border-slate-800 bg-slate-900 p-4 text-sm text-slate-300">
+      <div className="panel p-4 text-sm text-slate-300">
         <div className="mb-2 text-xs uppercase tracking-wider text-slate-400">Inspect network</div>
         <p className="mb-2">
           {data.nodes.length} words · {data.edges.length} links (
@@ -127,7 +127,7 @@ export default function InspectPanel({ data, health, selectedId, onSelect }: Pro
   const h = health.get(word.id);
 
   return (
-    <div className="rounded-lg border border-slate-800 bg-slate-900 p-4 text-sm">
+    <div className="panel p-4 text-sm">
       <div className="mb-2 flex justify-between text-xs uppercase tracking-wider text-slate-400">
         <span>Inspect</span>
         <span>

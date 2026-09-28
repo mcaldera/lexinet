@@ -73,24 +73,24 @@ export default function Menu(props: Props) {
         setOpen(false);
         onClick();
       }}
-      className={`w-full rounded px-2 py-1.5 text-left hover:bg-slate-800 ${cls}`}
+      className={`w-full rounded-lg px-2 py-1.5 text-left hover:bg-white/[0.06] ${cls}`}
     >
       {label}
     </button>
   );
-  const time = 'rounded bg-slate-800 px-2 py-1 hover:bg-slate-700';
+  const time = 'rounded-md bg-white/[0.06] px-2 py-1 hover:bg-white/[0.12]';
 
   return (
     <div ref={box} className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
         title="Menu"
-        className={`rounded px-2.5 py-1 text-slate-300 hover:bg-slate-800 ${open ? 'bg-slate-800' : ''}`}
+        className={`chip px-2.5 py-1 text-slate-300 ${open ? 'border-white/20 bg-white/10' : ''}`}
       >
         ☰
       </button>
       {open && (
-        <div className="absolute right-0 top-full z-20 mt-1 w-60 rounded-lg border border-slate-700 bg-slate-900 p-1.5 text-sm text-slate-300 shadow-xl">
+        <div className="glass absolute right-0 top-full z-20 mt-2 w-60 rounded-xl bg-slate-900/90 p-1.5 text-sm text-slate-300">
           {GRAPH_NAMES.length > 1 && (
             <select
               value={props.graphName}

@@ -10,14 +10,16 @@ type Props = {
 export default function StartPicker({ regions, onPick }: Props) {
   const sorted = [...regions].sort((a, b) => a.name.localeCompare(b.name));
   return (
-    <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-950/80 p-6 backdrop-blur-sm">
+    <div className="absolute inset-0 z-20 flex items-center justify-center bg-[radial-gradient(ellipse_at_center,rgba(2,6,23,0.7),rgba(2,6,23,0.95))] p-6 backdrop-blur-sm">
       <div className="w-full max-w-2xl">
-        <h2 className="mb-1 text-center text-2xl font-semibold text-slate-100">Where to begin?</h2>
+        <h2 className="mb-2 text-center font-title text-3xl font-bold tracking-[0.08em] text-emerald-100 [text-shadow:0_0_24px_rgba(52,211,153,0.45)]">
+          Where to begin?
+        </h2>
         <p className="mb-5 text-center text-sm text-slate-500">Your territory grows from there.</p>
         <button
           autoFocus
           onClick={() => onPick()}
-          className="mx-auto mb-5 block rounded-lg bg-emerald-700 px-5 py-2 font-medium text-white hover:bg-emerald-600"
+          className="btn-primary mx-auto mb-6 block rounded-full px-6 py-2"
         >
           🎲 Anywhere
         </button>
@@ -27,7 +29,7 @@ export default function StartPicker({ regions, onPick }: Props) {
               <button
                 key={r.id}
                 onClick={() => onPick(r.id)}
-                className="rounded-full border border-slate-700 px-3 py-1 text-sm text-slate-300 hover:border-emerald-500 hover:text-emerald-200"
+                className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-sm text-slate-300 transition hover:-translate-y-px hover:border-emerald-400/60 hover:bg-emerald-400/10 hover:text-emerald-100 hover:shadow-[0_0_16px_-4px_rgba(52,211,153,0.6)]"
               >
                 {r.name}
               </button>

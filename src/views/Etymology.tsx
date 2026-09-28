@@ -8,7 +8,7 @@ export default function Etymology({ word }: { word: WordNode }) {
       {word.root && (
         <div>
           <span className="text-pink-300/80">⬢</span> {word.root_lang ?? ''}{' '}
-          <i className="text-pink-200">{word.root}</i>
+          <i className="font-latin text-[1.2em] font-semibold text-pink-200">{word.root}</i>
           {word.root_meaning && <span> “{word.root_meaning}”</span>}
         </div>
       )}

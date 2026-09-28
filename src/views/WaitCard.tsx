@@ -28,7 +28,7 @@ export default function WaitCard(props: Props) {
   const { title, subtitle, message, tone, progress, action, onNext, onClose } = props;
   const t = TONE[tone];
   return (
-    <div className={`rounded-lg border bg-slate-900 p-4 text-sm ${t.border}`}>
+    <div className={`panel p-4 text-sm ${t.border}`}>
       <div className="flex justify-end">
         <button className="text-xs text-slate-500 hover:text-slate-200" onClick={onClose}>
           ✕
@@ -38,25 +38,17 @@ export default function WaitCard(props: Props) {
       {subtitle && <div className="text-center text-xs text-slate-500">{subtitle}</div>}
       <p className={`mt-3 text-center ${t.text}`}>{message}</p>
       {progress !== undefined && (
-        <div className="mx-auto mt-2 h-1 w-2/3 overflow-hidden rounded bg-slate-800">
+        <div className="mx-auto mt-2 h-1 w-2/3 overflow-hidden rounded-full bg-white/[0.08]">
           <div className={`h-full ${t.bar}`} style={{ width: `${Math.min(1, progress) * 100}%` }} />
         </div>
       )}
       {action ? (
-        <button
-          autoFocus
-          onClick={action.onClick}
-          className="mt-4 w-full rounded bg-emerald-700 py-2 text-sm font-medium text-white hover:bg-emerald-600"
-        >
+        <button autoFocus onClick={action.onClick} className="mt-4 w-full btn-primary py-2 text-sm">
           {action.label}
         </button>
       ) : (
         onNext && (
-          <button
-            autoFocus
-            onClick={onNext}
-            className="mt-4 w-full rounded bg-slate-800 py-2 text-sm text-slate-200 hover:bg-slate-700"
-          >
+          <button autoFocus onClick={onNext} className="btn-ghost mt-4 w-full py-2 text-sm">
             Next word <span className="text-xs opacity-60">(enter)</span>
           </button>
         )

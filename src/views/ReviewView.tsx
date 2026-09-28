@@ -154,7 +154,7 @@ export default function ReviewView(props: Props) {
   };
 
   return (
-    <div className="rounded-lg border border-slate-800 bg-slate-900 p-4">
+    <div className="panel p-4">
       {!current || !word ? (
         <div className="py-4 text-center text-sm text-slate-400">
           {elsewhere ? (
@@ -163,11 +163,7 @@ export default function ReviewView(props: Props) {
             </p>
           ) : null}
           {onNext ? (
-            <button
-              autoFocus
-              onClick={onNext}
-              className="w-full rounded bg-emerald-700 py-2 font-medium text-white hover:bg-emerald-600"
-            >
+            <button autoFocus onClick={onNext} className="w-full btn-primary py-2">
               Next word <span className="text-xs opacity-60">(enter)</span>
             </button>
           ) : (
@@ -200,7 +196,7 @@ export default function ReviewView(props: Props) {
             <div className="pb-1 pt-3 text-center">
               <div className="text-xl">
                 {gap.before}
-                <span className="inline-block min-w-16 border-b-2 border-emerald-500 text-emerald-200">
+                <span className="inline-block min-w-16 border-b-2 border-emerald-400 text-emerald-200 [box-shadow:0_6px_12px_-8px_rgba(52,211,153,0.9)]">
                   {check ? word.example!.blank : '\u00a0'}
                 </span>
                 {gap.after}
@@ -209,7 +205,9 @@ export default function ReviewView(props: Props) {
             </div>
           ) : (
             <div className="flex items-center justify-center gap-2 pb-1 pt-3">
-              <span className="text-2xl font-medium">{prompt}</span>
+              <span className="text-[1.7rem] font-semibold tracking-tight text-white">
+                {prompt}
+              </span>
               {!toItalian && <SpeakButton text={word.it} />}
             </div>
           )}
@@ -223,7 +221,7 @@ export default function ReviewView(props: Props) {
               <button
                 onClick={() => setChoosing(true)}
                 title="Show 4 meanings to choose from (no fast track, and no going back to typing)"
-                className="rounded border border-slate-700 px-2.5 py-0.5 text-slate-400 hover:border-slate-500 hover:text-slate-200"
+                className="btn-ghost rounded-full px-2.5 py-0.5 font-normal text-slate-400"
               >
                 ☰ Choose instead
               </button>
@@ -240,12 +238,12 @@ export default function ReviewView(props: Props) {
                     key={c}
                     disabled={!!check}
                     onClick={() => choose(c)}
-                    className={`flex w-full items-center gap-2 rounded border px-3 py-1.5 text-left text-sm ${
+                    className={`flex w-full items-center gap-2 rounded-lg border px-3 py-1.5 text-left text-sm transition ${
                       right
                         ? 'border-emerald-500 bg-emerald-500/15 text-emerald-100'
                         : wrong
                           ? 'border-red-500 bg-red-500/15 text-red-200'
-                          : 'border-slate-700 hover:border-slate-500 disabled:opacity-60'
+                          : 'border-white/10 bg-white/[0.02] hover:border-white/25 hover:bg-white/[0.06] disabled:opacity-60'
                     }`}
                   >
                     <span className="text-xs text-slate-500">{i + 1}</span> {c}
@@ -280,7 +278,7 @@ export default function ReviewView(props: Props) {
               autoComplete="off"
               autoCapitalize="off"
               spellCheck={false}
-              className="w-full rounded border border-slate-700 bg-slate-950 px-3 py-2 text-lg outline-none focus:border-emerald-500"
+              className="field w-full px-3 py-2 text-lg"
             />
           )}
 
@@ -300,15 +298,12 @@ export default function ReviewView(props: Props) {
                 </div>
               )}
               <div className="mt-3 flex gap-2">
-                <button
-                  onClick={submit}
-                  className="flex-1 rounded bg-emerald-700 py-2 text-sm hover:bg-emerald-600"
-                >
+                <button onClick={submit} className="flex-1 btn-primary py-2 text-sm">
                   Check
                 </button>
                 <button
                   onClick={() => answer && setCheck(checkAnswer('', answer, 'it'))}
-                  className="rounded bg-slate-800 px-3 py-2 text-sm text-slate-300 hover:bg-slate-700"
+                  className="btn-ghost px-3 py-2 text-sm"
                 >
                   {firstSight ? 'Show me' : "Don't know"}
                 </button>
@@ -316,7 +311,7 @@ export default function ReviewView(props: Props) {
             </>
           ) : (
             <>
-              <div className={`mt-3 rounded border px-3 py-2 ${VERDICT[check.verdict].cls}`}>
+              <div className={`mt-3 rounded-lg border px-3 py-2 ${VERDICT[check.verdict].cls}`}>
                 <div className="flex items-baseline justify-between text-xs">
                   <span className="font-semibold">
                     {firstSight && check.verdict === 'wrong'
@@ -339,10 +334,8 @@ export default function ReviewView(props: Props) {
                 autoFocus
                 disabled={busy}
                 onClick={() => rate(check.grade)}
-                className={`mt-3 w-full rounded py-2 text-sm font-medium text-white disabled:opacity-50 ${
-                  check.verdict === 'wrong'
-                    ? 'bg-red-700 hover:bg-red-600'
-                    : 'bg-emerald-700 hover:bg-emerald-600'
+                className={`mt-3 w-full py-2 text-sm ${
+                  check.verdict === 'wrong' ? 'btn-danger' : 'btn-primary'
                 }`}
               >
                 Continue

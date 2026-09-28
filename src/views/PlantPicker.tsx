@@ -16,7 +16,7 @@ export default function PlantPicker(props: Props) {
   const { anchorName, anchorCategory, options, coins, onPlant, onClose } = props;
   const cheapest = Math.min(PLANT_COST, ...options.map((o) => o.cost));
   return (
-    <div className="rounded-lg border border-emerald-500/40 bg-slate-900 p-4 text-sm">
+    <div className="panel border-emerald-500/40 p-4 text-sm">
       <div className="flex justify-between text-xs text-emerald-300/90">
         <span>
           🌱 Plant next to <b>{anchorName}</b>{' '}

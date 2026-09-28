@@ -152,3 +152,22 @@ export const BAND_COLOR = {
   dashed: 'rgba(250, 204, 21, 0.55)', // amber
   cracked: 'rgba(248, 113, 113, 0.85)', // red
 } as const;
+
+/** Fonts (bundled, see main.tsx): UI and word names, region names, Latin roots. */
+export const FONT_UI = "'Inter Variable', system-ui, sans-serif";
+export const FONT_TITLE = "'Cinzel Variable', 'Trajan Pro', Georgia, serif";
+export const FONT_LATIN = "'Cormorant Garamond', Georgia, serif";
+
+/** Health band colours as RGB triplets, for gradients (BAND_COLOR is the flat version). */
+export const BAND_RGB = {
+  solid: '52, 211, 153',
+  faded: '45, 185, 135',
+  dashed: '250, 204, 21',
+  cracked: '248, 113, 113',
+} as const;
+
+/** An "r, g, b" triplet moved towards another by k (0 = a, 1 = b). */
+export function mixRgb(a: string, b: string, k: number): string {
+  const [p, q] = [a, b].map((s) => s.split(',').map(Number));
+  return p.map((v, i) => Math.round(v + (q[i] - v) * k)).join(', ');
+}
