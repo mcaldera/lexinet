@@ -311,6 +311,70 @@ export default function GraphView({
 
   const hintKey = [...hints].map(([id, c]) => `${id}=${c}`).join(',');
 
+  /** Ids of the words the last graphData showed: any others entering are placed by a neighbour. */
+  const shownBefore = useRef(new Set<string>());
+  /** Your map and the whole network each keep their layout while you're in the other one. */
+  const views = useRef<Partial<Record<ViewName, SavedView>>>({});
+  /** Once the view you switched to has rendered: the camera you left it with, or 'fit'. */
+  const pendingCamera = useRef<SavedView['camera'] | 'fit'>(undefined);
+  const fitted = useRef(false);
+  /** Whole network: rounds of pulling stray words home left (see `shake`). */
+  const shakes = useRef(0);
+  /** Layout ticks so far (the whole network's camera follows it every 60). */
+  const ticks = useRef(0);
+  /** The layout finished (all shakes done) since this view was entered. */
+  const settled = useRef(false);
+  /**
+   * Back to a finished layout: show it exactly as it was. Rerunning the forces
+   * from full heat would drift it (the map is never quite at rest).
+   */
+  const hold = useRef(false);
+  /** The player panned or zoomed: stop refitting the view to the map. */
+  const cameraMoved = useRef(false);
+  // Switching views keeps the layout and camera of the one you leave and brings back
+  // the one you return to: your map is exactly as you left it (the whole network
+  // spreads its words far apart, and your map would take long to pull them back),
+  // and the whole network opens laid out after the first time. A view seen for the
+  // first time is laid out afresh.
+  const wasInspect = useRef(inspect);
+  if (wasInspect.current !== inspect) {
+    const leaving: ViewName = wasInspect.current ? 'network' : 'map';
+    wasInspect.current = inspect;
+    views.current[leaving] = saveView(
+      nodeCache.current,
+      shownBefore.current,
+      fg.current,
+      cameraMoved.current,
+      settled.current,
+    );
+    const back = views.current[inspect ? 'network' : 'map'];
+    // Left before it finished: carry on from where it was.
+    hold.current = !!back?.settled;
+    shakes.current = back?.settled ? SHAKES : 0;
+    settled.current = false;
+    for (const n of nodeCache.current.values()) {
+      const p = back?.pos.get(n.id);
+      n.vx = 0;
+      n.vy = 0;
+      if (p) [n.x, n.y, n.fx, n.fy] = p;
+      else [n.fx, n.fy] = [undefined, undefined];
+    }
+    if (back) shownBefore.current = new Set(back.pos.keys());
+    // Where you had put the camera yourself, it goes back there; otherwise the view is fitted.
+    pendingCamera.current = back?.moved ? back.camera : 'fit';
+    cameraMoved.current = !!back?.moved;
+  }
+  useEffect(() => {
+    const cam = pendingCamera.current;
+    pendingCamera.current = undefined;
+    if (cam === 'fit') fitView();
+    else if (cam) {
+      fg.current?.centerAt(cam.x, cam.y);
+      fg.current?.zoom(cam.k);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inspect]);
+
   const graphData = useMemo(() => {
     const visible = new Set(visibleKey.split(',').filter(Boolean));
     const flows = new Map(
@@ -325,19 +389,28 @@ export default function GraphView({
     );
     const linkedTo = (id: string) =>
       data.edges.flatMap((e) => (e.source === id ? [e.target] : e.target === id ? [e.source] : []));
+    const shown = shownBefore.current;
     const node = (id: string, word: WordNode, hub?: RootHub, hintOf?: string) => {
       let n = nodeCache.current.get(id);
       if (!n) {
         n = { id, word };
-        // Organic layout: a newly revealed word appears next to a visible word it
-        // links to (usually the one that revealed it), then settles by physics.
+        nodeCache.current.set(id, n);
+      }
+      if (!shown.has(id)) {
+        // Organic layout: a word entering the view appears next to a shown word it
+        // links to (usually the one that revealed it), then settles by physics. Not
+        // where it last was: after a visit to the whole network that is far away.
         const anchors = hintOf ? [hintOf] : hub ? hub.words : linkedTo(id);
-        const anchor = anchors.map((a) => nodeCache.current.get(a)).find((a) => a?.x !== undefined);
+        const anchor = anchors
+          .filter((a) => shown.has(a))
+          .map((a) => nodeCache.current.get(a))
+          .find((a) => a?.x !== undefined && a.y !== undefined);
         if (anchor) {
           n.x = anchor.x! + (Math.random() - 0.5) * 40;
           n.y = anchor.y! + (Math.random() - 0.5) * 40;
+          [n.vx, n.vy, n.fx, n.fy] = [0, 0, undefined, undefined];
+          hold.current = false; // it has to settle in
         }
-        nodeCache.current.set(id, n);
       }
       n.word = word;
       n.hub = hub;
@@ -412,6 +485,7 @@ export default function GraphView({
         hint: true,
       });
     }
+    shownBefore.current = new Set(nodes.map((n) => n.id));
     return { nodes, links };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visibleKey, data.edges, hubs, flowKey, hintKey, inspect]);
@@ -552,11 +626,8 @@ export default function GraphView({
         .filter((n): n is N => n?.x !== undefined && n?.y !== undefined)
         .map((n) => [n.x!, n.y!, territoryRadius(n.id)] as const),
     }));
-  const fitted = useRef(false);
-  /** Whole network: rounds of pulling stray words home left (see `shake`). */
-  const shakes = useRef(0);
-  /** The player panned or zoomed: stop refitting the view to the map. */
-  const cameraMoved = useRef(false);
+  /** The whole network is far bigger than your map: it may zoom out further. */
+  const minZoom = inspect ? 0.04 : 0.15;
   /** Fit the visible words into view, never closer than 2× (a new map has only a few). */
   const fitView = () => {
     const pts = graphData.nodes.filter((n) => n.x !== undefined && n.y !== undefined);
@@ -571,18 +642,8 @@ export default function GraphView({
       (size.height - 2 * pad) / Math.max(1, y1 - y0),
     );
     fg.current.centerAt((x0 + x1) / 2, (y0 + y1) / 2, 400);
-    fg.current.zoom(Math.max(0.15, k), 400);
+    fg.current.zoom(Math.max(minZoom, k), 400);
   };
-  // Switching to or from the whole network is a different map: lay it out afresh.
-  const wasInspect = useRef(inspect);
-  if (wasInspect.current !== inspect) {
-    wasInspect.current = inspect;
-    shakes.current = 0;
-    for (const n of nodeCache.current.values()) {
-      n.fx = undefined;
-      n.fy = undefined;
-    }
-  }
   /** A word's pull on its territory: practised words claim more ground. */
   const territoryRadius = (id: string) => {
     if (inspect) return 24; // galaxy view: every word lights up its nebula
@@ -1305,7 +1366,7 @@ export default function GraphView({
           onNodeClick(id);
         }}
         maxZoom={4}
-        minZoom={0.15}
+        minZoom={minZoom}
         onNodeDragEnd={(n) => {
           // Keep a dragged word where it was dropped (the map stays pinned).
           n.fx = n.x;
@@ -1314,7 +1375,12 @@ export default function GraphView({
         // The whole network is big: it cools slowly to find a better layout.
         d3AlphaDecay={inspect ? 0.006 : 0.0228}
         warmupTicks={fitted.current ? 0 : 80}
-        cooldownTicks={inspect ? 2500 : 300}
+        cooldownTicks={hold.current ? 0 : inspect ? 2500 : 300}
+        onEngineTick={() => {
+          // The whole network spreads out as it lays out: keep it in view until you
+          // take the camera yourself.
+          if (inspect && !cameraMoved.current && ++ticks.current % 60 === 0) fitView();
+        }}
         onEngineStop={() => {
           // A first layout can trap words in the wrong cluster: send strays home and rerun.
           if (inspect && shakes.current < SHAKES && shake(graphData.nodes)) {
@@ -1322,6 +1388,8 @@ export default function GraphView({
             fg.current?.d3ReheatSimulation();
             return;
           }
+          settled.current = true;
+          hold.current = false;
           // The camera follows the growing map until you pan or zoom it yourself (F refits).
           if (fitted.current && cameraMoved.current) return;
           fitted.current = true;
@@ -1516,6 +1584,33 @@ function drawHub(
     });
   }
   return lines;
+}
+
+type ViewName = 'map' | 'network';
+/** A view's layout: where its words were (and pins), and the camera. */
+type SavedView = {
+  pos: Map<string, [number, number, number | undefined, number | undefined]>;
+  camera?: { x: number; y: number; k: number };
+  /** The player had moved the camera (so it isn't refitted as the map grows). */
+  moved: boolean;
+  /** Its layout had finished. */
+  settled: boolean;
+};
+
+function saveView(
+  nodes: Map<string, N>,
+  shown: Set<string>,
+  cam: ForceGraphMethods<N, L> | undefined,
+  moved: boolean,
+  settled: boolean,
+): SavedView {
+  const pos: SavedView['pos'] = new Map();
+  for (const id of shown) {
+    const n = nodes.get(id);
+    if (n?.x !== undefined && n.y !== undefined) pos.set(id, [n.x, n.y, n.fx, n.fy]);
+  }
+  const camera = cam ? { ...cam.centerAt(), k: cam.zoom() } : undefined;
+  return { pos, camera, moved, settled };
 }
 
 /** Rounds of `shake` the whole network gets after settling. */
@@ -1858,19 +1953,20 @@ function drawRegionNames(
     if (!t.name || !t.pts.length) continue;
     const cx = t.pts.reduce((a, p) => a + p[0], 0) / t.pts.length;
     let cy = t.pts.reduce((a, p) => a + p[1], 0) / t.pts.length;
-    const px = Math.min(26, Math.max(13, 9 + 2.5 * Math.sqrt(t.pts.length))); // screen pixels
+    // Screen pixels; the whole network zoomed far out gets smaller names.
+    const px =
+      Math.min(26, Math.max(13, 9 + 2.5 * Math.sqrt(t.pts.length))) *
+      (galaxy ? Math.min(1, Math.max(0.65, scale / 0.15)) : 1);
     const text = t.name.toUpperCase();
     ctx.font = `${galaxy ? 600 : 700} ${px / scale}px ${FONT_TITLE}`;
     c.letterSpacing = `${(px * (galaxy ? 0.3 : 0.14)) / scale}px`;
     const half = ctx.measureText(text).width / 2;
     const lh = (px * 1.25) / scale;
     const box = (y: number) => ({ x0: cx - half, x1: cx + half, y0: y - lh / 2, y1: y + lh / 2 });
-    for (const dy of [0, 1, -1, 2, -2, 3, -3]) {
-      if (!hits(box(cy + dy * lh))) {
-        cy += dy * lh;
-        break;
-      }
-    }
+    const dy = [0, 1, -1, 2, -2, 3, -3].find((d) => !hits(box(cy + d * lh)));
+    // No room in the whole network: leave the name out (zooming in brings it back).
+    if (dy === undefined && galaxy) continue;
+    cy += (dy ?? 0) * lh;
     placed.push(box(cy));
     const rgb = t.landmark ? '252, 211, 77' : t.color;
     const a = t.landmark ? Math.max(alpha, 0.75) : alpha;
@@ -1994,7 +2090,8 @@ function drawStar(
   rgb: string,
   { active, linked }: { active: boolean; linked: boolean },
 ) {
-  const core = (active ? 3 : 1.8) / Math.sqrt(scale);
+  // Stars shrink slower than the map, and never below about a pixel.
+  const core = Math.max((active ? 3 : 1.8) / Math.sqrt(scale), 1.1 / scale);
   const glow = core * (active ? 5 : 3.4);
   ctx.save();
   const g = ctx.createRadialGradient(x, y, 0, x, y, glow);
