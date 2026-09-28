@@ -1066,12 +1066,12 @@ export default function GraphView({
     if (l.hint) return 0.6;
     if (touchesActive(l)) return 0.95;
     // Links between territories are long; keep them in the background.
-    const dim = crossRegion(l) || l.descends ? (inspect ? 0.12 : 0.35) : 1;
+    const dim = crossRegion(l) || l.descends ? (inspect ? 0.12 : 0.5) : 1;
     if (inspect) return (activeId === undefined ? 0.8 : 0.15) * dim;
     const [a, b] = [endId(l.source), endId(l.target)];
-    if (sighted.has(a) || sighted.has(b)) return 0.12 * dim; // towards the horizon
-    if (hidden(a) || hidden(b)) return 0.3 * dim;
-    return 0.6 * Math.max(0.2, edgeOpacity(health.get(a) ?? null, health.get(b) ?? null)) * dim;
+    if (sighted.has(a) || sighted.has(b)) return 0.2 * dim; // towards the horizon
+    if (hidden(a) || hidden(b)) return 0.4 * dim;
+    return 0.8 * Math.max(0.3, edgeOpacity(health.get(a) ?? null, health.get(b) ?? null)) * dim;
   };
 
   const linkTooltip = (l: L) => {
@@ -1300,11 +1300,12 @@ export default function GraphView({
         linkWidth={(l) =>
           inspect
             ? touchesActive(l)
-              ? 1.4
-              : 0.35 // galaxy view: thin hyperlanes, the selected word's lanes lit
+              ? 1.6
+              : 0.6 // galaxy view: thin hyperlanes, the selected word's lanes lit
             : l.hint
-              ? 0.6
-              : 0.35 + 3 * weightRank(l.weight) ** 2.2 + (touchesActive(l) ? 1 : 0)
+              ? 0.8
+              : // Screen pixels: even the weakest link stays a visible line.
+                0.9 + 3.1 * weightRank(l.weight) ** 2 + (touchesActive(l) ? 1 : 0)
         }
         linkLineDash={(l) =>
           l.hint
