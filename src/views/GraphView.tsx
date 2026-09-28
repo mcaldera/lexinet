@@ -979,8 +979,9 @@ export default function GraphView({
     if (l.via === 'user') {
       return `<b>${shownName(a) || '?'} ↔ ${shownName(b) || '?'}</b><div style="color:rgb(52,211,153)">🌱 planted by you</div>`;
     }
-    // Just the two words and why they belong together: less is more.
-    return `<b>${shownName(a) || '?'} ↔ ${shownName(b) || '?'}</b><div style="color:${color}">● ${reasonText(l, wa, wb)}</div>`;
+    // The two words, why they belong together and how strongly.
+    return `<b>${shownName(a) || '?'} ↔ ${shownName(b) || '?'}</b><div style="color:${color}">● ${reasonText(l, wa, wb)}</div>
+      <div style="opacity:.8">strength ${Math.round(l.weight * 100)}%</div>`;
   };
 
   /** A link between two conquered words: carries a moving band of light. */

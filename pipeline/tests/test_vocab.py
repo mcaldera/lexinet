@@ -107,3 +107,35 @@ def test_plural_and_category_reach_the_nodes():
     node = next(n for n in g["nodes"] if n["id"] == "la-cucina")
     assert node["pl"] == "le cucine" and node["theme"] == "Home"
     assert g["params"]["tier_names"]["1"].startswith("A1")
+
+
+def test_male_and_female_pairs_share_their_links():
+    fam = [
+        {"it": "la figlia", "en": "daughter child", "pos": "noun", "cat": "family", "level": "A1"},
+        {"it": "il figlio", "en": "son child", "pos": "noun", "cat": "family", "level": "A1"},
+        {"it": "la figliastra", "en": "stepdaughter child", "pos": "noun", "cat": "family", "level": "A2"},
+        {"it": "il figliastro", "en": "stepson child", "pos": "noun", "cat": "family", "level": "A2"},
+        {"it": "la famiglia", "en": "family", "pos": "noun", "cat": "family", "level": "A1"},
+        {"it": "il cugino", "en": "cousin (male)", "pos": "noun", "cat": "family", "level": "A2"},
+        {"it": "la cugina", "en": "cousin (female)", "pos": "noun", "cat": "family", "level": "A2"},
+        {"it": "il caso", "en": "case", "pos": "noun", "cat": "home", "level": "A1"},
+    ]
+    words = [dict(w) for w in WORDS if w["it"] != "la cucina"] + fam
+    g = bv.build(words, fake_embedder, {}, {})
+    at = {w["it"]: i for i, w in enumerate(words)}
+    sem = np.full((len(words), len(words)), 0.5)
+    pair = bv.counterparts(words, sem)
+    assert pair[at["il figliastro"]] == at["la figliastra"]  # stepson / stepdaughter
+    assert pair[at["il cugino"]] == at["la cugina"]  # same English, Italian -o / -a
+    assert at["il caso"] not in pair  # la casa is in the list, but "case" isn't "house"
+    links = pairs(g)
+    assert frozenset(("il-figlio", "la-figlia")) in links
+    # Whatever la figlia links to in its category, il figlio links to the counterpart.
+    for e in g["edges"]:
+        if e["via"] == "bridge":
+            continue
+        ends = {e["source"], e["target"]}
+        if "la-figlia" in ends and "il-figlio" not in ends:
+            other = (ends - {"la-figlia"}).pop()
+            mirror = {"la-figliastra": "il-figliastro", "la-cugina": "il-cugino", "il-cugino": "la-cugina"}.get(other, other)
+            assert frozenset(("il-figlio", mirror)) in links

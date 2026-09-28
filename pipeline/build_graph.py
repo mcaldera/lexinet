@@ -154,7 +154,7 @@ def numberbatch_embedder(path: Path = NUMBERBATCH_PATH) -> Embedder:
         urllib.request.urlretrieve(NUMBERBATCH_URL, path)
 
     def embed(texts: list[str]) -> np.ndarray:
-        keys = [t.lower().strip().replace(" ", "_") for t in texts]
+        keys = [t.lower().strip().replace(" ", "_").replace("-", "_") for t in texts]
         need = set(keys) | {w for t in keys for w in t.split("_")}
         vec: dict[str, np.ndarray] = {}
         with gzip.open(path, "rt", encoding="utf-8") as f:

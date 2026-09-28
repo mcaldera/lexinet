@@ -14,7 +14,9 @@ map reads sensibly:
      strongly related, at most once per word;
   4. the categories are joined into one map by their strongest bridges, lowest
      levels first, so a new area opens from the start;
-  5. hand-made `links` / `unlink` in the vocabulary win.
+  5. male/female pairs (il figlio / la figlia, la madre / il padre) are
+     linked and share their links;
+  6. hand-made `links` / `unlink` in the vocabulary win.
 
 Rebuilding is not deterministic in layout, but node ids come from the
 vocabulary (the Italian's slug or an explicit `id`), so progress is kept.
@@ -76,7 +78,7 @@ rest kind mean lie light second watch ring play match present fair spring fall c
 free sound set book park bank date letter fire type key note time way line run turn stick trip ball board
 change check club cross cut dish fan file glass ground hand head iron land last leave long miss object place
 plant port post press row scale seal sink slip square stamp star state step table tap tie tip wave pass lot
-count face fit form get hold keep lead let make put stand take found""".split())
+count face fit form get hold keep lead let make put stand take found ruler""".split())
 
 
 def assign_tiers(words: list[dict], ranks: dict[str, int], verb_forms: dict, n: int = TIERS) -> list[tuple[int, str]]:
@@ -97,6 +99,55 @@ def assign_tiers(words: list[dict], ranks: dict[str, int], verb_forms: dict, n: 
             for i in idx[len(idx) * part // k : len(idx) * (part + 1) // k]:
                 out[i] = (tier, lvl if k == 1 else f"{lvl}.{part + 1}")
     return out
+
+
+# Male/female English words: a gloss with one swapped names the counterpart
+# ("stepmother" -> "stepfather", "son-in-law" -> "daughter-in-law").
+GENDER_PAIRS = [
+    ("mother", "father"), ("mum", "dad"), ("grandma", "grandpa"), ("son", "daughter"),
+    ("brother", "sister"), ("husband", "wife"), ("woman", "man"), ("girl", "boy"), ("female", "male"),
+    ("queen", "king"), ("aunt", "uncle"), ("niece", "nephew"), ("princess", "prince"), ("lady", "gentleman"),
+    ("actress", "actor"), ("waitress", "waiter"), ("bride", "groom"), ("girlfriend", "boyfriend"),
+]
+GENDER_SWAP = {a: b for a, b in GENDER_PAIRS} | {b: a for a, b in GENDER_PAIRS}
+GENDER_RE = re.compile("|".join(sorted(GENDER_SWAP, key=len, reverse=True)))
+# Italian feminine endings for a masculine one (figlio/figlia, signore/signora,
+# attore/attrice, studente/studentessa).
+IT_GENDER = [("o", "a"), ("e", "a"), ("tore", "trice"), ("e", "essa")]
+
+
+def gender_swap(en: str) -> str:
+    return GENDER_RE.sub(lambda m: GENDER_SWAP[m.group(0)], head(en).lower())
+
+
+def counterparts(words: list[dict], sem: np.ndarray) -> dict[int, int]:
+    """Male/female pairs in one category (il figlio / la figlia, la madre / il
+    padre), both ways. Their links are mirrored so a pair reads the same on the
+    map. By Italian ending only when English says the same ("cousin"): il pasto
+    / la pasta or il caso / la casa are different words, not a pair."""
+    by_head: dict[tuple[str, str, str], list[int]] = {}
+    for i, w in enumerate(words):
+        by_head.setdefault((w["cat"], w["pos"], head(w["en"]).lower()), []).append(i)
+    by_lemma = {(w["cat"], w["pos"], V.lemma(w["it"])): i for i, w in enumerate(words)}
+    found: list[tuple[float, int, int]] = []
+    for i, w in enumerate(words):
+        if w["pos"] not in ("noun", "adj"):
+            continue
+        swapped = gender_swap(w["en"])
+        if swapped != head(w["en"]).lower():
+            for j in by_head.get((w["cat"], w["pos"], swapped), []):
+                found.append((1.0 + sem[i, j], i, j))
+        lem = V.lemma(w["it"])
+        for m, f in IT_GENDER:
+            if lem.endswith(m) and len(lem) > len(m) + 2:
+                j = by_lemma.get((w["cat"], w["pos"], lem[: -len(m)] + f))
+                if j is not None and j != i and head(words[j]["en"]) == head(w["en"]):
+                    found.append((0.5 + sem[i, j], i, j))
+    pair: dict[int, int] = {}
+    for _, i, j in sorted(found, reverse=True):
+        if i not in pair and j not in pair:
+            pair[i], pair[j] = j, i
+    return pair
 
 
 def w_root(w: dict) -> str:
@@ -185,6 +236,23 @@ def build(words: list[dict], embed: bg.Embedder, ranks: dict[str, int], verb_for
         if direct[i, j] >= BRIDGE_MIN:
             add(i, j, "bridge")
 
+    # Male/female pairs are linked and share their links (la figlia - la
+    # figliastra, so il figlio - il figliastro): an arbitrary asymmetry there
+    # reads as a mistake.
+    pair = counterparts(words, sem)
+    for i, j in pair.items():
+        if i < j:
+            add(i, j, "family" if fam[i, j] else "theme")
+    # A link to a word without a counterpart is shared only inside the category:
+    # la sorella's root link to la suora is hers alone (il fratello - la suora no).
+    for (i, j), via in list(chosen.items()):
+        for a, b in ((i, j), (j, i)):
+            if a in pair and pair[a] != b:
+                if b in pair:
+                    add(pair[a], pair[b], via)
+                elif via in ("tree", "theme") and cat[a] == cat[b]:
+                    add(pair[a], b, via)
+
     # 4. One map: join categories by their best low-level bridges.
     cats = sorted(by_cat)
     cidx = {c: k for k, c in enumerate(cats)}
@@ -211,7 +279,7 @@ def build(words: list[dict], embed: bg.Embedder, ranks: dict[str, int], verb_for
             parent[ra] = rb
             add(i, j, "bridge")
 
-    # 5. Hand-made links win.
+    # 6. Hand-made links win.
     at = {i_: k for k, i_ in enumerate(ids)} | {w["it"].lower(): k for k, w in enumerate(words)}
     for i, w in enumerate(words):
         for other in w.get("unlink") or []:
