@@ -103,6 +103,8 @@ const SUPPLY_RGB = '251, 191, 36';
 const SUPPLY_LIGHT = '255, 236, 179';
 /** A held word with less supply than this is thin: a little weakening nearby cuts it off (amber ring). */
 const THIN_SUPPLY = 0.7;
+/** How far words repel each other on your map (px): see the charge force. */
+const CHARGE_REACH = 300;
 /** Supply at which a word's ground is lit in full (shares add up, often past 100%). */
 const LIGHT_FULL = 1.5;
 
@@ -567,6 +569,14 @@ export default function GraphView({
     // Set once: a page shows one graph, and its regions never change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    // On your map words push each other away only nearby: with no limit a big
+    // category drives a small one far off along its one link (a Family of 40
+    // kept a 3-word Religion ~650 px from the word it hangs on; now ~320). The
+    // whole network keeps its reach, so the galaxy stays spread out.
+    fg.current?.d3Force('charge')?.distanceMax(inspect ? Infinity : CHARGE_REACH);
+  }, [inspect]);
 
   // Territories: every visible word of a region, named once you've conquered one of them.
   // Points are read from the live node objects at draw time, so dragged words take
