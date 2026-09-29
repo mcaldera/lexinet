@@ -39,6 +39,7 @@ import { expeditionStatus } from './core/expedition';
 import { newRun, switchRun, updateRun, deleteRun, runDbSuffix } from './runs';
 import { dbName } from './db';
 import GraphView, { flowKey, type FlowView } from './views/GraphView';
+import { roundShares } from './views/visuals';
 import InspectPanel from './views/InspectPanel';
 import ReviewView from './views/ReviewView';
 import VerbDrill from './views/VerbDrill';
@@ -426,11 +427,24 @@ export default function App() {
     const cached = flowCache.current;
     if (cached?.supply === supply && cached.id === panelId) return cached.view;
     const { sources, gains } = flowToward(supply, panelId, data.states, neighbours);
+    // The biggest suppliers get a badge; the many small far ones are summed up.
+    // Rounded together, the badges add up to the total the panel shows.
+    const shown = sources.filter((c) => c.share >= 0.005).slice(0, 12);
+    const rest = sources.slice(shown.length);
+    const pct = roundShares(
+      [...shown, { share: rest.reduce((a, c) => a + c.share, 0) }].map((c) => c.share * 100),
+    );
     const view: FlowView = {
       target: panelId,
-      sources: new Map(sources.map((c) => [c.source, c.share])),
+      sources: new Map(shown.map((c, i) => [c.source, pct[i]])),
+      others: rest.length ? { pct: pct[shown.length], count: rest.length } : undefined,
+      // The capital supplies itself: its total isn't the sum of the others.
+      total:
+        panelId === data.seed
+          ? undefined
+          : { pct: pct.reduce((a, b) => a + b, 0), needs: Math.round(SUPPLY.min * 100) },
       links: new Map(
-        sources.flatMap((c) =>
+        shown.flatMap((c) =>
           c.path.slice(1).map((b, i) => [flowKey(c.path[i], b), [c.path[i], b]] as const),
         ),
       ),

@@ -127,21 +127,17 @@ export function hangingOn(s: SupplyNow, id: string): string[] {
 export const freshOutput = () => wordOutput(2, 0, SUPPLY);
 
 /**
- * Where `id`'s supply comes from (its biggest suppliers, each sending at least
- * `least`), and, while it has less than it needs, what winning each "?" within
- * two links would add to it: how many more words it takes.
+ * Where `id`'s supply comes from (every supplier, biggest first: together they
+ * make up its supply), and, while it has less than it needs, what winning each
+ * "?" within two links would add to it: how many more words it takes.
  */
 export function flowToward(
   s: SupplyNow,
   id: string,
   states: Map<string, NodeState>,
   neighbours: Map<string, string[]>,
-  max = 8,
-  least = 0.02,
 ): { sources: Contribution[]; gains: Map<string, number> } {
-  const sources = contributions(s.input, s.flow, id)
-    .filter((c) => c.share >= least)
-    .slice(0, max);
+  const sources = contributions(s.input, s.flow, id);
   const gains = new Map<string, number>();
   if (id === s.world.home || isSupplied(s.flow, id, SUPPLY.min)) return { sources, gains };
   const near = new Set<string>();

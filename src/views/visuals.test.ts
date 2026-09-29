@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mixRgb, REGION_RGB, regionColors } from './visuals';
+import { REGION_RGB, mixRgb, regionColors, roundShares } from './visuals';
 
 test('regions tied by many links get different colours', () => {
   const regions = [0, 1, 2].map((id) => ({ id, words: [`${id}a`, `${id}b`] }));
@@ -36,4 +36,13 @@ describe('mixRgb', () => {
     expect(mixRgb('0, 0, 0', '255, 255, 255', 0.5)).toBe('128, 128, 128');
     expect(mixRgb('10, 20, 30', '0, 0, 0', 0)).toBe('10, 20, 30');
   });
+});
+
+test('shares round to whole percentages that add up to the total', () => {
+  const r = roundShares([3.4, 3.4, 9.4]);
+  expect(r.reduce((a, b) => a + b, 0)).toBe(16); // not 3 + 3 + 9 = 15
+  expect(r.every((v, i) => Math.abs(v - [3.4, 3.4, 9.4][i]) < 1)).toBe(true);
+  expect(roundShares([2.2, 31.1, 11.4])).toEqual([2, 31, 12]);
+  expect(roundShares([0.6, 0.6, 0.6])).toEqual([1, 1, 0]);
+  expect(roundShares([50])).toEqual([50]);
 });

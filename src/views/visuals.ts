@@ -189,3 +189,21 @@ export function mixRgb(a: string, b: string, k: number): string {
   const [p, q] = [a, b].map((s) => s.split(',').map(Number));
   return p.map((v, i) => Math.round(v + (q[i] - v) * k)).join(', ');
 }
+
+/**
+ * Whole percentages for parts of a total that add up to the total's own
+ * rounding (largest remainder): 3.4 + 3.4 + 9.4 = 16.2 shows as parts adding
+ * up to 16, not 3 + 3 + 9 = 15.
+ */
+export function roundShares(parts: number[]): number[] {
+  const total = Math.round(parts.reduce((a, b) => a + b, 0));
+  const out = parts.map(Math.floor);
+  let left = total - out.reduce((a, b) => a + b, 0);
+  const order = parts.map((p, i) => [p - Math.floor(p), i] as const).sort((a, b) => b[0] - a[0]);
+  for (const [, i] of order) {
+    if (left <= 0) break;
+    out[i]++;
+    left--;
+  }
+  return out;
+}

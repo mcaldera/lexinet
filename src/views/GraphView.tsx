@@ -66,13 +66,17 @@ export type SupplyView = {
   min: number;
 };
 /**
- * Where the selected word's supply comes from: each supplier's share, the
- * links it takes (oriented towards the word), and, for a word short of supply,
- * what winning a "?" nearby would add.
+ * Where the selected word's supply comes from: each shown supplier's share (in
+ * whole %, rounded to add up to `total`), the rest summed (`others`), the links
+ * it takes (oriented towards the word), and, for a word short of supply, what
+ * winning a "?" nearby would add.
  */
 export type FlowView = {
   target: string;
   sources: Map<string, number>;
+  others?: { pct: number; count: number };
+  /** Its supply (whole %) and what it needs; none for the capital. */
+  total?: { pct: number; needs: number };
   links: Map<string, [string, string]>;
   gains: Map<string, number>;
 };
@@ -1073,12 +1077,13 @@ export default function GraphView({
         });
       }
       const sv = supply?.value.get(node.id);
-      if (!inspect && sv !== undefined && !cut && scale > 1.5) {
-        // Close up, the supply in numbers.
+      if (!inspect && sv !== undefined && scale > 1.5) {
+        // Close up, the supply in numbers: cut-off words too (grey), so you
+        // can see how far they are from the 50% they need.
         lines.push({
           text: `⚡ ${Math.round(sv * 100)}%`,
           px: 8.5,
-          rgb: sv < THIN_SUPPLY ? '251, 146, 60' : SUPPLY_RGB,
+          rgb: cut ? '148, 163, 184' : sv < THIN_SUPPLY ? '251, 146, 60' : SUPPLY_RGB,
           alpha: 0.9,
           weight: 600,
         });
@@ -1355,7 +1360,12 @@ export default function GraphView({
           // Names on top, so links and words never cover them.
           const names = drawRegionNames(ctx, scale, livePoints(), inspect);
           drawLabels(ctx, scale, labels.current, names);
-          if (flow && !inspect) drawFlow(ctx, scale, flow, nodeCache.current);
+          if (flow && !inspect) {
+            drawFlow(ctx, scale, flow, nodeCache.current, (id) => {
+              const tower = supply?.towers.get(id);
+              return tower ? (tower.capital ? 16 : 11) : 0;
+            });
+          }
           pointers.current = drawPointers(
             ctx,
             size.width,
@@ -2386,15 +2396,19 @@ function badge(
 
 /**
  * The selected word's suppliers: a gold ring and "+N%" (the share each sends
- * it); a "?" nearby that would help: "+N% if won" in green.
+ * it, above its tower if it has one); over the word itself its total against
+ * what it needs; a "?" nearby that would help: "+N% if won" in green.
  */
 function drawFlow(
   ctx: CanvasRenderingContext2D,
   scale: number,
   flow: FlowView,
   nodes: Map<string, N>,
+  /** The height of the tower over a word, if any (map units). */
+  tower: (id: string) => number,
 ) {
   const pct = (v: number) => `+${Math.max(1, Math.round(v * 100))}%`;
+  const lift = (id: string) => (tower(id) ? tower(id) * 1.4 + 6 : 0);
   const at = (id: string) => {
     const n = nodes.get(id);
     return n?.x === undefined || n.y === undefined ? null : { x: n.x, y: n.y };
@@ -2408,7 +2422,26 @@ function drawFlow(
     ctx.strokeStyle = `rgba(${SUPPLY_RGB}, 0.85)`;
     ctx.lineWidth = Math.max(1.2, 1.6 / scale);
     ctx.stroke();
-    badge(ctx, pct(share), p.x, p.y - 15, scale, SUPPLY_LIGHT);
+    badge(ctx, share > 0 ? `+${share}%` : '+<1%', p.x, p.y - 15 - lift(id), scale, SUPPLY_LIGHT);
+  }
+  const t = at(flow.target);
+  if (t && flow.total) {
+    // The sum of the badges, against what the word needs to count.
+    const { pct: total, needs } = flow.total;
+    const y = t.y - 12 - 24 / scale - lift(flow.target);
+    // With far suppliers summed up, their line goes under the total.
+    badge(
+      ctx,
+      `${total}% of ${needs}%`,
+      t.x,
+      flow.others ? y - 13 / scale : y,
+      scale,
+      total >= needs ? SUPPLY_LIGHT : '251, 146, 60',
+    );
+    if (flow.others) {
+      const { pct: rest, count } = flow.others;
+      badge(ctx, `incl. ${rest}% from ${count} farther words`, t.x, y, scale, '148, 163, 184');
+    }
   }
   for (const [id, gain] of flow.gains) {
     const p = at(id);
