@@ -5,7 +5,7 @@ import ForceGraph2D, {
   type LinkObject,
   type NodeObject,
 } from 'react-force-graph-2d';
-import { COOLDOWN_MS, RECLAIM_MS } from '../config';
+import { COOLDOWN_MS, RECLAIM_MS, SUPPLY } from '../config';
 import { appNow } from '../core/clock';
 import { hintedName, FULL_NAME } from '../core/fade';
 import { edgeOpacity, healthBand } from '../core/health';
@@ -102,7 +102,9 @@ const SUPPLY_RGB = '251, 191, 36';
 /** Strong supply's pale gold: the gauge of a well-supplied word. */
 const SUPPLY_LIGHT = '255, 236, 179';
 /** A held word with less supply than this is thin: a little weakening nearby cuts it off (amber ring). */
-const THIN_SUPPLY = 0.25;
+const THIN_SUPPLY = 0.7;
+/** Supply at which a word's ground is lit in full (shares add up, often past 100%). */
+const LIGHT_FULL = 1.5;
 
 type Props = {
   data: AppData;
@@ -650,11 +652,11 @@ export default function GraphView({
     return reach?.get(id) ?? supply.value.get(id) ?? 0;
   };
   /**
-   * How brightly a word's ground is lit (0..1): its supply, steeper than
-   * straight, so the thin fringe (15%) stands on dark ground, half supply on
-   * clearly lit ground and the ground of words you know well shines.
+   * How brightly a word's ground is lit (0..1): its supply against LIGHT_FULL,
+   * steeper than straight, so the thin fringe (50%) stands on dim ground, 100%
+   * on clearly lit ground and the heart of a strong territory shines.
    */
-  const lightOf = (id: string) => Math.pow(Math.min(1, glowOf(id)), 1.5);
+  const lightOf = (id: string) => Math.pow(Math.min(1, glowOf(id) / LIGHT_FULL), 1.5);
   const isHub = (id: string) => id.startsWith('root:');
   /** A word's name as the player may see it: fading words lose letters (see core/fade). */
   const shownName = (id: string) => {
@@ -825,7 +827,7 @@ export default function GraphView({
     if (!inspect && ghosts?.has(node.id)) {
       // Beyond the horizon: a faint ghost of what lies ahead, clearer the more
       // supply seeps to it (it becomes a "?" at SUPPLY.reveal).
-      ctx.globalAlpha = 0.3 + 0.7 * Math.min(1, (reach?.get(node.id) ?? 0) / 0.08);
+      ctx.globalAlpha = 0.3 + 0.7 * Math.min(1, (reach?.get(node.id) ?? 0) / SUPPLY.reveal);
       shapePath(ctx, shape, x, y, r);
       ctx.fillStyle = 'rgba(71, 85, 105, 0.15)';
       ctx.fill();
@@ -948,9 +950,9 @@ export default function GraphView({
       (0.2 + Math.min(0.3, coh * 0.12)) * (cut ? 0.3 : 1) * breath,
     );
     if (!cut && !inspect && supply) {
-      // The supply gauge: a ring filled as far as its supply goes, full at the
-      // capital, a stub at the fringe. Amber when thin (a little weakening
-      // nearby cuts it off), pale gold in the middle ground, bright at the core.
+      // The supply gauge: a ring filled as far as its supply goes, full from
+      // 100%. Amber when thin (a little weakening nearby cuts it off), gold in
+      // the middle ground, pale gold once full.
       const v = Math.min(1, supply.value.get(node.id) ?? 0);
       // At least ~2.5 px on screen however far out you zoom: it has to be read at a glance.
       const w = Math.max(2.2, 2.6 / scale);
@@ -968,7 +970,7 @@ export default function GraphView({
       ctx.strokeStyle =
         v < THIN_SUPPLY
           ? 'rgba(251, 146, 60, 0.95)'
-          : v < 0.5
+          : v < 1
             ? `rgba(${SUPPLY_RGB}, 0.9)`
             : `rgba(${SUPPLY_LIGHT}, 1)`;
       ctx.lineWidth = w;
@@ -1052,7 +1054,7 @@ export default function GraphView({
       if (!inspect && sv !== undefined && !cut && scale > 1.5) {
         // Close up, the supply in numbers.
         lines.push({
-          text: `⚡ ${Math.round(Math.min(1, sv) * 100)}%`,
+          text: `⚡ ${Math.round(sv * 100)}%`,
           px: 8.5,
           rgb: sv < THIN_SUPPLY ? '251, 146, 60' : SUPPLY_RGB,
           alpha: 0.9,
@@ -1148,7 +1150,7 @@ export default function GraphView({
     if (!line) return;
     const [s, e] = line;
     if (s.x === undefined || e.x === undefined || s.y === undefined || e.y === undefined) return;
-    const strength = Math.min(1, (supply?.value.get(e.id) ?? 0) / 0.5);
+    const strength = Math.min(1, (supply?.value.get(e.id) ?? 0) / LIGHT_FULL);
     const seed = hashOf(`${s.id}|${e.id}`);
     const [ax, ay, bx, by] = [s.x, s.y, e.x, e.y];
     const len = Math.hypot(bx - ax, by - ay);

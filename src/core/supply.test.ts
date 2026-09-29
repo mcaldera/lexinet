@@ -72,7 +72,9 @@ test('words hanging on a chokepoint, none on a word with a detour', () => {
 test('coverage counts what a capital would reach', () => {
   const n = net('s-a:0.5', 'a-b:0.5', 'b-c:0.5');
   expect(coverage(n, 's', { min: 0.2, maxLink: 0.9 })).toBe(2); // a (0.5), b (0.25)
-  expect(isSupplied({ value: new Map([['x', 0.1]]), from: new Map() }, 'x', 0.1)).toBe(true);
+  expect(
+    isSupplied({ value: new Map([['x', 0.1]]), from: new Map(), shares: new Map() }, 'x', 0.1),
+  ).toBe(true);
 });
 
 test('a cut-off word holds out as long as it lasts, then falls', () => {
@@ -273,7 +275,7 @@ test('a word is held up by its other words, never by itself', () => {
   expect(flow.value.get('d')).toBeCloseTo(0.5);
 });
 
-test('a word takes the best of its other sources, near or far', () => {
+test('the shares of all its other words add up', () => {
   //  a - x - b - c   (a strong, b weak, c strong but further)
   const n = net('a-x:0.5', 'x-b:0.5', 'b-c:0.8');
   const flow = supplyFlow({
@@ -286,13 +288,13 @@ test('a word takes the best of its other sources, near or far', () => {
     neighbours: n,
     rules: RULES,
   });
-  // x: from a 0.5, from b 0.1, from c via b 0.36.
-  expect(flow.value.get('x')).toBeCloseTo(0.5);
-  // b: from c 0.72 beats a via x 0.25.
-  expect(flow.value.get('b')).toBeCloseTo(0.72);
-  // c: its own echo (0.9 * 0.8 * 0.8) doesn't count; b's 0.2 * 0.8 and a's 0.2 do.
-  expect(flow.value.get('c')).toBeCloseTo(0.2);
-  expect(flow.from.get('c')).toBe('b');
+  // x: a 0.5 + b 0.1 + c via b 0.36.
+  expect(flow.value.get('x')).toBeCloseTo(0.96);
+  expect(flow.from.get('x')).toBe('a'); // the biggest share comes from a
+  // b: c 0.72 + a via x 0.25.
+  expect(flow.value.get('b')).toBeCloseTo(0.97);
+  // c: b 0.16 + a via x and b 0.2; its own share echoing back doesn't count.
+  expect(flow.value.get('c')).toBeCloseTo(0.36);
 });
 
 test('what a word sends out grows with memory and tenses, up to 1', () => {
@@ -312,10 +314,10 @@ test('linked words you know well hold each other up; fresh ones need help', () =
       neighbours: n,
       rules: RULES,
     });
-  const fresh = flow(0.25);
-  expect(['a', 'b', 'c'].filter((id) => isSupplied(fresh, id, 0.15))).toEqual([]);
-  const known = flow(0.4);
-  expect(['a', 'b', 'c'].filter((id) => isSupplied(known, id, 0.15))).toEqual(['a', 'b', 'c']);
+  const held = (f: ReturnType<typeof flow>) =>
+    ['a', 'b', 'c'].filter((id) => isSupplied(f, id, 0.5));
+  expect(held(flow(0.25))).toEqual([]); // fresh: b gets 0.25, a 0.19
+  expect(held(flow(1))).toEqual(['a', 'b', 'c']); // strongholds: b 1, a 0.75
 });
 
 test('what hangs on a word: its own supply leaves with it', () => {
@@ -336,3 +338,115 @@ test('what hangs on a word: its own supply leaves with it', () => {
   expect(hanging(input, 0.2, 'a')).toEqual(['b']);
   expect(hanging(input, 0.2, 'b')).toEqual([]);
 });
+
+test('what hangs on a word: searching again only what reaches it gives the full answer', () => {
+  // A small, loopy network with sources of every strength.
+  const n = net(
+    's-a:0.8',
+    'a-b:0.6',
+    'b-c:0.7',
+    'c-d:0.5',
+    'a-e:0.4',
+    'e-c:0.9',
+    'd-f:0.8',
+    'f-g:0.6',
+    'g-h:0.5',
+    'x-y:0.9',
+  );
+  const out = [1, 0.25, 0.4, 0.65, 0.1, 1, 0.25, 0.4, 0.65, 0.4, 0.4];
+  const ids = ['s', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'x', 'y'];
+  const input = {
+    sources: new Map(ids.map((id, i) => [id, out[i]])),
+    home: 's',
+    carries: () => true,
+    neighbours: n,
+    rules: RULES,
+  };
+  const before = supplyFlow(input);
+  for (const id of ids) {
+    for (const min of [0.2, 0.5, 0.8]) {
+      const sources = new Map(input.sources);
+      sources.delete(id);
+      const full = supplyFlow({
+        ...input,
+        sources,
+        home: id === 's' ? undefined : 's',
+        carries: (x) => x !== id,
+      });
+      const brute = ids.filter(
+        (x) => x !== id && isSupplied(before, x, min) && !isSupplied(full, x, min),
+      );
+      expect(hanging(input, min, id, before).sort()).toEqual(brute.sort());
+    }
+  }
+});
+
+test.each([11, 23, 37, 51, 77])(
+  'the siege reroutes step by step exactly as a full recount would (seed %i)',
+  (start) => {
+    // A random network, words breaking at random times, each holding out a while.
+    let seed = start;
+    const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    const ids = Array.from({ length: 40 }, (_, i) => `w${i}`);
+    const links: string[] = [];
+    for (let i = 1; i < ids.length; i++) {
+      links.push(`${ids[Math.floor(rnd() * i)]}-${ids[i]}:${(0.3 + rnd() * 0.6).toFixed(2)}`);
+      if (rnd() < 0.4)
+        links.push(`${ids[Math.floor(rnd() * i)]}-${ids[i]}:${(0.3 + rnd() * 0.6).toFixed(2)}`);
+    }
+    const n = net(...links);
+    const out = new Map(ids.map((id) => [id, [0.25, 0.4, 0.65, 1][Math.floor(rnd() * 4)]]));
+    const breaks = new Map(
+      ids.filter(() => rnd() < 0.3).map((id) => [id, Math.floor(rnd() * 1000)]),
+    );
+    const hold = new Map(ids.map((id) => [id, 50 + Math.floor(rnd() * 400)]));
+    const rules = { ...RULES, min: 0.5 };
+    const world = {
+      held: ids,
+      home: 'w0',
+      output: (id: string) => out.get(id) ?? 0,
+      neighbours: n,
+      breakAt: (id: string) => breaks.get(id) ?? Infinity,
+      holdMs: (id: string) => hold.get(id)!,
+      rules,
+    };
+    // The reference: everything counted again at every step.
+    const reference = () => {
+      const held = new Set(ids);
+      const cut = new Map<string, number>();
+      const fallen: { id: string; at: number }[] = [];
+      let t = 0;
+      for (;;) {
+        const carries = (id: string) => held.has(id) && world.breakAt(id) > t;
+        const sources = new Map([...held].filter(carries).map((id) => [id, world.output(id)]));
+        const home = world.breakAt('w0') > t && held.has('w0') ? 'w0' : undefined;
+        if (home) sources.set(home, 1);
+        const supply = supplyFlow({ sources, home, carries, neighbours: n, rules });
+        for (const id of held) {
+          if (carries(id) && isSupplied(supply, id, rules.min)) cut.delete(id);
+          else if (!cut.has(id)) cut.set(id, t);
+        }
+        let next = Infinity;
+        for (const id of held) {
+          if (world.breakAt(id) > t) next = Math.min(next, world.breakAt(id));
+          const c = cut.get(id);
+          if (c !== undefined) next = Math.min(next, c + hold.get(id)!);
+        }
+        if (next > 2000) return { cutSince: cut, fallen };
+        t = next;
+        for (const id of [...held]) {
+          const c = cut.get(id);
+          if (c === undefined || c + hold.get(id)! > t) continue;
+          held.delete(id);
+          cut.delete(id);
+          fallen.push({ id, at: c + hold.get(id)! });
+        }
+      }
+    };
+    const ours = advanceSiege(world, new Map(), 0, 2000);
+    const ref = reference();
+    expect(ours.fallen).toEqual(ref.fallen);
+    expect([...ours.cutSince].sort()).toEqual([...ref.cutSince].sort());
+    expect(ref.fallen.length).toBeGreaterThan(0); // the test exercises falls
+  },
+);

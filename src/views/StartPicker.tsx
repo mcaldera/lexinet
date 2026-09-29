@@ -13,11 +13,14 @@ type Props = {
   onPick: (region?: number, capital?: string) => void;
 };
 
+/** A capital's share counts as reaching a word from this much: how central it is. */
+const REACH = 0.1;
+
 /**
  * A new game: pick a category, then your capital, the first word and your
- * home: it always sends out full supply. Each candidate says how many words it
- * would keep supplied on its own once they are yours (core/supply.ts coverage), by its English
- * meaning: the Italian is earned.
+ * home: it always sends out full supply. Each candidate says how many words its
+ * supply would reach once they are yours (core/supply.ts coverage), by its
+ * English meaning: the Italian is earned.
  */
 export default function StartPicker({ regions, nodes, edges, onPick }: Props) {
   const sorted = [...regions].sort((a, b) => a.name.localeCompare(b.name));
@@ -29,7 +32,7 @@ export default function StartPicker({ regions, nodes, edges, onPick }: Props) {
       .map((id) => ({
         id,
         word: nodes.find((n) => n.id === id)!,
-        supplies: coverage(weights, id, SUPPLY),
+        supplies: coverage(weights, id, { ...SUPPLY, min: REACH }),
       }))
       .sort((a, b) => b.supplies - a.supplies)
       .slice(0, 8);
@@ -55,7 +58,7 @@ export default function StartPicker({ regions, nodes, edges, onPick }: Props) {
                   <div className="flex items-baseline justify-between gap-3">
                     <span className="text-slate-100">{c.word.en}</span>
                     <span className="shrink-0 text-xs text-amber-300">
-                      supplies {c.supplies} words
+                      reaches {c.supplies} words
                     </span>
                   </div>
                   <span className="mt-1 block h-1 overflow-hidden rounded bg-white/[0.06]">

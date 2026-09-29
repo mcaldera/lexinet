@@ -18,15 +18,16 @@ export const VERB_POINTS_PER_TIER = 2;
  * Supply (core/supply.ts): your words count only while the words around them
  * hold them up. Every word you hold sends out supply by how well you know it
  * (`output` by memory strength level, core/strength; the capital always 1), and
- * each link passes on as much as it is strong. A word counts only supply from
- * its other words. Simulated on the vocabulary graph (6 new words a day): early
- * on ~80% of your words are supplied, carried by the capital; two linked words
- * far from home hold each other once reviewed (level 3), rarely while fresh;
- * one break cuts off at most a handful of words.
+ * each link passes on as much as it is strong. A word gets the shares of its
+ * other words added up. Simulated on the vocabulary graph (6 new words a day,
+ * walking to nearby words): 92-95% of your words supplied without a miss; one
+ * break cuts off up to ~5 words (under 1 on average); three linked words far
+ * from home never hold while fresh, 13% after their first review, 60% after
+ * two weeks.
  */
 export const SUPPLY = {
-  /** Supply a held word needs to count. */
-  min: 0.15,
+  /** Supply a held word needs to count (shares add up, so this is well above one share). */
+  min: 0.5,
   /**
    * What a held word sends out by memory strength level 0-5: a fresh conquest
    * is level 2 (stability ~3 days), the first review (day 3) makes it 3, two
@@ -43,13 +44,14 @@ export const SUPPLY = {
   breakRecall: 0.8,
   /**
    * The horizon: past your words supply seeps on at this share per word; a
-   * hidden word it reaches with `reveal` becomes a "?", with `sight` a ghost
-   * (less: unseen). Tuned on the graph: with 12 words held ~8 "?" appear two
-   * links out (three is rare) and ~20-30 ghosts beyond.
+   * hidden word it reaches with `reveal` (summed, like supply) becomes a "?",
+   * with `sight` a ghost (less: unseen). Tuned on the graph: with 12 words held
+   * ~8 "?" appear beyond the first ring and ~17 ghosts; the stronger your
+   * territory, the further it sees (~25 and ~30 at 60 held, ~70 and ~65 at 150).
    */
   fog: 0.6,
-  reveal: 0.08,
-  sight: 0.04,
+  reveal: 0.3,
+  sight: 0.12,
 };
 
 /** A claimed word's English -> Italian step opens this long after Italian -> English. */

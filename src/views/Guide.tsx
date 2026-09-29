@@ -102,11 +102,12 @@ export default function Guide({ onClose }: { onClose: () => void }) {
             first word, always sends out 100%.
           </p>
           <p>
-            Supply flows along links through your words, and each link passes on as much as it is
-            strong (at most {pct(SUPPLY.maxLink)}): tight, strongly linked clusters hold together,
-            thin bridges between categories are costly. A word counts only supply from its other
-            words, and needs {pct(SUPPLY.min)}. So a new word needs words you know well near it, and
-            a few linked words far from home hold each other once you know them well.
+            Each word's supply flows along links through your words, and each link passes on as much
+            as it is strong (at most {pct(SUPPLY.maxLink)}). A word gets what reaches it from all
+            your <i>other</i> words added up, so a word surrounded by words you know well is
+            strongly held, while thin bridges between categories are costly. It needs{' '}
+            {pct(SUPPLY.min)} to count. So a new word needs well-known words near it, and a few
+            linked words far from home hold each other once you know them well.
           </p>
           <p>
             A word <b>breaks</b> when you miss it, or when you leave it due until its name has faded

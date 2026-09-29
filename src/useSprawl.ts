@@ -459,12 +459,16 @@ export function useSprawl() {
       } else if (success && raidStarts(raid.last, false, [id], t, RAID)) {
         // The luck is in: strike the words the most hangs on (worth the work only now).
         const s = supplyNow({ ...data, states: applyChanges(data.states, changes), game }, t);
-        const hang = new Map(
-          [...s.flow.value.keys()]
-            // The capital is fortified: raids strike the words around it.
-            .filter((x) => s.input.carries(x) && !s.cut.has(x) && x !== s.world.home)
-            .map((x) => [x, hangingOn(s, x).length] as const),
+        // The capital is fortified: raids strike the words around it. Weighing
+        // every word takes long on a big map; a random few are enough to draw from.
+        const pool = [...s.flow.value.keys()].filter(
+          (x) => s.input.carries(x) && !s.cut.has(x) && x !== s.world.home,
         );
+        for (let i = pool.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [pool[i], pool[j]] = [pool[j], pool[i]];
+        }
+        const hang = new Map(pool.slice(0, 30).map((x) => [x, hangingOn(s, x).length] as const));
         const targets = raidTargets(hang, RAID.targets);
         if (targets.length) {
           raid = {
