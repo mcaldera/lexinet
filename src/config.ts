@@ -32,12 +32,14 @@ export const SUPPLY = {
   /** One more supply node for every this many words you have held at once. */
   every: 12,
   /**
-   * The horizon: past your words supply seeps on at this share per word, and
-   * a hidden word it reaches with `reveal` becomes a "?". Tuned on the graph:
-   * with 12 words held ~8 "?" appear two links out, three links out is rare.
+   * The horizon: past your words supply seeps on at this share per word; a
+   * hidden word it reaches with `reveal` becomes a "?", with `sight` a ghost
+   * (less: unseen). Tuned on the graph: with 12 words held ~8 "?" appear two
+   * links out (three is rare) and ~20-30 ghosts beyond.
    */
   fog: 0.6,
   reveal: 0.08,
+  sight: 0.04,
 };
 
 /** A claimed word's English -> Italian step opens this long after Italian -> English. */

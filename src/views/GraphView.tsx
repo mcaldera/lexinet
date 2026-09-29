@@ -142,8 +142,10 @@ type Props = {
   inspect: boolean;
   /** Draw shared roots as hub nodes (replaces word-to-word "shared root" links). */
   showRoots: boolean;
-  /** Hidden words one link beyond your "?": drawn as ghosts, not conquerable yet. */
+  /** Hidden words a little supply seeps to: drawn as ghosts, not conquerable yet. */
   ghosts?: Set<string>;
+  /** Supply seeping past your words (core/supply.ts, fog) at every word it reaches: the glow. */
+  reach?: Map<string, number>;
   onNodeClick: (id: string) => void;
   /** Hovering a word (placing a supply node previews it). */
   onNodeHover?: (id: string | undefined) => void;
@@ -171,6 +173,7 @@ export default function GraphView({
   inspect,
   showRoots,
   ghosts,
+  reach,
   onNodeClick,
   onNodeHover,
 }: Props) {
@@ -297,6 +300,7 @@ export default function GraphView({
       claimWaits.size > 0 ||
       (supply?.cut.size ?? 0) > 0 ||
       !!preview ||
+      !!activeId ||
       bursting);
 
   const hintKey = [...hints].map(([id, c]) => `${id}=${c}`).join(',');
@@ -643,24 +647,21 @@ export default function GraphView({
    * the supply you would have with it.
    */
   const drawSupplyField = (ctx: CanvasRenderingContext2D) => {
-    const field = preview?.value ?? supply?.value;
-    if (!field || !supply) return;
+    if (!supply) return;
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
-    for (const [id, v] of field) {
-      if (v < supply.min * 0.5 || supply.cut.has(id)) continue;
-      const st = data.states.get(id);
-      if (st === undefined || st === 'locked') continue;
-      const n = nodeCache.current.get(id);
-      if (n?.x === undefined || n.y === undefined) continue;
-      // Steep in supply, and a pale light rather than gold: it must read on every
-      // territory colour (Family's is gold) and set strong ground apart from thin.
+    for (const n of graphData.nodes) {
+      if (n.hub || n.hintOf || n.x === undefined || n.y === undefined) continue;
+      const v = glowOf(n.id);
+      if (v < 0.01) continue;
+      // Every word glows by its own supply, straight in proportion: a supply node
+      // (100%) is the brightest point, the fringe dim, no supply dark. A pale light
+      // rather than gold, so it reads on every territory colour (Family's is gold).
       const s = Math.min(1, v);
-      const k = s * s;
-      const r = 24 + 56 * s;
+      const r = 22 + 58 * s;
       const g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, r);
-      g.addColorStop(0, `rgba(${SUPPLY_LIGHT}, ${0.04 + 0.42 * k})`);
-      g.addColorStop(0.5, `rgba(${SUPPLY_LIGHT}, ${0.02 + 0.16 * k})`);
+      g.addColorStop(0, `rgba(${SUPPLY_LIGHT}, ${0.03 + 0.5 * s})`);
+      g.addColorStop(0.5, `rgba(${SUPPLY_LIGHT}, ${0.01 + 0.18 * s})`);
       g.addColorStop(1, `rgba(${SUPPLY_LIGHT}, 0)`);
       ctx.fillStyle = g;
       ctx.beginPath();
@@ -668,6 +669,19 @@ export default function GraphView({
       ctx.fill();
     }
     ctx.restore();
+  };
+  /**
+   * The supply the map lights a word with: a held word its own supply (none
+   * while cut off), any other word what seeps to it; while placing a node, the
+   * supply you would have with it.
+   */
+  const glowOf = (id: string) => {
+    if (!supply) return 0;
+    if (preview) return Math.max(preview.value.get(id) ?? 0, reach?.get(id) ?? 0);
+    if (data.states.get(id) === 'conquered') {
+      return supply.cut.has(id) ? 0 : (supply.value.get(id) ?? 0);
+    }
+    return reach?.get(id) ?? supply.value.get(id) ?? 0;
   };
   const isHub = (id: string) => id.startsWith('root:');
   /** A word's name as the player may see it: fading words lose letters (see core/fade). */
@@ -699,8 +713,11 @@ export default function GraphView({
     const shape: Shape = shapeOf(node.word.pos);
     const vl = verbLevels.get(node.id) ?? 0;
     // Stronger words are bigger; every tense a verb masters makes it bigger still.
-    const r = state === 'conquered' ? 5 + (strength.get(node.id) ?? 0) * 0.8 + vl * 0.9 : 6;
     const active = node.id === activeId;
+    // The selected word is drawn bigger: where you are must be found at a glance.
+    const r =
+      (state === 'conquered' ? 5 + (strength.get(node.id) ?? 0) * 0.8 + vl * 0.9 : 6) *
+      (active && !inspect ? 1.35 : 1);
     /** Queue a name under the word; drawLabels places it last, where it fits. */
     const label = (lines: LabelLine[], priority: number, below = r + 2.5) => {
       // Zoomed far out, word labels give way to region names.
@@ -801,19 +818,35 @@ export default function GraphView({
       return;
     }
     if (active) {
-      // The word the side panel is about: a bright ring with a soft halo.
+      // You are here: the word the side panel is about, with a breathing white
+      // halo, a bright ring and a slowly turning outer ring (thick enough on
+      // screen at any zoom), so switching words quickly never loses it.
+      const t = Date.now();
+      const breath = 0.75 + 0.25 * Math.sin(t / 420);
+      const px = 1 / Math.min(1, scale);
+      softGlow(ctx, x, y, r, r + 20, '248, 250, 252', 0.4 * breath);
       ctx.beginPath();
-      ctx.arc(x, y, r + 4, 0, 2 * Math.PI);
-      ctx.strokeStyle = 'rgba(248, 250, 252, 0.25)';
-      ctx.lineWidth = 4;
+      ctx.arc(x, y, r + 4.5, 0, 2 * Math.PI);
+      ctx.strokeStyle = 'rgba(2, 6, 23, 0.8)';
+      ctx.lineWidth = 4 * px;
       ctx.stroke();
       ctx.strokeStyle = '#f8fafc';
-      ctx.lineWidth = 1.4;
+      ctx.lineWidth = 2.2 * px;
       ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(x, y, r + 9 + 1.5 * breath, 0, 2 * Math.PI);
+      ctx.setLineDash([5 * px, 4 * px]);
+      ctx.lineDashOffset = -t / 60;
+      ctx.strokeStyle = `rgba(248, 250, 252, ${0.5 + 0.3 * breath})`;
+      ctx.lineWidth = 1.3 * px;
+      ctx.stroke();
+      ctx.setLineDash([]);
     }
 
     if (!inspect && ghosts?.has(node.id)) {
-      // Beyond the horizon: a faint ghost of what lies ahead.
+      // Beyond the horizon: a faint ghost of what lies ahead, clearer the more
+      // supply seeps to it (it becomes a "?" at SUPPLY.reveal).
+      ctx.globalAlpha = 0.3 + 0.7 * Math.min(1, (reach?.get(node.id) ?? 0) / 0.08);
       shapePath(ctx, shape, x, y, r);
       ctx.fillStyle = 'rgba(71, 85, 105, 0.15)';
       ctx.fill();

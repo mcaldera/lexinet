@@ -12,13 +12,8 @@ export type VerbGoal = {
 
 type Props = {
   goals: VerbGoal[];
-  /** Verb points earned (core/tiers.ts: one per tense learned) and needed for the next tier. */
-  have: number;
-  need: number;
-  nextTier: string;
   onSelect: (id: string) => void;
   onConjugate: (id: string) => void;
-  onClose: () => void;
   nowMs: number;
 };
 
@@ -32,29 +27,18 @@ function hint(g: VerbGoal, nowMs: number): string {
   return 'all tenses';
 }
 
-/** Verb points for the next tier: which verbs earn them, and what to do next. */
-export default function VerbGoals({
-  goals,
-  have,
-  need,
-  nextTier,
-  onSelect,
-  onConjugate,
-  onClose,
-  nowMs,
-}: Props) {
+/** Your verbs in the level panel: the verb points each has earned, and what to do next. */
+export default function VerbGoals({ goals, onSelect, onConjugate, nowMs }: Props) {
   // Undiscovered verbs are only counted: listing them spoils nothing and helps nobody.
   const shown = goals.filter((g) => g.state !== 'locked');
   const hidden = goals.length - shown.length;
   return (
-    <div className="panel border-amber-500/40 p-4 text-sm">
-      <div className="mb-3 flex justify-between text-xs text-amber-300/90">
-        <span title="Every tense you learn of a verb is a point: conquer a verb, then conjugate it (one new tense per day). One verb conjugated far counts as much as several conjugated a little.">
-          To reach {nextTier}: {have}/{need} verb points
-        </span>
-        <button className="text-slate-500 hover:text-slate-200" onClick={onClose}>
-          ✕
-        </button>
+    <div className="text-sm">
+      <div
+        className="mb-2 text-xs uppercase tracking-wider text-slate-500"
+        title="Every tense you learn of a verb is a point: conquer a verb, then conjugate it (one new tense per day). One verb conjugated far counts as much as several conjugated a little."
+      >
+        Your verbs · ◎ = verb point
       </div>
       <ul className="space-y-1.5">
         {shown.map((g) => (

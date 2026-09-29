@@ -20,8 +20,10 @@ export type SupplyRules = {
   minHoldMs: number;
   /** Past your words, supply seeps on into unknown land at this share per word... */
   fog: number;
-  /** ...and a hidden word it reaches with this much becomes a "?" (the horizon). */
+  /** ...and a hidden word it reaches with this much becomes a "?" (the horizon)... */
   reveal: number;
+  /** ...or, with this much, a ghost you can see but not conquer yet. */
+  sight: number;
 };
 
 export type Weighted = Map<string, { id: string; weight: number }[]>;
@@ -221,20 +223,19 @@ export function horizonChanges(
 }
 
 /**
- * Ghosts: hidden words one link beyond the "?" and the claims, the next ring
- * out. You can see them coming but not conquer them yet.
+ * Ghosts: hidden words a little supply seeps to (`reach` at least `sight`,
+ * below what makes a "?"). You can see them coming but not conquer them yet;
+ * with no supply at all a word stays unseen.
  */
 export function ghostWords(
   states: Map<string, NodeState>,
-  neighbours: Map<string, string[]>,
+  reach: Map<string, number>,
+  sight: number,
   allowed: (id: string) => boolean,
 ): Set<string> {
   const ghosts = new Set<string>();
-  for (const [id, st] of states) {
-    if (st !== 'frontier' && st !== 'claimed') continue;
-    for (const n of neighbours.get(id) ?? []) {
-      if (states.get(n) === 'locked' && allowed(n)) ghosts.add(n);
-    }
+  for (const [id, v] of reach) {
+    if (v >= sight - 1e-9 && states.get(id) === 'locked' && allowed(id)) ghosts.add(id);
   }
   return ghosts;
 }

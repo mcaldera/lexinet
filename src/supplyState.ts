@@ -87,6 +87,15 @@ export function supplyNow(data: AppData, t: number): SupplyNow {
   return { input, flow, broken, cut, working, world };
 }
 
+/**
+ * Supply seeping past your words (fog) from `sources`: the horizon. From every
+ * working node it lights the ground and shows ghosts; only nodes you hold
+ * reveal "?" (a capital not won yet opens just its neighbours).
+ */
+export function seep(s: SupplyNow, sources: Iterable<string> = s.working): Map<string, number> {
+  return supplyFlow({ ...s.input, sources, fog: SUPPLY.fog }).value;
+}
+
 /** Held words hanging on `id`: cut off if it broke (for a broken word: what it cuts off now). */
 export function hangingOn(s: SupplyNow, id: string): string[] {
   if (!s.broken.has(id)) return hanging(s.input, SUPPLY.min, id, s.flow);

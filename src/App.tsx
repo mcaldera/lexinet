@@ -29,7 +29,7 @@ import type { NodeState } from './core/unlock';
 import { nextPractice, nodeStrength } from './core/strength';
 import type { AppData, CardRow } from './db/repo';
 import { useSprawl, type GameEvent, type LevelUp } from './useSprawl';
-import { hangingOn, nodesToPlace, previewNode, supplyNodes, supplyNow } from './supplyState';
+import { hangingOn, nodesToPlace, previewNode, seep, supplyNodes, supplyNow } from './supplyState';
 import PlacePanel from './views/PlacePanel';
 import Menu from './views/Menu';
 import Guide from './views/Guide';
@@ -54,6 +54,8 @@ import { resumeOnGesture, sfx } from './audio';
 import { onSpeechProblem } from './speech';
 import NodeDetails from './views/NodeDetails';
 import VerbGoals, { type VerbGoal } from './views/VerbGoals';
+import LevelPanel from './views/LevelPanel';
+import { levelRgb } from './views/visuals';
 
 /** A node the user clicked: its cards are reviewed before the automatic queue. */
 type Session = { nodeId: string; cardIds: string[]; mode: 'conquer' | 'practice' };
@@ -259,16 +261,19 @@ export default function App() {
   /** Supply (core/supply.ts): who carries it, who's broken, who's cut off. */
   const supply = useMemo(() => (data ? supplyNow(data, now.getTime()) : null), [data, now]);
   /** Hidden words one link beyond your "?": the ghosts of what lies ahead. */
+  /** Supply seeping past your words from every working node: the glow and the ghosts. */
+  const reach = useMemo(() => (supply ? seep(supply) : new Map<string, number>()), [supply]);
   const ghosts = useMemo(
     () =>
       data && progress
         ? ghostWords(
             data.states,
-            neighbours,
+            reach,
+            SUPPLY.sight,
             tierAllows(tierMap(data.nodes), progress.tier, data.home),
           )
         : new Set<string>(),
-    [data, neighbours, progress],
+    [data, reach, progress],
   );
   const verbLevels = useMemo(
     () => (data ? computeVerbLevels(data.nodes, data.tenseCards, now) : new Map<string, number>()),
@@ -506,6 +511,14 @@ export default function App() {
   });
 
   const states = [...data.states.values()];
+  /** Words being claimed in the open tiers: shown as progress on the way. */
+  const claimedOpen = progress
+    ? data.nodes.filter(
+        (n) =>
+          ((n.tier ?? 1) <= progress.tier || data.home.has(n.id)) &&
+          data.states.get(n.id) === 'claimed',
+      ).length
+    : 0;
   const conquered = states.filter((s) => s === 'conquered').length;
   const claimed = states.filter((s) => s === 'claimed').length;
 
@@ -882,18 +895,7 @@ export default function App() {
         </h1>
         {progress && (
           <button onClick={() => setShowVerbGoals((v) => !v)} className="chip py-1">
-            <TierBadge
-              p={progress}
-              names={data.graph.params?.tier_names}
-              // Words being conquered (claimed) in the open tiers: shown as progress too.
-              claimed={
-                data.nodes.filter(
-                  (n) =>
-                    ((n.tier ?? 1) <= progress.tier || data.home.has(n.id)) &&
-                    data.states.get(n.id) === 'claimed',
-                ).length
-              }
-            />
+            <TierBadge p={progress} names={data.graph.params?.tier_names} claimed={claimedOpen} />
           </button>
         )}
         {inspect && (
@@ -1017,6 +1019,7 @@ export default function App() {
             claimWaits={claimWaits}
             supply={supplyView ?? undefined}
             ghosts={ghosts}
+            reach={reach}
             preview={preview && { id: preview.id, value: preview.flow.value }}
             reclaim={reclaimMap}
             hints={
@@ -1070,20 +1073,22 @@ export default function App() {
               onClose={() => setShowProgress(false)}
             />
           )}
-          {showVerbGoals && progress && progress.pointsNeed > 0 && !inspect && (
-            <VerbGoals
-              goals={verbGoals}
-              have={progress.verbPoints}
-              need={progress.pointsNeed}
-              nextTier={
-                data.graph.params?.tier_names?.[String(progress.tier + 1)] ??
-                `tier ${progress.tier + 1}`
-              }
-              nowMs={now.getTime()}
-              onSelect={(id) => selectNode(id)}
-              onConjugate={(id) => startConjugate(id)}
+          {showVerbGoals && progress && !inspect && (
+            <LevelPanel
+              p={progress}
+              names={data.graph.params?.tier_names}
+              claimed={claimedOpen}
               onClose={() => setShowVerbGoals(false)}
-            />
+            >
+              {verbGoals.length > 0 && (
+                <VerbGoals
+                  goals={verbGoals}
+                  nowMs={now.getTime()}
+                  onSelect={(id) => selectNode(id)}
+                  onConjugate={(id) => startConjugate(id)}
+                />
+              )}
+            </LevelPanel>
           )}
           {inspect ? (
             <InspectPanel
@@ -1419,15 +1424,19 @@ function TierBadge({
           : 'All levels open'
       }
     >
-      <span className="font-semibold text-amber-300">
+      <span className="font-semibold" style={{ color: `rgb(${levelRgb(name(p.tier))})` }}>
         {names ? name(p.tier) : `Tier ${p.tier}/${p.maxTier}`}
       </span>
       {p.needed > 0 && (
         <>
           <span className="flex h-1.5 w-24 overflow-hidden rounded-full bg-white/[0.08]">
             <span
-              className="block h-full rounded-full bg-gradient-to-r from-amber-500 to-amber-300 shadow-[0_0_8px_rgba(251,191,36,0.8)]"
-              style={{ width: `${pct * 100}%` }}
+              className="block h-full rounded-full"
+              style={{
+                width: `${pct * 100}%`,
+                background: `rgb(${levelRgb(name(p.tier))})`,
+                boxShadow: `0 0 8px rgba(${levelRgb(name(p.tier))}, 0.8)`,
+              }}
             />
             {/* Claimed words: striped, on their way to being counted. */}
             <span

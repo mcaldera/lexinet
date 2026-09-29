@@ -22,7 +22,7 @@ import { dayKey } from './core/streak';
 import type { Achievement } from './core/achievements';
 import type { PlantOption } from './core/plant';
 import { rootOpenings } from './core/roots';
-import { advanceSiege, horizonChanges, supplyFlow } from './core/supply';
+import { advanceSiege, horizonChanges } from './core/supply';
 import { reclaim, reclaimable, recordFalls, type Fallen } from './core/fallen';
 import {
   applyChanges,
@@ -42,7 +42,7 @@ import {
 import { openDb, type SqlDb } from './db';
 import { currentRun, runDbSuffix } from './runs';
 import { currentGraphName, loadGraph } from './graphs';
-import { hangingOn, nodesEarned, nodesToPlace, siegeWorld, supplyNow } from './supplyState';
+import { hangingOn, nodesEarned, nodesToPlace, seep, siegeWorld, supplyNow } from './supplyState';
 import {
   loadAll,
   migrate,
@@ -185,11 +185,10 @@ export function useSprawl() {
       );
       // Supply seeps past your words only from nodes you hold: a capital not won
       // yet shows its neighbours, as at every start, not three rings of "?".
-      const reach = supplyFlow({
-        ...supply.input,
-        sources: [...supply.working].filter((id) => states.get(id) === 'conquered'),
-        fog: SUPPLY.fog,
-      }).value;
+      const reach = seep(
+        supply,
+        [...supply.working].filter((id) => states.get(id) === 'conquered'),
+      );
       const anchors = new Set([
         ...supply.working,
         ...[...states].filter(([, st]) => st === 'conquered').map(([id]) => id),

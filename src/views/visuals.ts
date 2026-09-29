@@ -159,6 +159,24 @@ export const FONT_TITLE = "'Cinzel Variable', 'Trajan Pro', Georgia, serif";
 export const FONT_LATIN = "'Cormorant Garamond', Georgia, serif";
 
 /** Health band colours as RGB triplets, for gradients (BAND_COLOR is the flat version). */
+/**
+ * A colour per level band (the CEFR part of a tier name, "A2" of "A2.1"): easy
+ * green at A1 through teal and blue to purple at B2 and rose at C1, so the
+ * road ahead reads at a glance.
+ */
+export const LEVEL_RGB: Record<string, string> = {
+  A1: '52, 211, 153',
+  A2: '45, 212, 191',
+  B1: '96, 165, 250',
+  B2: '167, 139, 250',
+  C1: '232, 121, 249',
+  C2: '244, 114, 182',
+};
+/** The band of a tier name ("B1.2" -> "B1"). */
+export const levelBand = (name: string) => name.split(/[.\s]/)[0];
+/** A tier name's colour (amber for names that are no CEFR level). */
+export const levelRgb = (name: string) => LEVEL_RGB[levelBand(name)] ?? '251, 191, 36';
+
 export const BAND_RGB = {
   solid: '52, 211, 153',
   faded: '45, 185, 135',

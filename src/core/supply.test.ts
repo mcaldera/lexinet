@@ -10,7 +10,7 @@ import {
 } from './supply';
 import type { NodeState } from './unlock';
 
-const RULES = { min: 0.1, maxLink: 0.9, minHoldMs: 1000, fog: 0.6, reveal: 0.08 };
+const RULES = { min: 0.1, maxLink: 0.9, minHoldMs: 1000, fog: 0.6, reveal: 0.08, sight: 0.04 };
 
 /** Undirected weighted links "a-b:0.5". */
 function net(...links: string[]): Weighted {
@@ -182,21 +182,23 @@ test('with nothing to do, the nearest allowed word opens', () => {
   expect(changes).toEqual([{ id: 'b', state: 'frontier' }]);
 });
 
-test('ghosts: hidden words one link beyond the "?" and claims', () => {
-  const neighbours = new Map([
-    ['s', ['a']],
-    ['a', ['s', 'b', 'x']],
-    ['b', ['a']],
-    ['x', ['a']],
-  ]);
+test('ghosts: hidden words a little supply seeps to', () => {
   const states = new Map<string, NodeState>([
     ['s', 'conquered'],
     ['a', 'frontier'],
     ['b', 'locked'],
+    ['c', 'locked'],
     ['x', 'locked'],
   ]);
-  // x is from a later level: not shown yet.
-  expect([...ghostWords(states, neighbours, (id) => id !== 'x')]).toEqual(['b']);
+  const reach = new Map([
+    ['s', 1],
+    ['a', 0.5],
+    ['b', 0.05],
+    ['c', 0.01],
+    ['x', 0.2],
+  ]);
+  // c gets almost nothing: unseen. x is from a later level: not shown yet.
+  expect([...ghostWords(states, reach, 0.04, (id) => id !== 'x')]).toEqual(['b']);
 });
 
 test('towards the horizon, supply seeps on past your words with its fog share', () => {
