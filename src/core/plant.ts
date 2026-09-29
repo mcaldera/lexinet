@@ -28,7 +28,8 @@ export type PlantInput = {
   nodes: { id: string; region?: number | null; tier?: number }[];
   states: Map<string, string>;
   neighbours: Map<string, string[]>;
-  openTier: number;
+  /** The level open for a word (its topic's): a number, or per word. */
+  openTier: number | ((id: string) => number);
   /** Price of a word in the open tiers, and the extra per tier beyond. */
   cost: { base: number; perTierAhead: number };
   max?: number;
@@ -44,8 +45,9 @@ export function plantOptions(input: PlantInput): PlantOption[] {
   const region = byId.get(anchor)?.region ?? undefined;
   const linked = new Set(neighbours.get(anchor) ?? []);
   const ok = (id: string) => id !== anchor && (states.get(id) ?? 'locked') === 'locked';
+  const open = (id: string) => (typeof openTier === 'number' ? openTier : openTier(id));
   const price = (id: string) =>
-    cost.base + cost.perTierAhead * Math.max(0, (byId.get(id)?.tier ?? 1) - openTier);
+    cost.base + cost.perTierAhead * Math.max(0, (byId.get(id)?.tier ?? 1) - open(id));
   const out = new Map<string, PlantOption>();
   for (const c of candidates) {
     if (!ok(c.id)) continue;

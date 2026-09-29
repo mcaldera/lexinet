@@ -1,84 +1,171 @@
 import type { NodeState } from './unlock';
 
-export type TierProgress = {
-  /** Highest tier currently open. */
+/**
+ * Levels (CEFR sub-levels A1.1 … C1, "tiers" in the data): every topic
+ * (category) climbs its own ladder on its own words, and an overall level,
+ * from the words you hold across the whole network plus verb points, limits
+ * how far ahead any topic may run. Derived from state, never stored.
+ */
+
+/** The overall level: from the words you hold anywhere, plus verb points. */
+export type OverallLevel = {
   tier: number;
   maxTier: number;
-  /** Conquered words in tiers 1..tier. */
-  conquered: number;
-  /** Conquered words needed in tiers 1..tier to open the next tier (0 at max tier). */
+  /** Words you hold (conquered), anywhere. */
+  held: number;
+  /** Held words the next level needs (0 at the top). */
   needed: number;
-  /**
-   * Verb points: every tense learned (and not faded) of any verb is one. One
-   * verb with five tenses counts as much as five verbs with one.
-   */
+  /** Every tense learned (not faded) of any verb is a point. */
   verbPoints: number;
-  /** Verb points the next tier requires (0 at the last tier). */
+  /** Verb points the next level needs (0 at the top). */
   pointsNeed: number;
 };
 
-/** Verb requirement: `perTier` verb points per tier, so leaving tier k takes perTier × k. */
-export type VerbGate = { levels: Map<string, number>; perTier: number; maxLevel: number };
+/** A topic's level: it climbs on its own words, at most one band past the overall level. */
+export type TopicLevel = {
+  tier: number;
+  /** Its conquered words of levels up to `tier`, and how many its next level needs (0 at the top). */
+  conquered: number;
+  needed: number;
+  /** It has what its next level needs, but the overall level holds it back. */
+  capped: boolean;
+  /** All its words, and those you hold. */
+  words: number;
+  held: number;
+};
+
+export type Levels = {
+  overall: OverallLevel;
+  topics: Map<number, TopicLevel>;
+  /** The highest level a topic may reach now: the end of the band after the overall level's. */
+  cap: number;
+};
+
+export type LevelRules = {
+  /** The next overall level needs this share of all words up to the current one, held. */
+  overallShare: number;
+  /** A topic's next level needs this share of its own words up to its current one. */
+  topicShare: number;
+  /** Verb points: leaving overall level k takes `perTier` × k. */
+  perTier: number;
+  /** Tenses per verb (a verb's most points). */
+  maxLevel: number;
+};
+
+export type LevelWord = { id: string; tier?: number | null; region?: number | null };
 
 /**
- * A campaign: the player works from a home category and need not cover the rest.
- * Tier k+1 then needs `fraction` of the home words in tiers 1..k (at least
- * `minPerTier` × k words); conquered words of tiers 1..k count wherever they
- * are, and home words at any tier. The home is fixed, so exploring never lowers
- * the requirement's base or the tier.
+ * Bands from level names ("A1.2" → A1): levels of one band share a number, in
+ * order. Without names every level is its own band.
  */
-export type Campaign = { home: Set<string>; minPerTier: number };
-
-/**
- * Tier k+1 opens once `fraction` of the words in tiers 1..k are conquered and,
- * if verbs are given, `perTier` × k verb points are earned (capped by what the
- * verbs in reach could give). Derived from state, never stored.
- */
-export function tierProgress(
-  tiers: Map<string, number>,
-  states: Map<string, NodeState>,
-  fraction: number,
-  verbs?: VerbGate,
-  campaign?: Campaign,
-): TierProgress {
-  const maxTier = Math.max(1, ...tiers.values());
-  let tier = 1;
-  for (;;) {
-    let total = 0;
-    let conquered = 0;
-    let homeTotal = 0;
-    for (const [id, t] of tiers) {
-      const home = !!campaign?.home.has(id);
-      if (home && t <= tier) homeTotal++;
-      if (t > tier && !home) continue;
-      total++;
-      if (states.get(id) === 'conquered') conquered++;
-    }
-    const needed = campaign
-      ? Math.min(total, Math.max(campaign.minPerTier * tier, Math.ceil(homeTotal * fraction)))
-      : Math.ceil(total * fraction);
-    // Every tense learned counts, whatever the verb's level (a verb planted from a later
-    // level too). The cap looks at the verbs in reach: the open tiers, the home category
-    // (open at every level, like its words) and any verb already started.
-    const pool = verbs
-      ? [...verbs.levels].filter(
-          ([id, lvl]) => lvl > 0 || (tiers.get(id) ?? 1) <= tier || !!campaign?.home.has(id),
-        )
-      : [];
-    const pointsNeed = verbs ? Math.min(verbs.perTier * tier, pool.length * verbs.maxLevel) : 0;
-    const verbPoints = pool.reduce((sum, [, lvl]) => sum + lvl, 0);
-    const base = { tier, maxTier, conquered, verbPoints, pointsNeed };
-    if (tier >= maxTier) return { ...base, needed: 0, pointsNeed: 0 };
-    if (conquered < needed || verbPoints < pointsNeed) return { ...base, needed };
-    tier++;
+export function bandsOf(names?: Record<string, string> | null) {
+  const band = (tier: number) => names?.[String(tier)]?.split('.')[0];
+  const order = new Map<string, number>();
+  const tiers = Object.keys(names ?? {}).map(Number);
+  for (const t of tiers.sort((x, y) => x - y)) {
+    const b = band(t)!;
+    if (!order.has(b)) order.set(b, order.size);
   }
+  return (tier: number) => {
+    const b = band(tier);
+    return b === undefined ? tier : order.get(b)!;
+  };
 }
 
-/** Whether a node may be revealed at the given open tier. */
-/** Words of the open tiers, plus `home`: the category you started in is open at every level. */
-export const tierAllows =
-  (tiers: Map<string, number>, tier: number, home?: Set<string>) => (id: string) =>
-    (tiers.get(id) ?? 1) <= tier || !!home?.has(id);
+export function computeLevels(
+  words: LevelWord[],
+  states: Map<string, NodeState>,
+  /** Verb level (tenses learned, not faded) per verb. */
+  verbs: Map<string, number>,
+  rules: LevelRules,
+  bandOf: (tier: number) => number = (t) => t,
+): Levels {
+  const tierOf = new Map(words.map((w) => [w.id, w.tier ?? 1]));
+  const maxTier = Math.max(1, ...tierOf.values());
+  const capOf = (tier: number) => {
+    let cap = tier;
+    while (cap < maxTier && bandOf(cap + 1) <= bandOf(tier) + 1) cap++;
+    return cap;
+  };
+  const upTo = new Array<number>(maxTier + 2).fill(0);
+  for (const t of tierOf.values()) upTo[t]++;
+  for (let t = 1; t <= maxTier; t++) upTo[t] += upTo[t - 1];
+  const held = words.filter((w) => states.get(w.id) === 'conquered').length;
+  const verbPoints = [...verbs.values()].reduce((a, b) => a + b, 0);
+
+  let tier = 1;
+  let needed = 0;
+  let pointsNeed = 0;
+  for (;;) {
+    if (tier >= maxTier) {
+      [needed, pointsNeed] = [0, 0];
+      break;
+    }
+    needed = Math.ceil(rules.overallShare * upTo[tier]);
+    // Verb points are capped by what the verbs in reach could give: those a topic
+    // may reach now, and any already started (planted from further on, say).
+    const pool = [...verbs].filter(([id, lvl]) => lvl > 0 || (tierOf.get(id) ?? 1) <= capOf(tier));
+    pointsNeed = Math.min(rules.perTier * tier, pool.length * rules.maxLevel);
+    if (held < needed || verbPoints < pointsNeed) break;
+    tier++;
+  }
+  const cap = capOf(tier);
+
+  const byTopic = new Map<number, LevelWord[]>();
+  for (const w of words) {
+    if (w.region == null) continue;
+    byTopic.set(w.region, [...(byTopic.get(w.region) ?? []), w]);
+  }
+  const topics = new Map<number, TopicLevel>();
+  for (const [region, own] of byTopic) {
+    const done = own.filter((w) => states.get(w.id) === 'conquered');
+    const count = (list: LevelWord[], t: number) => list.filter((w) => (w.tier ?? 1) <= t).length;
+    let t = 1;
+    let capped = false;
+    let need = 0;
+    for (;;) {
+      if (t >= maxTier) {
+        need = 0;
+        break;
+      }
+      need = Math.ceil(rules.topicShare * count(own, t));
+      if (count(done, t) < need) break;
+      if (t + 1 > cap) {
+        capped = true;
+        break;
+      }
+      t++;
+    }
+    topics.set(region, {
+      tier: t,
+      conquered: count(done, t),
+      needed: need,
+      capped,
+      words: own.length,
+      held: done.length,
+    });
+  }
+  return { overall: { tier, maxTier, held, needed, verbPoints, pointsNeed }, topics, cap };
+}
+
+/** Whether a word may be revealed: its level is open in its topic (no topic: the cap). */
+export function levelAllows(words: LevelWord[], levels: Levels) {
+  const of = new Map(words.map((w) => [w.id, w]));
+  return (id: string) => {
+    const w = of.get(id);
+    const open = w?.region == null ? levels.cap : (levels.topics.get(w.region)?.tier ?? 1);
+    return (w?.tier ?? 1) <= open;
+  };
+}
+
+/** The level a word counts as open at (its topic's), for pricing a planted word. */
+export function openTierOf(words: LevelWord[], levels: Levels) {
+  const of = new Map(words.map((w) => [w.id, w]));
+  return (id: string) => {
+    const w = of.get(id);
+    return w?.region == null ? levels.cap : (levels.topics.get(w.region)?.tier ?? 1);
+  };
+}
 
 export const tierMap = (nodes: { id: string; tier?: number | null }[]) =>
   new Map(nodes.map((n) => [n.id, n.tier ?? 1]));

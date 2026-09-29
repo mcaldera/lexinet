@@ -1,4 +1,4 @@
-import { homeWords, pickStart, startCandidates } from './start';
+import { pickStart, startCandidates } from './start';
 
 const nodes = [
   { id: 'a', tier: 1, region: 0 },
@@ -32,11 +32,6 @@ test('words that open two neighbours beat words that open one', () => {
 
 test('anywhere means any categorised word of the easiest tier', () => {
   expect(startCandidates(nodes, edges)).toEqual(['a']);
-});
-
-test("the home category is the start word's, or just the word without one", () => {
-  expect(homeWords(nodes, 'b')).toEqual(new Set(['a', 'b', 'c']));
-  expect(homeWords(nodes, 'free')).toEqual(new Set(['free']));
 });
 
 test('a poorly linked category still gets a start', () => {

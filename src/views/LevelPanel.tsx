@@ -1,12 +1,14 @@
 import type { ReactNode } from 'react';
-import type { TierProgress } from '../core/tiers';
+import type { Levels } from '../core/tiers';
 import { levelBand, levelRgb } from './visuals';
 
 type Props = {
-  p: TierProgress;
+  levels: Levels;
   /** Display names per tier, e.g. CEFR sub-levels ("A1.2"). */
   names?: Record<string, string> | null;
-  /** Words being claimed in the open tiers: on their way to counting. */
+  /** Topics (categories) by id: their names. */
+  topicName: (id: number) => string;
+  /** Words being claimed: on their way to counting. */
   claimed: number;
   onClose: () => void;
   /** The verbs that earn verb points (VerbGoals), below the road. */
@@ -14,11 +16,13 @@ type Props = {
 };
 
 /**
- * Where you are on the road: every level as a segment coloured by its band
- * (A1 green … B2 purple), the one you're on filling towards the next, what
- * the next needs, and how far the next band is.
+ * Where you are: the overall level as a road, every level a segment coloured by
+ * its band (A1 green … B2 purple), the one you're on filling towards the next,
+ * what the next needs; then each topic you've entered with its own level.
  */
-export default function LevelPanel({ p, names, claimed, onClose, children }: Props) {
+export default function LevelPanel(props: Props) {
+  const { levels, names, claimed, onClose, children } = props;
+  const p = { ...levels.overall, conquered: levels.overall.held };
   const name = (t: number) => names?.[String(t)] ?? `Tier ${t}`;
   const tiers = Array.from({ length: p.maxTier }, (_, i) => i + 1);
   // Consecutive tiers of one band, for the labels under the road.
@@ -105,7 +109,7 @@ export default function LevelPanel({ p, names, claimed, onClose, children }: Pro
             )}
           </div>
           <Bar
-            label="Words"
+            label="Words held"
             value={`${p.conquered}/${p.needed}${claimed ? ` (+${claimed} on the way)` : ''}`}
             share={words}
             rgb={rgb}
@@ -121,6 +125,7 @@ export default function LevelPanel({ p, names, claimed, onClose, children }: Pro
           )}
         </div>
       )}
+      <Topics {...props} name={name} />
       {children && <div className="mt-4 border-t border-white/[0.06] pt-3">{children}</div>}
     </div>
   );
@@ -138,6 +143,65 @@ function Bar(props: { label: string; value: string; share: number; rgb: string; 
           className="h-full rounded-full"
           style={{ width: `${props.share * 100}%`, background: `rgb(${props.rgb})` }}
         />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The topics you've entered, most held first: each climbs its own levels on its
+ * own words; one held back by the overall level shows a lock.
+ */
+function Topics({ levels, topicName, name }: Props & { name: (t: number) => string }) {
+  const entered = [...levels.topics]
+    .filter(([, t]) => t.held > 0)
+    .sort((a, b) => b[1].held - a[1].held);
+  if (!entered.length) return null;
+  return (
+    <div className="mt-4 border-t border-white/[0.06] pt-3">
+      <div className="mb-1.5 flex items-baseline justify-between text-xs">
+        <span className="uppercase tracking-wider text-slate-500">Topics</span>
+        <span
+          className="text-slate-500"
+          title="A topic climbs on its own words, at most one band past your overall level"
+        >
+          up to {name(levels.cap)}
+        </span>
+      </div>
+      <div className="space-y-1.5">
+        {entered.map(([id, t]) => {
+          const rgb = levelRgb(name(t.tier));
+          const share = t.needed ? Math.min(1, t.conquered / t.needed) : 1;
+          return (
+            <div
+              key={id}
+              title={
+                t.needed === 0
+                  ? 'Every level open'
+                  : t.capped
+                    ? `${name(t.tier + 1)} waits for your overall level`
+                    : `${name(t.tier + 1)}: ${t.needed} of its words up to ${name(t.tier)} (${t.conquered} so far)`
+              }
+            >
+              <div className="flex items-baseline justify-between gap-2 text-xs">
+                <span className="truncate text-slate-300">{topicName(id)}</span>
+                <span className="shrink-0 text-slate-500">
+                  {t.held}/{t.words} <b style={{ color: `rgb(${rgb})` }}>{name(t.tier)}</b>
+                  {t.capped && ' 🔒'}
+                </span>
+              </div>
+              <div className="mt-0.5 h-1 overflow-hidden rounded-full bg-white/[0.06]">
+                <div
+                  className="h-full rounded-full"
+                  style={{
+                    width: `${share * 100}%`,
+                    background: `rgba(${rgb}, ${t.capped ? 0.4 : 0.9})`,
+                  }}
+                />
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

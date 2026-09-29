@@ -22,6 +22,7 @@ import {
   FONT_TITLE,
   FONT_UI,
   isWeakBridge,
+  levelRgb,
   mixRgb,
   REGION_RGB,
   regionColors,
@@ -135,6 +136,8 @@ type Props = {
   reclaim: Map<string, { was: 'conquered' | 'claimed'; steps: number; until: number }>;
   /** Words with a bought hint -> their English cousin, drawn as a small node next to them. */
   hints: Map<string, string>;
+  /** Each topic's (region id) level name ("A1.2"), shown under its name on your map. */
+  topicLevels?: Map<number, string>;
   /** Words that need attention, most urgent first: ripples, edge arrows, jump bar. */
   attention: Attention[];
   /** Word whose Italian name is the answer being asked: its name is hidden. */
@@ -167,6 +170,7 @@ export default function GraphView({
   supply,
   reclaim,
   hints,
+  topicLevels,
   attention,
   answerId,
   recall,
@@ -594,6 +598,7 @@ export default function GraphView({
       {
         name: named ? r.name : '',
         color: REGION_RGB[colorOf.get(r.id) ?? 0],
+        level: named && !inspect ? topicLevels?.get(r.id) : undefined,
         ids,
       },
     ];
@@ -1703,6 +1708,8 @@ function clusterForce(pull = 0.05, gap = 60) {
 type Territory = {
   name: string;
   color: string;
+  /** Its topic's level ("A1.2"), drawn small under the name. */
+  level?: string;
   /** Per word: x, y, territory radius, and how brightly supply lights its ground (0..1). */
   pts: (readonly [number, number, number, number])[];
 };
@@ -2063,6 +2070,17 @@ function drawRegionNames(
     ctx.fillStyle = `rgba(${mixRgb(rgb, '255, 255, 255', 0.12)}, ${a})`;
     ctx.fillText(text, cx, cy);
     ctx.shadowBlur = 0;
+    if (t.level) {
+      // The topic's own level, in its band's colour, tucked under the name.
+      const sub = Math.max(10, px * 0.5);
+      ctx.font = `700 ${sub / scale}px ${FONT_TITLE}`;
+      c.letterSpacing = `${(sub * 0.12) / scale}px`;
+      const y = cy + (px * 0.55 + sub * 0.6) / scale;
+      ctx.lineWidth = 4 / scale;
+      ctx.strokeText(t.level, cx, y);
+      ctx.fillStyle = `rgba(${levelRgb(t.level)}, ${a})`;
+      ctx.fillText(t.level, cx, y);
+    }
   }
   ctx.restore();
   // While bold, the names are in the way of word labels (see drawLabels).

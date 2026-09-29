@@ -6,9 +6,9 @@ import {
   EXPEDITION,
   HINT_COST,
   RAID,
-  TIER_MIN_WORDS,
+  OVERALL_SHARE,
+  TOPIC_SHARE,
   VERB_POINTS_PER_TIER,
-  TIER_UNLOCK_FRACTION,
   PLANT_COST,
   RECLAIM_MS,
   ROOTS,
@@ -157,12 +157,14 @@ export default function Guide({ onClose }: { onClose: () => void }) {
             {PLANT_COST}): your link carries supply too.
           </p>
           <p>
-            Levels follow your run: the next opens at {Math.round(TIER_UNLOCK_FRACTION * 100)}% of
-            your home category's words so far (at least {TIER_MIN_WORDS} per level), counting words
-            of that level from anywhere, plus {VERB_POINTS_PER_TIER} verb points per level: every
-            tense you learn of a verb is a point (one new tense per day per verb), so one verb
-            conjugated far counts as much as several conjugated a little. Your home category is open
-            at every level. Several runs (☰ → Runs) let you keep separate campaigns.
+            <b>Levels</b> (A1.1 … C1): every topic climbs its own. A topic's next level opens at{' '}
+            {pct(TOPIC_SHARE)} of its words so far; only then do its harder words appear. Your{' '}
+            <b>overall level</b> (the header) comes from the words you hold across the whole network
+            ({pct(OVERALL_SHARE)} of all words so far) plus {VERB_POINTS_PER_TIER} verb points per
+            level: every tense you learn of a verb is a point (one new tense per day per verb), so
+            one verb conjugated far counts as much as several conjugated a little. A topic may run
+            at most one band (A1, A2, …) past your overall level: 🔒 in the level panel means it
+            waits for you there. Several runs (☰ → Runs) let you keep separate campaigns.
           </p>
         </Section>
 

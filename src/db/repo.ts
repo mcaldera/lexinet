@@ -8,8 +8,7 @@ import {
   type Direction,
   type Grade,
 } from '../core/scheduler';
-import { tierAllows, tierMap } from '../core/tiers';
-import { homeWords } from '../core/start';
+import { levelAllows } from '../core/tiers';
 import { dayKey } from '../core/streak';
 import type { Example } from '../core/cloze';
 import type { Expedition } from '../core/expedition';
@@ -110,8 +109,6 @@ export type AppData = {
   seed: string;
   /** A start was chosen or play has begun; otherwise the start picker shows. */
   started: boolean;
-  /** The seed's category: the campaign's home, open at every level (core/start). */
-  home: Set<string>;
   nodes: WordNode[];
   edges: Edge[];
   cards: CardRow[];
@@ -197,7 +194,6 @@ export async function syncGraph(db: SqlDb, graph: Graph, now: Date) {
   const ids = new Set(graph.nodes.map((n) => n.id));
   const rows = await db.select<{ id: string; state: NodeState }>('SELECT id, state FROM nodes');
   const states = new Map(rows.filter((r) => ids.has(r.id)).map((r) => [r.id, r.state]));
-  const tiers = tierMap(graph.nodes);
   const tenseRows = await db.select<{
     id: string;
     node_id: string;
@@ -205,9 +201,14 @@ export async function syncGraph(db: SqlDb, graph: Graph, now: Date) {
     fsrs_json: string;
   }>("SELECT id, node_id, direction, fsrs_json FROM cards WHERE direction LIKE 'tense:%'");
   const seed = await loadMeta(db, 'seed', graph.seed);
-  const home = homeWords(graph.nodes, seed);
-  const open = computeProgress(graph.nodes, states, tenseRows.map(toTenseCard), now, home).tier;
-  const allowed = tierAllows(tiers, open, home);
+  const levels = computeProgress(
+    graph.nodes,
+    states,
+    tenseRows.map(toTenseCard),
+    now,
+    graph.params?.tier_names,
+  );
+  const allowed = levelAllows(graph.nodes, levels);
   // Reveal the words next to your territory and the capital (new words, changed
   // links, an empty map's start). Nothing closes here: the app's horizon does that.
   const anchors = new Set([
@@ -285,7 +286,6 @@ export async function loadAll(db: SqlDb, graph: Graph): Promise<AppData> {
     raid: await loadMeta<RaidState>(db, 'raid', {}),
     graph,
     seed: seed && ids.has(seed) ? seed : graph.seed,
-    home: homeWords(graph.nodes, seed && ids.has(seed) ? seed : graph.seed),
     started: !!seed || first.length > 0,
     nodes: graph.nodes,
     edges: [...graph.edges, ...userEdges],

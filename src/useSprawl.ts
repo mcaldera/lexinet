@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { appNow } from './core/clock';
 import { newCard, rate, Rating, State, type Grade } from './core/scheduler';
-import { tierAllows, tierMap } from './core/tiers';
+import { levelAllows, type Levels } from './core/tiers';
 import { tenseCardId, type Tense, type TenseCard } from './core/verbs';
 import { computeProgress } from './progress';
 import { without, type Game, type GameNode } from './core/game';
@@ -63,6 +63,8 @@ import {
 
 const graphName = currentGraphName();
 const runId = currentRun(graphName);
+/** Level names ("A1.2") of the graph: their bands shape the levels. */
+const names = (data: AppData) => data.graph.params?.tier_names;
 const claimsOf = (game: Game) => new Map([...game.nodes].map(([id, g]) => [id, g.claim]));
 
 // Module-level so StrictMode's double effect doesn't open/seed twice.
@@ -78,7 +80,25 @@ function getDb() {
   return dbPromise;
 }
 
-export type LevelUp = { tier: number; revealed: number };
+/** A new level: the overall one, or a topic's (named). */
+export type LevelUp = { tier: number; topic?: string; revealed: number };
+
+/** What rose between two level states: the overall level first, else a topic's. */
+function levelUpOf(
+  before: Levels,
+  after: Levels,
+  regions: { id: number; name: string }[] | undefined,
+  revealed: number,
+): LevelUp | null {
+  if (after.overall.tier > before.overall.tier) return { tier: after.overall.tier, revealed };
+  for (const [region, topic] of after.topics) {
+    if (topic.tier > (before.topics.get(region)?.tier ?? 1)) {
+      const name = regions?.find((r) => r.id === region)?.name;
+      return { tier: topic.tier, topic: name, revealed };
+    }
+  }
+  return null;
+}
 export type ReviewOutcome = {
   levelUp: LevelUp | null;
   conquered: boolean;
@@ -136,8 +156,6 @@ export function useSprawl() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const now = useMemo(() => appNow(offsetDays), [offsetDays, tick, data]);
   const neighbours = useMemo(() => neighbourMap(data?.edges ?? []), [data?.edges]);
-  const tiers = useMemo(() => tierMap(data?.nodes ?? []), [data?.nodes]);
-  const home = data?.home;
   const [lost, setLost] = useState<LostEvent | null>(null);
   const [event, setEvent] = useState<GameEvent | null>(null);
 
@@ -167,7 +185,7 @@ export function useSprawl() {
     (
       states: Map<string, NodeState>,
       game: Game,
-      tier: number,
+      levels: Levels,
       t: number,
       memory?: Partial<Pick<AppData, 'cards' | 'tenseCards'>>,
     ): {
@@ -215,7 +233,7 @@ export function useSprawl() {
         states,
         neighbours,
         anchors,
-        tierAllows(tiers, tier, home),
+        levelAllows(data.nodes, levels),
         (id) => id === data.seed || started.has(id) || rootWords.has(id),
         reach,
         SUPPLY.reveal,
@@ -230,7 +248,7 @@ export function useSprawl() {
       const opened = changes.filter((c) => c.state === 'frontier').length;
       return { changes, opened, unlocked, roots };
     },
-    [data, neighbours, tiers, home],
+    [data, neighbours],
   );
 
   // The siege runs whenever app time moves (clock tick, time travel): cut-off
@@ -268,9 +286,9 @@ export function useSprawl() {
     // Lost words remember what they were: one right answer wins them back for a while.
     const game = recordFalls({ simAt: t, nodes }, data.states, claimsOf(data.game), fallen, t);
     const states = applyChanges(data.states, fallen);
-    const tier = computeProgress(data.nodes, states, data.tenseCards, now, data.home).tier;
+    const levels = computeProgress(data.nodes, states, data.tenseCards, now, names(data));
     // Supply moves with time too (words fading break): the horizon follows.
-    const moved = horizon(states, game, tier, t);
+    const moved = horizon(states, game, levels, t);
     const changes = [...fallen, ...(moved?.changes ?? [])];
     void saveGame(db, game, changes);
     if (moved?.unlocked) void saveMeta(db, 'unlocked_roots', [...moved.unlocked]);
@@ -356,7 +374,7 @@ export function useSprawl() {
       // First sight of a word (neither direction ever answered): not knowing it is
       // learning, nothing breaks. Every later miss counts in the game.
       const firstSight = unseen(data.cards.filter((c) => c.nodeId === id));
-      const before = computeProgress(data.nodes, data.states, data.tenseCards, at, data.home).tier;
+      const before = computeProgress(data.nodes, data.states, data.tenseCards, at, names(data));
       const supplyBefore = supplyNow(data, t);
 
       // A word you had won and lost: one right answer brings its old status back.
@@ -418,7 +436,7 @@ export function useSprawl() {
       }
 
       const statesAfter = applyChanges(data.states, changes);
-      const after = computeProgress(data.nodes, statesAfter, data.tenseCards, at, data.home).tier;
+      const after = computeProgress(data.nodes, statesAfter, data.tenseCards, at, names(data));
       // Conquest locks in both directions: the other card (right in step 1 or 2,
       // still in FSRS learning) graduates too, so the word isn't asked again at once.
       const other = conquered
@@ -434,8 +452,7 @@ export function useSprawl() {
       // known better sends out more supply, so it may see further.
       const revealed = horizon(statesAfter, game, after, t, { cards: cardsAfter });
       changes = [...changes, ...revealed.changes];
-      const levelUp: LevelUp | null =
-        after > before ? { tier: after, revealed: revealed.opened } : null;
+      const levelUp = levelUpOf(before, after, data.graph.regions, revealed.opened);
       // Known well enough to send out full supply: a stronghold.
       const stronghold =
         statesAfter.get(id) === 'conquered' &&
@@ -540,16 +557,16 @@ export function useSprawl() {
         card: rate(existing?.card ?? newCard(at), grade, at),
       };
       const tenseCards = [...data.tenseCards.filter((c) => c.id !== id), tc];
-      const before = computeProgress(data.nodes, data.states, data.tenseCards, at, data.home).tier;
-      const after = computeProgress(data.nodes, data.states, tenseCards, at, data.home).tier;
+      const before = computeProgress(data.nodes, data.states, data.tenseCards, at, names(data));
+      const after = computeProgress(data.nodes, data.states, tenseCards, at, names(data));
       let changes: StateChange[] = [];
       let levelUp: LevelUp | null = null;
       let unlocked: Set<string> | undefined;
-      if (after > before) {
+      if (levelUpOf(before, after, data.graph.regions, 0)) {
         const revealed = horizon(data.states, data.game, after, at.getTime(), { tenseCards });
         changes = revealed.changes;
         unlocked = revealed.unlocked;
-        levelUp = { tier: after, revealed: revealed.opened };
+        levelUp = levelUpOf(before, after, data.graph.regions, revealed.opened);
       }
       await saveTenseReview(db, tc, grade, at, changes);
       if (unlocked) await saveMeta(db, 'unlocked_roots', [...unlocked]);

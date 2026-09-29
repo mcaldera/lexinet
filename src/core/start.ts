@@ -6,8 +6,7 @@ type Link = { source: string; target: string };
 /**
  * Words that make a good first word: in a category, from its easiest tier, and
  * linked to at least two other words of that category, which the start opens
- * right away (see `homeWords`; a lone start leaves nothing to do while its word
- * cools down). `region` limits the choice to one category; without it any will do.
+ * right away (a lone start leaves nothing to do while its word cools down). `region` limits the choice to one category; without it any will do.
  */
 export function startCandidates(nodes: StartWord[], edges: Link[], region?: number): string[] {
   const pool = nodes.filter(
@@ -40,12 +39,4 @@ export function pickStart(
 ): string | undefined {
   const ids = startCandidates(nodes, edges, region);
   return ids.length ? ids[Math.floor(random() * ids.length)] : undefined;
-}
-
-/** The start word's category: open at every level, so any category makes a full start. */
-export function homeWords(nodes: StartWord[], seed: string): Set<string> {
-  const region = nodes.find((n) => n.id === seed)?.region;
-  return new Set(
-    region == null ? [seed] : nodes.filter((n) => n.region === region).map((n) => n.id),
-  );
 }

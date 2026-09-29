@@ -1,145 +1,97 @@
-import { tierAllows, tierProgress } from './tiers';
+import { bandsOf, computeLevels, levelAllows, type LevelWord } from './tiers';
 import type { NodeState } from './unlock';
 
-const tiers = new Map([
-  ['a', 1],
-  ['b', 1],
-  ['c', 1],
-  ['d', 1],
-  ['e', 2],
-  ['f', 2],
-  ['g', 3],
-]);
+// Two topics: 1 (a..f) and 2 (p..s), levels 1-4.
+const words: LevelWord[] = [
+  { id: 'a', tier: 1, region: 1 },
+  { id: 'b', tier: 1, region: 1 },
+  { id: 'c', tier: 2, region: 1 },
+  { id: 'd', tier: 2, region: 1 },
+  { id: 'e', tier: 3, region: 1 },
+  { id: 'f', tier: 4, region: 1 },
+  { id: 'p', tier: 2, region: 2 },
+  { id: 'q', tier: 2, region: 2 },
+  { id: 'r', tier: 3, region: 2 },
+  { id: 's', tier: 4, region: 2 },
+];
 const states = (conquered: string[]) =>
   new Map<string, NodeState>(
-    [...tiers.keys()].map((id) => [id, conquered.includes(id) ? 'conquered' : 'locked']),
+    words.map((w) => [w.id, conquered.includes(w.id) ? 'conquered' : 'locked']),
   );
+const rules = { overallShare: 0.5, topicShare: 0.5, perTier: 1, maxLevel: 6 };
+const none = new Map<string, number>();
 
-test('tier 2 opens at 75% of tier 1', () => {
-  expect(tierProgress(tiers, states(['a', 'b']), 0.75)).toMatchObject({
+test('a topic climbs on its own words: half of those up to its level', () => {
+  const l = computeLevels(words, states(['a']), none, rules);
+  // Topic 1: a of a, b (level 1) is half: it climbs to 2, which needs 2 of a-d.
+  expect(l.topics.get(1)).toMatchObject({ tier: 2, conquered: 1, needed: 2, held: 1, words: 6 });
+  // Topic 2 has no level-1 words: it starts at level 2 already.
+  expect(l.topics.get(2)).toMatchObject({ tier: 2, conquered: 0, needed: 1 });
+});
+
+test('the overall level counts the words you hold anywhere', () => {
+  // Level 2 needs half of the 2 words of level 1: one held word, anywhere.
+  expect(computeLevels(words, states([]), none, rules).overall).toMatchObject({
     tier: 1,
-    maxTier: 3,
-    conquered: 2,
-    needed: 3,
-  });
-  expect(tierProgress(tiers, states(['a', 'b', 'c']), 0.75).tier).toBe(2);
-});
-
-test('progress counts all open tiers and stops at the top', () => {
-  const p = tierProgress(tiers, states(['a', 'b', 'c', 'e']), 0.75);
-  expect(p).toMatchObject({ tier: 2, maxTier: 3, conquered: 4, needed: 5 });
-  const top = tierProgress(tiers, states(['a', 'b', 'c', 'd', 'e', 'f']), 0.75);
-  expect(top).toMatchObject({ tier: 3, maxTier: 3, conquered: 6, needed: 0 });
-});
-
-test('tierAllows gates by tier; unknown ids count as tier 1', () => {
-  const allow = tierAllows(tiers, 2);
-  expect(['a', 'e', 'g', 'zzz'].map(allow)).toEqual([true, true, false, true]);
-});
-
-test('verb points gate tiers: 2 per level, any mix of verbs and tenses', () => {
-  const done = states(['a', 'b', 'c', 'd']);
-  const gate = (levels: [string, number][]) => ({
-    levels: new Map(levels),
-    perTier: 2,
-    maxLevel: 6,
-  });
-  // a and b are verbs of tier 1; one tense learned is 1 point of the 2 needed.
-  const stuck = tierProgress(
-    tiers,
-    done,
-    0.75,
-    gate([
-      ['a', 1],
-      ['b', 0],
-    ]),
-  );
-  expect(stuck).toMatchObject({ tier: 1, verbPoints: 1, pointsNeed: 2 });
-  expect(
-    tierProgress(
-      tiers,
-      done,
-      0.75,
-      gate([
-        ['a', 1],
-        ['b', 1],
-      ]),
-    ).tier,
-  ).toBe(2);
-  // One verb with two tenses is worth as much as two verbs with one.
-  expect(tierProgress(tiers, done, 0.75, gate([['a', 2]])).tier).toBe(2);
-  // Few verbs in reach: the requirement is capped by what they could give at most.
-  const one = { levels: new Map([['a', 0]]), perTier: 2, maxLevel: 1 };
-  expect(tierProgress(tiers, done, 0.75, one)).toMatchObject({ tier: 1, pointsNeed: 1 });
-});
-
-test('the home category is open at every level', () => {
-  const tiers = new Map([
-    ['a', 1],
-    ['b', 3],
-    ['c', 3],
-  ]);
-  const allowed = tierAllows(tiers, 1, new Set(['b']));
-  expect(['a', 'b', 'c'].map(allowed)).toEqual([true, true, false]);
-});
-
-test('a campaign measures levels by the home category, counting words from anywhere', () => {
-  // Home: a, e, g. Tier 1 needs max(1 × 1, 60% of {a}) = 1 word.
-  const campaign = { home: new Set(['a', 'e', 'g']), minPerTier: 1 };
-  expect(tierProgress(tiers, states([]), 0.6, undefined, campaign)).toMatchObject({
-    tier: 1,
+    held: 0,
     needed: 1,
   });
-  // b is not home but tier 1: it counts. Tier 2 needs max(2, 60% of {a, e}) = 2.
-  expect(tierProgress(tiers, states(['b']), 0.6, undefined, campaign)).toMatchObject({
+  expect(computeLevels(words, states(['p']), none, rules).overall).toMatchObject({
     tier: 2,
-    needed: 2,
+    held: 1,
+    needed: 3, // half of the 6 words up to level 2
   });
-  // g is home (tier 3) and counts already at tier 2.
-  expect(tierProgress(tiers, states(['b', 'g']), 0.6, undefined, campaign).tier).toBe(3);
 });
 
-test("the home category's verbs count for the verb requirement at any level", () => {
-  const tiers = new Map([
-    ['a', 1],
-    ['v', 3],
-  ]);
-  const states = new Map<string, 'conquered'>([['a', 'conquered']]);
-  const verbs = { levels: new Map([['v', 0]]), perTier: 1, maxLevel: 6 };
-  // A tier-3 verb elsewhere asks for nothing yet: the level moves on.
-  const away = tierProgress(tiers, states, 0.5, verbs, { home: new Set(['a']), minPerTier: 1 });
-  expect(away.tier).toBeGreaterThan(1);
-  // The same verb at home is in reach, so it is what the next level asks for.
-  const home = tierProgress(tiers, states, 0.5, verbs, {
-    home: new Set(['a', 'v']),
-    minPerTier: 1,
-  });
-  expect(home.tier).toBe(1);
-  expect([home.verbPoints, home.pointsNeed]).toEqual([0, 1]);
+test('a topic runs at most one band past the overall level', () => {
+  // Hold the overall level back: it needs every word up to its level.
+  const strict = { ...rules, overallShare: 1 };
+  // Every level its own band: overall 2 lets topics reach level 3, no further.
+  const l = computeLevels(words, states(['a', 'b']), none, strict);
+  expect(l.overall.tier).toBe(2);
+  expect(l.cap).toBe(3);
+  expect(l.topics.get(1)).toMatchObject({ tier: 3, conquered: 2, needed: 3, capped: false });
+  const held = computeLevels(words, states(['a', 'b', 'c', 'd', 'e']), none, strict);
+  expect(held.overall.tier).toBe(2);
+  expect(held.topics.get(1)).toMatchObject({ tier: 3, capped: true });
 });
 
-test('a verb from a later level counts once you conjugate it (planted ahead)', () => {
-  const tiers = new Map([
-    ['a', 1],
-    ['b', 1],
-    ['v', 3],
+test('bands: a topic may climb through the band after the overall level', () => {
+  const bandOf = bandsOf({ '1': 'A1.1', '2': 'A1.2', '3': 'A2.1', '4': 'B1' });
+  expect([1, 2, 3, 4].map(bandOf)).toEqual([0, 0, 1, 2]);
+  const l = computeLevels(
+    words,
+    states(['a', 'b', 'c', 'd', 'e']),
+    none,
+    { ...rules, overallShare: 1 },
+    bandOf,
+  );
+  // Overall level 2 (band A1): topics may reach A2 (level 3), not B1.
+  expect(l.overall.tier).toBe(2);
+  expect(l.cap).toBe(3);
+  expect(l.topics.get(1)).toMatchObject({ tier: 3, capped: true });
+});
+
+test('verb points gate the overall level: any mix of verbs and tenses', () => {
+  const verbs = new Map([
+    ['a', 0],
+    ['b', 0],
   ]);
-  const states = new Map<string, NodeState>([
-    ['a', 'conquered'],
-    ['b', 'locked'],
-    ['v', 'conquered'],
+  const stuck = computeLevels(words, states(['a', 'b']), verbs, rules);
+  expect(stuck.overall).toMatchObject({ tier: 1, verbPoints: 0, pointsNeed: 1 });
+  const one = computeLevels(words, states(['a', 'b']), new Map([...verbs, ['a', 1]]), rules);
+  expect(one.overall.tier).toBeGreaterThan(1);
+});
+
+test("what may be revealed: levels open in each word's topic", () => {
+  const allows = levelAllows(words, computeLevels(words, states(['a']), none, rules));
+  // Topic 1 is at 2, topic 2 at 2 (see above).
+  expect(['a', 'c', 'e', 'p', 'r', 'zzz'].map(allows)).toEqual([
+    true,
+    true,
+    false,
+    true,
+    false,
+    true,
   ]);
-  const campaign = { home: new Set(['a', 'b']), minPerTier: 1 };
-  const verbs = (lvl: number) => ({ levels: new Map([['v', lvl]]), perTier: 2, maxLevel: 6 });
-  // Not started: out of reach, so level 1 asks for no verbs (a, b: needs 2 words, has 1).
-  expect(tierProgress(tiers, states, 1, verbs(0), campaign)).toMatchObject({
-    verbPoints: 0,
-    pointsNeed: 0,
-  });
-  // Its present tense learned: one point, and the cap now counts it.
-  expect(tierProgress(tiers, states, 1, verbs(1), campaign)).toMatchObject({
-    tier: 1,
-    verbPoints: 1,
-    pointsNeed: 2,
-  });
 });

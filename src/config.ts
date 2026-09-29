@@ -1,18 +1,21 @@
 /**
- * Levels follow your campaign (core/tiers `Campaign`): the next one opens at this
- * share of your home category's words so far, and at least TIER_MIN_WORDS per level.
+ * Levels (core/tiers.ts): each topic climbs on its own words, its next level
+ * opening at TOPIC_SHARE of its words so far; the overall level needs
+ * OVERALL_SHARE of all words so far held (A1.2 at ~70 words, C1 at ~650 of
+ * 2663) plus verb points, and a topic may run at most one band (A1, A2, …)
+ * past it.
  */
-export const TIER_UNLOCK_FRACTION = 0.6;
-export const TIER_MIN_WORDS = 5;
+export const TOPIC_SHARE = 0.6;
+export const OVERALL_SHARE = 0.25;
 
 /** After a wrong answer ("Again") the word is locked for this long (app time). */
 export const COOLDOWN_MS = 60_000;
 
 /**
- * Verb points per tier: leaving tier k takes this × k. Every tense learned (and
- * not faded) of a verb is a point, however they are spread over verbs.
+ * Verb points per overall level: leaving level k takes this × k. Every tense
+ * learned (and not faded) of a verb is a point, however they are spread over verbs.
  */
-export const VERB_POINTS_PER_TIER = 2;
+export const VERB_POINTS_PER_TIER = 4;
 
 /**
  * Supply (core/supply.ts): your words count only while the words around them

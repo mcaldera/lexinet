@@ -1,5 +1,5 @@
-import { TIER_MIN_WORDS, TIER_UNLOCK_FRACTION, VERB_POINTS_PER_TIER } from './config';
-import { tierMap, tierProgress, type TierProgress } from './core/tiers';
+import { OVERALL_SHARE, TOPIC_SHARE, VERB_POINTS_PER_TIER } from './config';
+import { bandsOf, computeLevels, type Levels } from './core/tiers';
 import type { NodeState } from './core/unlock';
 import { TENSES, verbLevel, type TenseCard } from './core/verbs';
 import type { WordNode } from './db/repo';
@@ -13,21 +13,28 @@ export function verbLevels(nodes: WordNode[], tenseCards: TenseCard[], now: Date
   );
 }
 
-/** The open tier and what the next one needs (words and verbs). Single source of truth. */
+/**
+ * Your levels: every topic's, and the overall one with what its next needs
+ * (words and verbs). Single source of truth for what may be revealed.
+ */
 export function computeProgress(
   nodes: WordNode[],
   states: Map<string, NodeState>,
   tenseCards: TenseCard[],
   now: Date,
-  /** The start word's category (core/start `homeWords`): levels follow this campaign. */
-  home: Set<string>,
-): TierProgress {
-  const levels = verbLevels(nodes, tenseCards, now);
-  return tierProgress(
-    tierMap(nodes),
+  /** Level names ("A1.2"): their bands limit how far a topic runs ahead. */
+  names?: Record<string, string> | null,
+): Levels {
+  return computeLevels(
+    nodes,
     states,
-    TIER_UNLOCK_FRACTION,
-    { levels, perTier: VERB_POINTS_PER_TIER, maxLevel: TENSES.length },
-    { home, minPerTier: TIER_MIN_WORDS },
+    verbLevels(nodes, tenseCards, now),
+    {
+      overallShare: OVERALL_SHARE,
+      topicShare: TOPIC_SHARE,
+      perTier: VERB_POINTS_PER_TIER,
+      maxLevel: TENSES.length,
+    },
+    bandsOf(names),
   );
 }

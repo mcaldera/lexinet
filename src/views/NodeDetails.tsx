@@ -101,10 +101,13 @@ export function MemoryPanel({
   o,
   nowMs,
   recall,
+  broken,
 }: {
   o: MemoryOutlook;
   nowMs: number;
   recall?: number | null;
+  /** Broken already (by a miss or a raid): no point counting down to fading. */
+  broken?: boolean;
 }) {
   const length = Math.max(1, o.breaks - o.since);
   const at = (t: number) => `${Math.max(0, Math.min(1, (t - o.since) / length)) * 100}%`;
@@ -154,7 +157,7 @@ export function MemoryPanel({
               ? 'due now: practise it'
               : 'faded: it broke, mend it'}
         </span>
-        {phase !== 'broken' && (
+        {phase !== 'broken' && !broken && (
           <span className="text-slate-500">breaks in {until(o.breaks - nowMs)}</span>
         )}
       </div>
@@ -238,7 +241,12 @@ export default function NodeDetails(props: Props) {
       </div>
       {supply && <SupplyLine supply={supply} nowMs={props.nowMs} />}
       {props.memory && (
-        <MemoryPanel o={props.memory.outlook} nowMs={props.nowMs} recall={props.memory.recall} />
+        <MemoryPanel
+          o={props.memory.outlook}
+          nowMs={props.nowMs}
+          recall={props.memory.recall}
+          broken={supply?.broken}
+        />
       )}
       {verb && (
         <div className="mt-2 flex items-center justify-between gap-2">

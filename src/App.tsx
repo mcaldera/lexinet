@@ -18,7 +18,7 @@ import { FULL_NAME, hintedName } from './core/fade';
 import { appNow } from './core/clock';
 import { nodeHealth } from './core/health';
 import { buildQueue, closest, nearby, openOrder } from './core/queue';
-import { tierAllows, tierMap, type TierProgress } from './core/tiers';
+import { levelAllows, openTierOf, type Levels } from './core/tiers';
 import { ghostWords } from './core/supply';
 import { rootCharge, rootNeed } from './core/roots';
 import { neighbourMap } from './core/unlock';
@@ -260,7 +260,16 @@ export default function App() {
   );
 
   const progress = useMemo(
-    () => (data ? computeProgress(data.nodes, data.states, data.tenseCards, now, data.home) : null),
+    () =>
+      data
+        ? computeProgress(
+            data.nodes,
+            data.states,
+            data.tenseCards,
+            now,
+            data.graph.params?.tier_names,
+          )
+        : null,
     [data, now],
   );
   const neighbours = useMemo(() => neighbourMap(data?.edges ?? []), [data?.edges]);
@@ -271,12 +280,7 @@ export default function App() {
   const ghosts = useMemo(
     () =>
       data && progress
-        ? ghostWords(
-            data.states,
-            reach,
-            SUPPLY.sight,
-            tierAllows(tierMap(data.nodes), progress.tier, data.home),
-          )
+        ? ghostWords(data.states, reach, SUPPLY.sight, levelAllows(data.nodes, progress))
         : new Set<string>(),
     [data, reach, progress],
   );
@@ -507,14 +511,6 @@ export default function App() {
   });
 
   const states = [...data.states.values()];
-  /** Words being claimed in the open tiers: shown as progress on the way. */
-  const claimedOpen = progress
-    ? data.nodes.filter(
-        (n) =>
-          ((n.tier ?? 1) <= progress.tier || data.home.has(n.id)) &&
-          data.states.get(n.id) === 'claimed',
-      ).length
-    : 0;
   const conquered = states.filter((s) => s === 'conquered').length;
   const claimed = states.filter((s) => s === 'claimed').length;
 
@@ -531,7 +527,7 @@ export default function App() {
       nodes: data.nodes,
       states: data.states,
       neighbours,
-      openTier: progress?.tier ?? 1,
+      openTier: progress ? openTierOf(data.nodes, progress) : 1,
       cost: { base: PLANT_COST, perTierAhead: PLANT_COST_PER_TIER },
     }).map((o) => {
       const word = data.nodes.find((n) => n.id === o.id)!;
@@ -641,15 +637,12 @@ export default function App() {
     }
   };
 
-  // Verbs that can satisfy the next tier's requirement: the open tiers and the home
-  // category, plus any verb found beyond them (planted or opened by a root).
+  // Verbs that can earn verb points: those open in their topics, plus any verb
+  // found beyond them (planted or opened by a root).
+  const verbOpen = progress ? levelAllows(data.nodes, progress) : () => false;
   const verbGoals: VerbGoal[] = data.nodes
     .filter(
-      (n) =>
-        n.conjugations &&
-        ((n.tier ?? 1) <= (progress?.tier ?? 1) ||
-          data.home.has(n.id) ||
-          (data.states.get(n.id) ?? 'locked') !== 'locked'),
+      (n) => n.conjugations && (verbOpen(n.id) || (data.states.get(n.id) ?? 'locked') !== 'locked'),
     )
     .map((n) => {
       const st = data.states.get(n.id) ?? 'locked';
@@ -892,7 +885,11 @@ export default function App() {
         </h1>
         {progress && (
           <button onClick={() => setShowVerbGoals((v) => !v)} className="chip py-1">
-            <TierBadge p={progress} names={data.graph.params?.tier_names} claimed={claimedOpen} />
+            <TierBadge
+              p={progress.overall}
+              names={data.graph.params?.tier_names}
+              claimed={claimed}
+            />
           </button>
         )}
         {inspect && (
@@ -962,7 +959,9 @@ export default function App() {
           {levelUp && (
             <div className="rise-in absolute left-1/2 top-4 z-10 -translate-x-1/2 rounded-xl border border-amber-300/60 bg-gradient-to-b from-amber-500/25 to-amber-950/50 px-6 py-3 text-center shadow-[0_0_40px_rgba(251,191,36,0.35)] backdrop-blur-md">
               <div className="font-title text-xl font-bold tracking-wider text-amber-200">
-                {data.graph.params?.tier_names?.[String(levelUp.tier)] ?? `Tier ${levelUp.tier}`}{' '}
+                {levelUp.topic && `${levelUp.topic}: `}
+                {data.graph.params?.tier_names?.[String(levelUp.tier)] ??
+                  `Tier ${levelUp.tier}`}{' '}
                 open
               </div>
               <div className="text-sm text-amber-100/80">+{levelUp.revealed} words</div>
@@ -1040,6 +1039,16 @@ export default function App() {
             }
             cooldowns={cooldowns}
             inspect={inspect}
+            topicLevels={
+              progress
+                ? new Map(
+                    [...progress.topics].map(([id, t]) => [
+                      id,
+                      data.graph.params?.tier_names?.[String(t.tier)] ?? `Level ${t.tier}`,
+                    ]),
+                  )
+                : undefined
+            }
             onNodeClick={selectNode}
             onBackgroundClick={clearSelection}
           />
@@ -1068,9 +1077,10 @@ export default function App() {
           )}
           {showVerbGoals && progress && !inspect && (
             <LevelPanel
-              p={progress}
+              levels={progress}
               names={data.graph.params?.tier_names}
-              claimed={claimedOpen}
+              topicName={(id) => regionName(id)}
+              claimed={claimed}
               onClose={() => setShowVerbGoals(false)}
             >
               {verbGoals.length > 0 && (
@@ -1361,21 +1371,21 @@ function TierBadge({
   names,
   claimed = 0,
 }: {
-  p: TierProgress;
+  p: Levels['overall'];
   /** Display names per tier, e.g. CEFR levels. */
   names?: Record<string, string> | null;
-  /** Words in the open tiers being conquered right now (not counted yet, but on the way). */
+  /** Words being conquered right now (not counted yet, but on the way). */
   claimed?: number;
 }) {
   const name = (t: number) => names?.[String(t)] ?? `tier ${t}`;
-  const pct = p.needed ? Math.min(1, p.conquered / p.needed) : 1;
+  const pct = p.needed ? Math.min(1, p.held / p.needed) : 1;
   const pending = p.needed ? Math.min(1 - pct, claimed / p.needed) : 0;
   return (
     <span
       className="flex items-center gap-2 text-sm text-slate-300"
       title={
         p.needed
-          ? `${name(p.tier + 1)}: ${p.needed} words` +
+          ? `${name(p.tier + 1)}: ${p.needed} words held (${p.held} so far)` +
             (claimed ? ` (${claimed} on the way)` : '') +
             (p.pointsNeed
               ? ` and ${p.pointsNeed} verb points, ${p.verbPoints} so far (each tense learned of a verb is one)`
@@ -1408,7 +1418,7 @@ function TierBadge({
             />
           </span>
           <span className="text-xs text-slate-500">
-            {p.conquered}/{p.needed}
+            {p.held}/{p.needed}
             {p.pointsNeed > 0 && ` · ▲${p.verbPoints}/${p.pointsNeed}`}
           </span>
         </>
