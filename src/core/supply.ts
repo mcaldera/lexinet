@@ -343,6 +343,71 @@ export function hanging(
   return [...atRisk].filter(([, l]) => l < min - 1e-9).map(([j]) => ix.ids[j]);
 }
 
+/** One word's supplier: its share at the word and the words it comes by (supplier first). */
+export type Contribution = { source: string; share: number; path: string[] };
+
+/**
+ * Where a word's supply comes from: every other source's share at it, biggest
+ * first, with the path it takes. (The capital's own 1 isn't listed.)
+ */
+export function contributions(input: SupplyInput, supply: Supply, id: string): Contribution[] {
+  const ix = linkIndex(input.neighbours);
+  const target = ix.at.get(id);
+  if (target === undefined) return [];
+  const out: Contribution[] = [];
+  for (const [source, sp] of supply.shares) {
+    if (source === id) continue;
+    const at = new Map<number, number>();
+    for (let k = 0; k < sp.idx.length; k++) at.set(sp.idx[k], k);
+    const k = at.get(target);
+    if (k === undefined) continue;
+    const path = [id];
+    for (let j = sp.via[k]; ;) {
+      path.push(ix.ids[j]);
+      const next = at.get(j);
+      if (next === undefined) break; // the source itself
+      j = sp.via[next];
+    }
+    out.push({ source, share: sp.v[k], path: path.reverse() });
+  }
+  return out.sort((a, b) => b.share - a.share);
+}
+
+/**
+ * What winning `candidate` (a word you don't hold, sending out `out` once won)
+ * would add to `id`'s supply: its own share there, and what reaches `id`
+ * through it that couldn't before. Only the sources that reach the candidate
+ * are searched again.
+ */
+export function gainIfWon(
+  input: SupplyInput,
+  supply: Supply,
+  id: string,
+  candidate: string,
+  out: number,
+): number {
+  const ix = linkIndex(input.neighbours);
+  const c = ix.at.get(candidate);
+  const target = ix.at.get(id);
+  if (c === undefined || target === undefined || candidate === id) return 0;
+  const won: SupplyInput = {
+    ...input,
+    sources: new Map(input.sources).set(candidate, out),
+    carries: (x) => x === candidate || input.carries(x),
+  };
+  const carries = carrying(won, ix);
+  const shareAt = (sp: Spread) => {
+    for (let k = 0; k < sp.idx.length; k++) if (sp.idx[k] === target) return sp.v[k];
+    return 0;
+  };
+  let gain = shareAt(spread(candidate, out, won, ix, carries));
+  for (const [source, sp] of supply.shares) {
+    if (source === id || !sp.idx.includes(c)) continue;
+    gain += shareAt(spread(source, sp.out, won, ix, carries)) - shareAt(sp);
+  }
+  return gain;
+}
+
 /** Words a capital on `id` would send at least `min` to if they all carried. */
 export function coverage(
   neighbours: Weighted,

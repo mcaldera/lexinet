@@ -3,16 +3,20 @@ import { neighbourWeights } from './core/game';
 import { forgetAt } from './core/health';
 import { nodeStrength } from './core/strength';
 import {
+  contributions,
+  gainIfWon,
   hanging,
   isSupplied,
   sourcesAt,
   supplyFlow,
   wordOutput,
+  type Contribution,
   type SiegeWorld,
   type Supply,
   type SupplyInput,
 } from './core/supply';
 import { verbLevel, type TenseCard } from './core/verbs';
+import type { NodeState } from './core/unlock';
 import type { AppData, CardRow } from './db/repo';
 
 const DAY = 86_400_000;
@@ -117,4 +121,39 @@ export function hangingOn(s: SupplyNow, id: string): string[] {
   return [...s.cut].filter(
     (x) => x !== id && !s.broken.has(x) && isSupplied(repaired, x, SUPPLY.min),
   );
+}
+
+/** What a word sends out once won: a fresh conquest is strength level 2. */
+export const freshOutput = () => wordOutput(2, 0, SUPPLY);
+
+/**
+ * Where `id`'s supply comes from (its biggest suppliers, each sending at least
+ * `least`), and, while it has less than it needs, what winning each "?" within
+ * two links would add to it: how many more words it takes.
+ */
+export function flowToward(
+  s: SupplyNow,
+  id: string,
+  states: Map<string, NodeState>,
+  neighbours: Map<string, string[]>,
+  max = 8,
+  least = 0.02,
+): { sources: Contribution[]; gains: Map<string, number> } {
+  const sources = contributions(s.input, s.flow, id)
+    .filter((c) => c.share >= least)
+    .slice(0, max);
+  const gains = new Map<string, number>();
+  if (id === s.world.home || isSupplied(s.flow, id, SUPPLY.min)) return { sources, gains };
+  const near = new Set<string>();
+  for (const a of neighbours.get(id) ?? []) {
+    near.add(a);
+    for (const b of neighbours.get(a) ?? []) near.add(b);
+  }
+  for (const c of near) {
+    const st = states.get(c);
+    if (c === id || (st !== 'frontier' && st !== 'claimed')) continue;
+    const gain = gainIfWon(s.input, s.flow, id, c, freshOutput());
+    if (gain >= 0.01) gains.set(c, gain);
+  }
+  return { sources, gains };
 }

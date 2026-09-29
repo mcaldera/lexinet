@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react';
+
 type Props = {
   /** The word as the player may see it ("?" until conquered). */
   title: string;
@@ -11,6 +13,8 @@ type Props = {
   /** Meanwhile: go and do something else. */
   onNext?: () => void;
   onClose: () => void;
+  /** The word's status (NodeDetails, bare), inside the card rather than under it. */
+  children?: ReactNode;
 };
 
 const TONE = {
@@ -25,7 +29,7 @@ const TONE = {
  * miss, next claim step not open): the panel stays on it and says why.
  */
 export default function WaitCard(props: Props) {
-  const { title, subtitle, message, tone, progress, action, onNext, onClose } = props;
+  const { title, subtitle, message, tone, progress, action, onNext, onClose, children } = props;
   const t = TONE[tone];
   return (
     <div className={`panel p-4 text-sm ${t.border}`}>
@@ -53,6 +57,7 @@ export default function WaitCard(props: Props) {
           </button>
         )
       )}
+      {children && <div className="-mx-1 mt-3 border-t border-white/[0.06] pt-2">{children}</div>}
     </div>
   );
 }

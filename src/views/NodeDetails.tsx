@@ -50,6 +50,8 @@ type Props = {
   verb?: { level: number; drill: Drill };
   onConjugate?: () => void;
   nowMs: number;
+  /** Inside the word's own card (word card, wait card): no name line, no claim countdown. */
+  bare?: boolean;
 };
 
 const pct = (v: number) => `${Math.round(v * 100)}%`;
@@ -93,26 +95,68 @@ function Dots({ level }: { level: number }) {
 }
 
 /**
- * A word's memory at a glance: its strength, a bar from its last review to
- * when it's due (90% recall) and when it breaks (80%), with now on it, and
- * what the next strength level takes.
+ * A held word's memory and fate on one bar: from its last review to the tick
+ * where it's due (recall 90%), where it breaks (80%) and, while cut off, where
+ * it falls back to "?", with now filled in (grey while cut off, rose when
+ * broken). Below: what comes next, in time order; breaking is left out when
+ * the word falls first. Above: its strength and what the next level takes.
  */
-export function MemoryPanel({
+export function WordTimeline({
   o,
   nowMs,
   recall,
   broken,
+  falls,
 }: {
   o: MemoryOutlook;
   nowMs: number;
   recall?: number | null;
-  /** Broken already (by a miss or a raid): no point counting down to fading. */
+  /** Broken already (missed, raided, or faded). */
   broken?: boolean;
+  /** Cut off (or broken): when it falls back to "?" (app ms). */
+  falls?: number;
 }) {
-  const length = Math.max(1, o.breaks - o.since);
+  const events: { at: number; text: string; color: string; tick: string }[] = [];
+  if (!broken && o.due > nowMs) {
+    events.push({
+      at: o.due,
+      text: `due in ${until(o.due - nowMs)}`,
+      color: 'text-slate-400',
+      tick: 'bg-violet-300',
+    });
+  }
+  if (!broken && o.breaks > nowMs && (falls === undefined || o.breaks < falls)) {
+    events.push({
+      at: o.breaks,
+      text: `breaks in ${until(o.breaks - nowMs)}`,
+      color: 'text-rose-300/80',
+      tick: 'bg-rose-400',
+    });
+  }
+  if (falls !== undefined) {
+    events.push({
+      at: falls,
+      text: `✂ falls to ? in ${until(Math.max(0, falls - nowMs))}`,
+      color: 'text-slate-300',
+      tick: 'bg-slate-300',
+    });
+  }
+  events.sort((a, b) => a.at - b.at);
+  const end = Math.max(events[events.length - 1]?.at ?? o.breaks, nowMs + 1);
+  const length = Math.max(1, end - o.since);
   const at = (t: number) => `${Math.max(0, Math.min(1, (t - o.since) / length)) * 100}%`;
-  const phase = nowMs >= o.breaks ? 'broken' : nowMs >= o.due ? 'due' : 'fresh';
-  const fill = { fresh: 'bg-sky-400/80', due: 'bg-violet-400', broken: 'bg-rose-400' }[phase];
+  const fill = broken
+    ? 'bg-rose-400'
+    : falls !== undefined
+      ? 'bg-slate-400'
+      : nowMs >= o.due
+        ? 'bg-violet-400'
+        : 'bg-sky-400/80';
+  const lead = broken
+    ? { text: 'broken: one right answer mends it', color: 'text-rose-300' }
+    : nowMs >= o.due
+      ? { text: 'due now: practise it', color: 'text-violet-300' }
+      : null;
   const next = o.next;
   return (
     <div className="mt-1.5 space-y-1 text-xs">
@@ -139,27 +183,21 @@ export function MemoryPanel({
         title={recall == null ? undefined : `Recall now ${pct(recall)}: due at 90%, breaks at 80%`}
       >
         <div className={`absolute inset-y-0 left-0 ${fill}`} style={{ width: at(nowMs) }} />
-        <div className="absolute inset-y-0 w-0.5 bg-violet-300" style={{ left: at(o.due) }} />
+        {events.slice(0, -1).map((e) => (
+          <div
+            key={e.text}
+            className={`absolute inset-y-0 w-0.5 ${e.tick}`}
+            style={{ left: at(e.at) }}
+          />
+        ))}
       </div>
-      <div className="flex justify-between text-[11px]">
-        <span
-          className={
-            phase === 'fresh'
-              ? 'text-slate-400'
-              : phase === 'due'
-                ? 'text-violet-300'
-                : 'text-rose-300'
-          }
-        >
-          {phase === 'fresh'
-            ? `due in ${until(o.due - nowMs)}`
-            : phase === 'due'
-              ? 'due now: practise it'
-              : 'faded: it broke, mend it'}
-        </span>
-        {phase !== 'broken' && !broken && (
-          <span className="text-slate-500">breaks in {until(o.breaks - nowMs)}</span>
-        )}
+      <div className="flex flex-wrap gap-x-1.5 text-[11px]">
+        {[...(lead ? [lead] : []), ...events].map((e, i) => (
+          <span key={e.text} className={e.color}>
+            {i > 0 && <span className="text-slate-600">· </span>}
+            {e.text}
+          </span>
+        ))}
       </div>
     </div>
   );
@@ -176,9 +214,9 @@ function SupplyHint({ supply }: { supply?: Props['supply'] }) {
   ) : (
     <p
       className="text-slate-500"
-      title="Won out here, it is cut off from the start and holds out only as long as its memory lasts: win the words around it, and once you know them well they hold each other up"
+      title="Won out here, it is cut off from the start and holds out only as long as its memory lasts. The map shows where its supply comes from, and what winning each ? nearby would add"
     >
-      outside your supply
+      outside your supply: {pct(supply.value)} of the {pct(supply.min)} it needs
     </p>
   );
 }
@@ -216,7 +254,7 @@ export default function NodeDetails(props: Props) {
     return (
       <Panel>
         <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
+          <div className={`flex items-center gap-2 ${props.bare ? 'hidden' : ''}`}>
             <StepDots done={next ? next.step - 1 : 3} />
             <span className={wait <= 0 ? 'text-emerald-300' : 'text-slate-400'}>
               {!next ? '' : wait <= 0 ? 'ready' : `step ${next.step} in ${short(wait)}`}
@@ -235,17 +273,20 @@ export default function NodeDetails(props: Props) {
   const verb = props.verb;
   return (
     <Panel>
-      <div className="mb-1.5 text-sm text-slate-100">
-        {props.name || '?'} {/* Not while it is being asked: the meaning would be the answer. */}
-        {props.showEtymology && <span className="text-xs text-slate-500">{word.en}</span>}
-      </div>
-      {supply && <SupplyLine supply={supply} nowMs={props.nowMs} />}
+      {!props.bare && (
+        <div className="mb-1.5 text-sm text-slate-100">
+          {props.name || '?'} {/* Not while it is being asked: the meaning would be the answer. */}
+          {props.showEtymology && <span className="text-xs text-slate-500">{word.en}</span>}
+        </div>
+      )}
+      {supply && <SupplyLine supply={supply} />}
       {props.memory && (
-        <MemoryPanel
+        <WordTimeline
           o={props.memory.outlook}
           nowMs={props.nowMs}
           recall={props.memory.recall}
           broken={supply?.broken}
+          falls={supply?.cutUntil ?? supply?.brokenUntil}
         />
       )}
       {verb && (
@@ -311,7 +352,7 @@ export default function NodeDetails(props: Props) {
 }
 
 /** One line: broken, cut off, or supplied (and how much hangs on it). */
-function SupplyLine({ supply, nowMs }: { supply: NonNullable<Props['supply']>; nowMs: number }) {
+function SupplyLine({ supply }: { supply: NonNullable<Props['supply']> }) {
   const hang = supply.hanging ?? 0;
   if (supply.broken) {
     return (
@@ -321,9 +362,6 @@ function SupplyLine({ supply, nowMs }: { supply: NonNullable<Props['supply']>; n
       >
         ⛓ Broken ({supply.missed ? 'missed' : 'forgotten'}) · mend it
         {hang > 0 && ` · ${words(hang)} cut off`}
-        {supply.brokenUntil !== undefined && (
-          <span className="text-rose-300/70"> · falls in {until(supply.brokenUntil - nowMs)}</span>
-        )}
       </p>
     );
   }
@@ -331,9 +369,9 @@ function SupplyLine({ supply, nowMs }: { supply: NonNullable<Props['supply']>; n
     return (
       <p
         className="text-slate-400"
-        title="Not enough supply reaches it: it doesn't count, and falls back to '?' when it can't hold out any longer. Mend the broken word on its way, win or strengthen the words around it, or plant a link around the gap."
+        title="Not enough supply reaches it: it doesn't count, and falls back to '?' when it can't hold out any longer. The map shows where its supply comes from and what winning each ? nearby would add; or mend a broken word on its way, or plant a link."
       >
-        ✂ Cut off · falls in {until(supply.cutUntil - nowMs)}
+        ✂ Cut off: {pct(supply.value)} of the {pct(supply.min)} it needs
       </p>
     );
   }

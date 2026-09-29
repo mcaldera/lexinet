@@ -65,6 +65,19 @@ export type SupplyView = {
   /** Supply a word needs to count. */
   min: number;
 };
+/**
+ * Where the selected word's supply comes from: each supplier's share, the
+ * links it takes (oriented towards the word), and, for a word short of supply,
+ * what winning a "?" nearby would add.
+ */
+export type FlowView = {
+  target: string;
+  sources: Map<string, number>;
+  links: Map<string, [string, string]>;
+  gains: Map<string, number>;
+};
+/** A link's key in `FlowView.links`, whichever way round. */
+export const flowKey = (a: string, b: string) => (a < b ? `${a}|${b}` : `${b}|${a}`);
 type N = NodeObject<GNode>;
 type L = LinkObject<GNode, GLink>;
 
@@ -130,6 +143,8 @@ type Props = {
   claimWaits: Map<string, { opensAt: number; total: number }>;
   /** Your supply: lines, broken and cut-off words, towers. */
   supply?: SupplyView;
+  /** The selected word's suppliers and what winning a "?" nearby would add. */
+  flow?: FlowView;
   /** Lost words one right answer wins back, what they were and until when (app ms). */
   reclaim: Map<string, { was: 'conquered' | 'claimed'; steps: number; until: number }>;
   /** Words with a bought hint -> their English cousin, drawn as a small node next to them. */
@@ -168,6 +183,7 @@ export default function GraphView({
   supply,
   reclaim,
   hints,
+  flow,
   topicLevels,
   attention,
   answerId,
@@ -302,6 +318,7 @@ export default function GraphView({
       attentionOf.size > 0 ||
       claimWaits.size > 0 ||
       (supply?.cut.size ?? 0) > 0 ||
+      !!flow?.links.size ||
       !!activeId ||
       bursting);
 
@@ -1135,6 +1152,9 @@ export default function GraphView({
     const a = l.source as N;
     const b = l.target as N;
     if (typeof a !== 'object' || typeof b !== 'object') return null;
+    // The selected word's suppliers: their supply runs towards it, cut off or not.
+    const toward = flow?.links.get(flowKey(a.id, b.id));
+    if (toward) return toward[0] === a.id ? [a, b] : [b, a];
     const fed = (from: N, to: N) =>
       supply.from.get(to.id) === from.id &&
       data.states.get(to.id) === 'conquered' &&
@@ -1155,7 +1175,9 @@ export default function GraphView({
     if (!line) return;
     const [s, e] = line;
     if (s.x === undefined || e.x === undefined || s.y === undefined || e.y === undefined) return;
-    const strength = Math.min(1, (supply?.value.get(e.id) ?? 0) / LIGHT_FULL);
+    const strength = flow?.links.has(flowKey(s.id, e.id))
+      ? 1
+      : Math.min(1, (supply?.value.get(e.id) ?? 0) / LIGHT_FULL);
     const seed = hashOf(`${s.id}|${e.id}`);
     const [ax, ay, bx, by] = [s.x, s.y, e.x, e.y];
     const len = Math.hypot(bx - ax, by - ay);
@@ -1279,9 +1301,11 @@ export default function GraphView({
             ? `rgba(148, 170, 220, ${activeId === undefined ? 0.16 : 0.06})`
             : l.hint
               ? 'rgba(251, 191, 36, 0.55)'
-              : l.via === 'user'
-                ? `rgba(52, 211, 153, ${Math.max(0.5, linkAlpha(l))})` // planted by you
-                : `rgba(${REASON_RGB[l.reason]}, ${linkAlpha(l)})`
+              : flow?.links.has(flowKey(endId(l.source), endId(l.target)))
+                ? `rgba(${SUPPLY_RGB}, 0.9)` // the selected word's supply comes this way
+                : l.via === 'user'
+                  ? `rgba(52, 211, 153, ${Math.max(0.5, linkAlpha(l))})` // planted by you
+                  : `rgba(${REASON_RGB[l.reason]}, ${linkAlpha(l)})`
         }
         // Strong links are much thicker (and carry more supply).
         // By rank: the closest pairs (ghiaccio-gelato) stand out from mere same-theme ones.
@@ -1293,7 +1317,10 @@ export default function GraphView({
             : l.hint
               ? 0.8
               : // Screen pixels: even the weakest link stays a visible line.
-                0.9 + 3.1 * weightRank(l.weight) ** 2 + (touchesActive(l) ? 1 : 0)
+                0.9 +
+                3.1 * weightRank(l.weight) ** 2 +
+                (touchesActive(l) ? 1 : 0) +
+                (flow?.links.has(flowKey(endId(l.source), endId(l.target))) ? 1.2 : 0)
         }
         linkLineDash={(l) =>
           l.hint
@@ -1328,6 +1355,7 @@ export default function GraphView({
           // Names on top, so links and words never cover them.
           const names = drawRegionNames(ctx, scale, livePoints(), inspect);
           drawLabels(ctx, scale, labels.current, names);
+          if (flow && !inspect) drawFlow(ctx, scale, flow, nodeCache.current);
           pointers.current = drawPointers(
             ctx,
             size.width,
@@ -2354,6 +2382,39 @@ function badge(
   ctx.strokeText(text, x, y);
   ctx.fillStyle = `rgba(${rgb}, 0.95)`;
   ctx.fillText(text, x, y);
+}
+
+/**
+ * The selected word's suppliers: a gold ring and "+N%" (the share each sends
+ * it); a "?" nearby that would help: "+N% if won" in green.
+ */
+function drawFlow(
+  ctx: CanvasRenderingContext2D,
+  scale: number,
+  flow: FlowView,
+  nodes: Map<string, N>,
+) {
+  const pct = (v: number) => `+${Math.max(1, Math.round(v * 100))}%`;
+  const at = (id: string) => {
+    const n = nodes.get(id);
+    return n?.x === undefined || n.y === undefined ? null : { x: n.x, y: n.y };
+  };
+  ctx.save();
+  for (const [id, share] of flow.sources) {
+    const p = at(id);
+    if (!p) continue;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 13, 0, 2 * Math.PI);
+    ctx.strokeStyle = `rgba(${SUPPLY_RGB}, 0.85)`;
+    ctx.lineWidth = Math.max(1.2, 1.6 / scale);
+    ctx.stroke();
+    badge(ctx, pct(share), p.x, p.y - 15, scale, SUPPLY_LIGHT);
+  }
+  for (const [id, gain] of flow.gains) {
+    const p = at(id);
+    if (p) badge(ctx, `${pct(gain)} if won`, p.x, p.y - 15, scale, '134, 239, 172');
+  }
+  ctx.restore();
 }
 
 /** A glowing chevron pointing along the link: the direction influence travels. */

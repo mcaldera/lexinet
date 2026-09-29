@@ -1,6 +1,8 @@
 import {
   advanceSiege,
+  contributions,
   coverage,
+  gainIfWon,
   ghostWords,
   hanging,
   horizonChanges,
@@ -450,3 +452,52 @@ test.each([11, 23, 37, 51, 77])(
     expect(ref.fallen.length).toBeGreaterThan(0); // the test exercises falls
   },
 );
+
+test('where a word’s supply comes from: each supplier’s share and its path', () => {
+  //  s - a - b - t, and c - t directly
+  const n = net('s-a:0.8', 'a-b:0.8', 'b-t:0.5', 'c-t:0.5');
+  const input = {
+    sources: new Map([
+      ['s', 1],
+      ['a', 0.25],
+      ['c', 0.4],
+      ['t', 0.4],
+    ]),
+    home: 's',
+    carries: () => true,
+    neighbours: n,
+    rules: RULES,
+  };
+  const flow = supplyFlow(input);
+  const from = contributions(input, flow, 't');
+  expect(from.map((c) => c.source)).toEqual(['s', 'c', 'a']);
+  expect(from[0]).toMatchObject({ share: expect.closeTo(0.32), path: ['s', 'a', 'b', 't'] });
+  expect(from[1]).toMatchObject({ share: expect.closeTo(0.2), path: ['c', 't'] });
+  expect(from.reduce((a, c) => a + c.share, 0)).toBeCloseTo(flow.value.get('t')!);
+});
+
+test('what winning a nearby word would add, as a full recount says', () => {
+  //  s - a - x - t: x not held yet (a "?"), t held but cut off from s
+  const n = net('s-a:0.8', 'a-x:0.7', 'x-t:0.6', 'a-t:0.2');
+  const held = new Set(['s', 'a', 't']);
+  const input = {
+    sources: new Map([
+      ['s', 1],
+      ['a', 0.4],
+      ['t', 0.25],
+    ]),
+    home: 's',
+    carries: (id: string) => held.has(id),
+    neighbours: n,
+    rules: RULES,
+  };
+  const before = supplyFlow(input);
+  const after = supplyFlow({
+    ...input,
+    sources: new Map(input.sources).set('x', 0.25),
+    carries: (id: string) => id === 'x' || held.has(id),
+  });
+  const gain = gainIfWon(input, before, 't', 'x', 0.25);
+  expect(gain).toBeCloseTo(after.value.get('t')! - before.value.get('t')!);
+  expect(gain).toBeGreaterThan(0.3); // s and a now reach t through x, and x sends its own
+});

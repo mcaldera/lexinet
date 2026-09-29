@@ -29,7 +29,7 @@ import type { NodeState } from './core/unlock';
 import { memoryOutlook, nextPractice, nodeStrength } from './core/strength';
 import type { AppData, CardRow } from './db/repo';
 import { useSprawl, type GameEvent, type LevelUp } from './useSprawl';
-import { hangingOn, isStronghold, outputOf, seep, supplyNow } from './supplyState';
+import { flowToward, hangingOn, isStronghold, outputOf, seep, supplyNow } from './supplyState';
 import Menu from './views/Menu';
 import Guide from './views/Guide';
 import StartPicker from './views/StartPicker';
@@ -38,7 +38,7 @@ import { streak } from './core/streak';
 import { expeditionStatus } from './core/expedition';
 import { newRun, switchRun, updateRun, deleteRun, runDbSuffix } from './runs';
 import { dbName } from './db';
-import GraphView from './views/GraphView';
+import GraphView, { flowKey, type FlowView } from './views/GraphView';
 import InspectPanel from './views/InspectPanel';
 import ReviewView from './views/ReviewView';
 import VerbDrill from './views/VerbDrill';
@@ -113,7 +113,7 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
   /** A conquered word opened for viewing (it isn't due): meaning, etymology, tenses. */
-  const [info, setInfo] = useState<{ nodeId: string; status: string } | null>(null);
+  const [info, setInfo] = useState<{ nodeId: string } | null>(null);
   /**
    * A selected word that can't be worked on right now: the panel stays on it and
    * says why (out of reach, locked after a miss, next claim step not open).
@@ -177,6 +177,8 @@ export default function App() {
     [data, now],
   );
   const prevReady = useRef<number | null>(null);
+  /** The selected word's supply flow, worked out once per selection and supply state. */
+  const flowCache = useRef<{ supply: unknown; id: string; view: FlowView } | null>(null);
   useEffect(() => {
     if (prevReady.current !== null && readyCount > prevReady.current) sfx('ready');
     prevReady.current = data ? readyCount : null;
@@ -418,6 +420,25 @@ export default function App() {
   // map rings exactly this one (a due card waits while you look at another word).
   const panelId =
     planting ?? waitOn?.nodeId ?? activeDrill?.nodeId ?? info?.nodeId ?? current?.nodeId ?? focusId;
+  /** Where the selected word's supply comes from, and what a "?" nearby would add (map overlay). */
+  const flowView = (() => {
+    if (inspect || !supply || !panelId || !data.nodes.some((n) => n.id === panelId)) return;
+    const cached = flowCache.current;
+    if (cached?.supply === supply && cached.id === panelId) return cached.view;
+    const { sources, gains } = flowToward(supply, panelId, data.states, neighbours);
+    const view: FlowView = {
+      target: panelId,
+      sources: new Map(sources.map((c) => [c.source, c.share])),
+      links: new Map(
+        sources.flatMap((c) =>
+          c.path.slice(1).map((b, i) => [flowKey(c.path[i], b), [c.path[i], b]] as const),
+        ),
+      ),
+      gains,
+    };
+    flowCache.current = { supply, id: panelId, view };
+    return view;
+  })();
   // The word whose Italian name is the answer being asked: hidden everywhere meanwhile.
   const answerId =
     !waitOn && !activeDrill && !info && current?.direction === 'en-it' ? current.nodeId : undefined;
@@ -807,25 +828,13 @@ export default function App() {
         setVerbDrill({ nodeId, tense: drill.tense, kind: drill.kind });
         return;
       }
-      if (drill.kind === 'wait') {
-        const h = Math.max(1, Math.round((drill.until.getTime() - now.getTime()) / 3_600_000));
-        setInfo({
-          nodeId,
-          status: `The ${drill.tense} opens in ~${h} h (one new tense per day).`,
-        });
-        return;
-      }
-      setInfo({ nodeId, status: `Fully conjugated: all ${TENSES.length} tenses!` });
+      // Its card: the next tense's wait and the stars show in its status.
+      setInfo({ nodeId });
       return;
     }
     if (next) {
-      const days = (next.getTime() - now.getTime()) / 86_400_000;
-      const when =
-        days < 1 ? `${Math.max(1, Math.round(days * 24))} h` : `${Math.round(days)} days`;
-      setInfo({
-        nodeId,
-        status: `Not due yet: you can practise it in ~${when}.`,
-      });
+      // Not due yet: its card, whose timeline says when it is.
+      setInfo({ nodeId });
       return;
     }
     // Only what is actually due; a fading word that isn't due yet is defended
@@ -873,6 +882,78 @@ export default function App() {
     setEarnedNow([]);
     setTurn((t) => t + 1);
   };
+
+  /** The selected word's status; `bare` inside its own card (word card, wait card). */
+  const details = (bare: boolean) =>
+    detailsWord && (
+      <NodeDetails
+        bare={bare}
+        key={detailsWord.id}
+        word={detailsWord}
+        state={data.states.get(detailsWord.id) ?? 'locked'}
+        name={nameOf(detailsWord.id)}
+        health={health.get(detailsWord.id) ?? null}
+        memory={detailsMemory}
+        supply={detailsSupply}
+        nowMs={appNow(data.offsetDays).getTime()}
+        claimStep={claimNext(data.game.nodes.get(detailsWord.id)?.claim, CLAIM_GAPS)}
+        links={
+          data.states.get(detailsWord.id) === 'conquered'
+            ? {
+                ...wordLinks(detailsWord.id, data.edges, regionOf),
+                category: regionName(regionOf(detailsWord.id)),
+              }
+            : undefined
+        }
+        onPlant={
+          data.states.get(detailsWord.id) === 'conquered' && planting !== detailsWord.id
+            ? () => {
+                setWaitOn(null);
+                setInfo(null);
+                setPlanting(detailsWord.id);
+                sfx('select');
+              }
+            : undefined
+        }
+        coins={data.coins}
+        hint={
+          detailsWord.cognate && data.states.get(detailsWord.id) !== 'locked'
+            ? {
+                cognate: detailsWord.cognate,
+                bought: data.hints.has(detailsWord.id),
+                cost: HINT_COST,
+                onBuy: async () => {
+                  if (!(await buyHint(detailsWord.id))) return;
+                  sfx('plant');
+                  setNotice(`≈ ${detailsWord.cognate}`);
+                },
+              }
+            : undefined
+        }
+        reclaim={reclaimMap.get(detailsWord.id)}
+        verb={
+          detailsWord.conjugations && data.states.get(detailsWord.id) === 'conquered'
+            ? {
+                level: verbLevels.get(detailsWord.id) ?? 0,
+                drill: nextDrill(
+                  data.tenseCards.filter((c) => c.nodeId === detailsWord.id),
+                  now,
+                ),
+              }
+            : undefined
+        }
+        onConjugate={() => startConjugate(detailsWord.id)}
+        // Always there for your words, except while one is being asked (a hint).
+        showEtymology={session?.nodeId !== detailsWord.id && current?.nodeId !== detailsWord.id}
+      />
+    );
+  /** Whether the card on show is about the details word, which then carries its status. */
+  const embedded =
+    !!detailsWord &&
+    !planting &&
+    (waitOn
+      ? waitOn.nodeId === detailsWord.id
+      : !activeDrill && !!info && info.nodeId === detailsWord.id);
 
   return (
     <div className="flex h-full flex-col">
@@ -1039,6 +1120,7 @@ export default function App() {
             }
             cooldowns={cooldowns}
             inspect={inspect}
+            flow={flowView}
             topicLevels={
               progress
                 ? new Map(
@@ -1124,7 +1206,9 @@ export default function App() {
                   key={`${waitOn.nodeId}:${waitOn.reason}`}
                   {...waitCard(waitOn)}
                   onClose={() => setWaitOn(null)}
-                />
+                >
+                  {embedded && details(true)}
+                </WaitCard>
               ) : activeDrill ? (
                 <VerbDrill
                   key={`${activeDrill.nodeId}:${activeDrill.tense}:${turn}`}
@@ -1165,17 +1249,12 @@ export default function App() {
                 <WordInfo
                   key={info.nodeId}
                   word={data.nodes.find((n) => n.id === info.nodeId)!}
-                  memory={memoryOutlook(
-                    (cardsByNode.get(info.nodeId) ?? []).map((c) => c.card),
-                    now,
-                    SUPPLY.breakRecall,
-                  )}
-                  nowMs={now.getTime()}
-                  status={info.status}
                   verbLevel={verbLevels.get(info.nodeId)}
                   tenseCards={data.tenseCards.filter((c) => c.nodeId === info.nodeId)}
                   onClose={() => setInfo(null)}
-                />
+                >
+                  {embedded && details(true)}
+                </WordInfo>
               ) : (
                 <ReviewView
                   key={turn}
@@ -1206,69 +1285,7 @@ export default function App() {
               )}
             </>
           )}
-          {!inspect && detailsWord && (
-            <NodeDetails
-              key={detailsWord.id}
-              word={detailsWord}
-              state={data.states.get(detailsWord.id) ?? 'locked'}
-              name={nameOf(detailsWord.id)}
-              health={health.get(detailsWord.id) ?? null}
-              memory={detailsMemory}
-              supply={detailsSupply}
-              nowMs={appNow(data.offsetDays).getTime()}
-              claimStep={claimNext(data.game.nodes.get(detailsWord.id)?.claim, CLAIM_GAPS)}
-              links={
-                data.states.get(detailsWord.id) === 'conquered'
-                  ? {
-                      ...wordLinks(detailsWord.id, data.edges, regionOf),
-                      category: regionName(regionOf(detailsWord.id)),
-                    }
-                  : undefined
-              }
-              onPlant={
-                data.states.get(detailsWord.id) === 'conquered' && planting !== detailsWord.id
-                  ? () => {
-                      setWaitOn(null);
-                      setInfo(null);
-                      setPlanting(detailsWord.id);
-                      sfx('select');
-                    }
-                  : undefined
-              }
-              coins={data.coins}
-              hint={
-                detailsWord.cognate && data.states.get(detailsWord.id) !== 'locked'
-                  ? {
-                      cognate: detailsWord.cognate,
-                      bought: data.hints.has(detailsWord.id),
-                      cost: HINT_COST,
-                      onBuy: async () => {
-                        if (!(await buyHint(detailsWord.id))) return;
-                        sfx('plant');
-                        setNotice(`≈ ${detailsWord.cognate}`);
-                      },
-                    }
-                  : undefined
-              }
-              reclaim={reclaimMap.get(detailsWord.id)}
-              verb={
-                detailsWord.conjugations && data.states.get(detailsWord.id) === 'conquered'
-                  ? {
-                      level: verbLevels.get(detailsWord.id) ?? 0,
-                      drill: nextDrill(
-                        data.tenseCards.filter((c) => c.nodeId === detailsWord.id),
-                        now,
-                      ),
-                    }
-                  : undefined
-              }
-              onConjugate={() => startConjugate(detailsWord.id)}
-              // Always there for your words, except while one is being asked (a hint).
-              showEtymology={
-                session?.nodeId !== detailsWord.id && current?.nodeId !== detailsWord.id
-              }
-            />
-          )}
+          {!inspect && !embedded && details(false)}
         </aside>
       </main>
     </div>
