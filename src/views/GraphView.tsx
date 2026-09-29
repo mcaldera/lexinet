@@ -934,16 +934,34 @@ export default function GraphView({
       rgb,
       (0.2 + Math.min(0.3, coh * 0.12)) * (cut ? 0.3 : 1) * breath,
     );
-    const thin = !cut && !inspect && supply && (supply.value.get(node.id) ?? 0) < THIN_SUPPLY;
-    if (thin && !supply.nodes.has(node.id)) {
-      // Thin supply: it counts, but barely. A supply node nearby would help.
+    if (!cut && !inspect && supply) {
+      // The supply gauge: a ring filled as far as its supply goes, full at a
+      // supply node, a stub at the fringe. Amber when thin (a node nearby
+      // would help), pale gold in the middle ground, bright at the core.
+      const v = Math.min(1, supply.value.get(node.id) ?? 0);
+      // At least ~2.5 px on screen however far out you zoom: it has to be read at a glance.
+      const w = Math.max(2.2, 2.6 / scale);
+      const gr = r + 2.4 + vl * 1.8 + w / 2;
       ctx.beginPath();
-      ctx.arc(x, y, r + 3.5, 0, 2 * Math.PI);
-      ctx.setLineDash([2.5, 2]);
-      ctx.strokeStyle = `rgba(${SUPPLY_RGB}, 0.8)`;
-      ctx.lineWidth = 1.1;
+      ctx.arc(x, y, gr, 0, 2 * Math.PI);
+      ctx.strokeStyle = 'rgba(2, 6, 23, 0.85)';
+      ctx.lineWidth = w + 1.2 / scale;
       ctx.stroke();
-      ctx.setLineDash([]);
+      ctx.strokeStyle = 'rgba(148, 163, 184, 0.25)';
+      ctx.lineWidth = w;
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(x, y, gr, -Math.PI / 2, -Math.PI / 2 + Math.max(0.04, v) * 2 * Math.PI);
+      ctx.strokeStyle =
+        v < THIN_SUPPLY
+          ? 'rgba(251, 146, 60, 0.95)'
+          : v < 0.5
+            ? `rgba(${SUPPLY_RGB}, 0.9)`
+            : `rgba(${SUPPLY_LIGHT}, 1)`;
+      ctx.lineWidth = w;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+      ctx.lineCap = 'butt';
     }
     if (cut) {
       // The siege clock: a ring running down to when it falls back to "?".
@@ -1015,6 +1033,17 @@ export default function GraphView({
           rgb: '251, 191, 36',
           alpha: 0.95,
           weight: 700,
+        });
+      }
+      const sv = supply?.value.get(node.id);
+      if (!inspect && sv !== undefined && !cut && scale > 1.5) {
+        // Close up, the supply in numbers.
+        lines.push({
+          text: `⚡ ${Math.round(Math.min(1, sv) * 100)}%`,
+          px: 8.5,
+          rgb: sv < THIN_SUPPLY ? '251, 146, 60' : SUPPLY_RGB,
+          alpha: 0.9,
+          weight: 600,
         });
       }
       if (node.word.root && scale > 1.3 && h >= FULL_NAME) {

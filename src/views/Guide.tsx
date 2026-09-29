@@ -7,6 +7,7 @@ import {
   HINT_COST,
   RAID,
   TIER_MIN_WORDS,
+  VERB_POINTS_PER_TIER,
   TIER_UNLOCK_FRACTION,
   PLANT_COST,
   RECLAIM_MS,
@@ -143,9 +144,10 @@ export default function Guide({ onClose }: { onClose: () => void }) {
           <p>
             Levels follow your run: the next opens at {Math.round(TIER_UNLOCK_FRACTION * 100)}% of
             your home category's words so far (at least {TIER_MIN_WORDS} per level), counting words
-            of that level from anywhere, plus a few verbs conjugated (one new tense per day per
-            verb). Your home category is open at every level. Several runs (☰ → Runs) let you keep
-            separate campaigns.
+            of that level from anywhere, plus {VERB_POINTS_PER_TIER} verb points per level: every
+            tense you learn of a verb is a point (one new tense per day per verb), so one verb
+            conjugated far counts as much as several conjugated a little. Your home category is open
+            at every level. Several runs (☰ → Runs) let you keep separate campaigns.
           </p>
         </Section>
 
@@ -172,7 +174,8 @@ export default function Guide({ onClose }: { onClose: () => void }) {
               <span className="text-amber-300">🏰 supply node</span>
               <span className="text-amber-200">gold pulses: supply lines</span>
               <span className="text-amber-100">glow: supply (brighter = more)</span>
-              <span className="text-amber-300">◌ amber: thin supply, a node nearby helps</span>
+              <span className="text-amber-200">◔ ring around a word: its supply (full = 100%)</span>
+              <span className="text-orange-300">orange ring: thin supply, a node nearby helps</span>
               <span className="text-slate-400">faint ?: outside your supply</span>
               <span className="text-slate-300">◔ cut off: falls when it runs out</span>
               <span className="text-rose-300">rose: broken</span>

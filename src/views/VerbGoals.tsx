@@ -1,4 +1,4 @@
-import { TENSES, type Drill } from '../core/verbs';
+import type { Drill } from '../core/verbs';
 import type { NodeState } from '../core/unlock';
 
 export type VerbGoal = {
@@ -12,9 +12,9 @@ export type VerbGoal = {
 
 type Props = {
   goals: VerbGoal[];
+  /** Verb points earned (core/tiers.ts: one per tense learned) and needed for the next tier. */
+  have: number;
   need: number;
-  /** Verb level required for the next tier (1 = presente). */
-  level: number;
   nextTier: string;
   onSelect: (id: string) => void;
   onConjugate: (id: string) => void;
@@ -32,26 +32,25 @@ function hint(g: VerbGoal, nowMs: number): string {
   return 'all tenses';
 }
 
-/** Which verbs can satisfy the next tier's verb requirement, and what to do next. */
+/** Verb points for the next tier: which verbs earn them, and what to do next. */
 export default function VerbGoals({
   goals,
+  have,
   need,
-  level,
   nextTier,
   onSelect,
   onConjugate,
   onClose,
   nowMs,
 }: Props) {
-  const done = goals.filter((g) => g.level >= level).length;
   // Undiscovered verbs are only counted: listing them spoils nothing and helps nobody.
   const shown = goals.filter((g) => g.state !== 'locked');
   const hidden = goals.length - shown.length;
   return (
     <div className="panel border-amber-500/40 p-4 text-sm">
       <div className="mb-3 flex justify-between text-xs text-amber-300/90">
-        <span title="Conquer a verb, then conjugate it (one new tense per day)">
-          To reach {nextTier}: {done}/{need} verbs conjugated in the {TENSES[level - 1]}
+        <span title="Every tense you learn of a verb is a point: conquer a verb, then conjugate it (one new tense per day). One verb conjugated far counts as much as several conjugated a little.">
+          To reach {nextTier}: {have}/{need} verb points
         </span>
         <button className="text-slate-500 hover:text-slate-200" onClick={onClose}>
           ✕
@@ -65,10 +64,12 @@ export default function VerbGoals({
               disabled={g.state === 'locked'}
               onClick={() => onSelect(g.id)}
             >
-              <span className={g.level >= level ? 'text-emerald-300' : 'text-slate-200'}>
+              <span className={g.level > 0 ? 'text-emerald-300' : 'text-slate-200'}>
                 {g.name || '?'}
               </span>{' '}
-              <span className="text-xs text-amber-300">{'◎'.repeat(g.level)}</span>
+              <span className="text-xs text-amber-300" title={`${g.level} verb points`}>
+                {'◎'.repeat(g.level)}
+              </span>
               <div className="text-xs text-slate-500">{hint(g, nowMs)}</div>
             </button>
             {(g.drill?.kind === 'learn' || g.drill?.kind === 'defend') && (

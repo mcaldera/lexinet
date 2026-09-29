@@ -1,4 +1,4 @@
-import { TIER_MIN_WORDS, TIER_UNLOCK_FRACTION, VERBS_PER_TIER } from './config';
+import { TIER_MIN_WORDS, TIER_UNLOCK_FRACTION, VERB_POINTS_PER_TIER } from './config';
 import { tierMap, tierProgress, type TierProgress } from './core/tiers';
 import type { NodeState } from './core/unlock';
 import { TENSES, verbLevel, type TenseCard } from './core/verbs';
@@ -27,7 +27,7 @@ export function computeProgress(
     tierMap(nodes),
     states,
     TIER_UNLOCK_FRACTION,
-    { levels, perTier: VERBS_PER_TIER, maxLevel: TENSES.length },
+    { levels, perTier: VERB_POINTS_PER_TIER, maxLevel: TENSES.length },
     { home, minPerTier: TIER_MIN_WORDS },
   );
 }

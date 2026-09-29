@@ -1070,11 +1070,11 @@ export default function App() {
               onClose={() => setShowProgress(false)}
             />
           )}
-          {showVerbGoals && progress && progress.verbsNeed > 0 && !inspect && (
+          {showVerbGoals && progress && progress.pointsNeed > 0 && !inspect && (
             <VerbGoals
               goals={verbGoals}
-              need={progress.verbsNeed}
-              level={progress.verbLevel}
+              have={progress.verbPoints}
+              need={progress.pointsNeed}
               nextTier={
                 data.graph.params?.tier_names?.[String(progress.tier + 1)] ??
                 `tier ${progress.tier + 1}`
@@ -1413,7 +1413,9 @@ function TierBadge({
         p.needed
           ? `${name(p.tier + 1)}: ${p.needed} words` +
             (claimed ? ` (${claimed} on the way)` : '') +
-            (p.verbsNeed ? ` and ${p.verbsNeed} verbs in the ${TENSES[p.verbLevel - 1]}` : '')
+            (p.pointsNeed
+              ? ` and ${p.pointsNeed} verb points, ${p.verbPoints} so far (each tense learned of a verb is one)`
+              : '')
           : 'All levels open'
       }
     >
@@ -1439,7 +1441,7 @@ function TierBadge({
           </span>
           <span className="text-xs text-slate-500">
             {p.conquered}/{p.needed}
-            {p.verbsNeed > 0 && ` · ▲${p.verbsHave}/${p.verbsNeed}`}
+            {p.pointsNeed > 0 && ` · ▲${p.verbPoints}/${p.pointsNeed}`}
           </span>
         </>
       )}

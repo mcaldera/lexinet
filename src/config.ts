@@ -8,8 +8,11 @@ export const TIER_MIN_WORDS = 5;
 /** After a wrong answer ("Again") the word is locked for this long (app time). */
 export const COOLDOWN_MS = 60_000;
 
-/** Verbs (at the matching verb level) needed to open each next tier. */
-export const VERBS_PER_TIER = 2;
+/**
+ * Verb points per tier: leaving tier k takes this × k. Every tense learned (and
+ * not faded) of a verb is a point, however they are spread over verbs.
+ */
+export const VERB_POINTS_PER_TIER = 2;
 
 /**
  * Supply (core/supply.ts): your words count only while connected to a supply

@@ -1,4 +1,4 @@
-import { tierAllows, tierProgress, verbLevelFor } from './tiers';
+import { tierAllows, tierProgress } from './tiers';
 import type { NodeState } from './unlock';
 
 const tiers = new Map([
@@ -37,14 +37,14 @@ test('tierAllows gates by tier; unknown ids count as tier 1', () => {
   expect(['a', 'e', 'g', 'zzz'].map(allow)).toEqual([true, true, false, true]);
 });
 
-test('verbs gate tiers: tier 2 needs verbs at level 1, capped by verbs available', () => {
+test('verb points gate tiers: 2 per level, any mix of verbs and tenses', () => {
   const done = states(['a', 'b', 'c', 'd']);
   const gate = (levels: [string, number][]) => ({
     levels: new Map(levels),
     perTier: 2,
     maxLevel: 6,
   });
-  // a and b are verbs of tier 1; only one has learned presente -> stuck at tier 1.
+  // a and b are verbs of tier 1; one tense learned is 1 point of the 2 needed.
   const stuck = tierProgress(
     tiers,
     done,
@@ -54,7 +54,7 @@ test('verbs gate tiers: tier 2 needs verbs at level 1, capped by verbs available
       ['b', 0],
     ]),
   );
-  expect(stuck).toMatchObject({ tier: 1, verbsHave: 1, verbsNeed: 2, verbLevel: 1 });
+  expect(stuck).toMatchObject({ tier: 1, verbPoints: 1, pointsNeed: 2 });
   expect(
     tierProgress(
       tiers,
@@ -66,15 +66,11 @@ test('verbs gate tiers: tier 2 needs verbs at level 1, capped by verbs available
       ]),
     ).tier,
   ).toBe(2);
-  // Only one verb exists in tier 1: requirement shrinks to 1.
-  expect(tierProgress(tiers, done, 0.75, gate([['a', 1]])).tier).toBe(2);
-});
-
-test('verb levels follow tiers, spread out when there are more tiers than tenses', () => {
-  expect([1, 2, 3, 4, 5].map((t) => verbLevelFor(t, 6, 6))).toEqual([1, 2, 3, 4, 5]);
-  expect([1, 2, 3, 4, 5, 6, 7, 8, 9].map((t) => verbLevelFor(t, 10, 6))).toEqual([
-    1, 2, 2, 3, 4, 4, 5, 6, 6,
-  ]);
+  // One verb with two tenses is worth as much as two verbs with one.
+  expect(tierProgress(tiers, done, 0.75, gate([['a', 2]])).tier).toBe(2);
+  // Few verbs in reach: the requirement is capped by what they could give at most.
+  const one = { levels: new Map([['a', 0]]), perTier: 2, maxLevel: 1 };
+  expect(tierProgress(tiers, done, 0.75, one)).toMatchObject({ tier: 1, pointsNeed: 1 });
 });
 
 test('the home category is open at every level', () => {
@@ -119,5 +115,5 @@ test("the home category's verbs count for the verb requirement at any level", ()
     minPerTier: 1,
   });
   expect(home.tier).toBe(1);
-  expect([home.verbsHave, home.verbsNeed]).toEqual([0, 1]);
+  expect([home.verbPoints, home.pointsNeed]).toEqual([0, 1]);
 });
