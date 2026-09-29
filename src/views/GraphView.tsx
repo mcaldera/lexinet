@@ -98,7 +98,7 @@ const ATTENTION_LABEL: Record<AttentionKind, string> = {
 };
 /** Supply's colour: gold, like the towers that send it out. */
 const SUPPLY_RGB = '251, 191, 36';
-/** The light supply casts on the ground: pale gold, visible on any territory. */
+/** Strong supply's pale gold: the gauge of a well-supplied word. */
 const SUPPLY_LIGHT = '255, 236, 179';
 /** A held word with less supply than this is thin: a node nearby would help (amber ring). */
 const THIN_SUPPLY = 0.2;
@@ -603,13 +603,13 @@ export default function GraphView({
     }
     return m;
   }, [data.graph.regions, colorOf]);
-  const livePoints = () =>
+  const livePoints = (): Territory[] =>
     regionsToDraw.map((t) => ({
       ...t,
       pts: t.ids
         .map((id) => nodeCache.current.get(id))
         .filter((n): n is N => n?.x !== undefined && n?.y !== undefined)
-        .map((n) => [n.x!, n.y!, territoryRadius(n.id)] as const),
+        .map((n) => [n.x!, n.y!, territoryRadius(n.id), inspect ? 0 : lightOf(n.id)] as const),
     }));
   /** The whole network is far bigger than your map: it may zoom out further. */
   const minZoom = inspect ? 0.04 : 0.15;
@@ -646,52 +646,6 @@ export default function GraphView({
   const endId = (x: unknown) => (typeof x === 'object' && x ? (x as N).id : (x as string));
 
   /**
-   * Supply you can see: a gold glow under every word it reaches, bigger and
-   * brighter the more arrives, adding up where words cluster. Strong ground
-   * shines, the thin edges barely do, cut-off pockets stay dark: where a new
-   * supply node would help is plain to see. While placing one, the glow shows
-   * the supply you would have with it.
-   */
-  const drawSupplyField = (ctx: CanvasRenderingContext2D, scale: number) => {
-    if (!supply) return;
-    const k = 1 / Math.min(1, scale);
-    ctx.save();
-    ctx.globalCompositeOperation = 'lighter';
-    for (const n of graphData.nodes) {
-      if (n.hub || n.hintOf || n.x === undefined || n.y === undefined) continue;
-      const v = glowOf(n.id);
-      if (v < 0.01) continue;
-      // Every word glows by its own supply, straight in proportion: a supply node
-      // (100%) is the brightest point, the fringe dim, no supply dark. A pale light
-      // rather than gold, so it reads on every territory colour (Family's is gold).
-      // Brightness, not size: every word lights the same patch of ground, only
-      // as brightly as its supply (slightly lifted, so 10% still shows a glimmer),
-      // so ground around thin supply stays dark and well-supplied ground shines.
-      const b = Math.pow(Math.min(1, v), 0.8);
-      const r = 40;
-      const g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, r);
-      g.addColorStop(0, `rgba(${SUPPLY_LIGHT}, ${0.5 * b})`);
-      g.addColorStop(0.45, `rgba(${SUPPLY_LIGHT}, ${0.2 * b})`);
-      g.addColorStop(1, `rgba(${SUPPLY_LIGHT}, 0)`);
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.arc(n.x, n.y, r, 0, 2 * Math.PI);
-      ctx.fill();
-      // The word's own halo, right around it (held in size on screen when zoomed
-      // out), again the same size for all and only as bright as its supply.
-      const hr = 7 + 10 * k;
-      const h = ctx.createRadialGradient(n.x, n.y, 5, n.x, n.y, hr);
-      h.addColorStop(0, `rgba(${SUPPLY_LIGHT}, ${0.85 * b})`);
-      h.addColorStop(0.5, `rgba(${SUPPLY_LIGHT}, ${0.35 * b})`);
-      h.addColorStop(1, `rgba(${SUPPLY_LIGHT}, 0)`);
-      ctx.fillStyle = h;
-      ctx.beginPath();
-      ctx.arc(n.x, n.y, hr, 0, 2 * Math.PI);
-      ctx.fill();
-    }
-    ctx.restore();
-  };
-  /**
    * The supply the map lights a word with: a held word its own supply (none
    * while cut off), any other word what seeps to it; while placing a node, the
    * supply you would have with it.
@@ -704,6 +658,12 @@ export default function GraphView({
     }
     return reach?.get(id) ?? supply.value.get(id) ?? 0;
   };
+  /**
+   * How brightly a word's ground is lit (0..1): its supply, steeper than
+   * straight, so the thin fringe (15%) stands on dark ground, half supply on
+   * clearly lit ground and a supply node's surroundings shine.
+   */
+  const lightOf = (id: string) => Math.pow(Math.min(1, glowOf(id)), 1.5);
   const isHub = (id: string) => id.startsWith('root:');
   /** A word's name as the player may see it: fading words lose letters (see core/fade). */
   const shownName = (id: string) => {
@@ -1361,15 +1321,14 @@ export default function GraphView({
         autoPauseRedraw={!animate}
         linkCanvasObjectMode={(l) => (isEnergy(l) ? 'after' : undefined)}
         linkCanvasObject={(l, ctx) => drawEnergy(ctx, l)}
-        onRenderFramePre={(ctx, scale) => {
+        onRenderFramePre={(ctx) => {
           labels.current = [];
           if (inspect) {
             drawStarfield(ctx);
             drawNebulae(ctx, livePoints());
           } else {
             drawBackdrop(ctx);
-            drawTerritories(ctx, livePoints());
-            drawSupplyField(ctx, scale);
+            drawTerritories(ctx, livePoints(), !!supply);
           }
         }}
         onRenderFramePost={(ctx, scale) => {
@@ -1747,7 +1706,8 @@ function clusterForce(pull = 0.05, gap = 60) {
 type Territory = {
   name: string;
   color: string;
-  pts: (readonly [number, number, number])[];
+  /** Per word: x, y, territory radius, and how brightly supply lights its ground (0..1). */
+  pts: (readonly [number, number, number, number])[];
 };
 
 /** Device pixels per CSS pixel of the map canvas. */
@@ -1768,8 +1728,8 @@ function screenBlobs(ctx: CanvasRenderingContext2D, t: Territory, spread: number
   const s = Math.hypot(T.a, T.b);
   const blobs: Blob[] = [];
   let [x0, y0, x1, y1] = [Infinity, Infinity, -Infinity, -Infinity];
-  for (const [x, y, r] of t.pts) {
-    const b = { x: T.a * x + T.c * y + T.e, y: T.b * x + T.d * y + T.f, r: spread * r * s };
+  for (const [x, y, r, w] of t.pts) {
+    const b = { x: T.a * x + T.c * y + T.e, y: T.b * x + T.d * y + T.f, r: spread * r * s, w };
     blobs.push(b);
     x0 = Math.min(x0, b.x - b.r);
     y0 = Math.min(y0, b.y - b.r);
@@ -1786,14 +1746,34 @@ function screenBlobs(ctx: CanvasRenderingContext2D, t: Territory, spread: number
   return { blobs, bounds, empty: bounds.x0 >= bounds.x1 || bounds.y0 >= bounds.y1 };
 }
 
+/** Buffers for the supply light on the territories: one sample per territory grid point. */
+const lightCanvas = typeof document !== 'undefined' ? document.createElement('canvas') : null;
+let lightSum = new Float32Array(0);
+let lightClear = new Float32Array(0);
+/** The light on fully supplied ground (alpha); ground with no supply keeps the plain wash. */
+const LIGHT_MAX = 0.6;
+/**
+ * The light fades in from the border over this much field, so it never spills
+ * past the rim and gathers around the words rather than filling the fringe.
+ */
+const LIGHT_RAMP = 2.5 * TERRITORY_EDGE;
+/** Under the light the plain wash is fainter: how bright ground is is supply's to say. */
+const LIT_WASH = 0.35;
+
 /**
  * Territories: every word spreads a soft field in its region's colour (wider
  * for practised words); where fields overlap they add up, and the contour at
  * TERRITORY_EDGE is the border. Contours are traced as vector paths at full
  * resolution: a faint wash, terraces towards dense cores, a glow along the
  * border and a crisp rim.
+ *
+ * `lit`: supply lights the ground. Each point of a territory takes the supply
+ * of the words whose ground it is (their average, each by its pull there), so
+ * well-supplied words stand on bright ground, the thin fringe on dim ground and
+ * cut-off pockets on the bare wash. The light is summed on the contour grid into
+ * a small image the browser scales up, under the terrace lines and the rim.
  */
-function drawTerritories(ctx: CanvasRenderingContext2D, regions: Territory[]) {
+function drawTerritories(ctx: CanvasRenderingContext2D, regions: Territory[], lit: boolean) {
   const { width: W, height: H } = ctx.canvas;
   if (!W || !H) return;
   const dpr = dprOf(ctx);
@@ -1801,27 +1781,101 @@ function drawTerritories(ctx: CanvasRenderingContext2D, regions: Territory[]) {
   const cell = Math.max(4 * dpr, Math.sqrt((W * H) / 90000));
   // Read the map transform before drawing in device pixels.
   const blobsOf = regions.map((t) => screenBlobs(ctx, t, 2, 3 * cell));
+  const lctx = lit ? lightCanvas?.getContext('2d') : null;
+  const cols = Math.ceil(W / cell) + 2;
+  const rows = Math.ceil(H / cell) + 2;
+  if (lctx) {
+    if (lightClear.length < cols * rows) {
+      lightSum = new Float32Array(cols * rows * 4);
+      lightClear = new Float32Array(cols * rows);
+    }
+    lightSum.fill(0, 0, cols * rows * 4);
+    lightClear.fill(1, 0, cols * rows);
+  }
   ctx.save();
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.lineJoin = 'round';
+  const shapes: { c: string; outline: Path2D; terraces: Path2D[] }[] = [];
   regions.forEach((t, k) => {
     const { blobs, bounds, empty } = blobsOf[k];
     if (empty || !blobs.length) return;
-    const field = densityField(blobs, bounds, cell, true);
+    // On the light's grid: sample (i, j) of the field is the light's (ox + i, oy + j).
+    const ox = Math.floor(bounds.x0 / cell);
+    const oy = Math.floor(bounds.y0 / cell);
+    const grid = { ...bounds, x0: ox * cell, y0: oy * cell };
+    const field = densityField(blobs, grid, cell, true, !!lctx);
     const edge = isoLines(field, TERRITORY_EDGE);
     if (!edge.length) return;
     const c = t.color;
     const outline = new Path2D();
     traceLoops(outline, edge);
-    ctx.fillStyle = `rgba(${c}, 0.07)`;
+    const wash = lctx ? LIT_WASH : 1;
+    ctx.fillStyle = `rgba(${c}, ${0.07 * wash})`;
     ctx.fill(outline, 'evenodd');
+    const terraces: Path2D[] = [];
     for (const level of TERRACES) {
       const loops = isoLines(field, level);
       if (!loops.length) break;
       const p = new Path2D();
       traceLoops(p, loops);
-      ctx.fillStyle = `rgba(${c}, 0.045)`;
+      ctx.fillStyle = `rgba(${c}, ${0.045 * wash})`;
       ctx.fill(p, 'evenodd');
+      terraces.push(p);
+    }
+    shapes.push({ c, outline, terraces });
+    if (!lctx || !field.w) return;
+    // The region's own colour, lifted towards white: the ground brightens, it keeps its hue.
+    const [r, g, b] = mixRgb(c, '255, 255, 255', 0.4).split(',').map(Number);
+    for (let j = 0; j < field.rows; j++) {
+      const gj = oy + j;
+      if (gj < 0) continue;
+      if (gj >= rows) break;
+      for (let i = 0; i < field.cols; i++) {
+        const gi = ox + i;
+        if (gi < 0) continue;
+        if (gi >= cols) break;
+        const f = j * field.cols + i;
+        const d = field.v[f];
+        if (d <= TERRITORY_EDGE) continue;
+        const supplied = field.w[f] / d;
+        if (supplied < 0.005) continue;
+        const m = Math.min(1, (d - TERRITORY_EDGE) / LIGHT_RAMP);
+        const a = LIGHT_MAX * Math.min(1, supplied) * m * m * (3 - 2 * m);
+        const q = gj * cols + gi;
+        lightSum[4 * q] += a * r;
+        lightSum[4 * q + 1] += a * g;
+        lightSum[4 * q + 2] += a * b;
+        lightSum[4 * q + 3] += a;
+        lightClear[q] *= 1 - a;
+      }
+    }
+  });
+  if (lctx && lightCanvas) {
+    if (lightCanvas.width !== cols || lightCanvas.height !== rows) {
+      lightCanvas.width = cols;
+      lightCanvas.height = rows;
+    }
+    const img = lctx.createImageData(cols, rows);
+    const px = img.data;
+    for (let q = 0; q < cols * rows; q++) {
+      const sum = lightSum[4 * q + 3];
+      if (sum <= 0) continue;
+      // Where regions overlap, their colours mix by how much light each brings.
+      px[4 * q] = lightSum[4 * q] / sum;
+      px[4 * q + 1] = lightSum[4 * q + 1] / sum;
+      px[4 * q + 2] = lightSum[4 * q + 2] / sum;
+      px[4 * q + 3] = 255 * (1 - lightClear[q]);
+    }
+    lctx.putImageData(img, 0, 0);
+    ctx.globalCompositeOperation = 'screen';
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    // Grid point i sits at i·cell: centre the image's pixels on them.
+    ctx.drawImage(lightCanvas, -cell / 2, -cell / 2, cols * cell, rows * cell);
+    ctx.globalCompositeOperation = 'source-over';
+  }
+  for (const { c, outline, terraces } of shapes) {
+    for (const p of terraces) {
       ctx.strokeStyle = `rgba(${c}, 0.2)`;
       ctx.lineWidth = 0.8 * dpr;
       ctx.stroke(p);
@@ -1836,7 +1890,7 @@ function drawTerritories(ctx: CanvasRenderingContext2D, regions: Territory[]) {
     ctx.strokeStyle = `rgba(${mixRgb(c, '255, 255, 255', 0.25)}, 0.85)`;
     ctx.lineWidth = 1.5 * dpr;
     ctx.stroke(outline);
-  });
+  }
   ctx.restore();
 }
 

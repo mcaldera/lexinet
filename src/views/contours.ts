@@ -5,8 +5,11 @@
  * resolution (the old field was a half-resolution bitmap with jagged edges).
  */
 
-/** A soft circle: full weight at its centre, none beyond `r`. */
-export type Blob = { x: number; y: number; r: number };
+/**
+ * A soft circle: full weight at its centre, none beyond `r`. `w`: a value the
+ * blob carries (e.g. a word's supply), averaged by `densityField(…, weighted)`.
+ */
+export type Blob = { x: number; y: number; r: number; w?: number };
 
 /** Samples at the grid points x0 + i·cell, y0 + j·cell (i < cols, j < rows). */
 export type Field = {
@@ -16,10 +19,13 @@ export type Field = {
   cols: number;
   rows: number;
   v: Float32Array;
+  /** Σ w × kernel (weighted fields only): w / v is the blobs' average `w` at a point. */
+  w?: Float32Array;
 };
 
 /** Reused between frames: the map redraws up to 60 times a second. */
 let scratch = new Float32Array(0);
+let weightScratch = new Float32Array(0);
 let nextScratch = new Int32Array(0);
 let pointScratch = new Float32Array(0);
 
@@ -28,12 +34,14 @@ let pointScratch = new Float32Array(0);
  * ring of samples is forced to 0, so every iso-line closes even where the
  * bounds cut through a territory (callers pad the bounds past the view).
  * `reuse`: fill the shared buffer (valid until the next call) instead of a new one.
+ * `weighted`: also sum each blob's `w` × kernel into `w`.
  */
 export function densityField(
   blobs: Blob[],
   bounds: { x0: number; y0: number; x1: number; y1: number },
   cell: number,
   reuse = false,
+  weighted = false,
 ): Field {
   const cols = Math.max(2, Math.ceil((bounds.x1 - bounds.x0) / cell) + 1);
   const rows = Math.max(2, Math.ceil((bounds.y1 - bounds.y0) / cell) + 1);
@@ -46,6 +54,14 @@ export function densityField(
   } else {
     v = new Float32Array(n);
   }
+  let w: Float32Array | undefined;
+  if (weighted && reuse) {
+    if (weightScratch.length < n) weightScratch = new Float32Array(Math.ceil(n * 1.5));
+    w = weightScratch.subarray(0, n);
+    w.fill(0);
+  } else if (weighted) {
+    w = new Float32Array(n);
+  }
   const { x0, y0 } = bounds;
   for (const b of blobs) {
     const i0 = Math.max(1, Math.ceil((b.x - b.r - x0) / cell));
@@ -54,6 +70,7 @@ export function densityField(
     const j1 = Math.min(rows - 2, Math.floor((b.y + b.r - y0) / cell));
     if (i0 > i1 || j0 > j1) continue;
     const inv = 1 / (b.r * b.r);
+    const bw = w && b.w ? b.w : 0;
     for (let j = j0; j <= j1; j++) {
       const dy = y0 + j * cell - b.y;
       const dy2 = dy * dy * inv;
@@ -62,11 +79,14 @@ export function densityField(
       for (let i = i0; i <= i1; i++) {
         const dx = x0 + i * cell - b.x;
         const q = 1 - dx * dx * inv - dy2;
-        if (q > 0) v[row + i] += q * q * q;
+        if (q <= 0) continue;
+        const k = q * q * q;
+        v[row + i] += k;
+        if (bw) w![row + i] += bw * k;
       }
     }
   }
-  return { x0, y0, cell, cols, rows, v };
+  return { x0, y0, cell, cols, rows, v, w };
 }
 
 /** The level a lone blob's contour sits at `k` × its radius. */

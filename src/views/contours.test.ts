@@ -26,6 +26,27 @@ describe('densityField', () => {
     const mid = 20 * one.cols + 20;
     expect(two.v[mid]).toBeCloseTo(2 * one.v[mid]);
   });
+
+  it("averages the blobs' weights where they overlap, each by its own pull", () => {
+    const f = densityField(
+      [
+        { x: -30, y: 0, r: 40, w: 1 },
+        { x: 30, y: 0, r: 40, w: 0.2 },
+      ],
+      bounds,
+      5,
+      false,
+      true,
+    );
+    const avg = (x: number) => {
+      const k = Math.round(-f.y0 / f.cell) * f.cols + Math.round((x - f.x0) / f.cell);
+      return f.w![k] / f.v[k];
+    };
+    expect(avg(-30)).toBeCloseTo(1);
+    expect(avg(0)).toBeCloseTo(0.6);
+    expect(avg(30)).toBeCloseTo(0.2);
+    expect(densityField([{ x: 0, y: 0, r: 40, w: 1 }], bounds, 5).w).toBeUndefined();
+  });
 });
 
 describe('isoLines', () => {
