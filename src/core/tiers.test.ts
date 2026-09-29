@@ -117,3 +117,29 @@ test("the home category's verbs count for the verb requirement at any level", ()
   expect(home.tier).toBe(1);
   expect([home.verbPoints, home.pointsNeed]).toEqual([0, 1]);
 });
+
+test('a verb from a later level counts once you conjugate it (planted ahead)', () => {
+  const tiers = new Map([
+    ['a', 1],
+    ['b', 1],
+    ['v', 3],
+  ]);
+  const states = new Map<string, NodeState>([
+    ['a', 'conquered'],
+    ['b', 'locked'],
+    ['v', 'conquered'],
+  ]);
+  const campaign = { home: new Set(['a', 'b']), minPerTier: 1 };
+  const verbs = (lvl: number) => ({ levels: new Map([['v', lvl]]), perTier: 2, maxLevel: 6 });
+  // Not started: out of reach, so level 1 asks for no verbs (a, b: needs 2 words, has 1).
+  expect(tierProgress(tiers, states, 1, verbs(0), campaign)).toMatchObject({
+    verbPoints: 0,
+    pointsNeed: 0,
+  });
+  // Its present tense learned: one point, and the cap now counts it.
+  expect(tierProgress(tiers, states, 1, verbs(1), campaign)).toMatchObject({
+    tier: 1,
+    verbPoints: 1,
+    pointsNeed: 2,
+  });
+});

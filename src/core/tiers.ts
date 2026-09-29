@@ -9,9 +9,8 @@ export type TierProgress = {
   /** Conquered words needed in tiers 1..tier to open the next tier (0 at max tier). */
   needed: number;
   /**
-   * Verb points: every tense learned (and not faded) of a verb of the open
-   * tiers (or the home category) is one. One verb with five tenses counts as
-   * much as five verbs with one.
+   * Verb points: every tense learned (and not faded) of any verb is one. One
+   * verb with five tenses counts as much as five verbs with one.
    */
   verbPoints: number;
   /** Verb points the next tier requires (0 at the last tier). */
@@ -58,9 +57,13 @@ export function tierProgress(
     const needed = campaign
       ? Math.min(total, Math.max(campaign.minPerTier * tier, Math.ceil(homeTotal * fraction)))
       : Math.ceil(total * fraction);
-    // Verbs of the open tiers, plus the home category's (open at every level, like its words).
+    // Every tense learned counts, whatever the verb's level (a verb planted from a later
+    // level too). The cap looks at the verbs in reach: the open tiers, the home category
+    // (open at every level, like its words) and any verb already started.
     const pool = verbs
-      ? [...verbs.levels].filter(([id]) => (tiers.get(id) ?? 1) <= tier || !!campaign?.home.has(id))
+      ? [...verbs.levels].filter(
+          ([id, lvl]) => lvl > 0 || (tiers.get(id) ?? 1) <= tier || !!campaign?.home.has(id),
+        )
       : [];
     const pointsNeed = verbs ? Math.min(verbs.perTier * tier, pool.length * verbs.maxLevel) : 0;
     const verbPoints = pool.reduce((sum, [, lvl]) => sum + lvl, 0);

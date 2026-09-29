@@ -650,10 +650,15 @@ export default function App() {
     }
   };
 
-  // Verbs that can satisfy the next tier's requirement (open tiers, conjugable).
+  // Verbs that can satisfy the next tier's requirement: the open tiers and the home
+  // category, plus any verb found beyond them (planted or opened by a root).
   const verbGoals: VerbGoal[] = data.nodes
     .filter(
-      (n) => n.conjugations && ((n.tier ?? 1) <= (progress?.tier ?? 1) || data.home.has(n.id)),
+      (n) =>
+        n.conjugations &&
+        ((n.tier ?? 1) <= (progress?.tier ?? 1) ||
+          data.home.has(n.id) ||
+          (data.states.get(n.id) ?? 'locked') !== 'locked'),
     )
     .map((n) => {
       const st = data.states.get(n.id) ?? 'locked';
