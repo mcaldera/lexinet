@@ -94,6 +94,16 @@ export default function App() {
   const [notice, setNotice] = useState<string | null>(null);
   /** Last word clicked or reached with the arrow keys: shown in the details panel. */
   const [selectedId, setSelectedId] = useState<string>();
+  /**
+   * A click into empty map let go of the word: nothing is selected and the panel
+   * rests (no due card jumps in) until a word is picked. `selectedId` stays, so
+   * "Next word" still starts from where you were.
+   */
+  const [deselected, setDeselected] = useState(false);
+  const select = (id: string | undefined) => {
+    setSelectedId(id);
+    setDeselected(false);
+  };
   const [showVerbGoals, setShowVerbGoals] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
   useEffect(() => {
@@ -376,9 +386,10 @@ export default function App() {
 
   // The review stays local: only the word you're on or a word linked to it comes
   // next. With nothing due there, it stays put (N / the jump bar find the rest).
-  const nearQueue = nearby(queue, selectedId, neighbours);
+  const focusId = deselected ? undefined : selectedId;
+  const nearQueue = deselected ? [] : nearby(queue, selectedId, neighbours);
   const isNear = (id: string) =>
-    !selectedId || id === selectedId || !!neighbours.get(selectedId)?.includes(id);
+    !deselected && (!selectedId || id === selectedId || !!neighbours.get(selectedId)?.includes(id));
   const current: CardRow | undefined = session
     ? data.cards.find((c) => c.id === session.cardIds[0])
     : nearQueue[0];
@@ -404,18 +415,13 @@ export default function App() {
     activeDrill?.nodeId ??
     info?.nodeId ??
     session?.nodeId ??
-    selectedId ??
+    focusId ??
     current?.nodeId;
   const detailsWord = data.nodes.find((n) => n.id === detailsId);
   // The word the side panel is about, in the order the panel picks its card: the
   // map rings exactly this one (a due card waits while you look at another word).
   const panelId =
-    planting ??
-    waitOn?.nodeId ??
-    activeDrill?.nodeId ??
-    info?.nodeId ??
-    current?.nodeId ??
-    selectedId;
+    planting ?? waitOn?.nodeId ?? activeDrill?.nodeId ?? info?.nodeId ?? current?.nodeId ?? focusId;
   // The word whose Italian name is the answer being asked: hidden everywhere meanwhile.
   const answerId =
     !waitOn && !activeDrill && !info && current?.direction === 'en-it' ? current.nodeId : undefined;
@@ -600,7 +606,7 @@ export default function App() {
     );
     if (outcome.opened && !outcome.levelUp) setTimeout(() => sfx('reveal'), 450);
     setLastCardId(row.id);
-    setSelectedId(row.nodeId); // the next card comes from around this word
+    select(row.nodeId); // the next card comes from around this word
     setTurn((t) => t + 1);
     if (grade === Rating.Again) {
       // Locked for a minute either way, so recalling it needs real memory.
@@ -641,7 +647,7 @@ export default function App() {
       data.tenseCards.filter((c) => c.nodeId === nodeId),
       now,
     );
-    setSelectedId(nodeId);
+    select(nodeId);
     if (drill.kind === 'learn' || drill.kind === 'defend') {
       setSession(null);
       setInfo(null);
@@ -775,7 +781,7 @@ export default function App() {
     setPlanting(null);
     // Another word was clicked: leave the conjugation drill (no penalty).
     if (verbDrill && verbDrill.nodeId !== nodeId) setVerbDrill(null);
-    setSelectedId(nodeId);
+    select(nodeId);
     if (fresh.has(nodeId)) setFresh((f) => new Set([...f].filter((id) => id !== nodeId)));
     // A root isn't asked: it opens by itself (core/roots.ts). The card says how far it is.
     if (data.graph.roots?.some((r) => r.id === nodeId)) return wait({ nodeId, reason: 'root' });
@@ -876,6 +882,23 @@ export default function App() {
     if (!inspect) sfx(blocked ? 'blocked' : 'select');
   };
 
+  /** A click into empty map: let go of the word and close what's open over it. */
+  const clearSelection = () => {
+    if (inspect) return setInspectId(undefined);
+    setDeselected(true);
+    setSession(null);
+    setInfo(null);
+    setWaitOn(null);
+    setVerbDrill(null);
+    setPlanting(null);
+    setPlacing(false);
+    setPreviewId(undefined);
+    setShowProgress(false);
+    setShowVerbGoals(false);
+    setEarnedNow([]);
+    setTurn((t) => t + 1);
+  };
+
   /** Put the earned supply node on a word you hold (placing mode). */
   const placeHere = async (nodeId: string) => {
     if (!(await placeNode(nodeId))) {
@@ -961,7 +984,7 @@ export default function App() {
           onDeleteRun={(id) => deleteRun(graphName, id, dbName(graphName, runDbSuffix(id)))}
           onRestart={async () => {
             setSession(null);
-            setSelectedId(undefined);
+            select(undefined);
             await reset();
           }}
         />
@@ -1002,7 +1025,7 @@ export default function App() {
               onPick={async (region, capital) => {
                 const seed = capital ?? pickStart(data.nodes, data.graph.edges, region);
                 if (!seed) return;
-                setSelectedId(undefined);
+                select(undefined);
                 await reset(seed);
                 // The run is named after where it began.
                 updateRun(graphName, runId, {
@@ -1053,6 +1076,7 @@ export default function App() {
             inspect={inspect}
             showRoots={showRoots}
             onNodeClick={selectNode}
+            onBackgroundClick={clearSelection}
             onNodeHover={placing ? setPreviewId : undefined}
           />
         </section>

@@ -147,6 +147,8 @@ type Props = {
   /** Supply seeping past your words (core/supply.ts, fog) at every word it reaches: the glow. */
   reach?: Map<string, number>;
   onNodeClick: (id: string) => void;
+  /** A click into empty map (not on a word or an edge arrow): let go of the selection. */
+  onBackgroundClick?: () => void;
   /** Hovering a word (placing a supply node previews it). */
   onNodeHover?: (id: string | undefined) => void;
 };
@@ -175,6 +177,7 @@ export default function GraphView({
   ghosts,
   reach,
   onNodeClick,
+  onBackgroundClick,
   onNodeHover,
 }: Props) {
   const wrap = useRef<HTMLDivElement>(null);
@@ -199,6 +202,8 @@ export default function GraphView({
   }, []);
   /** Keyboard cursor: arrows move it along links, Enter/Space opens it. */
   const [cursorId, setCursorId] = useState<string | undefined>(activeId ?? data.seed);
+  /** Where the cursor was before a click into empty map hid it: arrows go on from there. */
+  const lastCursor = useRef<string | undefined>(undefined);
   useEffect(() => {
     if (activeId) setCursorId(activeId);
   }, [activeId]);
@@ -507,9 +512,10 @@ export default function GraphView({
     onArrow: (dx, dy) => {
       const pos = (id: string) => nodeCache.current.get(id);
       const visible = graphData.nodes.filter((n) => n.x !== undefined && !n.hintOf);
-      const from = (cursorId && pos(cursorId)) || visible[0];
+      const start = cursorId ?? lastCursor.current;
+      const from = (start && pos(start)) || visible[0];
       if (!from) return;
-      if (!cursorId || !pos(cursorId)) return setCursorId(from.id);
+      if (!start || !pos(start)) return setCursorId(from.id);
       const linked = new Set(
         graphData.links
           .filter((l) => !l.category && !l.hint)
@@ -1383,7 +1389,10 @@ export default function GraphView({
           const hit = pointers.current.find(
             (p) => Math.hypot(p.x - e.offsetX, p.y - e.offsetY) < 16,
           );
-          if (hit) jumpTo(hit.id);
+          if (hit) return jumpTo(hit.id);
+          if (cursorId) lastCursor.current = cursorId;
+          setCursorId(undefined);
+          onBackgroundClick?.();
         }}
         linkLabel={linkTooltip}
         onNodeHover={(n) => onNodeHover?.(n ? (n.hintOf ?? n.id) : undefined)}
