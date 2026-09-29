@@ -646,8 +646,9 @@ export default function GraphView({
    * supply node would help is plain to see. While placing one, the glow shows
    * the supply you would have with it.
    */
-  const drawSupplyField = (ctx: CanvasRenderingContext2D) => {
+  const drawSupplyField = (ctx: CanvasRenderingContext2D, scale: number) => {
     if (!supply) return;
+    const k = 1 / Math.min(1, scale);
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
     for (const n of graphData.nodes) {
@@ -657,15 +658,29 @@ export default function GraphView({
       // Every word glows by its own supply, straight in proportion: a supply node
       // (100%) is the brightest point, the fringe dim, no supply dark. A pale light
       // rather than gold, so it reads on every territory colour (Family's is gold).
-      const s = Math.min(1, v);
-      const r = 22 + 58 * s;
+      // Brightness, not size: every word lights the same patch of ground, only
+      // as brightly as its supply (slightly lifted, so 10% still shows a glimmer),
+      // so ground around thin supply stays dark and well-supplied ground shines.
+      const b = Math.pow(Math.min(1, v), 0.8);
+      const r = 40;
       const g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, r);
-      g.addColorStop(0, `rgba(${SUPPLY_LIGHT}, ${0.03 + 0.5 * s})`);
-      g.addColorStop(0.5, `rgba(${SUPPLY_LIGHT}, ${0.01 + 0.18 * s})`);
+      g.addColorStop(0, `rgba(${SUPPLY_LIGHT}, ${0.5 * b})`);
+      g.addColorStop(0.45, `rgba(${SUPPLY_LIGHT}, ${0.2 * b})`);
       g.addColorStop(1, `rgba(${SUPPLY_LIGHT}, 0)`);
       ctx.fillStyle = g;
       ctx.beginPath();
       ctx.arc(n.x, n.y, r, 0, 2 * Math.PI);
+      ctx.fill();
+      // The word's own halo, right around it (held in size on screen when zoomed
+      // out), again the same size for all and only as bright as its supply.
+      const hr = 7 + 10 * k;
+      const h = ctx.createRadialGradient(n.x, n.y, 5, n.x, n.y, hr);
+      h.addColorStop(0, `rgba(${SUPPLY_LIGHT}, ${0.85 * b})`);
+      h.addColorStop(0.5, `rgba(${SUPPLY_LIGHT}, ${0.35 * b})`);
+      h.addColorStop(1, `rgba(${SUPPLY_LIGHT}, 0)`);
+      ctx.fillStyle = h;
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, hr, 0, 2 * Math.PI);
       ctx.fill();
     }
     ctx.restore();
@@ -818,29 +833,42 @@ export default function GraphView({
       return;
     }
     if (active) {
-      // You are here: the word the side panel is about, with a breathing white
-      // halo, a bright ring and a slowly turning outer ring (thick enough on
-      // screen at any zoom), so switching words quickly never loses it.
+      // You are here: a white target around the word the side panel is about,
+      // sized in screen pixels (k = one pixel in map units), so it is as plain
+      // zoomed far out as close up: a halo, a ring with four ticks, and a pulse
+      // running outwards.
       const t = Date.now();
-      const breath = 0.75 + 0.25 * Math.sin(t / 420);
-      const px = 1 / Math.min(1, scale);
-      softGlow(ctx, x, y, r, r + 20, '248, 250, 252', 0.4 * breath);
+      const k = 1 / scale;
+      const R = r + 9 * k;
+      const p = (t % 1600) / 1600;
+      softGlow(ctx, x, y, r, R + 16 * k, '248, 250, 252', 0.5);
       ctx.beginPath();
-      ctx.arc(x, y, r + 4.5, 0, 2 * Math.PI);
-      ctx.strokeStyle = 'rgba(2, 6, 23, 0.8)';
-      ctx.lineWidth = 4 * px;
-      ctx.stroke();
-      ctx.strokeStyle = '#f8fafc';
-      ctx.lineWidth = 2.2 * px;
+      ctx.arc(x, y, R + p * 24 * k, 0, 2 * Math.PI);
+      ctx.strokeStyle = `rgba(248, 250, 252, ${0.75 * (1 - p)})`;
+      ctx.lineWidth = 2 * k;
       ctx.stroke();
       ctx.beginPath();
-      ctx.arc(x, y, r + 9 + 1.5 * breath, 0, 2 * Math.PI);
-      ctx.setLineDash([5 * px, 4 * px]);
-      ctx.lineDashOffset = -t / 60;
-      ctx.strokeStyle = `rgba(248, 250, 252, ${0.5 + 0.3 * breath})`;
-      ctx.lineWidth = 1.3 * px;
+      ctx.arc(x, y, R, 0, 2 * Math.PI);
+      ctx.strokeStyle = 'rgba(2, 6, 23, 0.85)';
+      ctx.lineWidth = 5.5 * k;
       ctx.stroke();
-      ctx.setLineDash([]);
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2.8 * k;
+      ctx.stroke();
+      ctx.lineCap = 'round';
+      for (let i = 0; i < 4; i++) {
+        const a = (i * Math.PI) / 2 + Math.PI / 4;
+        ctx.beginPath();
+        ctx.moveTo(x + Math.cos(a) * (R + 4 * k), y + Math.sin(a) * (R + 4 * k));
+        ctx.lineTo(x + Math.cos(a) * (R + 11 * k), y + Math.sin(a) * (R + 11 * k));
+        ctx.strokeStyle = 'rgba(2, 6, 23, 0.85)';
+        ctx.lineWidth = 5 * k;
+        ctx.stroke();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2.6 * k;
+        ctx.stroke();
+      }
+      ctx.lineCap = 'butt';
     }
 
     if (!inspect && ghosts?.has(node.id)) {
@@ -1327,7 +1355,7 @@ export default function GraphView({
         autoPauseRedraw={!animate}
         linkCanvasObjectMode={(l) => (isEnergy(l) ? 'after' : undefined)}
         linkCanvasObject={(l, ctx) => drawEnergy(ctx, l)}
-        onRenderFramePre={(ctx) => {
+        onRenderFramePre={(ctx, scale) => {
           labels.current = [];
           if (inspect) {
             drawStarfield(ctx);
@@ -1335,7 +1363,7 @@ export default function GraphView({
           } else {
             drawBackdrop(ctx);
             drawTerritories(ctx, livePoints());
-            drawSupplyField(ctx);
+            drawSupplyField(ctx, scale);
           }
         }}
         onRenderFramePost={(ctx, scale) => {
