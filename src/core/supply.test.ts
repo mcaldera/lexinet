@@ -7,6 +7,7 @@ import {
   hanging,
   horizonChanges,
   isSupplied,
+  sourcesAt,
   supplyFlow,
   wordOutput,
   type Weighted,
@@ -500,4 +501,18 @@ test('what winning a nearby word would add, as a full recount says', () => {
   const gain = gainIfWon(input, before, 't', 'x', 0.25);
   expect(gain).toBeCloseTo(after.value.get('t')! - before.value.get('t')!);
   expect(gain).toBeGreaterThan(0.3); // s and a now reach t through x, and x sends its own
+});
+
+test('the capital supplies only once it is yours', () => {
+  const world = {
+    held: ['a'],
+    home: 's',
+    output: () => 0.25,
+    neighbours: net('s-a:0.5'),
+    breakAt: () => Infinity,
+    holdMs: () => 1,
+    rules: RULES,
+  };
+  expect(sourcesAt(world, ['a'], 0)).toEqual(new Map([['a', 0.25]]));
+  expect(sourcesAt(world, ['s', 'a'], 0).get('s')).toBe(1);
 });

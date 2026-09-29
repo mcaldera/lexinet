@@ -207,6 +207,16 @@ const btn = 'btn rounded-md px-2 py-1 text-xs text-white disabled:opacity-40';
 /** Inside your supply or not, for a "?" or a claim: won out there, a word is cut off. */
 function SupplyHint({ supply }: { supply?: Props['supply'] }) {
   if (!supply) return null;
+  if (supply.capital) {
+    return (
+      <p
+        className="text-amber-200/80"
+        title="Your capital always sends out 100%, from when you hold it"
+      >
+        ⚡ your capital: sends 100% once it's yours
+      </p>
+    );
+  }
   return supply.value >= supply.min - 1e-9 ? (
     <p className="text-amber-200/80" title="Supply reaches it: won, it will count">
       ⚡ inside your supply ({pct(supply.value)})

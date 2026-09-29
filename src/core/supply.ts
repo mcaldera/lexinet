@@ -400,7 +400,8 @@ export function gainIfWon(
     for (let k = 0; k < sp.idx.length; k++) if (sp.idx[k] === target) return sp.v[k];
     return 0;
   };
-  let gain = shareAt(spread(candidate, out, won, ix, carries));
+  // A candidate already sending (none but held words do) keeps what it sends.
+  let gain = supply.shares.has(candidate) ? 0 : shareAt(spread(candidate, out, won, ix, carries));
   for (const [source, sp] of supply.shares) {
     if (source === id || !sp.idx.includes(c)) continue;
     gain += shareAt(spread(source, sp.out, won, ix, carries)) - shareAt(sp);
@@ -422,15 +423,14 @@ export function coverage(
 export type SiegeWorld = {
   /** Held (conquered) words. */
   held: Iterable<string>;
-  /** The capital: it sends out 1 while it isn't broken, and supplies itself. */
+  /** The capital: while you hold it and it isn't broken, it sends out 1 and supplies itself. */
   home?: string;
   /** What a held word sends out while it isn't broken (`wordOutput`). */
   output: (id: string) => number;
   neighbours: Weighted;
   /**
-   * When a word breaks (app ms): a miss, or its recall falling below the line;
-   * Infinity if it won't. For a capital you lost: 0 (broken); for the capital
-   * before it was ever won: Infinity (it works from the start).
+   * When a held word breaks (app ms): a miss, or its recall falling below the
+   * line; Infinity if it won't.
    */
   breakAt: (id: string) => number;
   /** How long a cut-off word holds out (ms). */
@@ -438,11 +438,16 @@ export type SiegeWorld = {
   rules: SupplyRules;
 };
 
-/** The words sending out supply at `t` (held, not broken; the capital), and how much. */
+/**
+ * The words sending out supply at `t` and how much: the words you hold that
+ * aren't broken. Only yours: the capital too sends its 1 only once conquered
+ * (before that nothing is held that would need it).
+ */
 export function sourcesAt(world: SiegeWorld, held: Iterable<string>, t: number) {
   const sources = new Map<string, number>();
-  for (const id of held) if (world.breakAt(id) > t) sources.set(id, world.output(id));
-  if (world.home !== undefined && world.breakAt(world.home) > t) sources.set(world.home, 1);
+  for (const id of held) {
+    if (world.breakAt(id) > t) sources.set(id, id === world.home ? 1 : world.output(id));
+  }
   return sources;
 }
 

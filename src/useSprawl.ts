@@ -203,8 +203,11 @@ export function useSprawl() {
         supply,
         new Map([...supply.input.sources].filter(([id]) => states.get(id) === 'conquered')),
       );
+      // Your words, and the capital before its first conquest: a new game shows
+      // its neighbours (once held and lost, it's a word like any other).
+      const fresh = game.nodes.get(data.seed)?.fallen?.was !== 'conquered';
       const anchors = new Set([
-        ...supply.input.sources.keys(),
+        ...(fresh ? [data.seed] : []),
         ...[...states].filter(([, st]) => st === 'conquered').map(([id]) => id),
       ]);
       // A root charges from the supply reaching its words (a full share of SUPPLY.min each).

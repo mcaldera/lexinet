@@ -46,12 +46,9 @@ export function siegeWorld(data: AppData, t: number): SiegeWorld {
       wordOutput(nodeStrength(memory(id)).level, verbLevel(tenses.get(id) ?? [], at), SUPPLY),
     neighbours: neighbourWeights(data.edges),
     breakAt: (id) => {
+      // Only words you hold send and carry supply (the capital too).
+      if (data.states.get(id) !== 'conquered') return 0;
       const g = data.game.nodes.get(id);
-      if (data.states.get(id) !== 'conquered') {
-        // The capital on a word you don't hold: it works before its first
-        // conquest; once you've held and lost it, it doesn't.
-        return id === data.seed && g?.fallen?.was !== 'conquered' ? Infinity : 0;
-      }
       return Math.min(g?.missedAt ?? Infinity, forgetAt(memory(id), SUPPLY.breakRecall));
     },
     holdMs: (id) => Math.max(SUPPLY.minHoldMs, nodeStrength(memory(id)).days * DAY),
@@ -139,7 +136,8 @@ export function flowToward(
 ): { sources: Contribution[]; gains: Map<string, number> } {
   const sources = contributions(s.input, s.flow, id);
   const gains = new Map<string, number>();
-  if (id === s.world.home || isSupplied(s.flow, id, SUPPLY.min)) return { sources, gains };
+  const capital = id === s.world.home && s.input.sources.has(id);
+  if (capital || isSupplied(s.flow, id, SUPPLY.min)) return { sources, gains };
   const near = new Set<string>();
   for (const a of neighbours.get(id) ?? []) {
     near.add(a);

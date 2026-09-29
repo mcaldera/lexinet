@@ -440,7 +440,7 @@ export default function App() {
       others: rest.length ? { pct: pct[shown.length], count: rest.length } : undefined,
       // The capital supplies itself: its total isn't the sum of the others.
       total:
-        panelId === data.seed
+        panelId === data.seed && supply.input.sources.has(panelId)
           ? undefined
           : { pct: pct.reduce((a, b) => a + b, 0), needs: Math.round(SUPPLY.min * 100) },
       links: new Map(
@@ -499,7 +499,7 @@ export default function App() {
     broken: supply.broken,
     sends: supply.input.sources,
     towers: new Map(
-      [data.seed, ...supply.world.held]
+      [...supply.world.held]
         .filter((id) => id === data.seed || isStronghold(supply.world, id))
         .map((id) => [id, { capital: id === data.seed, working: supply.input.sources.has(id) }]),
     ),
