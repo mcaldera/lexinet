@@ -12,6 +12,7 @@ import {
   voiceCount,
 } from '../speech';
 import { GRAPH_NAMES, graphLabel } from '../graphs';
+import Icon from './Icon';
 
 type Props = {
   graphName: string;
@@ -83,9 +84,9 @@ export default function Menu(props: Props) {
       <button
         onClick={() => setOpen((o) => !o)}
         title="Menu"
-        className={`chip px-2.5 py-1 text-slate-300 ${open ? 'border-white/20 bg-white/10' : ''}`}
+        className={`chip px-2 py-1 text-base text-slate-300 ${open ? 'border-white/20 bg-white/10' : ''}`}
       >
-        ☰
+        <Icon name="menu" />
       </button>
       {open && (
         <div className="glass absolute right-0 top-full z-20 mt-2 w-60 rounded-xl bg-slate-900/90 p-1.5 text-sm text-slate-300">
@@ -161,7 +162,7 @@ export default function Menu(props: Props) {
                   }}
                   className="invisible px-1.5 text-xs text-slate-500 hover:text-red-300 group-hover:visible"
                 >
-                  ✕
+                  <Icon name="x" />
                 </button>
               )}
             </div>
@@ -210,7 +211,7 @@ function VoicePicker() {
             className="rounded bg-slate-800 px-2 py-1 hover:bg-slate-700"
             title="Test the voice"
           >
-            🔊
+            <Icon name="volume" />
           </button>
         </div>
       ) : (

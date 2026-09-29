@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import type { Levels } from '../core/tiers';
 import { levelBand, levelRgb } from './visuals';
+import Icon from './Icon';
 
 type Props = {
   levels: Levels;
@@ -8,7 +9,7 @@ type Props = {
   names?: Record<string, string> | null;
   /** Topics (categories) by id: their names. */
   topicName: (id: number) => string;
-  /** Words being claimed: on their way to counting. */
+  /** Words being learned: on their way to counting. */
   claimed: number;
   onClose: () => void;
   /** The verbs that earn verb points (VerbGoals), below the road. */
@@ -40,17 +41,14 @@ export default function LevelPanel(props: Props) {
   const nextBand = tiers.find((t) => t > p.tier && names && levelBand(name(t)) !== here);
   const last = p.tier >= p.maxTier;
   return (
-    <div className="panel p-4 text-sm" style={{ borderColor: `rgba(${rgb}, 0.45)` }}>
-      <div className="flex items-baseline justify-between">
-        <span className="text-xs uppercase tracking-wider text-slate-500">Level</span>
-        <button className="text-slate-500 hover:text-slate-200" onClick={onClose}>
-          ✕
+    <div className="panel p-4 text-sm">
+      <div className="flex items-start justify-between">
+        <span className="eyebrow">Level</span>
+        <button className="icon-btn -mr-1.5 -mt-1" onClick={onClose} title="Close">
+          <Icon name="x" />
         </button>
       </div>
-      <div
-        className="font-title text-2xl font-bold tracking-wide"
-        style={{ color: `rgb(${rgb})`, textShadow: `0 0 18px rgba(${rgb}, 0.45)` }}
-      >
+      <div className="font-title text-2xl font-bold tracking-wide" style={{ color: `rgb(${rgb})` }}>
         {name(p.tier)}
       </div>
 
@@ -69,7 +67,7 @@ export default function LevelPanel(props: Props) {
                     className="relative h-2.5 flex-1 overflow-hidden rounded-sm"
                     style={{
                       background: `rgba(${c}, ${t < p.tier ? 0.85 : 0.14})`,
-                      boxShadow: current ? `0 0 0 1.5px rgb(${c}), 0 0 10px rgba(${c}, 0.7)` : '',
+                      boxShadow: current ? `0 0 0 1.5px rgb(${c})` : '',
                     }}
                   >
                     {current && (
@@ -109,7 +107,7 @@ export default function LevelPanel(props: Props) {
             )}
           </div>
           <Bar
-            label="Words held"
+            label="Words learned"
             value={`${p.conquered}/${p.needed}${claimed ? ` (+${claimed} on the way)` : ''}`}
             share={words}
             rgb={rgb}
@@ -160,7 +158,7 @@ function Topics({ levels, topicName, name }: Props & { name: (t: number) => stri
   return (
     <div className="mt-4 border-t border-white/[0.06] pt-3">
       <div className="mb-1.5 flex items-baseline justify-between text-xs">
-        <span className="uppercase tracking-wider text-slate-500">Topics</span>
+        <span className="eyebrow">Topics</span>
         <span
           className="text-slate-500"
           title="A topic climbs on its own words, at most one band past your overall level"
@@ -185,9 +183,9 @@ function Topics({ levels, topicName, name }: Props & { name: (t: number) => stri
             >
               <div className="flex items-baseline justify-between gap-2 text-xs">
                 <span className="truncate text-slate-300">{topicName(id)}</span>
-                <span className="shrink-0 text-slate-500">
+                <span className="flex shrink-0 items-center gap-1 text-slate-500">
                   {t.held}/{t.words} <b style={{ color: `rgb(${rgb})` }}>{name(t.tier)}</b>
-                  {t.capped && ' 🔒'}
+                  {t.capped && <Icon name="lock" className="text-slate-400" />}
                 </span>
               </div>
               <div className="mt-0.5 h-1 overflow-hidden rounded-full bg-white/[0.06]">

@@ -3,12 +3,13 @@ import type { Verdict } from '../core/answer';
 import type { Grade } from '../core/scheduler';
 import { checkConjugation, PRONOUNS, TENSES, type Tense } from '../core/verbs';
 import type { WordNode } from '../db/repo';
-import { SpeakButton } from './ReviewView';
+import Icon from './Icon';
+import { HeadWord } from './WordInfo';
 
 type Props = {
   word: WordNode;
   tense: Tense;
-  /** learn: earn the next level; defend: a learned tense is due. */
+  /** learn: earn the next level; defend: a learned tense is due for review. */
   kind: 'learn' | 'defend';
   onDone: (grade: Grade) => void;
   onCancel: () => void;
@@ -32,21 +33,18 @@ export default function VerbDrill({ word, tense, kind, onDone, onCancel }: Props
   const passed = result && !result.rows.includes('wrong');
 
   return (
-    <div className="panel border-amber-500/40 p-4 text-sm">
-      <div className="mb-3 flex justify-between text-xs text-amber-300/90">
-        <span>
+    <div className="panel p-4 text-sm">
+      <div className="mb-3 flex items-center justify-between text-xs text-amber-300/90">
+        <span className="eyebrow text-amber-300/80">
           {tense}
-          {kind === 'learn' ? ` · ★${level}` : ''}
+          {kind === 'learn' ? ` · ★${level}` : ' · review'}
         </span>
-        <button className="text-slate-500 hover:text-slate-200" onClick={onCancel}>
-          ✕
+        <button className="icon-btn -my-1 -mr-1.5" onClick={onCancel} title="Cancel">
+          <Icon name="x" />
         </button>
       </div>
-      <div className="mb-3 text-center">
-        <div className="flex items-center justify-center gap-2 text-2xl font-medium">
-          {word.it} <SpeakButton text={word.it} />
-        </div>
-        <div className="text-slate-400">{word.en}</div>
+      <div className="mb-4">
+        <HeadWord word={word.it} pos={word.pos} meaning={word.en} />
       </div>
       <div className="space-y-1.5">
         {forms.map((form, i) => (
@@ -70,8 +68,8 @@ export default function VerbDrill({ word, tense, kind, onDone, onCancel }: Props
               autoComplete="off"
               autoCapitalize="off"
               spellCheck={false}
-              className={`min-w-0 flex-1 rounded border bg-slate-950 px-2 py-1 outline-none focus:border-amber-400 ${
-                result ? ROW[result.rows[i]] : 'border-slate-700'
+              className={`field min-w-0 flex-1 px-2 py-1 focus:border-amber-400/70 focus:shadow-[0_0_0_3px_rgba(251,191,36,0.15)] ${
+                result ? ROW[result.rows[i]] : ''
               }`}
             />
             {result && result.rows[i] !== 'correct' && (
@@ -84,13 +82,13 @@ export default function VerbDrill({ word, tense, kind, onDone, onCancel }: Props
         <div
           className={`mt-3 text-center font-semibold ${passed ? 'text-emerald-300' : 'text-red-300'}`}
         >
-          {passed ? (kind === 'learn' ? `★${level} ${tense}` : 'Defended') : 'Not yet'}
+          {passed ? (kind === 'learn' ? `★${level} ${tense}` : 'Still there') : 'Not yet'}
         </div>
       )}
       <button
         autoFocus={!!result}
         onClick={() => (result ? onDone(result.grade) : check())}
-        className="mt-3 w-full rounded bg-amber-700 py-2 text-sm hover:bg-amber-600"
+        className="btn mt-3 w-full bg-amber-400 py-2 text-sm font-semibold text-amber-950 hover:bg-amber-300"
       >
         {result ? 'Continue' : 'Check'}
       </button>

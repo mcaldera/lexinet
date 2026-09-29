@@ -109,7 +109,7 @@ export function speak(text: string, rate = 0.9) {
     if (e.error !== 'interrupted' && e.error !== 'canceled') problem(`Speech failed (${e.error})`);
   };
   current = u;
-  if (!v && voiceCount() > 0) problem('No Italian voice installed: see ☰ → Voice');
+  if (!v && voiceCount() > 0) problem('No Italian voice installed: see Menu → Voice');
   // Chrome can swallow an utterance queued right after cancel(), and sometimes
   // sits paused after a tab switch: cancel only when busy, then speak a tick later.
   if (s.speaking || s.pending) s.cancel();
@@ -127,7 +127,7 @@ export function speak(text: string, rate = 0.9) {
     problem(
       stuck
         ? "The browser's speech is stuck: quit Chrome completely and reopen"
-        : `${v?.name ?? 'The voice'} didn't speak: pick another in ☰`,
+        : `${v?.name ?? 'The voice'} didn't speak: pick another in the menu`,
     );
   }, 2500);
 }

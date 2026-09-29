@@ -108,9 +108,9 @@ const ATTENTION_RGB: Record<AttentionKind, string> = {
   new: '125, 211, 252', // light sky: just revealed
 };
 const ATTENTION_LABEL: Record<AttentionKind, string> = {
-  broken: 'broken',
-  raid: 'raided',
-  reclaim: 'to win back',
+  broken: 'slipped',
+  raid: 'quizzed',
+  reclaim: 'to recover',
   due: 'due',
   ready: 'ready',
   new: 'new',
@@ -935,7 +935,7 @@ export default function GraphView({
         ctx.stroke();
         badge(
           ctx,
-          back.was === 'conquered' ? '↺ ★' : `↺ ${back.steps}/3`,
+          back.was === 'conquered' ? '↺' : `↺ ${back.steps}/3`,
           x,
           y - r - 7,
           scale,
@@ -955,11 +955,12 @@ export default function GraphView({
     const rgb = cut && !broken ? '100, 116, 139' : BAND_RGB[band];
     const tower = inspect ? undefined : supply?.towers.get(node.id);
     if (tower) {
-      // The capital and your strongholds: a gold tower over the word (grey while broken).
-      const h = tower.capital ? 16 : 11;
+      // The core word and your anchors radiate: gold rays outside the gauge ring
+      // (faint while slipped). More and longer rays on the core.
+      const w = Math.max(2.2, 2.6 / scale);
       ctx.save();
-      if (!tower.working) ctx.globalAlpha = 0.45;
-      drawTower(ctx, x, y - r - h * 0.75, h, SUPPLY_RGB);
+      if (!tower.working) ctx.globalAlpha = 0.4;
+      drawRays(ctx, x, y, r + 2.4 + vl * 1.8 + w + 1.4, tower.capital, scale);
       ctx.restore();
     }
     const coh = inspect ? 0 : (cohesionOf.get(node.id) ?? 0);
@@ -1078,10 +1079,10 @@ export default function GraphView({
       }
       const sv = supply?.value.get(node.id);
       if (!inspect && sv !== undefined && scale > 1.5) {
-        // Close up, the supply in numbers: cut-off words too (grey), so you
+        // Close up, the signal in numbers: disconnected words too (grey), so you
         // can see how far they are from the 50% they need.
         lines.push({
-          text: `⚡ ${Math.round(sv * 100)}%`,
+          text: `${Math.round(sv * 100)}%`,
           px: 8.5,
           rgb: cut ? '148, 163, 184' : sv < THIN_SUPPLY ? '251, 146, 60' : SUPPLY_RGB,
           alpha: 0.9,
@@ -1126,7 +1127,7 @@ export default function GraphView({
 
   const linkTooltip = (l: L) => {
     const [a, b] = [endId(l.source), endId(l.target)];
-    if (l.hint) return '💡 your hint';
+    if (l.hint) return 'English cousin';
     if (l.descends) {
       const hub = hubs.find((h) => h.id === a);
       const word = hidden(b) || !shownName(b) ? 'This unknown word' : `<b>${shownName(b)}</b>`;
@@ -1141,7 +1142,7 @@ export default function GraphView({
       return `<span style="color:${color}">● ${REASON_LABEL[l.reason]}</span>`;
     }
     if (l.via === 'user') {
-      return `<b>${shownName(a) || '?'} ↔ ${shownName(b) || '?'}</b><div style="color:rgb(52,211,153)">🌱 planted by you</div>`;
+      return `<b>${shownName(a) || '?'} ↔ ${shownName(b) || '?'}</b><div style="color:rgb(52,211,153)">connected by you</div>`;
     }
     // The two words, why they belong together and how strongly.
     return `<b>${shownName(a) || '?'} ↔ ${shownName(b) || '?'}</b><div style="color:${color}">● ${reasonText(l, wa, wb)}</div>
@@ -1237,10 +1238,10 @@ export default function GraphView({
         }}
         nodeLabel={(n) => {
           if (n.hintOf) {
-            return `💡 Hint: English cousin “${n.word.it}”`;
+            return `English cousin “${n.word.it}”`;
           }
           if (n.hub && !inspect && !unlockedRoots.has(n.id)) {
-            return `${n.hub.lang ?? ''} root ${n.hub.root}: opens by itself once enough of its words are inside your supply, and reveals them all`;
+            return `${n.hub.lang ?? ''} root ${n.hub.root}: clicks once enough of its words get signal, and reveals them all`;
           }
           if (n.hub) {
             const known = n.hub.words.filter((w) => !hidden(w) && shownName(w)).map(shownName);
@@ -1257,16 +1258,16 @@ export default function GraphView({
             return `${hidden(n.id) ? 'Unknown word' : n.word.it} · locked ${Math.ceil((until - nowApp) / 1000)} s`;
           }
           if (!inspect && ghosts?.has(n.id))
-            return 'Beyond your horizon: conquer a word next to it';
+            return 'Faint: learn a word next to it to bring it in reach';
           const outside = !inspect && supply && (supply.value.get(n.id) ?? 0) < supply.min - 1e-9;
           if (!inspect && state === 'frontier') {
-            return `Unknown ${n.word.pos ?? 'word'}: click to conquer${
-              outside ? ' · outside your supply: won here, it is cut off' : ''
+            return `New ${n.word.pos ?? 'word'}: click to learn${
+              outside ? ' · weak signal: learned here, it starts disconnected' : ''
             }`;
           }
           if (!inspect && state === 'claimed') {
             const steps = claimSteps(claims.get(n.id));
-            return `Claimed ${steps}/${CLAIM_STEPS}: ${
+            return `Learning ${steps}/${CLAIM_STEPS}: ${
               attentionOf.get(n.id) === 'ready' ? 'next step ready, click' : 'next step opens soon'
             }`;
           }
@@ -1274,21 +1275,18 @@ export default function GraphView({
           const h = health.get(n.id);
           const pct = h != null ? ` · recall ${Math.round(h * 100)}%` : '';
           if (!inspect && supply?.broken.has(n.id)) {
-            return `Broken: ${shownName(n.id) || '?'} · no supply passes · click to mend it`;
+            return `Slipped: ${shownName(n.id) || '?'} · passes no signal · click to bring it back`;
           }
           const cutOff = inspect ? undefined : supply?.cut.get(n.id);
           if (cutOff) {
             const hours = Math.max(1, Math.round((cutOff.until - nowMs) / 3_600_000));
-            return `Cut off: ${shownName(n.id) || '?'} · falls back to "?" in ${hours} h unless reconnected`;
+            return `Disconnected: ${shownName(n.id) || '?'} · fades in ${hours} h unless it reconnects`;
           }
           if (!inspect && state === 'conquered' && h != null && h < FULL_NAME) {
             return `Due: ${shownName(n.id) || '?'}${pct} · click to review`;
           }
           const lvl = strength.get(n.id) ?? 0;
-          const str =
-            state === 'conquered'
-              ? ` · strength ${'★'.repeat(lvl)}${'☆'.repeat(MAX_STRENGTH - lvl)}`
-              : '';
+          const str = state === 'conquered' ? ` · memory ${lvl}/${MAX_STRENGTH}` : '';
           const hint = inspect ? `${state} · tier ${n.word.tier ?? 1}` : 'click to practise';
 
           const vl = verbLevels.get(n.id);
@@ -1362,8 +1360,9 @@ export default function GraphView({
           drawLabels(ctx, scale, labels.current, names);
           if (flow && !inspect) {
             drawFlow(ctx, scale, flow, nodeCache.current, (id) => {
+              // Clear of the rays around the core and the anchors.
               const tower = supply?.towers.get(id);
-              return tower ? (tower.capital ? 16 : 11) : 0;
+              return tower ? (tower.capital ? 4 : 2) : 0;
             });
           }
           pointers.current = drawPointers(
@@ -2119,54 +2118,34 @@ function drawRegionNames(
  * The capital or a stronghold: a crenellated gold tower of height `h` standing on (x, y + h/2),
  * with a pennant in `rgb`.
  */
-function drawTower(ctx: CanvasRenderingContext2D, x: number, y: number, h: number, rgb: string) {
-  const w = h * 0.62;
-  const top = y - h / 2;
-  const base = y + h / 2;
-  const m = w / 5; // merlon width
-  softGlow(ctx, x, y, 0, h * 1.2, '252, 211, 77', 0.28);
+/**
+ * Rays around a word sending out full signal (an anchor), longer and more of
+ * them around the core word. At least ~1 px wide and a few px long on screen.
+ */
+function drawRays(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  from: number,
+  core: boolean,
+  scale: number,
+) {
+  const n = core ? 12 : 8;
+  const len = (core ? 5 : 3.5) * Math.max(1, 0.8 / scale);
+  softGlow(ctx, x, y, from, from + len * 1.6, '252, 211, 77', core ? 0.22 : 0.14);
   ctx.beginPath();
-  ctx.moveTo(x - w / 2 - h * 0.05, base);
-  // Along the top: merlons (even) and gaps (odd), left to right.
-  for (let i = 0; i < 5; i++) {
-    const yy = i % 2 ? top + m : top;
-    ctx.lineTo(x - w / 2 + i * m, yy);
-    ctx.lineTo(x - w / 2 + (i + 1) * m, yy);
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * 2 * Math.PI - Math.PI / 2;
+    // Every other ray on the core is shorter, like a compass rose.
+    const l = core && i % 2 ? len * 0.6 : len;
+    ctx.moveTo(x + Math.cos(a) * from, y + Math.sin(a) * from);
+    ctx.lineTo(x + Math.cos(a) * (from + l), y + Math.sin(a) * (from + l));
   }
-  ctx.lineTo(x + w / 2 + h * 0.05, base);
-  ctx.closePath();
-  const g = ctx.createLinearGradient(x - w / 2, 0, x + w / 2, 0);
-  g.addColorStop(0, '#fde68a');
-  g.addColorStop(0.55, '#fbbf24');
-  g.addColorStop(1, '#b45309');
-  ctx.fillStyle = g;
-  ctx.strokeStyle = 'rgba(1, 3, 11, 0.85)';
-  ctx.lineWidth = h / 14;
+  ctx.strokeStyle = `rgba(${SUPPLY_LIGHT}, 0.95)`;
+  ctx.lineWidth = Math.max(1, 1.1 / scale);
+  ctx.lineCap = 'round';
   ctx.stroke();
-  ctx.fill();
-  // The door and a window slit.
-  ctx.fillStyle = 'rgba(69, 26, 3, 0.9)';
-  ctx.beginPath();
-  ctx.moveTo(x - w / 7, base);
-  ctx.lineTo(x - w / 7, base - h * 0.22);
-  ctx.arc(x, base - h * 0.22, w / 7, Math.PI, 0);
-  ctx.lineTo(x + w / 7, base);
-  ctx.fill();
-  ctx.fillRect(x - w / 24, top + m * 1.9, w / 12, h * 0.16);
-  // The pennant.
-  ctx.strokeStyle = 'rgba(253, 230, 138, 0.95)';
-  ctx.lineWidth = h / 28;
-  ctx.beginPath();
-  ctx.moveTo(x, top);
-  ctx.lineTo(x, top - h * 0.42);
-  ctx.stroke();
-  ctx.fillStyle = `rgba(${rgb}, 0.95)`;
-  ctx.beginPath();
-  ctx.moveTo(x, top - h * 0.42);
-  ctx.lineTo(x + h * 0.34, top - h * 0.33);
-  ctx.lineTo(x, top - h * 0.24);
-  ctx.closePath();
-  ctx.fill();
+  ctx.lineCap = 'butt';
 }
 
 /** Far stars behind the galaxy view, in three layers that drift at different speeds. */
@@ -2408,7 +2387,7 @@ function drawFlow(
   tower: (id: string) => number,
 ) {
   const pct = (v: number) => `+${Math.max(1, Math.round(v * 100))}%`;
-  const lift = (id: string) => (tower(id) ? tower(id) * 1.4 + 6 : 0);
+  const lift = (id: string) => (tower(id) ? tower(id) * 1.4 + 2 : 0);
   const at = (id: string) => {
     const n = nodes.get(id);
     return n?.x === undefined || n.y === undefined ? null : { x: n.x, y: n.y };
@@ -2445,7 +2424,7 @@ function drawFlow(
   }
   for (const [id, gain] of flow.gains) {
     const p = at(id);
-    if (p) badge(ctx, `${pct(gain)} if won`, p.x, p.y - 15, scale, '134, 239, 172');
+    if (p) badge(ctx, `${pct(gain)} if learned`, p.x, p.y - 15, scale, '134, 239, 172');
   }
   ctx.restore();
 }

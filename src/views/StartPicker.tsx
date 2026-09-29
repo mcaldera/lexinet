@@ -4,23 +4,24 @@ import { neighbourWeights } from '../core/game';
 import { startCandidates } from '../core/start';
 import { coverage } from '../core/supply';
 import type { Edge, Region, WordNode } from '../db/repo';
+import Icon from './Icon';
 
 type Props = {
   regions: Region[];
   nodes: WordNode[];
   edges: Edge[];
-  /** A category's id (undefined: anywhere), and the capital chosen (undefined: by chance). */
+  /** A topic's id (undefined: anywhere), and the core word chosen (undefined: by chance). */
   onPick: (region?: number, capital?: string) => void;
 };
 
-/** A capital's share counts as reaching a word from this much: how central it is. */
+/** A core word's share counts as reaching a word from this much: how central it is. */
 const REACH = 0.1;
 
 /**
- * A new game: pick a category, then your capital, the first word and your
- * home: it always sends out full supply. Each candidate says how many words its
- * supply would reach once they are yours (core/supply.ts coverage), by its
- * English meaning: the Italian is earned.
+ * A new game: pick a topic, then your core word, the first word, which always
+ * sends out full signal. Each candidate says how many words its signal would
+ * reach once they are learned (core/supply.ts coverage), by its English
+ * meaning: the Italian is earned.
  */
 export default function StartPicker({ regions, nodes, edges, onPick }: Props) {
   const sorted = [...regions].sort((a, b) => a.name.localeCompare(b.name));
@@ -42,11 +43,12 @@ export default function StartPicker({ regions, nodes, edges, onPick }: Props) {
     <div className="absolute inset-0 z-20 flex items-center justify-center bg-[radial-gradient(ellipse_at_center,rgba(2,6,23,0.7),rgba(2,6,23,0.95))] p-6 backdrop-blur-sm">
       {region ? (
         <div className="w-full max-w-md">
-          <h2 className="mb-2 text-center font-title text-3xl font-bold tracking-[0.08em] text-emerald-100 [text-shadow:0_0_24px_rgba(52,211,153,0.45)]">
-            {region.name}: your capital
+          <h2 className="mb-2 text-center font-title text-3xl font-bold tracking-[0.08em] text-slate-100">
+            {region.name}
           </h2>
           <p className="mb-5 text-center text-sm text-slate-500">
-            Your first word, always sending out full supply. Strongly linked words supply more.
+            Pick your core word: your first word, always sending out full signal. Well-linked words
+            reach further.
           </p>
           <ul className="space-y-1.5">
             {candidates.map((c) => (
@@ -72,32 +74,38 @@ export default function StartPicker({ regions, nodes, edges, onPick }: Props) {
             ))}
           </ul>
           <div className="mt-5 flex justify-center gap-2">
-            <button onClick={() => setRegion(null)} className="btn-ghost rounded-full px-4 py-1.5">
-              ← Categories
+            <button
+              onClick={() => setRegion(null)}
+              className="btn-ghost inline-flex items-center gap-1.5 rounded-full px-4 py-1.5"
+            >
+              <Icon name="arrowLeft" />
+              Topics
             </button>
             <button
               autoFocus
               onClick={() => onPick(region.id)}
-              className="btn-primary rounded-full px-5 py-1.5"
+              className="btn-primary inline-flex items-center gap-1.5 rounded-full px-5 py-1.5"
             >
-              🎲 Choose for me
+              <Icon name="shuffle" />
+              Choose for me
             </button>
           </div>
         </div>
       ) : (
         <div className="w-full max-w-2xl">
-          <h2 className="mb-2 text-center font-title text-3xl font-bold tracking-[0.08em] text-emerald-100 [text-shadow:0_0_24px_rgba(52,211,153,0.45)]">
+          <h2 className="mb-2 text-center font-title text-3xl font-bold tracking-[0.08em] text-slate-100">
             Where to begin?
           </h2>
           <p className="mb-5 text-center text-sm text-slate-500">
-            Your territory grows from there.
+            Pick a topic: your mind map grows from there.
           </p>
           <button
             autoFocus
             onClick={() => onPick()}
-            className="btn-primary mx-auto mb-6 block rounded-full px-6 py-2"
+            className="btn-primary mx-auto mb-6 flex items-center gap-1.5 rounded-full px-6 py-2"
           >
-            🎲 Anywhere
+            <Icon name="shuffle" />
+            Anywhere
           </button>
           {sorted.length > 0 && (
             <div className="flex flex-wrap justify-center gap-1.5">
@@ -105,7 +113,7 @@ export default function StartPicker({ regions, nodes, edges, onPick }: Props) {
                 <button
                   key={r.id}
                   onClick={() => setRegion(r)}
-                  className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-sm text-slate-300 transition hover:-translate-y-px hover:border-emerald-400/60 hover:bg-emerald-400/10 hover:text-emerald-100 hover:shadow-[0_0_16px_-4px_rgba(52,211,153,0.6)]"
+                  className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-sm text-slate-300 transition hover:border-emerald-400/60 hover:bg-emerald-400/10 hover:text-emerald-100"
                 >
                   {r.name}
                 </button>

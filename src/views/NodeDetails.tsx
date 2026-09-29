@@ -1,9 +1,11 @@
+import type { ReactNode } from 'react';
 import { TENSES, type Drill } from '../core/verbs';
 import type { ClaimStep } from '../core/claim';
 import type { NodeState } from '../core/unlock';
 import type { WordNode } from '../db/repo';
 import Etymology from './Etymology';
-import { StepDots, timeLeft } from './ReviewView';
+import Icon, { Sparks } from './Icon';
+import { ExampleLine, StepDots, timeLeft } from './ReviewView';
 import { MAX_STRENGTH, type MemoryOutlook } from '../core/strength';
 
 type Props = {
@@ -12,45 +14,49 @@ type Props = {
   /** The name as the player may see it (faded words lose letters; '' = gone). */
   name: string;
   health: number | null;
-  /** Conquered words: their memory (strength, due, breaking, next level) and recall now (0-1). */
+  /** Learned words: their memory (strength, due, slipping, next level) and recall now (0-1). */
   memory?: { outlook: MemoryOutlook; recall: number | null };
-  /** Its place in your supply (core/supply.ts). */
+  /** Its signal (core/supply.ts: "supply" in the code). */
   supply?: {
     value: number;
     min: number;
+    /** The core word (the capital in the code). */
     capital: boolean;
-    /** A held word: what it sends out while unbroken (by memory strength and tenses). */
+    /** A learned word: what it sends out while it hasn't slipped (by memory strength and tenses). */
     sends?: number;
-    /** Sends out full supply (known for months). */
+    /** An anchor: sends out full signal (known for months). */
     stronghold: boolean;
+    /** Slipped (broken in the code). */
     broken: boolean;
-    /** Broken by a miss (else by fading past the line). */
+    /** Slipped by a miss (else by fading past the line). */
     missed: boolean;
-    /** Cut off (not broken itself): falls at this app time. */
+    /** Disconnected (it hasn't slipped itself): fades at this app time. */
     cutUntil?: number;
-    /** Broken and so cut off too: falls at this app time. */
+    /** Slipped and so disconnected too: fades at this app time. */
     brokenUntil?: number;
-    /** Held words that would be cut off if it broke (or are, while it's broken). */
+    /** Learned words that would be disconnected if it slipped (or are, while it has). */
     hanging?: number;
   };
   /** False while this word is being quizzed: etymology and meaning would give it away. */
   showEtymology: boolean;
-  /** Conquered words: links into their category and out of it (score cohesion). */
+  /** In the word's own card: its example sentence, between its status and its origin. */
+  showExample?: boolean;
+  /** Learned words: links into their topic and out of it (score cohesion). */
   links?: { inside: number; outside: number; category: string };
   /** Words with an English cousin: buy it as a hint, or see the one bought. */
   hint?: { cognate: string; bought: boolean; cost: number; onBuy: () => void };
-  /** Conquered words: open the plant picker (core/plant.ts). */
+  /** Learned words: open the connect picker (core/plant.ts). */
   onPlant?: () => void;
   coins?: number;
-  /** A lost word one right answer wins back: what it was and until when (app ms). */
+  /** A lost word one right answer recovers: what it was and until when (app ms). */
   reclaim?: { was: 'conquered' | 'claimed'; steps: number; until: number };
-  /** Claimed words: the step to do next and when it opens (null = complete). */
+  /** Words being learned: the step to do next and when it opens (null = complete). */
   claimStep?: ClaimStep | null;
-  /** Conquered verbs: level and what the next conjugation step is. */
+  /** Learned verbs: level and what the next conjugation step is. */
   verb?: { level: number; drill: Drill };
   onConjugate?: () => void;
   nowMs: number;
-  /** Inside the word's own card (word card, wait card): no name line, no claim countdown. */
+  /** Inside the word's own card (word card, wait card): no name line, no step countdown. */
   bare?: boolean;
 };
 
@@ -77,17 +83,103 @@ const until = (ms: number) =>
 const words = (n: number) => `${n} ${n === 1 ? 'word' : 'words'}`;
 
 /**
- * Memory strength: how long you'll remember the word (FSRS stability), as dots.
- * Only spaced reviews raise it. Stars are for verb tenses, not this.
+ * How a status looks: its chip, the meter's fill and the box around both.
+ * Trouble tints the whole box, so a disconnected word stands out at a glance.
  */
-/** Strength as five dots: memory that lasts longer fills more of them. */
+const TONE = {
+  good: {
+    chip: 'bg-amber-300/10 text-amber-200 ring-amber-300/25',
+    bar: 'bg-gradient-to-r from-amber-400 to-amber-200',
+    box: 'bg-white/[0.025] ring-white/[0.06]',
+  },
+  warn: {
+    chip: 'bg-orange-400/15 text-orange-200 ring-orange-400/40',
+    bar: 'bg-orange-400',
+    box: 'bg-orange-500/[0.08] ring-orange-400/30',
+  },
+  bad: {
+    chip: 'bg-rose-400/15 text-rose-200 ring-rose-400/40',
+    bar: 'bg-rose-400',
+    box: 'bg-rose-500/[0.08] ring-rose-400/30',
+  },
+  due: {
+    chip: 'bg-violet-400/15 text-violet-200 ring-violet-400/40',
+    bar: 'bg-violet-400',
+    box: '',
+  },
+} as const;
+type Tone = keyof typeof TONE;
+
+function Chip({ tone, children }: { tone: Tone; children: ReactNode }) {
+  return (
+    <span
+      className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] ring-1 ring-inset ${TONE[tone].chip}`}
+    >
+      {children}
+    </span>
+  );
+}
+
+/**
+ * Signal against the line a word needs: 0 to 100% (more fills it), with a
+ * tick where it stays connected. 41% of 50% is a bar that stops short of it.
+ */
+function Meter({ value, min, tone }: { value: number; min: number; tone: Tone }) {
+  return (
+    <div
+      className="relative mt-2 h-1.5 rounded-full bg-white/[0.08]"
+      title={`Signal ${pct(value)}: it needs ${pct(min)} to stay connected`}
+    >
+      <div
+        className={`h-full rounded-full ${TONE[tone].bar}`}
+        style={{ width: `${Math.min(1, value) * 100}%` }}
+      />
+      <div
+        className="absolute -bottom-1 -top-1 w-0.5 rounded-full bg-slate-200/90 shadow-[0_0_0_2px_rgba(15,23,42,0.9)]"
+        style={{ left: `calc(${min * 100}% - 1px)` }}
+      />
+    </div>
+  );
+}
+
+/**
+ * A word's signal at a glance: what it means for the word (chip), how much
+ * reaches it against what it needs (meter) and what happens next (one line).
+ */
+function Signal(props: {
+  tone: Tone;
+  chips: ReactNode;
+  value?: number;
+  min: number;
+  note?: ReactNode;
+}) {
+  const { tone, chips, value, min, note } = props;
+  const short = value !== undefined && value < min - 1e-9;
+  return (
+    <div className={`rounded-lg p-2.5 ring-1 ring-inset ${TONE[tone].box}`}>
+      <div className="flex items-center justify-between gap-2">
+        <span className="flex flex-wrap items-center gap-1">{chips}</span>
+        {value !== undefined && (
+          <span className="shrink-0 tabular-nums text-slate-300">
+            {pct(value)}
+            {short && <span className="text-slate-500"> / {pct(min)}</span>}
+          </span>
+        )}
+      </div>
+      {value !== undefined && <Meter value={value} min={min} tone={tone} />}
+      {note && <p className="mt-2 leading-snug text-slate-400">{note}</p>}
+    </div>
+  );
+}
+
+/** Memory strength as five dots: memory that lasts longer fills more of them. */
 function Dots({ level }: { level: number }) {
   return (
-    <span className="flex gap-0.5">
+    <span className="flex gap-[3px]">
       {Array.from({ length: MAX_STRENGTH }, (_, i) => (
         <span
           key={i}
-          className={`h-1.5 w-1.5 rounded-full ${i < level ? 'bg-sky-300' : 'bg-slate-700'}`}
+          className={`h-1.5 w-1.5 rounded-full ${i < level ? 'bg-sky-300' : 'bg-white/[0.12]'}`}
         />
       ))}
     </span>
@@ -95,11 +187,11 @@ function Dots({ level }: { level: number }) {
 }
 
 /**
- * A held word's memory and fate on one bar: from its last review to the tick
- * where it's due (recall 90%), where it breaks (80%) and, while cut off, where
- * it falls back to "?", with now filled in (grey while cut off, rose when
- * broken). Below: what comes next, in time order; breaking is left out when
- * the word falls first. Above: its strength and what the next level takes.
+ * A learned word's memory on one bar: from its last review to the ticks where
+ * it's due (recall 90%), where it slips (80%) and, while disconnected, where it
+ * fades, with now filled in. Under it: what comes next, in time order (the
+ * fading is on the status line, so only its tick is here). Above: its strength
+ * and what the next level takes.
  */
 export function WordTimeline({
   o,
@@ -111,12 +203,12 @@ export function WordTimeline({
   o: MemoryOutlook;
   nowMs: number;
   recall?: number | null;
-  /** Broken already (missed, raided, or faded). */
+  /** Slipped already (missed, quizzed and lost, or faded). */
   broken?: boolean;
-  /** Cut off (or broken): when it falls back to "?" (app ms). */
+  /** Disconnected (or slipped): when it fades back to "?" (app ms). */
   falls?: number;
 }) {
-  const events: { at: number; text: string; color: string; tick: string }[] = [];
+  const events: { at: number; text?: string; color: string; tick: string }[] = [];
   if (!broken && o.due > nowMs) {
     events.push({
       at: o.due,
@@ -128,110 +220,109 @@ export function WordTimeline({
   if (!broken && o.breaks > nowMs && (falls === undefined || o.breaks < falls)) {
     events.push({
       at: o.breaks,
-      text: `breaks in ${until(o.breaks - nowMs)}`,
-      color: 'text-rose-300/80',
+      text: `slips in ${until(o.breaks - nowMs)}`,
+      color: 'text-slate-500',
       tick: 'bg-rose-400',
     });
   }
-  if (falls !== undefined) {
-    events.push({
-      at: falls,
-      text: `✂ falls to ? in ${until(Math.max(0, falls - nowMs))}`,
-      color: 'text-slate-300',
-      tick: 'bg-slate-300',
-    });
-  }
+  if (falls !== undefined) events.push({ at: falls, color: '', tick: 'bg-orange-300' });
   events.sort((a, b) => a.at - b.at);
   const end = Math.max(events[events.length - 1]?.at ?? o.breaks, nowMs + 1);
   const length = Math.max(1, end - o.since);
   const at = (t: number) => `${Math.max(0, Math.min(1, (t - o.since) / length)) * 100}%`;
+  const due = !broken && nowMs >= o.due;
   const fill = broken
-    ? 'bg-rose-400'
+    ? 'bg-rose-400/80'
     : falls !== undefined
-      ? 'bg-slate-400'
-      : nowMs >= o.due
+      ? 'bg-slate-500'
+      : due
         ? 'bg-violet-400'
-        : 'bg-sky-400/80';
-  const lead = broken
-    ? { text: 'broken: one right answer mends it', color: 'text-rose-300' }
-    : nowMs >= o.due
-      ? { text: 'due now: practise it', color: 'text-violet-300' }
-      : null;
+        : 'bg-sky-400/70';
+  const captions = [
+    ...(due ? [{ text: 'due now: review it', color: 'text-violet-300' }] : []),
+    ...events.filter((e) => e.text),
+  ];
   const next = o.next;
   return (
-    <div className="mt-1.5 space-y-1 text-xs">
+    <div className="space-y-1.5">
       <div
-        className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-slate-400"
-        title={`Memory strength ${o.level}/${MAX_STRENGTH}: after a review you still recall it (90%) for ~${span(o.days)}. It grows only when you answer right while it's due, never by cramming; the stronger, the more supply it sends out.`}
+        className="flex items-center justify-between gap-2"
+        title={`Memory strength ${o.level}/${MAX_STRENGTH}: after a review you still recall it (90%) for ~${span(o.days)}. It grows only when you answer right while it's due, never by cramming; the stronger, the more signal it sends out.`}
       >
-        <Dots level={o.level} />
-        <span>
-          memory {o.level}/{MAX_STRENGTH}
+        <span className="flex items-center gap-2">
+          <span className="eyebrow">Memory</span>
+          <Dots level={o.level} />
+          <span className="tabular-nums text-slate-300">
+            {o.level}/{MAX_STRENGTH}
+          </span>
         </span>
         {next && (
-          <span className="text-slate-500">
+          <span
+            className="whitespace-nowrap text-[11px] text-slate-500"
+            title={`${next.level}/${MAX_STRENGTH} after ${next.reviews === 1 ? 'the next right answer' : `${next.reviews} right answers`}, each given when due${next.reachedAt > nowMs + 60_000 ? `: in ~${until(next.reachedAt - nowMs)}` : ''}`}
+          >
             → {next.level}/{MAX_STRENGTH}{' '}
-            {next.reviews === 1
-              ? 'with the next right answer'
-              : `after ${next.reviews} right answers`}
-            {next.reachedAt > nowMs + 60_000 && ` (~${until(next.reachedAt - nowMs)})`}
+            {next.reviews === 1 ? 'next review' : `in ${next.reviews} reviews`}
           </span>
         )}
       </div>
       <div
-        className="relative h-1.5 overflow-hidden rounded-full bg-slate-800"
-        title={recall == null ? undefined : `Recall now ${pct(recall)}: due at 90%, breaks at 80%`}
+        className="relative h-1 overflow-hidden rounded-full bg-white/[0.08]"
+        title={recall == null ? undefined : `Recall now ${pct(recall)}: due at 90%, slips at 80%`}
       >
         <div className={`absolute inset-y-0 left-0 ${fill}`} style={{ width: at(nowMs) }} />
         {events.slice(0, -1).map((e) => (
           <div
-            key={e.text}
+            key={e.at}
             className={`absolute inset-y-0 w-0.5 ${e.tick}`}
             style={{ left: at(e.at) }}
           />
         ))}
       </div>
-      <div className="flex flex-wrap gap-x-1.5 text-[11px]">
-        {[...(lead ? [lead] : []), ...events].map((e, i) => (
-          <span key={e.text} className={e.color}>
-            {i > 0 && <span className="text-slate-600">· </span>}
-            {e.text}
-          </span>
-        ))}
-      </div>
+      {captions.length > 0 && (
+        <div className="flex flex-wrap gap-x-1.5 text-[11px]">
+          {captions.map((e, i) => (
+            <span key={e.text} className={e.color}>
+              {i > 0 && <span className="text-slate-600">· </span>}
+              {e.text}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
-const btn = 'btn rounded-md px-2 py-1 text-xs text-white disabled:opacity-40';
 
-/** Inside your supply or not, for a "?" or a claim: won out there, a word is cut off. */
-function SupplyHint({ supply }: { supply?: Props['supply'] }) {
+/** A word you don't hold yet: would it stay connected if learned now? */
+function SignalHint({ supply }: { supply?: Props['supply'] }) {
   if (!supply) return null;
   if (supply.capital) {
     return (
-      <p
-        className="text-amber-200/80"
-        title="Your capital always sends out 100%, from when you hold it"
-      >
-        ⚡ your capital: sends 100% once it's yours
-      </p>
+      <Signal
+        tone="good"
+        chips={<Chip tone="good">Core</Chip>}
+        min={supply.min}
+        note="Your core word: it sends 100% signal once learned."
+      />
     );
   }
-  return supply.value >= supply.min - 1e-9 ? (
-    <p className="text-amber-200/80" title="Supply reaches it: won, it will count">
-      ⚡ inside your supply ({pct(supply.value)})
-    </p>
-  ) : (
-    <p
-      className="text-slate-500"
-      title="Won out here, it is cut off from the start and holds out only as long as its memory lasts. The map shows where its supply comes from, and what winning each ? nearby would add"
-    >
-      outside your supply: {pct(supply.value)} of the {pct(supply.min)} it needs
-    </p>
+  const inside = supply.value >= supply.min - 1e-9;
+  return (
+    <Signal
+      tone={inside ? 'good' : 'warn'}
+      chips={<span className="eyebrow">Signal</span>}
+      value={supply.value}
+      min={supply.min}
+      note={
+        inside
+          ? 'Learned now, it stays connected.'
+          : 'Too little here: learned now, it starts disconnected. The map shows which words nearby would help.'
+      }
+    />
   );
 }
 
-/** The selected word's status: a line or two, with the breakdown one click away. */
+/** The selected word's status: its signal, its memory, and what can be done with it. */
 export default function NodeDetails(props: Props) {
   const { word, state, supply } = props;
   const hint = props.hint && <HintButton hint={props.hint} coins={props.coins ?? 0} />;
@@ -241,19 +332,18 @@ export default function NodeDetails(props: Props) {
   if (state === 'frontier') {
     return (
       <Panel>
-        <div className="flex items-center justify-between gap-2">
-          <div className="space-y-0.5">
-            {props.reclaim && (
-              <p className="text-teal-300">
-                ↺ was{' '}
-                {props.reclaim.was === 'conquered' ? 'yours' : `claimed (${props.reclaim.steps}/3)`}{' '}
-                · {timeLeft(props.reclaim.until - props.nowMs)} to win back
-              </p>
-            )}
-            <SupplyHint supply={supply} />
-          </div>
-          {hint}
-        </div>
+        {props.reclaim && (
+          <p className="mb-2 flex items-center gap-1.5 text-teal-300">
+            <Icon name="recover" />
+            Was{' '}
+            {props.reclaim.was === 'conquered'
+              ? 'learned'
+              : `learning ${props.reclaim.steps}/3`} · {timeLeft(props.reclaim.until - props.nowMs)}{' '}
+            to recover it
+          </p>
+        )}
+        <SignalHint supply={supply} />
+        {hint && <div className="mt-2.5 flex">{hint}</div>}
       </Panel>
     );
   }
@@ -263,162 +353,214 @@ export default function NodeDetails(props: Props) {
     const wait = next ? next.opensAt - props.nowMs : 0;
     return (
       <Panel>
-        <div className="flex items-center justify-between gap-2">
-          <div className={`flex items-center gap-2 ${props.bare ? 'hidden' : ''}`}>
-            <StepDots done={next ? next.step - 1 : 3} />
+        {!props.bare && next && (
+          <div className="mb-2 flex items-center gap-2">
+            <StepDots done={next.step - 1} />
             <span className={wait <= 0 ? 'text-emerald-300' : 'text-slate-400'}>
-              {!next ? '' : wait <= 0 ? 'ready' : `step ${next.step} in ${short(wait)}`}
+              {wait <= 0 ? `step ${next.step} ready` : `step ${next.step} in ${short(wait)}`}
             </span>
           </div>
-          {hint}
-        </div>
-        <div className="mt-1">
-          <SupplyHint supply={supply} />
-        </div>
+        )}
+        <SignalHint supply={supply} />
+        {hint && <div className="mt-2.5 flex">{hint}</div>}
       </Panel>
     );
   }
   if (state !== 'conquered') return null;
 
   const verb = props.verb;
+  const o = props.memory?.outlook;
+  const due = !!o && !supply?.broken && props.nowMs >= o.due;
   return (
     <Panel>
-      {!props.bare && (
-        <div className="mb-1.5 text-sm text-slate-100">
-          {props.name || '?'} {/* Not while it is being asked: the meaning would be the answer. */}
-          {props.showEtymology && <span className="text-xs text-slate-500">{word.en}</span>}
+      {/* Not while it is being asked (no name then): the meaning would be the answer. */}
+      {!props.bare && props.name && (
+        <div className="mb-2 flex items-baseline gap-2">
+          <span className="headword text-xl">{props.name}</span>
+          {props.showEtymology && <span className="text-slate-400">{word.en}</span>}
         </div>
       )}
-      {supply && <SupplyLine supply={supply} />}
-      {props.memory && (
-        <WordTimeline
-          o={props.memory.outlook}
-          nowMs={props.nowMs}
-          recall={props.memory.recall}
-          broken={supply?.broken}
-          falls={supply?.cutUntil ?? supply?.brokenUntil}
-        />
-      )}
-      {verb && (
-        <div className="mt-2 flex items-center justify-between gap-2">
-          <span className="text-amber-300" title={`Verb level ${verb.level}/${TENSES.length}`}>
-            {'★'.repeat(verb.level)}
-            <span className="text-slate-700">{'★'.repeat(TENSES.length - verb.level)}</span>
-            {verb.drill.kind === 'wait' && (
-              <span className="ml-2 text-slate-500">
-                {verb.drill.tense} in{' '}
-                {Math.max(1, Math.round((verb.drill.until.getTime() - props.nowMs) / 3_600_000))} h
+      <div className="space-y-3">
+        {supply && <SignalLine supply={supply} due={due} nowMs={props.nowMs} />}
+        {o && (
+          <WordTimeline
+            o={o}
+            nowMs={props.nowMs}
+            recall={props.memory?.recall}
+            broken={supply?.broken}
+            falls={supply?.cutUntil ?? supply?.brokenUntil}
+          />
+        )}
+        {verb && (
+          <div className="flex items-center justify-between gap-2">
+            <span
+              className="flex items-center gap-2"
+              title={`Verb level ${verb.level}/${TENSES.length}`}
+            >
+              <span className="eyebrow">Verb</span>
+              <span className="tracking-[0.15em] text-amber-300">
+                {'★'.repeat(verb.level)}
+                <span className="text-white/[0.12]">{'★'.repeat(TENSES.length - verb.level)}</span>
               </span>
+              {verb.drill.kind === 'wait' && (
+                <span className="text-[11px] text-slate-500">
+                  {verb.drill.tense} in{' '}
+                  {Math.max(1, Math.round((verb.drill.until.getTime() - props.nowMs) / 3_600_000))}{' '}
+                  h
+                </span>
+              )}
+            </span>
+            {(verb.drill.kind === 'learn' || verb.drill.kind === 'defend') && (
+              <button
+                onClick={props.onConjugate}
+                className="btn-quiet border-amber-400/30 text-amber-200 hover:border-amber-300/60"
+              >
+                {verb.drill.kind === 'learn' ? 'Conjugate' : 'Review'} · {verb.drill.tense}
+              </button>
             )}
-          </span>
-          {(verb.drill.kind === 'learn' || verb.drill.kind === 'defend') && (
-            <button
-              onClick={props.onConjugate}
-              className={`${btn} bg-amber-700 hover:bg-amber-600`}
-            >
-              {verb.drill.kind === 'learn' ? 'Conjugate' : 'Defend'} · {verb.drill.tense}
-            </button>
-          )}
-        </div>
-      )}
-      {(props.onPlant || hint) && (
-        <div className="mt-2 flex justify-end gap-1.5">
-          {props.onPlant && (
-            <button
-              onClick={props.onPlant}
-              title="Bring a hidden word next to this one: your link carries supply too"
-              className={`${btn} bg-emerald-800 hover:bg-emerald-700`}
-            >
-              🌱 Plant
-            </button>
-          )}
-          {hint}
-        </div>
-      )}
-      {props.showEtymology && <Etymology word={word} />}
-      <More>
-        <p>
-          Recall {props.memory?.recall == null ? '—' : pct(props.memory.recall)} (due at 90%, breaks
-          at 80%)
-        </p>
-        {supply && (
+          </div>
+        )}
+        {props.showExample && word.example && <ExampleLine example={word.example} />}
+        {props.showEtymology && <Etymology word={word} />}
+      </div>
+      <div className="mt-3 flex items-center gap-1.5">
+        {props.onPlant && (
+          <button
+            onClick={props.onPlant}
+            title="Bring a hidden word next to this one: your link carries signal too"
+            className="btn-quiet"
+          >
+            <Icon name="link" className="text-emerald-300" />
+            Connect
+          </button>
+        )}
+        {hint}
+        <More>
           <p>
-            Supply {pct(supply.value)} (counts from {pct(supply.min)})
+            Recall {props.memory?.recall == null ? '—' : pct(props.memory.recall)} (due at 90%,
+            slips at 80%)
           </p>
-        )}
-        {supply?.sends !== undefined && (
-          <p title="What it passes to its neighbours: more the better you know it">
-            Sends out {pct(supply.sends)}
-          </p>
-        )}
-        {props.links && (
-          <p>
-            {props.links.category}: {props.links.inside} links in, {props.links.outside} out
-          </p>
-        )}
-      </More>
+          {supply && (
+            <p>
+              Signal {pct(supply.value)} (connected from {pct(supply.min)})
+            </p>
+          )}
+          {supply?.sends !== undefined && (
+            <p title="What it passes to its neighbours: more the better you know it">
+              Sends out {pct(supply.sends)}
+            </p>
+          )}
+          {props.links && (
+            <p>
+              {props.links.category}: {props.links.inside} links in, {props.links.outside} out
+            </p>
+          )}
+        </More>
+      </div>
     </Panel>
   );
 }
 
-/** One line: broken, cut off, or supplied (and how much hangs on it). */
-function SupplyLine({ supply }: { supply: NonNullable<Props['supply']> }) {
+/** A learned word's signal: slipped, disconnected, or connected (and what depends on it). */
+function SignalLine({
+  supply,
+  due,
+  nowMs,
+}: {
+  supply: NonNullable<Props['supply']>;
+  due: boolean;
+  nowMs: number;
+}) {
   const hang = supply.hanging ?? 0;
+  const dueChip = due && <Chip tone="due">Due</Chip>;
   if (supply.broken) {
     return (
-      <p
-        className="text-rose-300"
-        title="A broken word passes no supply on: whatever hangs on it is cut off. One right answer mends it."
-      >
-        ⛓ Broken ({supply.missed ? 'missed' : 'forgotten'}) · mend it
-        {hang > 0 && ` · ${words(hang)} cut off`}
-      </p>
+      <Signal
+        tone="bad"
+        chips={<Chip tone="bad">Slipped</Chip>}
+        // No meter: signal reaching it doesn't help, only a right answer does.
+        min={supply.min}
+        note={
+          <>
+            {supply.missed ? 'Missed' : 'Forgotten'}: it passes no signal on. One right answer
+            brings it back
+            {hang > 0 && <b className="font-medium text-rose-200"> and {words(hang)} with it</b>}.
+            {supply.brokenUntil !== undefined && (
+              <> Fades in {until(Math.max(0, supply.brokenUntil - nowMs))}.</>
+            )}
+          </>
+        }
+      />
     );
   }
   if (supply.cutUntil !== undefined) {
     return (
-      <p
-        className="text-slate-400"
-        title="Not enough supply reaches it: it doesn't count, and falls back to '?' when it can't hold out any longer. The map shows where its supply comes from and what winning each ? nearby would add; or mend a broken word on its way, or plant a link."
-      >
-        ✂ Cut off: {pct(supply.value)} of the {pct(supply.min)} it needs
-      </p>
+      <Signal
+        tone="warn"
+        chips={
+          <>
+            <Chip tone="warn">Disconnected</Chip>
+            {dueChip}
+          </>
+        }
+        value={supply.value}
+        min={supply.min}
+        note={
+          <>
+            <b className="font-medium text-orange-200">
+              Fades in {until(Math.max(0, supply.cutUntil - nowMs))}
+            </b>{' '}
+            unless it reconnects: learn a word next to it, or bring back one that slipped on the
+            way.
+          </>
+        }
+      />
     );
   }
+  const role = supply.capital ? 'Core' : supply.stronghold ? 'Anchor' : 'Connected';
   return (
-    <p
-      className="text-amber-200/90"
-      title={
-        hang > 0
-          ? `If it broke, ${words(hang)} would be cut off: keep it strong, or give them another way (a planted link, more words around them)`
-          : 'Supplied: it counts, and supplies its neighbours the better you know it'
+    <Signal
+      tone="good"
+      chips={
+        <>
+          <Chip tone="good">{role}</Chip>
+          {dueChip}
+        </>
       }
-    >
-      ⚡ {supply.capital ? 'Capital' : `Supply ${pct(supply.value)}`}
-      {supply.stronghold && <span className="text-amber-300"> · stronghold</span>}
-      {hang > 0 && (
-        <span className="text-amber-300">
-          {' '}
-          · {words(hang)} {hang === 1 ? 'hangs' : 'hang'} on it
-        </span>
-      )}
-    </p>
+      value={supply.value}
+      min={supply.min}
+      note={
+        <>
+          {supply.sends !== undefined && `Sends ${pct(supply.sends)}`}
+          {hang > 0 && (
+            <span
+              className="text-amber-200/90"
+              title={`If it slipped, ${words(hang)} would be disconnected: keep it strong, or give them another way (a connected word, more words around them)`}
+            >
+              {' '}
+              · {words(hang)} {hang === 1 ? 'depends' : 'depend'} on it
+            </span>
+          )}
+        </>
+      }
+    />
   );
 }
 
-function Panel({ children }: { children: React.ReactNode }) {
-  return <div className="px-1 text-xs text-slate-300">{children}</div>;
+function Panel({ children }: { children: ReactNode }) {
+  return <div className="text-xs text-slate-300">{children}</div>;
 }
 
 /** Numbers most players never need: folded away. */
-function More({ children }: { children: React.ReactNode }) {
+function More({ children }: { children: ReactNode }) {
   return (
-    <details className="group mt-2 text-slate-500">
-      <summary className="cursor-pointer list-none text-[11px] hover:text-slate-300">
-        <span className="group-open:hidden">more ▸</span>
-        <span className="hidden group-open:inline">less ▾</span>
+    <details className="group ml-auto text-slate-500 [&[open]]:basis-full">
+      <summary className="flex cursor-pointer list-none items-center justify-end gap-0.5 text-[11px] hover:text-slate-300">
+        <span className="group-open:hidden">More</span>
+        <span className="hidden group-open:inline">Less</span>
+        <Icon name="chevronRight" className="transition group-open:rotate-90" />
       </summary>
-      <div className="mt-1 space-y-0.5 text-slate-400">{children}</div>
+      <div className="mt-1.5 space-y-0.5 text-slate-400">{children}</div>
     </details>
   );
 }
@@ -427,8 +569,12 @@ function More({ children }: { children: React.ReactNode }) {
 function HintButton({ hint, coins }: { hint: NonNullable<Props['hint']>; coins: number }) {
   if (hint.bought) {
     return (
-      <span className="shrink-0 text-amber-200" title="Hint: its English cousin">
-        ≈ {hint.cognate}
+      <span
+        className="inline-flex items-center gap-1.5 rounded-md bg-amber-300/[0.07] px-2 py-1 text-amber-100"
+        title="Its English cousin"
+      >
+        <Icon name="bulb" className="text-amber-300" />
+        {hint.cognate}
       </span>
     );
   }
@@ -436,10 +582,12 @@ function HintButton({ hint, coins }: { hint: NonNullable<Props['hint']>; coins: 
     <button
       onClick={hint.onBuy}
       disabled={coins < hint.cost}
-      title="Its English cousin, shown next to it"
-      className={`${btn} shrink-0 bg-amber-800 hover:bg-amber-700`}
+      title="Show its English cousin, a related English word"
+      className="btn-quiet"
     >
-      💡 {hint.cost}
+      <Icon name="bulb" className="text-amber-300" />
+      Cousin
+      <Sparks n={hint.cost} className="text-slate-500" />
     </button>
   );
 }

@@ -19,7 +19,7 @@ type Props = {
 
 function hint(g: VerbGoal, nowMs: number): string {
   if (g.state === 'locked') return 'not found yet';
-  if (g.state !== 'conquered') return 'conquer it first';
+  if (g.state !== 'conquered') return 'learn it first';
   if (!g.drill) return '';
   if (g.drill.kind === 'learn' || g.drill.kind === 'defend') return g.drill.tense;
   if (g.drill.kind === 'wait')
@@ -35,10 +35,11 @@ export default function VerbGoals({ goals, onSelect, onConjugate, nowMs }: Props
   return (
     <div className="text-sm">
       <div
-        className="mb-2 text-xs uppercase tracking-wider text-slate-500"
-        title="Every tense you learn of a verb is a point: conquer a verb, then conjugate it (one new tense per day). One verb conjugated far counts as much as several conjugated a little."
+        className="mb-2 flex items-baseline justify-between"
+        title="Every tense you learn of a verb is a point: learn a verb, then conjugate it (one new tense per day). One verb conjugated far counts as much as several conjugated a little."
       >
-        Your verbs · ◎ = verb point
+        <span className="eyebrow">Your verbs</span>
+        <span className="text-xs text-slate-500">◎ = verb point</span>
       </div>
       <ul className="space-y-1.5">
         {shown.map((g) => (
@@ -59,7 +60,7 @@ export default function VerbGoals({ goals, onSelect, onConjugate, nowMs }: Props
             {(g.drill?.kind === 'learn' || g.drill?.kind === 'defend') && (
               <button
                 onClick={() => onConjugate(g.id)}
-                className="shrink-0 rounded bg-amber-700 px-2 py-1 text-xs hover:bg-amber-600"
+                className="btn-quiet shrink-0 border-amber-400/30 text-amber-200 hover:border-amber-300/60"
               >
                 Conjugate
               </button>

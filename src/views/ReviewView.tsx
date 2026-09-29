@@ -7,6 +7,7 @@ import { CLAIM_STEP_NAMES, unseen, type ClaimStep } from '../core/claim';
 import { Rating, type Grade } from '../core/scheduler';
 import type { AppData, CardRow } from '../db/repo';
 import Etymology from './Etymology';
+import Icon from './Icon';
 
 const ACCENTS = ['à', 'è', 'é', 'ì', 'ò', 'ù'];
 
@@ -167,15 +168,16 @@ export default function ReviewView(props: Props) {
               Next word <span className="text-xs opacity-60">(enter)</span>
             </button>
           ) : (
-            !elsewhere && <p>Pick a ? on the map.</p>
+            !elsewhere && <p>Pick a new word on the map.</p>
           )}
         </div>
       ) : (
         <>
           <div className="mb-1 flex items-center gap-2 text-xs text-slate-500">
             {reclaim ? (
-              <span className="text-teal-300">
-                ↺ win back · {timeLeft(reclaim.until - (props.nowMs ?? 0))}
+              <span className="flex items-center gap-1.5 text-teal-300">
+                <Icon name="recover" />
+                recover · {timeLeft(reclaim.until - (props.nowMs ?? 0))}
               </span>
             ) : claimStep ? (
               <ClaimSteps step={claimStep.step} />
@@ -183,35 +185,33 @@ export default function ReviewView(props: Props) {
               <span>review{dueCount > 1 ? ` · ${dueCount} due` : ''}</span>
             )}
             {mode !== 'due' && (
-              <button
-                className="ml-auto text-slate-500 hover:text-slate-200"
-                onClick={onCancel}
-                title="Cancel"
-              >
-                ✕
+              <button className="icon-btn -my-1 -mr-1.5 ml-auto" onClick={onCancel} title="Cancel">
+                <Icon name="x" />
               </button>
             )}
           </div>
           {gap ? (
             <div className="pb-1 pt-3 text-center">
-              <div className="text-xl">
+              <div className="font-serif text-[1.45rem] leading-snug text-slate-100">
                 {gap.before}
                 <span className="inline-block min-w-16 border-b-2 border-emerald-400 text-emerald-200 [box-shadow:0_6px_12px_-8px_rgba(52,211,153,0.9)]">
                   {check ? word.example!.blank : '\u00a0'}
                 </span>
                 {gap.after}
               </div>
-              <div className="mt-1 text-sm text-slate-400">{word.example!.en}</div>
+              <div data-example-en className="mt-1 text-sm text-slate-400">
+                {word.example!.en}
+              </div>
             </div>
           ) : (
             <div className="flex items-center justify-center gap-2 pb-1 pt-3">
-              <span className="text-[1.7rem] font-semibold tracking-tight text-white">
+              <span data-prompt className="headword text-center text-[2.1rem]">
                 {prompt}
               </span>
               {!toItalian && <SpeakButton text={word.it} />}
             </div>
           )}
-          <div className="mb-3 text-center text-xs text-slate-500">
+          <div data-gloss className="mb-3 text-center text-xs text-slate-500">
             {gap ? `${word.en} · ` : ''}
             {toItalian ? 'in Italian' : 'in English'}
             {word.pos && ` · ${word.pos}`}
@@ -221,9 +221,10 @@ export default function ReviewView(props: Props) {
               <button
                 onClick={() => setChoosing(true)}
                 title="Show 4 meanings to choose from (no fast track, and no going back to typing)"
-                className="btn-ghost rounded-full px-2.5 py-0.5 font-normal text-slate-400"
+                className="btn-ghost inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 font-normal text-slate-400"
               >
-                ☰ Choose instead
+                <Icon name="list" />
+                Choose instead
               </button>
             </div>
           )}
@@ -320,10 +321,12 @@ export default function ReviewView(props: Props) {
                   </span>
                   {check.notes.length > 0 && <span>{check.notes.join(' · ')}</span>}
                 </div>
-                <div className="mt-0.5 flex items-center gap-2 text-xl text-slate-100">
+                <div className="mt-1 flex items-center gap-2 font-serif text-2xl font-medium text-slate-50">
                   {answer}
                   {word.pl && toItalian && (
-                    <span className="text-sm text-slate-400">· pl. {word.pl}</span>
+                    <span className="font-sans text-sm font-normal text-slate-400">
+                      · pl. {word.pl}
+                    </span>
                   )}
                   <SpeakButton text={word.it} />
                 </div>
@@ -352,12 +355,8 @@ export default function ReviewView(props: Props) {
 export function SpeakButton({ text, title = 'Listen' }: { text: string; title?: string }) {
   if (!canSpeak()) return null;
   return (
-    <button
-      onClick={() => speak(text)}
-      title={title}
-      className="text-base text-slate-500 hover:text-slate-200"
-    >
-      🔊
+    <button onClick={() => speak(text)} title={title} className="icon-btn text-base">
+      <Icon name="volume" />
     </button>
   );
 }
@@ -366,8 +365,8 @@ export function SpeakButton({ text, title = 'Listen' }: { text: string; title?: 
 export function ExampleLine({ example }: { example: { it: string; en: string } }) {
   return (
     <div className="mt-3 text-sm">
-      <div className="flex items-start gap-1.5 text-slate-200">
-        <span className="italic">{example.it}</span>
+      <div className="flex items-start justify-between gap-1 text-slate-100">
+        <span className="font-serif text-[1.05rem] italic leading-snug">{example.it}</span>
         <SpeakButton text={example.it} title="Listen to the sentence" />
       </div>
       <div className="text-xs text-slate-500">{example.en}</div>
@@ -375,7 +374,7 @@ export function ExampleLine({ example }: { example: { it: string; en: string } }
   );
 }
 
-/** Where this answer sits in conquering a word: three dots and the step's name. */
+/** Where this answer sits in learning a word: three dots and the step's name. */
 function ClaimSteps({ step }: { step: number }) {
   return (
     <span
@@ -388,7 +387,7 @@ function ClaimSteps({ step }: { step: number }) {
   );
 }
 
-/** Claim progress as three dots: done, the one in play, still to come. */
+/** Learning progress as three dots: done, the one in play, still to come. */
 export function StepDots({ done, current }: { done: number; current?: number }) {
   return (
     <span className="flex gap-0.5">

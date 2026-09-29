@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   CLAIM_GAPS,
   COOLDOWN_MS,
@@ -55,6 +55,7 @@ import { onSpeechProblem } from './speech';
 import NodeDetails from './views/NodeDetails';
 import VerbGoals, { type VerbGoal } from './views/VerbGoals';
 import LevelPanel from './views/LevelPanel';
+import Icon, { Sparks, type IconName } from './views/Icon';
 import { levelRgb } from './views/visuals';
 
 /** A node the user clicked: its cards are reviewed before the automatic queue. */
@@ -207,7 +208,7 @@ export default function App() {
     if (!lost || !data) return;
     const names = lost.ids.map((id) => data.nodes.find((n) => n.id === id)?.it ?? id);
     setNotice(
-      `Cut off too long: ${names.join(', ')} · ↺ ${RECLAIM_MS / 86_400_000} days to win back`,
+      `Faded: ${names.join(', ')} · ${RECLAIM_MS / 86_400_000} days to recover ${names.length === 1 ? 'it' : 'them'}`,
     );
     sfx('lost');
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -629,23 +630,25 @@ export default function App() {
       setCooldowns((m) => new Map(m).set(row.nodeId, appMs() + COOLDOWN_MS));
       const n = outcome.cut;
       if (!firstSight)
-        setNotice(`Missed${n ? ` · ${n} ${n === 1 ? 'word' : 'words'} cut off` : ''}`);
+        setNotice(`Missed${n ? ` · ${n} ${n === 1 ? 'word' : 'words'} disconnected` : ''}`);
       setSession((s) => (s?.nodeId === row.nodeId ? null : s));
       // Stay on the missed word (locked) instead of jumping to the next card.
       setWaitOn({ nodeId: row.nodeId, reason: 'locked', note: firstSight ? 'new' : 'missed' });
       return;
     }
     if (outcome.roots) {
-      setNotice(`⬢ ${outcome.roots.names.join(', ')} opened · +${outcome.roots.revealed} ?`);
+      setNotice(
+        `${outcome.roots.names.join(', ')} clicked · ${outcome.roots.revealed} new ${outcome.roots.revealed === 1 ? 'word' : 'words'}`,
+      );
       setTimeout(() => sfx('conquer'), 450);
     }
-    const opened = outcome.opened && !outcome.levelUp ? `+${outcome.opened} ?` : '';
+    const opened = outcome.opened && !outcome.levelUp ? `+${outcome.opened} new` : '';
     const said = outcome.reclaimed
-      ? 'Won back'
+      ? 'Recovered'
       : outcome.repaired !== undefined
-        ? `Mended${outcome.repaired ? ` · ${outcome.repaired} reconnected` : ''}`
+        ? `Back in mind${outcome.repaired ? ` · ${outcome.repaired} reconnected` : ''}`
         : outcome.conquered
-          ? `${wordOf(row.nodeId)} ✓`
+          ? `${wordOf(row.nodeId)} learned`
           : outcome.claim
             ? claimNotice(outcome.claim, appNow(data.offsetDays).getTime())
             : '';
@@ -720,7 +723,7 @@ export default function App() {
     const locked = {
       ...base,
       tone: 'locked' as const,
-      message: `${w.note === 'new' ? 'New word · ' : ''}back in ${left} s`,
+      message: `${w.note === 'new' ? 'New word · ' : ''}again in ${left} s`,
       progress: 1 - (left * 1000) / COOLDOWN_MS,
     };
     if (w.reason === 'root' && hub) {
@@ -738,7 +741,7 @@ export default function App() {
       return {
         ...base,
         tone: 'reach' as const,
-        message: `Opens with ${need} of its ${hub.words.length} words inside your supply`,
+        message: `Clicks once ${need} of its ${hub.words.length} words get signal`,
         progress: charge / need,
       };
     }
@@ -746,7 +749,7 @@ export default function App() {
       return {
         ...base,
         tone: 'reach' as const,
-        message: 'Out of reach: conquer a word next to it',
+        message: 'Out of reach: learn a word next to it first',
       };
     }
     if (w.reason === 'locked') {
@@ -897,11 +900,15 @@ export default function App() {
     setTurn((t) => t + 1);
   };
 
-  /** The selected word's status; `bare` inside its own card (word card, wait card). */
-  const details = (bare: boolean) =>
+  /**
+   * The selected word's status; `bare` inside its own card (word card, wait card),
+   * `example` in the word card (its sentence goes between status and origin).
+   */
+  const details = (bare: boolean, example = false) =>
     detailsWord && (
       <NodeDetails
         bare={bare}
+        showExample={example}
         key={detailsWord.id}
         word={detailsWord}
         state={data.states.get(detailsWord.id) ?? 'locked'}
@@ -939,7 +946,7 @@ export default function App() {
                 onBuy: async () => {
                   if (!(await buyHint(detailsWord.id))) return;
                   sfx('plant');
-                  setNotice(`≈ ${detailsWord.cognate}`);
+                  setNotice(`Cousin: ${detailsWord.cognate}`);
                 },
               }
             : undefined
@@ -974,9 +981,7 @@ export default function App() {
       <header className="relative z-10 flex items-center gap-2.5 border-b border-white/[0.06] bg-slate-950/80 px-4 py-2 shadow-[0_8px_30px_-20px_rgba(0,0,0,0.9)] backdrop-blur">
         <h1 className="mr-2 flex select-none items-center gap-2">
           <Logo />
-          <span className="font-title text-lg font-bold tracking-[0.16em] text-emerald-200 [text-shadow:0_0_18px_rgba(52,211,153,0.5)]">
-            Sprawl
-          </span>
+          <span className="text-[15px] font-semibold tracking-[0.2em] text-slate-100">PLEXUS</span>
         </h1>
         {progress && (
           <button onClick={() => setShowVerbGoals((v) => !v)} className="chip py-1">
@@ -990,38 +995,45 @@ export default function App() {
         {inspect && (
           <button
             onClick={() => setInspect(false)}
-            className="btn rounded-full bg-gradient-to-b from-pink-500 to-pink-700 px-3 py-0.5 text-sm text-white shadow-[0_6px_20px_-8px_rgba(236,72,153,0.9)] hover:from-pink-400"
+            className="chip border-pink-400/40 bg-pink-500/15 text-pink-100 hover:bg-pink-500/25"
           >
-            Whole network ✕
+            <Icon name="network" className="text-pink-300" />
+            Whole network
+            <Icon name="x" className="text-pink-300" />
           </button>
         )}
         <button
           onClick={async () => {
             if (data.expedition) return;
             if (await startExpedition()) sfx('reveal');
-            else setNotice('No open words for an expedition');
+            else setNotice('No new words for a focus session');
           }}
           disabled={!!data.expedition || !data.started}
-          title={`Expedition: take ${EXPEDITION.goal} words of one category in ${EXPEDITION.minutes} min for 🪙${EXPEDITION.coins}`}
-          className="chip ml-auto text-sky-300 disabled:opacity-40"
+          title={`Focus: learn ${EXPEDITION.goal} words of one topic in ${EXPEDITION.minutes} min for ${EXPEDITION.coins} sparks`}
+          className="chip ml-auto py-1 text-slate-300 disabled:opacity-40"
         >
-          ⚑
+          <Icon name="target" className="text-sky-300" />
+          Focus
         </button>
         <button
           onClick={() => setShowProgress((v) => !v)}
           title={`Streak: ${days.current} ${days.current === 1 ? 'day' : 'days'}${days.playedToday ? '' : ' (play today to keep it)'} · best ${days.best}`}
-          className={`chip ${days.playedToday ? 'text-orange-300' : 'text-slate-500'}`}
+          className={`chip py-1 ${days.playedToday ? 'text-slate-200' : 'text-slate-500'}`}
         >
-          🔥 {days.current}
+          <Icon name="flame" className={days.playedToday ? 'text-orange-400' : ''} />
+          {days.current}
         </button>
         <button
           onClick={() => setShowProgress((v) => !v)}
           title="Score and achievements"
-          className={`chip ${
-            showProgress ? 'border-amber-400/40 bg-amber-500/20 text-amber-100' : 'text-amber-300'
+          className={`chip py-1 ${
+            showProgress ? 'border-amber-400/40 bg-amber-500/15 text-amber-100' : 'text-slate-200'
           }`}
         >
-          🏆 {score.toLocaleString()} <span className="ml-1.5 text-slate-300">🪙 {data.coins}</span>
+          <Icon name="trophy" className="text-amber-300" />
+          {score.toLocaleString()}
+          <span className="mx-0.5 h-3 w-px bg-white/10" />
+          <Sparks n={data.coins} />
         </button>
         <Menu
           graphName={graphName}
@@ -1212,7 +1224,7 @@ export default function App() {
                     setPlanting(null);
                     sfx('plant');
                     const w = data.nodes.find((n) => n.id === o.id);
-                    setNotice(`🌱 “${w?.en}”`);
+                    setNotice(`Connected “${w?.en}”`);
                   }}
                 />
               ) : waitOn ? (
@@ -1221,7 +1233,8 @@ export default function App() {
                   {...waitCard(waitOn)}
                   onClose={() => setWaitOn(null)}
                 >
-                  {embedded && details(true)}
+                  {/* A faint word (still hidden) has no status to show. */}
+                  {embedded && data.states.get(waitOn.nodeId) !== 'locked' && details(true)}
                 </WaitCard>
               ) : activeDrill ? (
                 <VerbDrill
@@ -1267,7 +1280,7 @@ export default function App() {
                   tenseCards={data.tenseCards.filter((c) => c.nodeId === info.nodeId)}
                   onClose={() => setInfo(null)}
                 >
-                  {embedded && details(true)}
+                  {embedded && details(true, true)}
                 </WordInfo>
               ) : (
                 <ReviewView
@@ -1306,7 +1319,7 @@ export default function App() {
   );
 }
 
-/** When a claim's next step opens, e.g. "step 2/3 in 45 s". */
+/** When a word's next learning step opens, e.g. "step 2/3 in 45 s". */
 function claimNotice(claim: Claim, nowMs: number): string {
   const next = claimNext(claim, CLAIM_GAPS);
   if (!next) return '';
@@ -1316,37 +1329,30 @@ function claimNotice(claim: Claim, nowMs: number): string {
   return `step ${next.step}/${CLAIM_STEPS} in ${when}`;
 }
 
-/** The mark: a hex territory holding three linked words (also public/favicon.svg). */
+/** The mark: a small woven network of words, one of them central (also public/favicon.svg). */
 function Logo() {
   return (
-    <svg
-      viewBox="0 0 32 32"
-      className="h-6 w-6 drop-shadow-[0_0_6px_rgba(52,211,153,0.6)]"
-      aria-hidden
-    >
+    <svg viewBox="0 0 32 32" className="h-6 w-6" aria-hidden>
       <defs>
         <radialGradient id="logo-orb" cx="38%" cy="32%" r="75%">
-          <stop offset="0" stopColor="#d1fae5" />
-          <stop offset="0.45" stopColor="#34d399" />
-          <stop offset="1" stopColor="#065f46" />
+          <stop offset="0" stopColor="#ecfdf5" />
+          <stop offset="0.5" stopColor="#6ee7b7" />
+          <stop offset="1" stopColor="#047857" />
         </radialGradient>
       </defs>
       <path
-        d="M16 2 28.1 9v14L16 30 3.9 23V9Z"
-        fill="#052e2b"
-        stroke="#34d399"
-        strokeWidth="1.4"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M16 10.5 10 20.5M16 10.5l6 10M10 20.5h12"
+        d="M7 9 19 5M7 9l9.5 8M19 5l-2.5 12M19 5l7 10M26 15l-9.5 2M16.5 17 8 24M16.5 17l5 9M26 15l-4.5 11M8 24l13.5 2"
         stroke="#6ee7b7"
-        strokeWidth="1.8"
+        strokeOpacity="0.55"
+        strokeWidth="1.3"
         strokeLinecap="round"
       />
-      <circle cx="16" cy="10.5" r="3.6" fill="url(#logo-orb)" />
-      <circle cx="10" cy="20.5" r="2.9" fill="url(#logo-orb)" />
-      <circle cx="22" cy="20.5" r="2.9" fill="url(#logo-orb)" />
+      <circle cx="16.5" cy="17" r="3.4" fill="url(#logo-orb)" />
+      <circle cx="7" cy="9" r="2.2" fill="url(#logo-orb)" />
+      <circle cx="19" cy="5" r="2.2" fill="url(#logo-orb)" />
+      <circle cx="26" cy="15" r="2.4" fill="url(#logo-orb)" />
+      <circle cx="8" cy="24" r="2.2" fill="url(#logo-orb)" />
+      <circle cx="21.5" cy="26" r="2.2" fill="url(#logo-orb)" />
     </svg>
   );
 }
@@ -1387,11 +1393,12 @@ function AchievementBanner({ earned }: { earned: Achievement[] }) {
   const coins = earned.reduce((n, a) => n + a.coins, 0);
   return (
     <div className="glass rise-in pointer-events-none absolute left-1/2 top-4 z-10 -translate-x-1/2 rounded-xl border-amber-300/50 px-5 py-2 text-center shadow-[0_0_40px_rgba(251,191,36,0.3)]">
-      <div className="text-lg font-semibold text-amber-200">
-        🏆 {earned.map((a) => a.title).join(' · ')}
+      <div className="flex items-center justify-center gap-2 text-lg font-semibold text-amber-200">
+        <Icon name="trophy" className="text-amber-300" />
+        {earned.map((a) => a.title).join(' · ')}
       </div>
-      <div className="text-xs text-amber-100/70">
-        {earned.length === 1 && `${earned[0].description} · `}+{coins} 🪙
+      <div className="flex items-center justify-center gap-1 text-xs text-amber-100/70">
+        {earned.length === 1 && `${earned[0].description} · `}+<Sparks n={coins} />
       </div>
     </div>
   );
@@ -1416,7 +1423,7 @@ function TierBadge({
       className="flex items-center gap-2 text-sm text-slate-300"
       title={
         p.needed
-          ? `${name(p.tier + 1)}: ${p.needed} words held (${p.held} so far)` +
+          ? `${name(p.tier + 1)}: ${p.needed} words learned (${p.held} so far)` +
             (claimed ? ` (${claimed} on the way)` : '') +
             (p.pointsNeed
               ? ` and ${p.pointsNeed} verb points, ${p.verbPoints} so far (each tense learned of a verb is one)`
@@ -1458,7 +1465,7 @@ function TierBadge({
   );
 }
 
-/** Top-left over the map: the expedition and the raid under way, with their clocks. */
+/** Top-left over the map: the focus session and the pop quiz under way, with their clocks. */
 function Missions(props: {
   expedition: { name: string; goal: number; taken: number; until: number } | null;
   raid?: { targets: string[]; defended: string[]; until: number };
@@ -1478,27 +1485,35 @@ function Missions(props: {
     <div className="absolute left-3 top-3 z-10 space-y-1.5 text-xs">
       {expedition && (
         <div
-          className="glass rounded-lg px-2.5 py-1.5 text-sky-200"
-          title="Expedition: claim or conquer words of this category before time runs out"
+          className="glass flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-slate-200"
+          title="Focus: learn words of this topic (a started one counts) before time runs out"
         >
-          ⚑ {expedition.name}{' '}
-          <b>
+          <Icon name="target" className="text-sky-300" />
+          {expedition.name}
+          <b className="tabular-nums text-sky-200">
             {expedition.taken}/{expedition.goal}
-          </b>{' '}
+          </b>
           <span className="font-mono text-slate-400">{clock(expedition.until)}</span>
         </div>
       )}
       {raid && (
         <div
           className="rounded-lg border border-orange-500/50 bg-orange-950/80 px-2.5 py-1.5 text-orange-200 shadow-[0_0_30px_-8px_rgba(249,115,22,0.6)] backdrop-blur-md"
-          title="Raid: answer each raided word right before time runs out, or it breaks and cuts off what hangs on it"
+          title="Pop quiz: answer each word right before time runs out, or it slips and disconnects what depends on it"
         >
-          ⚔ Raid <span className="font-mono text-orange-300">{clock(raid.until)}</span>
+          <span className="flex items-center gap-2">
+            <Icon name="timer" className="text-orange-300" />
+            Pop quiz <span className="font-mono text-orange-300">{clock(raid.until)}</span>
+          </span>
           <div className="mt-1 flex flex-wrap gap-1">
             {raid.targets.map((id) =>
               raid.defended.includes(id) ? (
-                <span key={id} className="rounded bg-emerald-900/60 px-1.5 text-emerald-200">
-                  ✓ {props.wordName(id)}
+                <span
+                  key={id}
+                  className="inline-flex items-center gap-1 rounded bg-emerald-900/60 px-1.5 text-emerald-200"
+                >
+                  <Icon name="check" />
+                  {props.wordName(id)}
                 </span>
               ) : (
                 <button
@@ -1517,7 +1532,7 @@ function Missions(props: {
   );
 }
 
-/** A moment the game made on its own: raid, expedition end, stronghold. Fades by itself. */
+/** A moment the game made on its own: pop quiz, focus end, a new anchor. Fades by itself. */
 function EventBanner({ event }: { event: GameEvent }) {
   const [shown, setShown] = useState(true);
   useEffect(() => {
@@ -1530,7 +1545,7 @@ function EventBanner({ event }: { event: GameEvent }) {
     return () => clearTimeout(t);
   }, [event]);
   if (!shown) return null;
-  const [title, sub, tone] = eventText(event);
+  const [title, sub, tone, icon] = eventText(event);
   const cls = {
     orange: 'border-orange-400/70 text-orange-200',
     emerald: 'border-emerald-400/70 text-emerald-200',
@@ -1541,27 +1556,49 @@ function EventBanner({ event }: { event: GameEvent }) {
     <div
       className={`glass rise-in pointer-events-none absolute left-1/2 top-16 z-10 -translate-x-1/2 rounded-xl px-5 py-2 text-center ${cls}`}
     >
-      <div className="text-lg font-semibold">{title}</div>
-      <div className="text-xs opacity-80">{sub}</div>
+      <div className="flex items-center justify-center gap-2 text-lg font-semibold">
+        <Icon name={icon} className="opacity-80" />
+        {title}
+      </div>
+      <div className="flex items-center justify-center gap-1 text-xs opacity-80">{sub}</div>
     </div>
   );
 }
 
-function eventText(e: GameEvent): [string, string, string] {
+function eventText(e: GameEvent): [string, ReactNode, string, IconName] {
   const words = (n: number) => `${n} ${n === 1 ? 'word' : 'words'}`;
   switch (e.kind) {
     case 'raid':
-      return ['⚔ Raid!', `Defend ${words(e.count)} in ${RAID.durationMs / 60_000} min`, 'orange'];
+      return [
+        'Pop quiz',
+        `${words(e.count)} in ${RAID.durationMs / 60_000} min, or they slip`,
+        'orange',
+        'timer',
+      ];
     case 'raid-won':
-      return ['⚔ Raid repelled', `+${e.coins} 🪙`, 'emerald'];
+      return [
+        'Pop quiz passed',
+        <>
+          +<Sparks n={e.coins} />
+        </>,
+        'emerald',
+        'timer',
+      ];
     case 'raid-lost':
-      return ['⚔ The raid hit', `${words(e.count)} broken: mend them`, 'orange'];
+      return ['Pop quiz over', `${words(e.count)} slipped: bring them back`, 'orange', 'timer'];
     case 'expedition-won':
-      return ['⚑ Expedition done', `+${e.coins} 🪙`, 'emerald'];
+      return [
+        'Focus done',
+        <>
+          +<Sparks n={e.coins} />
+        </>,
+        'emerald',
+        'target',
+      ];
     case 'expedition-lost':
-      return ['⚑ Expedition over', 'Out of time', 'slate'];
+      return ['Focus over', 'Out of time', 'slate', 'target'];
     case 'stronghold':
-      return [`🏰 ${e.word} is a stronghold`, 'Known this well, it supplies in full', 'amber'];
+      return [`${e.word} is an anchor`, 'Known this well, it sends full signal', 'amber', 'anchor'];
   }
 }
 

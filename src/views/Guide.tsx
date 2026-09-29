@@ -15,6 +15,7 @@ import {
   SUPPLY,
 } from '../config';
 import { BAND_COLOR, REASON_LABEL, REASON_RGB } from './visuals';
+import Icon from './Icon';
 
 const pct = (x: number) => `${Math.round(x * 100)}%`;
 
@@ -43,25 +44,26 @@ export default function Guide({ onClose }: { onClose: () => void }) {
         className="panel max-h-full w-full max-w-2xl overflow-y-auto bg-slate-900/90 p-5 text-sm text-slate-300 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mb-3 flex items-baseline justify-between">
-          <h2 className="text-base font-semibold text-slate-100">How Sprawl works</h2>
-          <button className="text-slate-500 hover:text-slate-200" onClick={onClose}>
-            ✕
+        <div className="mb-3 flex items-start justify-between">
+          <h2 className="text-base font-semibold text-slate-100">How Plexus works</h2>
+          <button className="icon-btn -mr-1.5 -mt-1" onClick={onClose} title="Close">
+            <Icon name="x" />
           </button>
         </div>
 
-        <Section title="Conquering">
+        <Section title="Learning words">
           <p>
-            Click a <b>?</b> to claim it: say what it means. Then produce the Italian (
+            Your words form a mind map: each one is linked to the words it belongs with. Click a{' '}
+            <b>?</b> (a new word) and say what it means. Then produce the Italian (
             {CLAIM_STEP_GAP_MS / 60_000} min later) and recall it once more (
-            {CLAIM_RECALL_GAP_MS / 60_000} min after that) to conquer it. A new word asks you to
-            type its meaning; typed right at first sight, it skips the long waits: produce it{' '}
-            {CLAIM_KNOWN_GAP_MS / 1000} s later and it is yours. Not sure? ☰ Choose instead shows
-            four meanings (no fast track, and no going back to typing).
+            {CLAIM_RECALL_GAP_MS / 60_000} min after that): it is learned. Typed right at first
+            sight, a word skips the long waits: produce it {CLAIM_KNOWN_GAP_MS / 1000} s later and
+            it is yours. Not sure? <i>Choose instead</i> shows four meanings (no fast track, and no
+            going back to typing).
           </p>
           <p>
-            Reviews of your words sometimes fill the gap in a sentence. 🔊 says a word aloud (the
-            menu switches automatic pronunciation off and picks the voice).
+            Reviews of your words sometimes fill the gap in a sentence. The speaker button says a
+            word aloud (the menu switches automatic pronunciation off and picks the voice).
           </p>
           <p className="text-xs text-slate-400">
             Voices come from your system. No Italian voice in the menu? Windows: Settings → Time &
@@ -71,14 +73,15 @@ export default function Guide({ onClose }: { onClose: () => void }) {
             on Windows and macOS. Restart the browser afterwards.
           </p>
           <p>
-            Every word next to one of yours is a <b>?</b> you can conquer. Faint ones lie outside
-            your supply: won there, they are cut off from the start (see Supply).
+            Every word next to one of yours is a <b>?</b> you can learn. Faint ones are out of reach
+            until a word next to them is yours; a <b>?</b> with little signal starts disconnected
+            (see Signal).
           </p>
           <p>
-            ⬢ A shared root appears once you conquer one of its words. It charges as more of its
-            words come inside your supply and opens by itself at {ROOTS.open} (all of a smaller
-            family): then every word of the family becomes a <b>?</b>, wherever it lies and at any
-            level.
+            A shared root (a pink hexagon) appears once you learn one of its words. It charges as
+            more of its words get signal and <b>clicks</b> by itself at {ROOTS.open} (all of a
+            smaller family): then every word of the family becomes a <b>?</b>, wherever it lies and
+            at any level.
           </p>
         </Section>
 
@@ -91,80 +94,80 @@ export default function Guide({ onClose }: { onClose: () => void }) {
             months); a miss makes it short again. Gold ★ are a verb's tenses.
           </p>
           <p>
-            A word's details show its memory as a bar: from its last review to when it is due (the
-            tick) and when it breaks (the end), with how far along you are now. Above it: how many
-            right answers, each given when due, take it to the next strength level.
+            A word's card shows its memory as a bar: from its last review to when it is due (the
+            tick) and when it slips (the end), with how far along you are now. Next to the dots: how
+            many right answers, each given when due, take it to the next strength level.
           </p>
         </Section>
 
-        <Section title="Supply">
+        <Section title="Signal">
           <p>
-            Your words hold each other up. Every word you hold sends out <b>supply</b>, more the
-            better you know it: {pct(SUPPLY.output[2])} when just conquered, {pct(SUPPLY.output[3])}{' '}
-            after its first review, {pct(SUPPLY.output[4])} after a couple of weeks and{' '}
-            {pct(SUPPLY.output[5])} after about seven weeks of right answers (a <b>stronghold</b>,
-            with a tower). Verbs send out {pct(SUPPLY.perTense)} more per tense. Your capital, the
-            first word, always sends out 100%.
+            Your words hold each other up. Every word you know sends out <b>signal</b> along its
+            links, more the better you know it: {pct(SUPPLY.output[2])} when just learned,{' '}
+            {pct(SUPPLY.output[3])} after its first review, {pct(SUPPLY.output[4])} after a couple
+            of weeks and {pct(SUPPLY.output[5])} after about seven weeks of right answers (an{' '}
+            <b>anchor</b>, with gold rays). Verbs send out {pct(SUPPLY.perTense)} more per tense.
+            Your <b>core</b> word, the first one, always sends out 100%.
           </p>
           <p>
-            Each word's supply flows along links through your words, and each link passes on as much
-            as it is strong (at most {pct(SUPPLY.maxLink)}). A word gets what reaches it from all
-            your <i>other</i> words added up, so a word surrounded by words you know well is
-            strongly held, while thin bridges between categories are costly. It needs{' '}
-            {pct(SUPPLY.min)} to count. So a new word needs well-known words near it, and a few
-            linked words far from home hold each other once you know them well.
+            Signal flows along links through your words, and each link passes on as much as it is
+            strong (at most {pct(SUPPLY.maxLink)}). A word gets what reaches it from all your{' '}
+            <i>other</i> words added up, so a word surrounded by words you know well is strongly
+            held, while thin bridges between topics are costly. It needs {pct(SUPPLY.min)} to stay{' '}
+            <b>connected</b>. So a new word needs well-known words near it, and a few linked words
+            far from the rest hold each other once you know them well.
           </p>
           <p>
-            A word <b>breaks</b> when you miss it, or when you leave it due until its name has faded
-            completely (recall {pct(SUPPLY.breakRecall)}). A broken word sends out and passes on no
-            supply: whatever hangs on it is <b>cut off</b>. One right answer mends it, and
+            A word <b>slips</b> when you miss it, or when you leave it due until its name has faded
+            completely (recall {pct(SUPPLY.breakRecall)}). A word that slipped passes no signal on:
+            whatever depends on it is <b>disconnected</b>. One right answer brings it back, and
             everything behind it lights up again.
           </p>
           <p>
-            Cut off, a word doesn't score and holds out as long as its memory lasts (at least a
-            day), then falls back to <b>?</b>. Mend the gap, win or strengthen the words around it,
-            or plant a link around it. Anything lost can be won back with one right answer for{' '}
-            {RECLAIM_MS / 86_400_000} days.
+            Disconnected, a word doesn't score and lasts as long as its memory does (at least a
+            day), then <b>fades</b> back to <b>?</b>. Bring back the word that slipped, learn or
+            strengthen the words around it, or connect a new word next to it. Anything faded can be{' '}
+            <b>recovered</b> with one right answer for {RECLAIM_MS / 86_400_000} days.
           </p>
           <p>
-            Chokepoints matter: a word's details say how many words hang on it. Keep those strong,
-            or give their words a second way (another link, more words around them).
+            Some words carry many others: a word's card says how many words depend on it. Keep those
+            strong, or give their words a second way (another link, more words around them).
           </p>
         </Section>
 
         <Section title="Events">
           <p>
-            ⚑ Expedition (header): take {EXPEDITION.goal} words of one category (claimed counts)
-            within {EXPEDITION.minutes} min for {EXPEDITION.coins} 🪙. Failing costs nothing.
+            <b>Focus</b> (header): learn {EXPEDITION.goal} words of one topic (started ones count)
+            within {EXPEDITION.minutes} min for {EXPEDITION.coins} sparks. Failing costs nothing.
           </p>
           <p>
-            ⚔ Raids: now and then a raid strikes a few of your words, chokepoints (the words the
-            most hangs on) more often than others. Answer each one into Italian within{' '}
-            {RAID.durationMs / 60_000} min (click it in the raid box), or it breaks. Repelling a
-            raid pays {RAID.coins} 🪙.
+            <b>Pop quiz</b>: now and then a few of your words are quizzed, the ones many words
+            depend on more often than others. Answer each one into Italian within{' '}
+            {RAID.durationMs / 60_000} min (click it in the quiz box), or it slips. Passing pays{' '}
+            {RAID.coins} sparks.
           </p>
-          <p>🔥 Your streak counts the days you played; the calendar is in the 🏆 panel.</p>
+          <p>Your streak counts the days you played; the calendar is in the score panel.</p>
         </Section>
 
-        <Section title="Score and coins">
+        <Section title="Score and sparks">
           <p>
-            Each category scores 10 × supplied words × (1 + 2 × cohesion), where cohesion is the
-            share of their links that stay inside the category. Cut-off words don't score.
+            Each topic scores 10 × connected words × (1 + 2 × cohesion), where cohesion is the share
+            of their links that stay inside the topic. Disconnected words don't score.
           </p>
           <p>
-            Coins: {COINS_PER_CONQUEST} per conquest, more for achievements. Spend them on a hint (
-            {HINT_COST}: the English cousin) or on planting a hidden word next to one of yours (from{' '}
-            {PLANT_COST}): your link carries supply too.
+            Sparks: {COINS_PER_CONQUEST} per word learned, more for achievements. Spend them on a
+            word's English cousin ({HINT_COST}) or on connecting a hidden word to one of yours (from{' '}
+            {PLANT_COST}): your link carries signal too.
           </p>
           <p>
             <b>Levels</b> (A1.1 … C1): every topic climbs its own. A topic's next level opens at{' '}
             {pct(TOPIC_SHARE)} of its words so far; only then do its harder words appear. Your{' '}
-            <b>overall level</b> (the header) comes from the words you hold across the whole network
+            <b>overall level</b> (the header) comes from the words you know across the whole network
             ({pct(OVERALL_SHARE)} of all words so far) plus {VERB_POINTS_PER_TIER} verb points per
             level: every tense you learn of a verb is a point (one new tense per day per verb), so
             one verb conjugated far counts as much as several conjugated a little. A topic may run
-            at most one band (A1, A2, …) past your overall level: 🔒 in the level panel means it
-            waits for you there. Several runs (☰ → Runs) let you keep separate campaigns.
+            at most one band (A1, A2, …) past your overall level: a lock in the level panel means it
+            waits for you there. Several runs (Menu → Runs) keep separate games.
           </p>
         </Section>
 
@@ -174,9 +177,9 @@ export default function Guide({ onClose }: { onClose: () => void }) {
               <span className={item}>{dot(BAND_COLOR.solid)} strong</span>
               <span className={item}>{dot(BAND_COLOR.faded)} due</span>
               <span className={item}>{dot(BAND_COLOR.dashed)} fading</span>
-              <span className={item}>{dot(BAND_COLOR.cracked)} broken</span>
-              <span className={item}>{dot('rgba(100, 116, 139, 0.9)')} cut off</span>
-              <span className={item}>{dot('rgba(71, 85, 105, 0.9)')} ? to conquer</span>
+              <span className={item}>{dot(BAND_COLOR.cracked)} slipped</span>
+              <span className={item}>{dot('rgba(100, 116, 139, 0.9)')} disconnected</span>
+              <span className={item}>{dot('rgba(71, 85, 105, 0.9)')} ? new word</span>
             </div>
             <div className={row}>
               <span>● noun</span>
@@ -186,20 +189,20 @@ export default function Guide({ onClose }: { onClose: () => void }) {
               <span className="text-pink-300">⬢ shared root</span>
             </div>
             <div className={row}>
-              <span className="text-emerald-300">◌ claimed (3 steps)</span>
+              <span className="text-emerald-300">◌ learning (3 steps)</span>
               <span className="text-slate-300">◯ next step opening</span>
-              <span className="text-amber-300">🏰 capital, stronghold</span>
-              <span className="text-amber-200">gold pulses: supply lines</span>
-              <span className="text-amber-100">glow: supply (brighter = more)</span>
-              <span className="text-amber-200">◔ ring around a word: its supply (full = 100%)</span>
-              <span className="text-orange-300">orange ring: thin supply</span>
-              <span className="text-slate-400">faint ?: outside your supply</span>
-              <span className="text-slate-300">◔ cut off: falls when it runs out</span>
-              <span className="text-rose-300">rose: broken</span>
-              <span className="text-teal-300">↺ win back</span>
+              <span className="text-amber-200">gold rays: core word, anchors</span>
+              <span className="text-amber-200">gold pulses: signal paths</span>
+              <span className="text-amber-100">light: signal (brighter = more)</span>
+              <span className="text-amber-200">◔ ring around a word: its signal (full = 100%)</span>
+              <span className="text-orange-300">orange ring: weak signal</span>
+              <span className="text-slate-400">faint shapes: out of reach</span>
+              <span className="text-slate-300">◔ disconnected: fades when it runs out</span>
+              <span className="text-rose-300">rose: slipped</span>
+              <span className="text-teal-300">↺ recover</span>
               <span className="text-sky-300">ripple: needs you</span>
-              <span className="text-amber-200">≈ hint</span>
-              <span className="text-emerald-300">-·- planted</span>
+              <span className="text-amber-200">≈ English cousin</span>
+              <span className="text-emerald-300">-·- connected by you</span>
             </div>
             <div className={row}>
               {(['semantic', 'thematic', 'morphological', 'etymological'] as const).map((r) => (
@@ -234,7 +237,7 @@ export default function Guide({ onClose }: { onClose: () => void }) {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="mt-4 space-y-1.5 first-of-type:mt-0">
-      <h3 className="text-xs uppercase tracking-wider text-slate-500">{title}</h3>
+      <h3 className="eyebrow">{title}</h3>
       {children}
     </section>
   );

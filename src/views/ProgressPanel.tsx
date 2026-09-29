@@ -1,6 +1,7 @@
 import { ACHIEVEMENTS } from '../core/achievements';
 import type { ClusterScore } from '../core/score';
 import { calendar } from '../core/streak';
+import Icon, { Sparks } from './Icon';
 
 type Props = {
   score: number;
@@ -8,7 +9,7 @@ type Props = {
   regionName: (id: number) => string;
   achievements: Record<string, number>;
   coins: number;
-  /** Words conquered, being claimed, and discovered so far, of `total`. */
+  /** Words learned, being learned, and discovered so far, of `total`. */
   counts: { conquered: number; claimed: number; discovered: number; total: number };
   /** Answers per day, and the streak they make (core/streak.ts). */
   activity: Map<string, number>;
@@ -19,22 +20,29 @@ type Props = {
 
 const pct = (v: number) => `${Math.round(v * 100)}%`;
 
-/** Score by category and achievements (how scoring works is in the guide). */
+/** Score by topic and achievements (how scoring works is in the guide). */
 export default function ProgressPanel(props: Props) {
   const { score, clusters, regionName, achievements, coins, counts, onClose } = props;
   const earned = ACHIEVEMENTS.filter((a) => a.id in achievements).length;
   return (
-    <div className="panel border-amber-500/30 p-4 text-sm">
-      <div className="flex items-baseline justify-between">
-        <span className="text-3xl font-bold text-amber-300">{score.toLocaleString()}</span>
-        <span className="text-slate-400">🪙 {coins}</span>
-        <button className="text-xs text-slate-500 hover:text-slate-200" onClick={onClose}>
-          ✕
+    <div className="panel p-4 text-sm">
+      <div className="flex items-start justify-between">
+        <div>
+          <div className="eyebrow">Score</div>
+          <div className="mt-1 flex items-baseline gap-3">
+            <span className="text-3xl font-semibold tabular-nums text-amber-200">
+              {score.toLocaleString()}
+            </span>
+            <Sparks n={coins} className="text-slate-300" />
+          </div>
+        </div>
+        <button className="icon-btn -mr-1.5 -mt-1" onClick={onClose} title="Close">
+          <Icon name="x" />
         </button>
       </div>
       <p className="mt-1 text-xs text-slate-500">
-        {counts.conquered} of {counts.total} words
-        {counts.claimed > 0 && ` · ${counts.claimed} claimed`} · {counts.discovered} discovered
+        {counts.conquered} of {counts.total} words learned
+        {counts.claimed > 0 && ` · ${counts.claimed} learning`} · {counts.discovered} discovered
       </p>
       <Calendar activity={props.activity} streak={props.streak} now={props.now} />
       {clusters.length > 0 && (
@@ -52,14 +60,14 @@ export default function ProgressPanel(props: Props) {
                 <span className="text-amber-300">{c.points}</span>
               </div>
               <div className="mt-0.5 h-0.5 overflow-hidden rounded bg-slate-800">
-                <div className="h-full bg-emerald-400" style={{ width: pct(c.cohesion) }} />
+                <div className="h-full bg-emerald-400/80" style={{ width: pct(c.cohesion) }} />
               </div>
             </li>
           ))}
         </ul>
       )}
       <div className="mb-1.5 mt-4 flex justify-between text-xs text-slate-500">
-        <span>Achievements</span>
+        <span className="eyebrow">Achievements</span>
         <span>
           {earned}/{ACHIEVEMENTS.length}
         </span>
@@ -70,7 +78,7 @@ export default function ProgressPanel(props: Props) {
           return (
             <li
               key={a.id}
-              title={`${a.description} · 🪙${a.coins}`}
+              title={`${a.description} · ${a.coins} sparks`}
               className={`rounded px-1.5 py-0.5 text-xs ${
                 got ? 'bg-amber-500/15 text-amber-200' : 'text-slate-600'
               }`}
@@ -100,8 +108,9 @@ function Calendar({ activity, streak, now }: Pick<Props, 'activity' | 'streak' |
   return (
     <div className="mt-3">
       <div className="mb-1 flex justify-between text-xs text-slate-500">
-        <span className={streak.playedToday ? 'text-orange-300' : ''}>
-          🔥 {streak.current} {streak.current === 1 ? 'day' : 'days'}
+        <span className={`flex items-center gap-1 ${streak.playedToday ? 'text-slate-200' : ''}`}>
+          <Icon name="flame" className={streak.playedToday ? 'text-orange-400' : ''} />
+          {streak.current} {streak.current === 1 ? 'day' : 'days'}
           {!streak.playedToday && streak.current > 0 && ' · play today to keep it'}
         </span>
         <span>best {streak.best}</span>
