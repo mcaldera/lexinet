@@ -139,8 +139,6 @@ type Props = {
   recall?: Set<string>;
   /** Show every word and edge (spoilers) for inspecting the network. */
   inspect: boolean;
-  /** Draw shared roots as hub nodes (replaces word-to-word "shared root" links). */
-  showRoots: boolean;
   /** Hidden words a little supply seeps to: drawn as ghosts, not conquerable yet. */
   ghosts?: Set<string>;
   /** Supply seeping past your words (core/supply.ts, fog) at every word it reaches: the glow. */
@@ -169,7 +167,6 @@ export default function GraphView({
   answerId,
   recall,
   inspect,
-  showRoots,
   ghosts,
   reach,
   onNodeClick,
@@ -269,7 +266,7 @@ export default function GraphView({
 
   // Keep node objects stable across renders so the layout doesn't restart.
   const nodeCache = useRef(new Map<string, N>());
-  const hubs = useMemo(() => (showRoots ? (data.graph.roots ?? []) : []), [showRoots, data.graph]);
+  const hubs = useMemo(() => data.graph.roots ?? [], [data.graph]);
   // A root appears once you've conquered one of its words (always in inspect mode).
   const visibleKey = [
     ...data.nodes

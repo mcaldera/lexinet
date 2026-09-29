@@ -15,8 +15,6 @@ import { GRAPH_NAMES, graphLabel } from '../graphs';
 
 type Props = {
   graphName: string;
-  showRoots: boolean;
-  onRoots: (on: boolean) => void;
   inspect: boolean;
   onInspect: (on: boolean) => void;
   onGuide: () => void;
@@ -113,7 +111,6 @@ export default function Menu(props: Props) {
           {toggle('Sounds', audio.sfx, setSfx)}
           {props.speechToggle && canSpeak() && toggle('Say words aloud', audio.speech, setSpeech)}
           {props.speechToggle && canSpeak() && <VoicePicker />}
-          {toggle('Roots', props.showRoots, props.onRoots)}
           {toggle('Whole network', props.inspect, (on) => {
             setOpen(false);
             props.onInspect(on);

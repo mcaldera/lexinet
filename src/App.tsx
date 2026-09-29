@@ -81,7 +81,6 @@ export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [turn, setTurn] = useState(0);
   const [inspect, setInspect] = useState(false);
-  const [showRoots, setShowRoots] = useState(true);
   const [inspectId, setInspectId] = useState<string>();
   const [levelUp, setLevelUp] = useState<LevelUp | null>(null);
   /** A verb that just mastered a new tense: celebrated over the map. */
@@ -931,8 +930,6 @@ export default function App() {
         </button>
         <Menu
           graphName={graphName}
-          showRoots={showRoots}
-          onRoots={setShowRoots}
           inspect={inspect}
           onInspect={setInspect}
           onGuide={() => setShowGuide(true)}
@@ -1040,7 +1037,6 @@ export default function App() {
             }
             cooldowns={cooldowns}
             inspect={inspect}
-            showRoots={showRoots}
             onNodeClick={selectNode}
             onBackgroundClick={clearSelection}
           />
