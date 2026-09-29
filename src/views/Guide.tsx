@@ -16,6 +16,8 @@ import {
 } from '../config';
 import { BAND_COLOR, REASON_LABEL, REASON_RGB } from './visuals';
 
+const pct = (x: number) => `${Math.round(x * 100)}%`;
+
 /**
  * Everything the main screen leaves out: how the game works, what the map's
  * marks mean, and the keys. Opened from the menu or with "?".
@@ -92,28 +94,35 @@ export default function Guide({ onClose }: { onClose: () => void }) {
 
         <Section title="Supply">
           <p>
-            🏰 Your words count only while they are connected to a <b>supply node</b>. Your first
-            word is your capital; every {SUPPLY.every} words you hold earn another node, which you
-            put on any word you hold. Supply flows out along links through your words, and each link
-            passes on as much as it is strong (at most {Math.round(SUPPLY.maxLink * 100)}%): tight,
-            strongly linked clusters are easy to supply, thin bridges between categories are costly.
-            A word needs {Math.round(SUPPLY.min * 100)}% to count.
+            Your words hold each other up. Every word you hold sends out <b>supply</b>, more the
+            better you know it: {pct(SUPPLY.output[2])} when just conquered, {pct(SUPPLY.output[3])}{' '}
+            after its first review, {pct(SUPPLY.output[4])} after a couple of weeks and{' '}
+            {pct(SUPPLY.output[5])} after about seven weeks of right answers (a <b>stronghold</b>,
+            with a tower). Verbs send out {pct(SUPPLY.perTense)} more per tense. Your capital, the
+            first word, always sends out 100%.
+          </p>
+          <p>
+            Supply flows along links through your words, and each link passes on as much as it is
+            strong (at most {pct(SUPPLY.maxLink)}): tight, strongly linked clusters hold together,
+            thin bridges between categories are costly. A word counts only supply from its other
+            words, and needs {pct(SUPPLY.min)}. So a new word needs words you know well near it, and
+            a few linked words far from home hold each other once you know them well.
           </p>
           <p>
             A word <b>breaks</b> when you miss it, or when you leave it due until its name has faded
-            completely (recall {Math.round(SUPPLY.breakRecall * 100)}%). A broken word passes no
-            supply on: whatever hangs on it is <b>cut off</b>. One right answer mends it, and
+            completely (recall {pct(SUPPLY.breakRecall)}). A broken word sends out and passes on no
+            supply: whatever hangs on it is <b>cut off</b>. One right answer mends it, and
             everything behind it lights up again.
           </p>
           <p>
             Cut off, a word doesn't score and holds out as long as its memory lasts (at least a
-            day), then falls back to <b>?</b>. Mend the gap, put a supply node nearby, or plant a
-            link around it. Anything lost can be won back with one right answer for{' '}
+            day), then falls back to <b>?</b>. Mend the gap, win or strengthen the words around it,
+            or plant a link around it. Anything lost can be won back with one right answer for{' '}
             {RECLAIM_MS / 86_400_000} days.
           </p>
           <p>
             Chokepoints matter: a word's details say how many words hang on it. Keep those strong,
-            or give their words a second way (another link, another node).
+            or give their words a second way (another link, more words around them).
           </p>
         </Section>
 
@@ -171,11 +180,11 @@ export default function Guide({ onClose }: { onClose: () => void }) {
             <div className={row}>
               <span className="text-emerald-300">◌ claimed (3 steps)</span>
               <span className="text-slate-300">◯ next step opening</span>
-              <span className="text-amber-300">🏰 supply node</span>
+              <span className="text-amber-300">🏰 capital, stronghold</span>
               <span className="text-amber-200">gold pulses: supply lines</span>
               <span className="text-amber-100">glow: supply (brighter = more)</span>
               <span className="text-amber-200">◔ ring around a word: its supply (full = 100%)</span>
-              <span className="text-orange-300">orange ring: thin supply, a node nearby helps</span>
+              <span className="text-orange-300">orange ring: thin supply</span>
               <span className="text-slate-400">faint ?: outside your supply</span>
               <span className="text-slate-300">◔ cut off: falls when it runs out</span>
               <span className="text-rose-300">rose: broken</span>

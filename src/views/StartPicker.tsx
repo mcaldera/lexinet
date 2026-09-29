@@ -15,8 +15,8 @@ type Props = {
 
 /**
  * A new game: pick a category, then your capital, the first word and your
- * first supply node. Each candidate says how many words it would keep
- * supplied once they are yours (core/supply.ts coverage), by its English
+ * home: it always sends out full supply. Each candidate says how many words it
+ * would keep supplied on its own once they are yours (core/supply.ts coverage), by its English
  * meaning: the Italian is earned.
  */
 export default function StartPicker({ regions, nodes, edges, onPick }: Props) {
@@ -43,7 +43,7 @@ export default function StartPicker({ regions, nodes, edges, onPick }: Props) {
             {region.name}: your capital
           </h2>
           <p className="mb-5 text-center text-sm text-slate-500">
-            Your first word and first supply node. Strongly linked words supply more.
+            Your first word, always sending out full supply. Strongly linked words supply more.
           </p>
           <ul className="space-y-1.5">
             {candidates.map((c) => (

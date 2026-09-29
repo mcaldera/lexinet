@@ -1,15 +1,19 @@
 import type { NodeState, StateChange } from './unlock';
 
 /**
- * Supply: your words only count while they're connected to a supply node.
+ * Supply: your words only count while the words around them hold them up.
  *
- * Every working supply node sends out 1. Supply flows along links through the
+ * Every word you hold (and isn't broken) sends out supply, more the better you
+ * know it (`wordOutput`: its memory strength, plus a verb's tenses); the
+ * capital, your home, always sends out 1. Supply flows along links through the
  * words that carry it (held and not broken), and each link passes on as much
  * of it as the link is strong (capped at `maxLink`, so even family links fade).
- * A word gets the best of all paths. A held word with at least `min` is
- * supplied; the rest are cut off and hold out as long as their memory lasts
- * (`advanceSiege`), then fall back to "?". Computed from the states; only the
- * siege clocks are stored.
+ * A word gets the best supply from any of your *other* words: a word can't hold
+ * itself up, so a lone word is cut off however well you know it, while a few
+ * well-known words linked together hold each other (an outpost). A held word
+ * with at least `min` is supplied; the rest are cut off and hold out as long as
+ * their memory lasts (`advanceSiege`), then fall back to "?". Computed from the
+ * states and memory; only the siege clocks are stored.
  */
 export type SupplyRules = {
   /** Supply a held word needs to count (and a "?" to lie inside your supply). */
@@ -26,12 +30,28 @@ export type SupplyRules = {
   sight: number;
 };
 
+/** What a word sends out, by memory strength (core/strength levels 0-5) and verb tenses. */
+export type OutputRules = {
+  /** Output per strength level: a fresh conquest is level 2, a word known for months 5. */
+  output: number[];
+  /** Added per tense a verb has learned (not faded), up to 1 in all. */
+  perTense: number;
+};
+
+/** What a held word sends out: more the better you know it. At most 1, like the capital. */
+export function wordOutput(level: number, tenses: number, rules: OutputRules): number {
+  const base = rules.output[Math.max(0, Math.min(rules.output.length - 1, level))] ?? 0;
+  return Math.min(1, base + rules.perTense * tenses);
+}
+
 export type Weighted = Map<string, { id: string; weight: number }[]>;
 
 export type SupplyInput = {
-  /** Working supply nodes: each sends out 1. */
-  sources: Iterable<string>;
-  /** Words that pass supply on (held and not broken); sources always do. */
+  /** Words sending out supply, and how much each sends (at most 1). */
+  sources: Map<string, number>;
+  /** The capital: supplied by itself in full (every other word only by others). */
+  home?: string;
+  /** Words that pass supply on (held and not broken); a source always passes its own. */
   carries: (id: string) => boolean;
   neighbours: Weighted;
   rules: Pick<SupplyRules, 'maxLink'>;
@@ -40,42 +60,46 @@ export type SupplyInput = {
 };
 
 export type Supply = {
-  /** Supply arriving at every word it reaches (sources 1). */
+  /** Supply arriving at every word it reaches from other words (the capital: 1). */
   value: Map<string, number>;
-  /** The neighbour each word's best supply comes from (unset for sources). */
+  /** The neighbour each word's best supply comes from (unset for the capital). */
   from: Map<string, string>;
 };
 
 export const linkFactor = (weight: number, maxLink: number) =>
   Math.max(0, Math.min(weight, maxLink));
 
-/** Best supply at every word: a widest-path search from all working sources. */
+/**
+ * Best supply at every word: a widest-path search from all sources at once.
+ * Each word keeps the best arrivals of two different sources, so the best one
+ * that isn't its own is always among them (a word's own supply echoing back
+ * to it through a neighbour doesn't count either).
+ */
 export function supplyFlow(input: SupplyInput): Supply {
   const value = new Map<string, number>();
   const from = new Map<string, string>();
-  const sources = new Set(input.sources);
-  const heap = new MaxHeap();
-  for (const s of sources) {
-    value.set(s, 1);
-    heap.push(1, s);
-  }
-  const done = new Set<string>();
+  const heap = new MaxHeap<{ id: string; origin: string; via?: string }>();
+  for (const [s, out] of input.sources) if (out > 0) heap.push(out, { id: s, origin: s });
+  /** Per word: the sources whose best arrival it has had (at most two). */
+  const settled = new Map<string, string[]>();
   while (heap.size) {
-    const [v, id] = heap.pop();
-    if (done.has(id) || v < (value.get(id) ?? 0)) continue;
-    done.add(id);
+    const [v, { id, origin, via }] = heap.pop();
+    const had = settled.get(id) ?? [];
+    if (had.length >= 2 || had.includes(origin)) continue;
+    settled.set(id, [...had, origin]);
+    if (!value.has(id) && (origin !== id || id === input.home)) {
+      value.set(id, v);
+      if (via) from.set(id, via);
+    }
     // A word outside your hold receives supply but passes none on (or, towards
     // the horizon, only its `fog` share).
-    const pass = sources.has(id) || input.carries(id) ? 1 : (input.fog ?? 0);
+    const pass = origin === id || input.carries(id) ? 1 : (input.fog ?? 0);
     if (pass <= 0) continue;
     for (const n of input.neighbours.get(id) ?? []) {
-      if (done.has(n.id)) continue;
-      const next = v * pass * linkFactor(n.weight, input.rules.maxLink);
-      if (next > (value.get(n.id) ?? 0)) {
-        value.set(n.id, next);
-        from.set(n.id, id);
-        heap.push(next, n.id);
-      }
+      const next = settled.get(n.id);
+      if (next && (next.length >= 2 || next.includes(origin))) continue;
+      const w = v * pass * linkFactor(n.weight, input.rules.maxLink);
+      if (w > 0) heap.push(w, { id: n.id, origin, via: id });
     }
   }
   return { value, from };
@@ -94,9 +118,11 @@ export function hanging(
   id: string,
   before: Supply = supplyFlow(input),
 ): string[] {
+  const sources = new Map(input.sources);
+  sources.delete(id);
   const after = supplyFlow({
     ...input,
-    sources: [...input.sources].filter((s) => s !== id),
+    sources,
     carries: (x) => x !== id && input.carries(x),
   });
   return [...before.value.keys()].filter(
@@ -104,27 +130,29 @@ export function hanging(
   );
 }
 
-/** Words a supply node on `id` would reach with at least `min` if they all carried. */
+/** Words a capital on `id` would supply with at least `min` if they all carried. */
 export function coverage(
   neighbours: Weighted,
   id: string,
   rules: Pick<SupplyRules, 'min' | 'maxLink'>,
   carries: (id: string) => boolean = () => true,
 ): number {
-  const flow = supplyFlow({ sources: [id], carries, neighbours, rules });
+  const flow = supplyFlow({ sources: new Map([[id, 1]]), home: id, carries, neighbours, rules });
   return [...flow.value.keys()].filter((x) => x !== id && isSupplied(flow, x, rules.min)).length;
 }
 
 export type SiegeWorld = {
   /** Held (conquered) words. */
   held: Iterable<string>;
-  /** Supply nodes: one works from its word while that word isn't broken. */
-  nodes: string[];
+  /** The capital: it sends out 1 while it isn't broken, and supplies itself. */
+  home?: string;
+  /** What a held word sends out while it isn't broken (`wordOutput`). */
+  output: (id: string) => number;
   neighbours: Weighted;
   /**
    * When a word breaks (app ms): a miss, or its recall falling below the line;
-   * Infinity if it won't. For a supply node whose word you lost: 0 (broken);
-   * for the capital before it was ever won: Infinity (it works from the start).
+   * Infinity if it won't. For a capital you lost: 0 (broken); for the capital
+   * before it was ever won: Infinity (it works from the start).
    */
   breakAt: (id: string) => number;
   /** How long a cut-off word holds out (ms). */
@@ -132,11 +160,20 @@ export type SiegeWorld = {
   rules: SupplyRules;
 };
 
+/** The words sending out supply at `t` (held, not broken; the capital), and how much. */
+export function sourcesAt(world: SiegeWorld, held: Iterable<string>, t: number) {
+  const sources = new Map<string, number>();
+  for (const id of held) if (world.breakAt(id) > t) sources.set(id, world.output(id));
+  if (world.home !== undefined && world.breakAt(world.home) > t) sources.set(world.home, 1);
+  return sources;
+}
+
 /**
  * Play the siege from `from` to `to`: cut-off words start their clock,
  * supplied ones stop it, and words cut off longer than they hold fall (they
  * leave the held set, which may cut off more). Breaks and falls are handled in
- * time order, so a week away plays out as it would have.
+ * time order, so a week away plays out as it would have. What words send out
+ * changes only when you answer, so it stays fixed in between.
  */
 export function advanceSiege(
   world: SiegeWorld,
@@ -152,7 +189,8 @@ export function advanceSiege(
     const broken = (id: string) => world.breakAt(id) <= t;
     const carries = (id: string) => held.has(id) && !broken(id);
     const supply = supplyFlow({
-      sources: world.nodes.filter((n) => !broken(n)),
+      sources: sourcesAt(world, held, t),
+      home: world.home,
       carries,
       neighbours: world.neighbours,
       rules: world.rules,
@@ -182,8 +220,8 @@ export function advanceSiege(
 }
 
 /**
- * The horizon: hidden words linked to one of your anchors (held words and
- * working supply nodes) become "?", and so do words further out that strong
+ * The horizon: hidden words linked to one of your anchors (held words and a
+ * working capital) become "?", and so do words further out that strong
  * supply seeps to (`reach` at least `reveal`: supplyFlow with `fog`). "?" left
  * with neither go back to hidden, unless `keep` holds them (started, won back,
  * opened by a root). With nothing left to do, the allowed word nearest to an
@@ -264,15 +302,15 @@ function nearestAllowed(
   return undefined;
 }
 
-/** A binary max-heap of [priority, id]. */
-class MaxHeap {
-  private items: [number, string][] = [];
+/** A binary max-heap of [priority, item]. */
+class MaxHeap<T> {
+  private items: [number, T][] = [];
   get size() {
     return this.items.length;
   }
-  push(p: number, id: string) {
+  push(p: number, item: T) {
     const a = this.items;
-    a.push([p, id]);
+    a.push([p, item]);
     let i = a.length - 1;
     while (i > 0) {
       const up = (i - 1) >> 1;
@@ -281,7 +319,7 @@ class MaxHeap {
       i = up;
     }
   }
-  pop(): [number, string] {
+  pop(): [number, T] {
     const a = this.items;
     const top = a[0];
     const last = a.pop()!;

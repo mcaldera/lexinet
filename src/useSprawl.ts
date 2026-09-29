@@ -42,7 +42,7 @@ import {
 import { openDb, type SqlDb } from './db';
 import { currentRun, runDbSuffix } from './runs';
 import { currentGraphName, loadGraph } from './graphs';
-import { hangingOn, nodesEarned, nodesToPlace, seep, siegeWorld, supplyNow } from './supplyState';
+import { hangingOn, isStronghold, seep, siegeWorld, supplyNow } from './supplyState';
 import {
   loadAll,
   migrate,
@@ -64,8 +64,6 @@ import {
 const graphName = currentGraphName();
 const runId = currentRun(graphName);
 const claimsOf = (game: Game) => new Map([...game.nodes].map(([id, g]) => [id, g.claim]));
-const heldCount = (states: Map<string, NodeState>) =>
-  [...states.values()].filter((st) => st === 'conquered').length;
 
 // Module-level so StrictMode's double effect doesn't open/seed twice.
 let dbPromise: Promise<{ db: SqlDb; graph: Graph }> | null = null;
@@ -99,13 +97,14 @@ export type ReviewOutcome = {
 };
 /** Words lost to the siege (cut off longer than they could hold out). */
 export type LostEvent = { at: number; ids: string[] };
-/** Something the game did on its own, for a banner (raids, expeditions, supply nodes). */
+/** Something the game did on its own, for a banner (raids, expeditions, strongholds). */
 export type GameEvent =
   | { kind: 'raid'; at: number; count: number }
   | { kind: 'raid-won' | 'expedition-won'; at: number; coins: number }
   | { kind: 'raid-lost'; at: number; count: number }
   | { kind: 'expedition-lost'; at: number }
-  | { kind: 'supply'; at: number; count: number };
+  /** A word you know so well it sends out full supply (core/supply.ts wordOutput). */
+  | { kind: 'stronghold'; at: number; word: string };
 
 /** Answers per day, one more for `at`'s day. */
 const counted = (activity: Map<string, number>, at: Date) =>
@@ -157,12 +156,12 @@ export function useSprawl() {
   }, [data, now]);
 
   /**
-   * Move the horizon (core/supply.ts): hidden words next to your words and
-   * working supply nodes become "?", and so do words further out where strong
+   * Move the horizon (core/supply.ts): hidden words next to your words and a
+   * working capital become "?", and so do words further out where strong
    * supply seeps (SUPPLY.fog / reveal); untried "?" left alone go back to
    * hidden. Root hubs with enough of their words inside your supply open
-   * (core/roots.ts) and reveal all their words, at any level. `nodes`: supply
-   * nodes to use instead of the saved ones (placing one moves the horizon).
+   * (core/roots.ts) and reveal all their words, at any level. `memory`: cards
+   * after an answer not in `data` yet (what words send out follows them).
    */
   const horizon = useCallback(
     (
@@ -170,7 +169,7 @@ export function useSprawl() {
       game: Game,
       tier: number,
       t: number,
-      nodes?: string[],
+      memory?: Partial<Pick<AppData, 'cards' | 'tenseCards'>>,
     ): {
       changes: StateChange[];
       opened: number;
@@ -179,18 +178,15 @@ export function useSprawl() {
       roots?: { names: string[]; revealed: number };
     } => {
       if (!data) return { changes: [], opened: 0 };
-      const supply = supplyNow(
-        { ...data, states, game, supplyNodes: nodes ?? data.supplyNodes },
-        t,
-      );
-      // Supply seeps past your words only from nodes you hold: a capital not won
+      const supply = supplyNow({ ...data, ...memory, states, game }, t);
+      // Supply seeps past your words only from words you hold: a capital not won
       // yet shows its neighbours, as at every start, not three rings of "?".
       const reach = seep(
         supply,
-        [...supply.working].filter((id) => states.get(id) === 'conquered'),
+        new Map([...supply.input.sources].filter(([id]) => states.get(id) === 'conquered')),
       );
       const anchors = new Set([
-        ...supply.working,
+        ...supply.input.sources.keys(),
         ...[...states].filter(([, st]) => st === 'conquered').map(([id]) => id),
       ]);
       // A root charges from the supply reaching its words (a full share of SUPPLY.min each).
@@ -249,7 +245,7 @@ export function useSprawl() {
         g.cutSince !== undefined ? [[id, g.cutSince] as const] : [],
       ),
     );
-    const siege = advanceSiege(siegeWorld(data), cutBefore, data.game.simAt || t, t);
+    const siege = advanceSiege(siegeWorld(data, t), cutBefore, data.game.simAt || t, t);
     const nodes = new Map(data.game.nodes);
     for (const [id, g] of nodes) {
       if (g.cutSince !== undefined && !siege.cutSince.has(id))
@@ -423,11 +419,6 @@ export function useSprawl() {
 
       const statesAfter = applyChanges(data.states, changes);
       const after = computeProgress(data.nodes, statesAfter, data.tenseCards, at, data.home).tier;
-      // What the new territory opens (and, on a level up, the new tier).
-      const revealed = horizon(statesAfter, game, after, t);
-      changes = [...changes, ...revealed.changes];
-      const levelUp: LevelUp | null =
-        after > before ? { tier: after, revealed: revealed.opened } : null;
       // Conquest locks in both directions: the other card (right in step 1 or 2,
       // still in FSRS learning) graduates too, so the word isn't asked again at once.
       const other = conquered
@@ -436,16 +427,24 @@ export function useSprawl() {
           )
         : undefined;
       const graduated = other && { ...other, card: rate(other.card, Rating.Good, at) };
+      const cardsAfter = data.cards.map((c) =>
+        c.id === row.id ? { ...c, card } : c.id === graduated?.id ? graduated : c,
+      );
+      // What the new territory opens (and, on a level up, the new tier): a word
+      // known better sends out more supply, so it may see further.
+      const revealed = horizon(statesAfter, game, after, t, { cards: cardsAfter });
+      changes = [...changes, ...revealed.changes];
+      const levelUp: LevelUp | null =
+        after > before ? { tier: after, revealed: revealed.opened } : null;
+      // Known well enough to send out full supply: a stronghold.
+      const stronghold =
+        statesAfter.get(id) === 'conquered' &&
+        !isStronghold(supplyBefore.world, id) &&
+        isStronghold(siegeWorld({ ...data, cards: cardsAfter }, t), id);
       await saveReview(db, row.id, card, grade, at, changes);
       if (graduated) await saveCard(db, graduated.id, graduated.card);
       await saveGame(db, game);
       if (revealed.unlocked) await saveMeta(db, 'unlocked_roots', [...revealed.unlocked]);
-
-      // The most words held at once: every SUPPLY.every of them earn a supply node.
-      const held = heldCount(applyChanges(data.states, changes));
-      const bestHeld = Math.max(data.bestHeld, held);
-      if (bestHeld > data.bestHeld) await saveMeta(db, 'best_held', bestHeld);
-      const earned = nodesEarned(bestHeld) - nodesEarned(data.bestHeld);
 
       // Raids: a right answer defends a raided word; now and then a new raid strikes.
       let raid = data.raid;
@@ -462,8 +461,8 @@ export function useSprawl() {
         const s = supplyNow({ ...data, states: applyChanges(data.states, changes), game }, t);
         const hang = new Map(
           [...s.flow.value.keys()]
-            // Supply nodes are fortified: raids strike the words between them.
-            .filter((x) => s.input.carries(x) && !s.cut.has(x) && !s.world.nodes.includes(x))
+            // The capital is fortified: raids strike the words around it.
+            .filter((x) => s.input.carries(x) && !s.cut.has(x) && x !== s.world.home)
             .map((x) => [x, hangingOn(s, x).length] as const),
         );
         const targets = raidTargets(hang, RAID.targets);
@@ -477,7 +476,10 @@ export function useSprawl() {
       }
       if (raid !== data.raid) await saveMeta(db, 'raid', raid);
       if (raidEvent) setEvent(raidEvent);
-      else if (earned > 0) setEvent({ kind: 'supply', at: t, count: earned });
+      else if (stronghold) {
+        const word = data.nodes.find((n) => n.id === id)?.it ?? id;
+        setEvent({ kind: 'stronghold', at: t, word });
+      }
       // Every real conquest (not a win-back) earns a coin; a won raid pays too.
       const coins =
         data.coins +
@@ -499,7 +501,6 @@ export function useSprawl() {
           game,
           coins,
           raid,
-          bestHeld,
           activity: counted(d.activity, at),
         };
       });
@@ -541,13 +542,23 @@ export function useSprawl() {
       let levelUp: LevelUp | null = null;
       let unlocked: Set<string> | undefined;
       if (after > before) {
-        const revealed = horizon(data.states, data.game, after, at.getTime());
+        const revealed = horizon(data.states, data.game, after, at.getTime(), { tenseCards });
         changes = revealed.changes;
         unlocked = revealed.unlocked;
         levelUp = { tier: after, revealed: revealed.opened };
       }
       await saveTenseReview(db, tc, grade, at, changes);
       if (unlocked) await saveMeta(db, 'unlocked_roots', [...unlocked]);
+      // Enough tenses make a verb send out full supply: a stronghold.
+      const t = at.getTime();
+      if (
+        data.states.get(nodeId) === 'conquered' &&
+        !isStronghold(siegeWorld(data, t), nodeId) &&
+        isStronghold(siegeWorld({ ...data, tenseCards }, t), nodeId)
+      ) {
+        const word = data.nodes.find((n) => n.id === nodeId)?.it ?? nodeId;
+        setEvent({ kind: 'stronghold', at: t, word });
+      }
       setData(
         (d) =>
           d && {
@@ -631,55 +642,6 @@ export function useSprawl() {
     [db, data],
   );
 
-  /** A supply node placed or taken back: the horizon moves with its supply. */
-  const moveHorizon = useCallback(
-    async (nodes: string[]) => {
-      if (!db || !data) return;
-      const at = appNow(data.offsetDays);
-      const tier = computeProgress(data.nodes, data.states, data.tenseCards, at, data.home).tier;
-      const moved = horizon(data.states, data.game, tier, at.getTime(), nodes);
-      if (!moved.changes.length && !moved.unlocked) return;
-      await saveGame(db, data.game, moved.changes);
-      if (moved.unlocked) await saveMeta(db, 'unlocked_roots', [...moved.unlocked]);
-      setData(
-        (d) =>
-          d && {
-            ...d,
-            states: applyChanges(d.states, moved.changes),
-            unlockedRoots: moved.unlocked ?? d.unlockedRoots,
-          },
-      );
-    },
-    [db, data, horizon],
-  );
-
-  /** Put an earned supply node on a word you hold. */
-  const placeNode = useCallback(
-    async (nodeId: string): Promise<boolean> => {
-      if (!db || !data || nodesToPlace(data) < 1) return false;
-      if (data.states.get(nodeId) !== 'conquered' || nodeId === data.seed) return false;
-      if (data.supplyNodes.includes(nodeId)) return false;
-      const supplyNodes = [...data.supplyNodes, nodeId];
-      await saveMeta(db, 'supply_nodes', supplyNodes);
-      await moveHorizon(supplyNodes);
-      setData((d) => d && { ...d, supplyNodes });
-      return true;
-    },
-    [db, data, moveHorizon],
-  );
-
-  /** Take a placed supply node back (to put it elsewhere); the capital stays. */
-  const liftNode = useCallback(
-    async (nodeId: string) => {
-      if (!db || !data || !data.supplyNodes.includes(nodeId)) return;
-      const supplyNodes = data.supplyNodes.filter((id) => id !== nodeId);
-      await saveMeta(db, 'supply_nodes', supplyNodes);
-      await moveHorizon(supplyNodes);
-      setData((d) => d && { ...d, supplyNodes });
-    },
-    [db, data, moveHorizon],
-  );
-
   const timeTravel = useCallback(
     async (days: number) => {
       if (!db) return;
@@ -712,8 +674,6 @@ export function useSprawl() {
     earnAchievements,
     plant,
     buyHint,
-    placeNode,
-    liftNode,
     timeTravel,
     reset,
     graphName,

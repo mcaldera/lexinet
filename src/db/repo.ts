@@ -125,10 +125,6 @@ export type AppData = {
   unlockedRoots: Set<string>;
   /** Per-word game state: claims, misses, siege clocks, lost words (core/game.ts). */
   game: Game;
-  /** Supply nodes you placed (word ids); the capital (`seed`) is always one too. */
-  supplyNodes: string[];
-  /** The most words you have held at once: every SUPPLY.every of them earn a supply node. */
-  bestHeld: number;
   /** Achievement id -> app time (ms) it was earned (core/achievements.ts). */
   achievements: Record<string, number>;
   /** Coins to spend on planting words (core/plant.ts). */
@@ -287,13 +283,6 @@ export async function loadAll(db: SqlDb, graph: Graph): Promise<AppData> {
     activity,
     expedition: await loadMeta<Expedition | null>(db, 'expedition', null),
     raid: await loadMeta<RaidState>(db, 'raid', {}),
-    supplyNodes: (await loadMeta<string[]>(db, 'supply_nodes', [])).filter((id) => ids.has(id)),
-    // Saves from before supply count what they hold now.
-    bestHeld: await loadMeta<number>(
-      db,
-      'best_held',
-      nodeRows.filter((n) => ids.has(n.id) && n.state === 'conquered').length,
-    ),
     graph,
     seed: seed && ids.has(seed) ? seed : graph.seed,
     home: homeWords(graph.nodes, seed && ids.has(seed) ? seed : graph.seed),

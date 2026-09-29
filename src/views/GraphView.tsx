@@ -55,9 +55,10 @@ export type SupplyView = {
   from: Map<string, string>;
   /** Held words that are broken (missed, or faded past the line). */
   broken: Set<string>;
-  /** Your supply nodes (the capital first), and those working now. */
-  nodes: Set<string>;
-  working: Set<string>;
+  /** What each word sends out now (held and unbroken; the capital while it works). */
+  sends: Map<string, number>;
+  /** Towers: the capital and your strongholds (words sending out full supply); working = sending now. */
+  towers: Map<string, { capital: boolean; working: boolean }>;
   /** Held words cut off: since when, and when they fall (app ms). */
   cut: Map<string, { since: number; until: number }>;
   /** Supply a word needs to count. */
@@ -96,12 +97,12 @@ const ATTENTION_LABEL: Record<AttentionKind, string> = {
   ready: 'ready',
   new: 'new',
 };
-/** Supply's colour: gold, like the towers that send it out. */
+/** Supply's colour: gold, like the towers on the words sending out the most. */
 const SUPPLY_RGB = '251, 191, 36';
 /** Strong supply's pale gold: the gauge of a well-supplied word. */
 const SUPPLY_LIGHT = '255, 236, 179';
-/** A held word with less supply than this is thin: a node nearby would help (amber ring). */
-const THIN_SUPPLY = 0.2;
+/** A held word with less supply than this is thin: a little weakening nearby cuts it off (amber ring). */
+const THIN_SUPPLY = 0.25;
 
 type Props = {
   data: AppData;
@@ -124,10 +125,8 @@ type Props = {
   claims: Map<string, Claim | undefined>;
   /** Claimed words waiting for their next step: when it opens and the whole wait (app ms). */
   claimWaits: Map<string, { opensAt: number; total: number }>;
-  /** Your supply: lines, broken and cut-off words, supply nodes. */
+  /** Your supply: lines, broken and cut-off words, towers. */
   supply?: SupplyView;
-  /** Placing a supply node: the word previewed and the supply it would bring. */
-  preview?: { id: string; value: Map<string, number> };
   /** Lost words one right answer wins back, what they were and until when (app ms). */
   reclaim: Map<string, { was: 'conquered' | 'claimed'; steps: number; until: number }>;
   /** Words with a bought hint -> their English cousin, drawn as a small node next to them. */
@@ -149,8 +148,6 @@ type Props = {
   onNodeClick: (id: string) => void;
   /** A click into empty map (not on a word or an edge arrow): let go of the selection. */
   onBackgroundClick?: () => void;
-  /** Hovering a word (placing a supply node previews it). */
-  onNodeHover?: (id: string | undefined) => void;
 };
 
 export default function GraphView({
@@ -166,7 +163,6 @@ export default function GraphView({
   claims,
   claimWaits,
   supply,
-  preview,
   reclaim,
   hints,
   attention,
@@ -178,7 +174,6 @@ export default function GraphView({
   reach,
   onNodeClick,
   onBackgroundClick,
-  onNodeHover,
 }: Props) {
   const wrap = useRef<HTMLDivElement>(null);
   const fg = useRef<ForceGraphMethods<N, L>>(undefined);
@@ -304,7 +299,6 @@ export default function GraphView({
       attentionOf.size > 0 ||
       claimWaits.size > 0 ||
       (supply?.cut.size ?? 0) > 0 ||
-      !!preview ||
       !!activeId ||
       bursting);
 
@@ -646,22 +640,22 @@ export default function GraphView({
   const endId = (x: unknown) => (typeof x === 'object' && x ? (x as N).id : (x as string));
 
   /**
-   * The supply the map lights a word with: a held word its own supply (none
-   * while cut off), any other word what seeps to it; while placing a node, the
-   * supply you would have with it.
+   * The supply the map lights a word with: a held word the supply there (what
+   * reaches it, or what it sends out if more; none while cut off), any other
+   * word what seeps to it.
    */
   const glowOf = (id: string) => {
     if (!supply) return 0;
-    if (preview) return Math.max(preview.value.get(id) ?? 0, reach?.get(id) ?? 0);
     if (data.states.get(id) === 'conquered') {
-      return supply.cut.has(id) ? 0 : (supply.value.get(id) ?? 0);
+      if (supply.cut.has(id)) return 0;
+      return Math.max(supply.value.get(id) ?? 0, supply.sends.get(id) ?? 0);
     }
     return reach?.get(id) ?? supply.value.get(id) ?? 0;
   };
   /**
    * How brightly a word's ground is lit (0..1): its supply, steeper than
    * straight, so the thin fringe (15%) stands on dark ground, half supply on
-   * clearly lit ground and a supply node's surroundings shine.
+   * clearly lit ground and the ground of words you know well shines.
    */
   const lightOf = (id: string) => Math.pow(Math.min(1, glowOf(id)), 1.5);
   const isHub = (id: string) => id.startsWith('root:');
@@ -740,12 +734,6 @@ export default function GraphView({
       const p = (Date.now() - burst.at) / BURST_MS[burst.kind];
       if (p < 1) drawBurst(ctx, x, y, r, scale, burst.kind, p);
       else bursts.current.delete(node.id);
-    }
-    const pv = preview?.value.get(node.id);
-    if (pv !== undefined && supply && !inspect && pv >= supply.min - 1e-9) {
-      // Placing a supply node: what it would supply glows gold, what it would add brightest.
-      const gain = (supply.value.get(node.id) ?? 0) < supply.min - 1e-9;
-      softGlow(ctx, x, y, r, r + (gain ? 14 : 9), SUPPLY_RGB, gain ? 0.55 : 0.22);
     }
     const attn = attentionOf.get(node.id);
     if (attn) drawRipple(ctx, x, y, r, scale, ATTENTION_RGB[attn]);
@@ -940,11 +928,12 @@ export default function GraphView({
     const broken = !inspect && !!supply?.broken.has(node.id);
     // Cut off from supply: drained of colour until reconnected.
     const rgb = cut && !broken ? '100, 116, 139' : BAND_RGB[band];
-    if (!inspect && supply?.nodes.has(node.id)) {
-      // A supply node: a gold tower over the word (grey while it isn't working).
-      const h = 12 + (node.id === data.seed ? 4 : 0);
+    const tower = inspect ? undefined : supply?.towers.get(node.id);
+    if (tower) {
+      // The capital and your strongholds: a gold tower over the word (grey while broken).
+      const h = tower.capital ? 16 : 11;
       ctx.save();
-      if (!supply.working.has(node.id)) ctx.globalAlpha = 0.45;
+      if (!tower.working) ctx.globalAlpha = 0.45;
       drawTower(ctx, x, y - r - h * 0.75, h, SUPPLY_RGB);
       ctx.restore();
     }
@@ -962,9 +951,9 @@ export default function GraphView({
       (0.2 + Math.min(0.3, coh * 0.12)) * (cut ? 0.3 : 1) * breath,
     );
     if (!cut && !inspect && supply) {
-      // The supply gauge: a ring filled as far as its supply goes, full at a
-      // supply node, a stub at the fringe. Amber when thin (a node nearby
-      // would help), pale gold in the middle ground, bright at the core.
+      // The supply gauge: a ring filled as far as its supply goes, full at the
+      // capital, a stub at the fringe. Amber when thin (a little weakening
+      // nearby cuts it off), pale gold in the middle ground, bright at the core.
       const v = Math.min(1, supply.value.get(node.id) ?? 0);
       // At least ~2.5 px on screen however far out you zoom: it has to be read at a glance.
       const w = Math.max(2.2, 2.6 / scale);
@@ -1135,7 +1124,7 @@ export default function GraphView({
 
   /**
    * A supply line: the link a held word's supply comes in by, from the word
-   * nearer the supply node [from, to]. Only supplied words have one.
+   * it comes from [from, to]. Only supplied words have one.
    */
   const supplyLine = (l: L): [N, N] | null => {
     if (inspect || !supply || l.category || l.descends || l.hint) return null;
@@ -1153,8 +1142,8 @@ export default function GraphView({
   const isEnergy = (l: L) => !!supplyLine(l);
 
   /**
-   * Supply flowing out along a supply line: pulses of gold light from the
-   * supply node outwards, each line at its own pace and phase (from the words'
+   * Supply flowing out along a supply line: pulses of gold light from where
+   * it comes from, each line at its own pace and phase (from the words'
    * ids), brighter where more supply arrives.
    */
   const drawEnergy = (ctx: CanvasRenderingContext2D, l: L) => {
@@ -1354,7 +1343,6 @@ export default function GraphView({
           onBackgroundClick?.();
         }}
         linkLabel={linkTooltip}
-        onNodeHover={(n) => onNodeHover?.(n ? (n.hintOf ?? n.id) : undefined)}
         onNodeClick={(n) => {
           const id = n.hintOf ?? n.id; // a hint opens its word
           setCursorId(id);
@@ -2073,7 +2061,7 @@ function drawRegionNames(
 }
 
 /**
- * A supply node: a crenellated gold tower of height `h` standing on (x, y + h/2),
+ * The capital or a stronghold: a crenellated gold tower of height `h` standing on (x, y + h/2),
  * with a pennant in `rgb`.
  */
 function drawTower(ctx: CanvasRenderingContext2D, x: number, y: number, h: number, rgb: string) {

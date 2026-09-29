@@ -29,8 +29,7 @@ import type { NodeState } from './core/unlock';
 import { nextPractice, nodeStrength } from './core/strength';
 import type { AppData, CardRow } from './db/repo';
 import { useSprawl, type GameEvent, type LevelUp } from './useSprawl';
-import { hangingOn, nodesToPlace, previewNode, seep, supplyNodes, supplyNow } from './supplyState';
-import PlacePanel from './views/PlacePanel';
+import { hangingOn, isStronghold, outputOf, seep, supplyNow } from './supplyState';
 import Menu from './views/Menu';
 import Guide from './views/Guide';
 import StartPicker from './views/StartPicker';
@@ -77,8 +76,6 @@ export default function App() {
     runId,
     event,
     startExpedition,
-    placeNode,
-    liftNode,
   } = useSprawl();
   const [lastCardId, setLastCardId] = useState<string>();
   const [session, setSession] = useState<Session | null>(null);
@@ -270,8 +267,7 @@ export default function App() {
   const neighbours = useMemo(() => neighbourMap(data?.edges ?? []), [data?.edges]);
   /** Supply (core/supply.ts): who carries it, who's broken, who's cut off. */
   const supply = useMemo(() => (data ? supplyNow(data, now.getTime()) : null), [data, now]);
-  /** Hidden words one link beyond your "?": the ghosts of what lies ahead. */
-  /** Supply seeping past your words from every working node: the glow and the ghosts. */
+  /** Supply seeping past your words from every word sending it out: the glow and the ghosts. */
   const reach = useMemo(() => (supply ? seep(supply) : new Map<string, number>()), [supply]);
   const ghosts = useMemo(
     () =>
@@ -336,9 +332,6 @@ export default function App() {
   const [showProgress, setShowProgress] = useState(false);
   /** Conquered word whose plant picker is open. */
   const [planting, setPlanting] = useState<string | null>(null);
-  /** Placing an earned supply node: the word whose preview the map shows. */
-  const [placing, setPlacing] = useState(false);
-  const [previewId, setPreviewId] = useState<string>();
 
   /** Charge of each sealed root: the supply at its words, each up to 1 (core/roots.ts). */
   const rootCharges = useMemo(() => {
@@ -461,13 +454,17 @@ export default function App() {
   const brokenHang = new Map(
     [...(supply?.broken ?? [])].map((id) => [id, supply ? hangingOn(supply, id).length : 0]),
   );
-  /** Supply as the map draws it: flow, broken words, supply nodes, siege clocks. */
+  /** Supply as the map draws it: flow, broken words, towers, siege clocks. */
   const supplyView = supply && {
     value: supply.flow.value,
     from: supply.flow.from,
     broken: supply.broken,
-    nodes: new Set(supplyNodes(data)),
-    working: supply.working,
+    sends: supply.input.sources,
+    towers: new Map(
+      [data.seed, ...supply.world.held]
+        .filter((id) => id === data.seed || isStronghold(supply.world, id))
+        .map((id) => [id, { capital: id === data.seed, working: supply.input.sources.has(id) }]),
+    ),
     cut: new Map(
       [...supply.cut].map((id) => {
         const since = data.game.nodes.get(id)?.cutSince ?? now.getTime();
@@ -476,12 +473,6 @@ export default function App() {
     ),
     min: SUPPLY.min,
   };
-  const toPlace = nodesToPlace(data);
-  /** While placing: the supply the previewed word would bring. */
-  const preview =
-    placing && supply && previewId && data.states.get(previewId) === 'conquered'
-      ? { id: previewId, ...previewNode(supply, previewId) }
-      : undefined;
   /** Lost words that one right answer still wins back as they were (core/fallen.ts). */
   const reclaimMap = new Map(
     [...data.game.nodes].flatMap(([id]) => {
@@ -558,13 +549,13 @@ export default function App() {
     if (!detailsWord || !supply) return undefined;
     const id = detailsWord.id;
     const st = data.states.get(id);
-    const node = supplyNodes(data).includes(id);
     const cut = supplyView?.cut.get(id);
     return {
       value: supply.flow.value.get(id) ?? 0,
       min: SUPPLY.min,
-      node: node ? (id === data.seed ? ('capital' as const) : ('node' as const)) : undefined,
-      working: supply.working.has(id),
+      capital: id === data.seed,
+      sends: st === 'conquered' ? outputOf(supply.world, id) : undefined,
+      stronghold: st === 'conquered' && isStronghold(supply.world, id),
       broken: supply.broken.has(id),
       missed: data.game.nodes.get(id)?.missedAt !== undefined,
       cutUntil: cut && !supply.broken.has(id) ? cut.until : undefined,
@@ -572,14 +563,6 @@ export default function App() {
       hanging:
         st === 'conquered' && (!supply.cut.has(id) || supply.broken.has(id))
           ? hangingOn(supply, id).length
-          : undefined,
-      onLift:
-        node && id !== data.seed
-          ? async () => {
-              await liftNode(id);
-              setPlacing(true);
-              setPreviewId(undefined);
-            }
           : undefined,
     };
   })();
@@ -873,7 +856,6 @@ export default function App() {
 
   /** Click / arrow / jump on a word: a tick, or a dull tap when it can't be opened now. */
   const selectNode = (nodeId: string) => {
-    if (placing) return void placeHere(nodeId);
     let blocked = false;
     openNode(nodeId, (w) => {
       blocked = true;
@@ -891,25 +873,10 @@ export default function App() {
     setWaitOn(null);
     setVerbDrill(null);
     setPlanting(null);
-    setPlacing(false);
-    setPreviewId(undefined);
     setShowProgress(false);
     setShowVerbGoals(false);
     setEarnedNow([]);
     setTurn((t) => t + 1);
-  };
-
-  /** Put the earned supply node on a word you hold (placing mode). */
-  const placeHere = async (nodeId: string) => {
-    if (!(await placeNode(nodeId))) {
-      setNotice('Place it on a word you hold');
-      sfx('blocked');
-      return;
-    }
-    setPlacing(false);
-    setPreviewId(undefined);
-    setNotice(`⚡ ${wordOf(nodeId)} supplies its area`);
-    sfx('conquer');
   };
 
   return (
@@ -1048,7 +1015,6 @@ export default function App() {
             supply={supplyView ?? undefined}
             ghosts={ghosts}
             reach={reach}
-            preview={preview && { id: preview.id, value: preview.flow.value }}
             reclaim={reclaimMap}
             hints={
               new Map(
@@ -1077,7 +1043,6 @@ export default function App() {
             showRoots={showRoots}
             onNodeClick={selectNode}
             onBackgroundClick={clearSelection}
-            onNodeHover={placing ? setPreviewId : undefined}
           />
         </section>
         <aside
@@ -1128,35 +1093,7 @@ export default function App() {
             />
           ) : (
             <>
-              {toPlace > 0 && !placing && (
-                <button
-                  onClick={() => {
-                    setPlacing(true);
-                    setPreviewId(undefined);
-                    sfx('select');
-                  }}
-                  className="panel flex w-full shrink-0 items-center justify-between rounded-xl border-amber-300/40 px-3 py-2 text-left text-sm text-amber-100 hover:border-amber-300/80"
-                  title="A supply node keeps the words around it supplied: put it where it counts"
-                >
-                  <span>⚡ Supply node ready{toPlace > 1 ? ` ×${toPlace}` : ''}</span>
-                  <span className="text-xs text-amber-300">Place it</span>
-                </button>
-              )}
-              {placing && supply ? (
-                <PlacePanel
-                  data={data}
-                  supply={supply}
-                  nameOf={(id) => nameOf(id) || wordOf(id)}
-                  regionName={(id) => regionName(regionOf(id))}
-                  preview={preview}
-                  onPreview={setPreviewId}
-                  onPlace={placeHere}
-                  onClose={() => {
-                    setPlacing(false);
-                    setPreviewId(undefined);
-                  }}
-                />
-              ) : planting && data.states.get(planting) === 'conquered' ? (
+              {planting && data.states.get(planting) === 'conquered' ? (
                 <PlantPicker
                   key={planting}
                   anchorName={wordOf(planting)}
@@ -1546,7 +1483,7 @@ function Missions(props: {
   );
 }
 
-/** A moment the game made on its own: raid, expedition end, supply node. Fades by itself. */
+/** A moment the game made on its own: raid, expedition end, stronghold. Fades by itself. */
 function EventBanner({ event }: { event: GameEvent }) {
   const [shown, setShown] = useState(true);
   useEffect(() => {
@@ -1589,12 +1526,8 @@ function eventText(e: GameEvent): [string, string, string] {
       return ['⚑ Expedition done', `+${e.coins} 🪙`, 'emerald'];
     case 'expedition-lost':
       return ['⚑ Expedition over', 'Out of time', 'slate'];
-    case 'supply':
-      return [
-        `⚡ Supply node${e.count > 1 ? ` ×${e.count}` : ''} earned`,
-        'Place it on a word you hold',
-        'amber',
-      ];
+    case 'stronghold':
+      return [`🏰 ${e.word} is a stronghold`, 'Known this well, it supplies in full', 'amber'];
   }
 }
 

@@ -15,22 +15,32 @@ export const COOLDOWN_MS = 60_000;
 export const VERB_POINTS_PER_TIER = 2;
 
 /**
- * Supply (core/supply.ts): your words count only while connected to a supply
- * node. Supply is 1 at a node and each link passes on as much as it is strong.
- * `min` 0.1: one node supplies ~37 words once they are all yours (a third of
- * its category), measured on the vocabulary graph.
+ * Supply (core/supply.ts): your words count only while the words around them
+ * hold them up. Every word you hold sends out supply by how well you know it
+ * (`output` by memory strength level, core/strength; the capital always 1), and
+ * each link passes on as much as it is strong. A word counts only supply from
+ * its other words. Simulated on the vocabulary graph (6 new words a day): early
+ * on ~80% of your words are supplied, carried by the capital; two linked words
+ * far from home hold each other once reviewed (level 3), rarely while fresh;
+ * one break cuts off at most a handful of words.
  */
 export const SUPPLY = {
   /** Supply a held word needs to count. */
-  min: 0.1,
+  min: 0.15,
+  /**
+   * What a held word sends out by memory strength level 0-5: a fresh conquest
+   * is level 2 (stability ~3 days), the first review (day 3) makes it 3, two
+   * weeks 4, about seven weeks 5 (full, like the capital).
+   */
+  output: [0.05, 0.1, 0.25, 0.4, 0.65, 1],
+  /** A verb sends out this much more per tense learned (not faded), up to 1. */
+  perTense: 0.1,
   /** The most one link passes on, however strong (family links are 1.0). */
   maxLink: 0.9,
   /** A cut-off word holds out as long as its memory lasts, but at least a day. */
   minHoldMs: 24 * 3_600_000,
   /** A held word breaks when its weaker direction's recall falls to this (core/fade NO_NAME). */
   breakRecall: 0.8,
-  /** One more supply node for every this many words you have held at once. */
-  every: 12,
   /**
    * The horizon: past your words supply seeps on at this share per word; a
    * hidden word it reaches with `reveal` becomes a "?", with `sight` a ghost

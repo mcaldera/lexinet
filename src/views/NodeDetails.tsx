@@ -20,8 +20,11 @@ type Props = {
   supply?: {
     value: number;
     min: number;
-    node?: 'capital' | 'node';
-    working: boolean;
+    capital: boolean;
+    /** A held word: what it sends out while unbroken (by memory strength and tenses). */
+    sends?: number;
+    /** Sends out full supply (known for months). */
+    stronghold: boolean;
     broken: boolean;
     /** Broken by a miss (else by fading past the line). */
     missed: boolean;
@@ -31,8 +34,6 @@ type Props = {
     brokenUntil?: number;
     /** Held words that would be cut off if it broke (or are, while it's broken). */
     hanging?: number;
-    /** A placed node: take it back to place it elsewhere. */
-    onLift?: () => void;
   };
   /** False while this word is being quizzed: etymology and meaning would give it away. */
   showEtymology: boolean;
@@ -109,7 +110,7 @@ function SupplyHint({ supply }: { supply?: Props['supply'] }) {
   ) : (
     <p
       className="text-slate-500"
-      title="Won out here, it is cut off from the start and holds out only as long as its memory lasts, unless a supply node comes near"
+      title="Won out here, it is cut off from the start and holds out only as long as its memory lasts: win the words around it, and once you know them well they hold each other up"
     >
       outside your supply
     </p>
@@ -206,17 +207,8 @@ export default function NodeDetails(props: Props) {
           )}
         </div>
       )}
-      {(props.onPlant || hint || supply?.onLift) && (
+      {(props.onPlant || hint) && (
         <div className="mt-2 flex justify-end gap-1.5">
-          {supply?.onLift && (
-            <button
-              onClick={supply.onLift}
-              title="Take this supply node back and put it on another word you hold"
-              className={`${btn} bg-amber-800 hover:bg-amber-700`}
-            >
-              ⚡ Move
-            </button>
-          )}
           {props.onPlant && (
             <button
               onClick={props.onPlant}
@@ -238,6 +230,11 @@ export default function NodeDetails(props: Props) {
         {supply && (
           <p>
             Supply {pct(supply.value)} (counts from {pct(supply.min)})
+          </p>
+        )}
+        {supply?.sends !== undefined && (
+          <p title="What it passes to its neighbours: more the better you know it">
+            Sends out {pct(supply.sends)}
           </p>
         )}
         {props.links && (
@@ -271,7 +268,7 @@ function SupplyLine({ supply, nowMs }: { supply: NonNullable<Props['supply']>; n
     return (
       <p
         className="text-slate-400"
-        title="No supply reaches it: it doesn't count, and falls back to '?' when it can't hold out any longer. Mend the broken word on its way, place a supply node near it, or plant a link around the gap."
+        title="Not enough supply reaches it: it doesn't count, and falls back to '?' when it can't hold out any longer. Mend the broken word on its way, win or strengthen the words around it, or plant a link around the gap."
       >
         ✂ Cut off · falls in {until(supply.cutUntil - nowMs)}
       </p>
@@ -282,17 +279,18 @@ function SupplyLine({ supply, nowMs }: { supply: NonNullable<Props['supply']>; n
       className="text-amber-200/90"
       title={
         hang > 0
-          ? `If it broke, ${words(hang)} would be cut off: keep it strong, or give them another way (a planted link, a supply node)`
-          : 'Supplied: it counts, and passes supply on to its neighbours'
+          ? `If it broke, ${words(hang)} would be cut off: keep it strong, or give them another way (a planted link, more words around them)`
+          : 'Supplied: it counts, and supplies its neighbours the better you know it'
       }
     >
-      ⚡{' '}
-      {supply.node === 'capital'
-        ? 'Capital'
-        : supply.node === 'node'
-          ? `Supply node${supply.working ? '' : ' (not working)'}`
-          : `Supply ${pct(supply.value)}`}
-      {hang > 0 && <span className="text-amber-300"> · {words(hang)} hang on it</span>}
+      ⚡ {supply.capital ? 'Capital' : `Supply ${pct(supply.value)}`}
+      {supply.stronghold && <span className="text-amber-300"> · stronghold</span>}
+      {hang > 0 && (
+        <span className="text-amber-300">
+          {' '}
+          · {words(hang)} {hang === 1 ? 'hangs' : 'hang'} on it
+        </span>
+      )}
     </p>
   );
 }
