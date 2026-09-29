@@ -1,6 +1,6 @@
 import { appNow } from './clock';
 import { dueAt, newCard, rate, Rating } from './scheduler';
-import { nextPractice, nodeStrength } from './strength';
+import { memoryOutlook, nextPractice, nodeStrength } from './strength';
 
 const t0 = new Date(Date.UTC(2026, 0, 1));
 
@@ -23,4 +23,23 @@ test('practice waits until a card is due, unless a direction is unreviewed', () 
   const next = nextPractice([a, b], t0)!;
   expect(next.getTime()).toBe(Math.min(dueAt(a), dueAt(b)));
   expect(nextPractice([a, b], appNow(30, t0.getTime()))).toBeNull();
+});
+
+test('the memory outlook: due, breaking, and what the next level takes', () => {
+  // A fresh conquest: both directions right once (stability ~3 days, level 2).
+  const a = rate(newCard(t0), Rating.Good, t0);
+  const b = rate(newCard(t0), Rating.Good, t0);
+  const o = memoryOutlook([a, b], t0)!;
+  expect(o.level).toBe(2);
+  expect(o.since).toBe(t0.getTime());
+  expect(o.due).toBe(Math.min(dueAt(a), dueAt(b)));
+  expect(o.breaks).toBeGreaterThan(o.due);
+  // One right answer on each direction when due makes it level 3.
+  expect(o.next).toMatchObject({ level: 3 });
+  expect(o.next!.reviews).toBeGreaterThanOrEqual(1);
+  expect(o.next!.at).toBe(o.due);
+  // Overdue: the next review is now, not in the past.
+  const late = appNow(10, t0.getTime());
+  expect(memoryOutlook([a, b], late)!.next!.at).toBe(late.getTime());
+  expect(memoryOutlook([newCard(t0)], t0)).toBeNull();
 });

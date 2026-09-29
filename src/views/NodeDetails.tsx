@@ -4,7 +4,7 @@ import type { NodeState } from '../core/unlock';
 import type { WordNode } from '../db/repo';
 import Etymology from './Etymology';
 import { StepDots, timeLeft } from './ReviewView';
-import { MAX_STRENGTH } from '../core/strength';
+import { MAX_STRENGTH, type MemoryOutlook } from '../core/strength';
 
 type Props = {
   word: WordNode;
@@ -12,10 +12,8 @@ type Props = {
   /** The name as the player may see it (faded words lose letters; '' = gone). */
   name: string;
   health: number | null;
-  /** Conquered words: memory strength (0-5), how many days it lasts, and recall right now (0-1). */
-  memory?: { level: number; days: number; recall: number | null };
-  /** When its next review is due (app ms). */
-  due?: number;
+  /** Conquered words: their memory (strength, due, breaking, next level) and recall now (0-1). */
+  memory?: { outlook: MemoryOutlook; recall: number | null };
   /** Its place in your supply (core/supply.ts). */
   supply?: {
     value: number;
@@ -80,22 +78,87 @@ const words = (n: number) => `${n} ${n === 1 ? 'word' : 'words'}`;
  * Memory strength: how long you'll remember the word (FSRS stability), as dots.
  * Only spaced reviews raise it. Stars are for verb tenses, not this.
  */
-export function MemoryDots({ level, days }: { level: number; days: number }) {
+/** Strength as five dots: memory that lasts longer fills more of them. */
+function Dots({ level }: { level: number }) {
   return (
-    <span
-      className="flex items-center gap-1.5 text-slate-500"
-      title={`Memory strength ${level}/${MAX_STRENGTH}: you should still recall it after ~${span(days)}. It grows only with spaced reviews; cut off from supply, a word holds out this long.`}
-    >
-      <span className="flex gap-0.5">
-        {Array.from({ length: MAX_STRENGTH }, (_, i) => (
-          <span
-            key={i}
-            className={`h-1.5 w-1.5 rounded-full ${i < level ? 'bg-sky-300' : 'bg-slate-700'}`}
-          />
-        ))}
-      </span>
-      <span>lasts ~{span(days)}</span>
+    <span className="flex gap-0.5">
+      {Array.from({ length: MAX_STRENGTH }, (_, i) => (
+        <span
+          key={i}
+          className={`h-1.5 w-1.5 rounded-full ${i < level ? 'bg-sky-300' : 'bg-slate-700'}`}
+        />
+      ))}
     </span>
+  );
+}
+
+/**
+ * A word's memory at a glance: its strength, a bar from its last review to
+ * when it's due (90% recall) and when it breaks (80%), with now on it, and
+ * what the next strength level takes.
+ */
+export function MemoryPanel({
+  o,
+  nowMs,
+  recall,
+}: {
+  o: MemoryOutlook;
+  nowMs: number;
+  recall?: number | null;
+}) {
+  const length = Math.max(1, o.breaks - o.since);
+  const at = (t: number) => `${Math.max(0, Math.min(1, (t - o.since) / length)) * 100}%`;
+  const phase = nowMs >= o.breaks ? 'broken' : nowMs >= o.due ? 'due' : 'fresh';
+  const fill = { fresh: 'bg-sky-400/80', due: 'bg-violet-400', broken: 'bg-rose-400' }[phase];
+  const next = o.next;
+  return (
+    <div className="mt-1.5 space-y-1 text-xs">
+      <div
+        className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-slate-400"
+        title={`Memory strength ${o.level}/${MAX_STRENGTH}: after a review you still recall it (90%) for ~${span(o.days)}. It grows only when you answer right while it's due, never by cramming; the stronger, the more supply it sends out.`}
+      >
+        <Dots level={o.level} />
+        <span>
+          memory {o.level}/{MAX_STRENGTH}
+        </span>
+        {next && (
+          <span className="text-slate-500">
+            → {next.level}/{MAX_STRENGTH}{' '}
+            {next.reviews === 1
+              ? 'with the next right answer'
+              : `after ${next.reviews} right answers`}
+            {next.reachedAt > nowMs + 60_000 && ` (~${until(next.reachedAt - nowMs)})`}
+          </span>
+        )}
+      </div>
+      <div
+        className="relative h-1.5 overflow-hidden rounded-full bg-slate-800"
+        title={recall == null ? undefined : `Recall now ${pct(recall)}: due at 90%, breaks at 80%`}
+      >
+        <div className={`absolute inset-y-0 left-0 ${fill}`} style={{ width: at(nowMs) }} />
+        <div className="absolute inset-y-0 w-0.5 bg-violet-300" style={{ left: at(o.due) }} />
+      </div>
+      <div className="flex justify-between text-[11px]">
+        <span
+          className={
+            phase === 'fresh'
+              ? 'text-slate-400'
+              : phase === 'due'
+                ? 'text-violet-300'
+                : 'text-rose-300'
+          }
+        >
+          {phase === 'fresh'
+            ? `due in ${until(o.due - nowMs)}`
+            : phase === 'due'
+              ? 'due now: practise it'
+              : 'faded: it broke, mend it'}
+        </span>
+        {phase !== 'broken' && (
+          <span className="text-slate-500">breaks in {until(o.breaks - nowMs)}</span>
+        )}
+      </div>
+    </div>
   );
 }
 const btn = 'btn rounded-md px-2 py-1 text-xs text-white disabled:opacity-40';
@@ -167,7 +230,6 @@ export default function NodeDetails(props: Props) {
   if (state !== 'conquered') return null;
 
   const verb = props.verb;
-  const dueIn = props.due !== undefined ? props.due - props.nowMs : undefined;
   return (
     <Panel>
       <div className="mb-1.5 text-sm text-slate-100">
@@ -176,14 +238,7 @@ export default function NodeDetails(props: Props) {
       </div>
       {supply && <SupplyLine supply={supply} nowMs={props.nowMs} />}
       {props.memory && (
-        <div className="mt-1 flex items-center gap-2 text-xs">
-          <MemoryDots level={props.memory.level} days={props.memory.days} />
-          {dueIn !== undefined && (
-            <span className={dueIn <= 0 ? 'text-violet-300' : 'text-slate-500'}>
-              · {dueIn <= 0 ? 'due now' : `due in ${until(dueIn)}`}
-            </span>
-          )}
-        </div>
+        <MemoryPanel o={props.memory.outlook} nowMs={props.nowMs} recall={props.memory.recall} />
       )}
       {verb && (
         <div className="mt-2 flex items-center justify-between gap-2">

@@ -24,9 +24,9 @@ import { rootCharge, rootNeed } from './core/roots';
 import { neighbourMap } from './core/unlock';
 import { nextDrill, TENSES, type Tense } from './core/verbs';
 import { computeProgress, verbLevels as computeVerbLevels } from './progress';
-import { cardId, dueAt, isDue, Rating, retrievability, type Grade } from './core/scheduler';
+import { cardId, isDue, Rating, retrievability, type Grade } from './core/scheduler';
 import type { NodeState } from './core/unlock';
-import { nextPractice, nodeStrength } from './core/strength';
+import { memoryOutlook, nextPractice, nodeStrength } from './core/strength';
 import type { AppData, CardRow } from './db/repo';
 import { useSprawl, type GameEvent, type LevelUp } from './useSprawl';
 import { hangingOn, isStronghold, outputOf, seep, supplyNow } from './supplyState';
@@ -565,9 +565,12 @@ export default function App() {
           : undefined,
     };
   })();
-  const detailsDue = (() => {
-    const cards = detailsWord ? (cardsByNode.get(detailsWord.id) ?? []) : [];
-    return cards.length ? Math.min(...cards.map((c) => dueAt(c.card))) : undefined;
+  /** The selected word's memory: strength, due, breaking, and what the next level takes. */
+  const detailsMemory = (() => {
+    if (!detailsWord || data.states.get(detailsWord.id) !== 'conquered') return undefined;
+    const cards = (cardsByNode.get(detailsWord.id) ?? []).map((c) => c.card);
+    const outlook = memoryOutlook(cards, now, SUPPLY.breakRecall);
+    return outlook ? { outlook, recall: nodeHealth(cards, now) } : undefined;
   })();
 
   const onRate = async (row: CardRow, grade: Grade, typed = true) => {
@@ -828,7 +831,7 @@ export default function App() {
         days < 1 ? `${Math.max(1, Math.round(days * 24))} h` : `${Math.round(days)} days`;
       setInfo({
         nodeId,
-        status: `Holding. Strength only grows with time: next review in ~${when}.`,
+        status: `Not due yet: you can practise it in ~${when}.`,
       });
       return;
     }
@@ -1152,7 +1155,12 @@ export default function App() {
                 <WordInfo
                   key={info.nodeId}
                   word={data.nodes.find((n) => n.id === info.nodeId)!}
-                  strength={nodeStrength((cardsByNode.get(info.nodeId) ?? []).map((c) => c.card))}
+                  memory={memoryOutlook(
+                    (cardsByNode.get(info.nodeId) ?? []).map((c) => c.card),
+                    now,
+                    SUPPLY.breakRecall,
+                  )}
+                  nowMs={now.getTime()}
                   status={info.status}
                   verbLevel={verbLevels.get(info.nodeId)}
                   tenseCards={data.tenseCards.filter((c) => c.nodeId === info.nodeId)}
@@ -1195,19 +1203,8 @@ export default function App() {
               state={data.states.get(detailsWord.id) ?? 'locked'}
               name={nameOf(detailsWord.id)}
               health={health.get(detailsWord.id) ?? null}
-              memory={
-                data.states.get(detailsWord.id) === 'conquered'
-                  ? {
-                      ...nodeStrength((cardsByNode.get(detailsWord.id) ?? []).map((c) => c.card)),
-                      recall: nodeHealth(
-                        (cardsByNode.get(detailsWord.id) ?? []).map((c) => c.card),
-                        now,
-                      ),
-                    }
-                  : undefined
-              }
+              memory={detailsMemory}
               supply={detailsSupply}
-              due={detailsDue}
               nowMs={appNow(data.offsetDays).getTime()}
               claimStep={claimNext(data.game.nodes.get(detailsWord.id)?.claim, CLAIM_GAPS)}
               links={

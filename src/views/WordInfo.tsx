@@ -1,11 +1,14 @@
-import { MemoryDots } from './NodeDetails';
+import { MemoryPanel } from './NodeDetails';
+import type { MemoryOutlook } from '../core/strength';
 import { PRONOUNS, TENSES, type TenseCard } from '../core/verbs';
 import type { WordNode } from '../db/repo';
 import { ExampleLine, SpeakButton } from './ReviewView';
 
 type Props = {
   word: WordNode;
-  strength: { level: number; days: number };
+  /** Its memory: strength, due, breaking, next level (null: never reviewed). */
+  memory: MemoryOutlook | null;
+  nowMs: number;
   /** Why the word can't be practised right now, e.g. "come back in ~2 days". */
   status: string;
   verbLevel?: number;
@@ -15,7 +18,7 @@ type Props = {
 
 /** A conquered word you can look at any time: meaning, etymology, strength, tenses. */
 export default function WordInfo(props: Props) {
-  const { word, strength, status, verbLevel, tenseCards, onClose } = props;
+  const { word, memory, status, verbLevel, tenseCards, onClose } = props;
   const learned = TENSES.filter((t) => tenseCards.some((c) => c.tense === t));
   return (
     <div className="panel border-emerald-500/30 p-4 text-sm">
@@ -31,10 +34,8 @@ export default function WordInfo(props: Props) {
           ✕
         </button>
       </div>
-      <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
-        <MemoryDots {...strength} />
-        {word.pos && <span>{word.pos}</span>}
-      </div>
+      {word.pos && <div className="mt-1 text-xs text-slate-500">{word.pos}</div>}
+      {memory && <MemoryPanel o={memory} nowMs={props.nowMs} />}
       <p className="mt-2 text-xs text-slate-500">{status}</p>
       {word.example && <ExampleLine example={word.example} />}
       {verbLevel !== undefined && word.conjugations && learned.length > 0 && (

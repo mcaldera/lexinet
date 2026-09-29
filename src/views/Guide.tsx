@@ -90,6 +90,11 @@ export default function Guide({ onClose }: { onClose: () => void }) {
             to fade letter by letter. Each right answer makes the next gap longer (days, weeks,
             months); a miss makes it short again. Gold ★ are a verb's tenses.
           </p>
+          <p>
+            A word's details show its memory as a bar: from its last review to when it is due (the
+            tick) and when it breaks (the end), with how far along you are now. Above it: how many
+            right answers, each given when due, take it to the next strength level.
+          </p>
         </Section>
 
         <Section title="Supply">
