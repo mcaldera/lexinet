@@ -44,14 +44,17 @@ test('a word is unseen until one of its cards has been answered', () => {
   expect(unseen([{ card: { state: State.Learning } }, { card: { state: State.New } }])).toBe(false);
 });
 
-test('a word recognised at first sight is on the fast track: produce it at once to conquer', () => {
+test('a word recognised at first sight is on the fast track: produce it after a short break to conquer', () => {
   const t0 = 1_000_000;
-  const c = recordClaim(undefined, 'it-en', t0, GAPS, true);
+  const gaps = { ...GAPS, known: 30_000 };
+  const c = recordClaim(undefined, 'it-en', t0, gaps, true);
   expect(c.known).toBe(true);
-  expect(claimNext(c, GAPS)).toEqual({ step: 2, directions: ['en-it'], opensAt: t0 });
-  const done = recordClaim(c, 'en-it', t0 + 5_000, GAPS);
+  expect(claimNext(c, gaps)).toEqual({ step: 2, directions: ['en-it'], opensAt: t0 + 30_000 });
+  // Right after the Italian was on screen, producing it would be copying.
+  expect(claimSteps(recordClaim(c, 'en-it', t0 + 5_000, gaps))).toBe(1);
+  const done = recordClaim(c, 'en-it', t0 + 30_000, gaps);
   expect(claimComplete(done)).toBe(true);
-  expect(claimNext(done, GAPS)).toBeNull();
+  expect(claimNext(done, gaps)).toBeNull();
 });
 
 test('a word learnt from "Show me" takes the full three steps', () => {

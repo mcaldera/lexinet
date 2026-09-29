@@ -4,12 +4,12 @@ import type { NodeState } from './unlock';
 const GAPS = { step: 60_000, recall: 10 * 60_000 };
 const t0 = Date.UTC(2026, 0, 1);
 
-test('open claim steps first, then threats, then freshly revealed words', () => {
+test('broken words first (biggest gap first), then open claim steps, then new words', () => {
   const states = new Map<string, NodeState>([
     ['new', 'frontier'],
     ['old', 'frontier'],
-    ['angry', 'frontier'],
-    ['fading', 'conquered'],
+    ['small', 'conquered'],
+    ['big', 'conquered'],
     ['fine', 'conquered'],
     ['ready', 'claimed'],
     ['waiting', 'claimed'],
@@ -21,35 +21,36 @@ test('open claim steps first, then threats, then freshly revealed words', () => 
       ['ready', { itEn: t0 - 120_000 }],
       ['waiting', { itEn: t0 - 10_000 }],
     ]),
-    health: new Map([
-      ['fading', 0.6],
-      ['fine', 0.95],
+    broken: new Map([
+      ['small', 1],
+      ['big', 14],
     ]),
-    hostile: new Set(['angry']),
     fresh: new Set(['new', 'hidden']),
     nowMs: t0,
     gaps: GAPS,
   });
   expect(list).toEqual([
+    { id: 'big', kind: 'broken' },
+    { id: 'small', kind: 'broken' },
     { id: 'ready', kind: 'ready' },
-    { id: 'angry', kind: 'threat' },
-    { id: 'fading', kind: 'threat' },
     { id: 'new', kind: 'new' },
   ]);
 });
 
-test('words under a wrong-answer lock are left out', () => {
+test('words under a wrong-answer lock are left out, except broken ones', () => {
   const list = attentionList({
-    states: new Map([['a', 'frontier']]),
+    states: new Map<string, NodeState>([
+      ['a', 'frontier'],
+      ['b', 'conquered'],
+    ]),
     claims: new Map(),
-    health: new Map(),
-    hostile: new Set(['a']),
-    fresh: new Set(),
+    broken: new Map([['b', 0]]),
+    fresh: new Set(['a']),
     nowMs: t0,
     gaps: GAPS,
-    blocked: (id) => id === 'a',
+    blocked: () => true,
   });
-  expect(list).toEqual([]);
+  expect(list).toEqual([{ id: 'b', kind: 'broken' }]);
 });
 
 test('newly revealed: hidden before, "?" now', () => {
@@ -65,30 +66,7 @@ test('newly revealed: hidden before, "?" now', () => {
   expect(newlyRevealed(before, after)).toEqual(['a', 'c']);
 });
 
-test('a miss flags the endangered claims and the word to win back first', () => {
-  const list = attentionList({
-    states: new Map<string, NodeState>([
-      ['x', 'frontier'],
-      ['a', 'claimed'],
-      ['r', 'claimed'],
-    ]),
-    claims: new Map([['r', { itEn: t0 - 120_000 }]]),
-    health: new Map(),
-    hostile: new Set(['x']),
-    fresh: new Set(),
-    nowMs: t0,
-    gaps: GAPS,
-    blocked: (id) => id === 'x',
-    danger: new Map([['a', { from: 'x' }]]),
-  });
-  expect(list).toEqual([
-    { id: 'x', kind: 'danger' },
-    { id: 'a', kind: 'danger' },
-    { id: 'r', kind: 'ready' },
-  ]);
-});
-
-test('conquered words with a review due are flagged, after open claim steps', () => {
+test('held words with a review due are flagged, after open claim steps', () => {
   const list = attentionList({
     states: new Map<string, NodeState>([
       ['w', 'conquered'],
@@ -96,8 +74,6 @@ test('conquered words with a review due are flagged, after open claim steps', ()
       ['q', 'frontier'],
     ]),
     claims: new Map([['r', { itEn: t0 - 120_000 }]]),
-    health: new Map([['w', 0.95]]),
-    hostile: new Set(),
     fresh: new Set(),
     nowMs: t0,
     gaps: GAPS,
@@ -109,19 +85,19 @@ test('conquered words with a review due are flagged, after open claim steps', ()
   ]);
 });
 
-test('raided words come right after danger', () => {
+test('raided words come right after broken ones', () => {
   const list = attentionList({
-    states: new Map([
+    states: new Map<string, NodeState>([
       ['a', 'conquered'],
       ['b', 'claimed'],
+      ['c', 'conquered'],
     ]),
     claims: new Map([['b', { itEn: 1 }]]),
-    health: new Map(),
-    hostile: new Set(),
+    broken: new Map([['c', 3]]),
     fresh: new Set(),
     nowMs: 10_000_000,
     gaps: { step: 60_000, recall: 300_000 },
     raid: new Set(['a']),
   });
-  expect(list.map((a) => a.kind)).toEqual(['raid', 'ready']);
+  expect(list.map((a) => a.kind)).toEqual(['broken', 'raid', 'ready']);
 });

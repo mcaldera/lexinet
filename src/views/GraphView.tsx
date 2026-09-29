@@ -5,7 +5,7 @@ import ForceGraph2D, {
   type LinkObject,
   type NodeObject,
 } from 'react-force-graph-2d';
-import { COOLDOWN_MS, DANGER_MS, INFLUENCE, REACH, RECLAIM_MS } from '../config';
+import { COOLDOWN_MS, RECLAIM_MS } from '../config';
 import { appNow } from '../core/clock';
 import { hintedName, FULL_NAME } from '../core/fade';
 import { edgeOpacity, healthBand } from '../core/health';
@@ -38,15 +38,30 @@ import {
 type GNode = { id: string; word: WordNode; hub?: RootHub; hintOf?: string };
 /**
  * `descends`: link from a root hub to one of its words. `category`: invisible
- * spring pulling discovered words of the same category together. `flow`:
- * influence travelling source -> target (drawn as moving particles).
+ * spring pulling discovered words of the same category together.
  */
 type GLink = Edge & {
   descends?: boolean;
   category?: boolean;
-  flow?: 'attack' | 'support';
   /** Link from a word to its bought hint. */
   hint?: boolean;
+};
+
+/** Supply as the map draws it (core/supply.ts, via supplyState). */
+export type SupplyView = {
+  /** Supply arriving at each word it reaches. */
+  value: Map<string, number>;
+  /** The neighbour each word's supply comes from: the supply lines. */
+  from: Map<string, string>;
+  /** Held words that are broken (missed, or faded past the line). */
+  broken: Set<string>;
+  /** Your supply nodes (the capital first), and those working now. */
+  nodes: Set<string>;
+  working: Set<string>;
+  /** Held words cut off: since when, and when they fall (app ms). */
+  cut: Map<string, { since: number; until: number }>;
+  /** Supply a word needs to count. */
+  min: number;
 };
 type N = NodeObject<GNode>;
 type L = LinkObject<GNode, GLink>;
@@ -66,23 +81,27 @@ function hashOf(s: string) {
 
 /** Ripple colours (RGB) for words that need attention. */
 const ATTENTION_RGB: Record<AttentionKind, string> = {
-  danger: '244, 63, 94', // rose: a claim about to fall, or the missed word to win back
-  raid: '251, 146, 60', // orange: a border word under raid
+  broken: '244, 63, 94', // rose: a broken word, a gap in your supply
+  raid: '251, 146, 60', // orange: a chokepoint under raid
   reclaim: '45, 212, 191', // teal: a lost word one answer wins back
-  due: '167, 139, 250', // violet: a conquered word due for review
+  due: '167, 139, 250', // violet: a held word due for review
   ready: '52, 211, 153', // emerald: a claim step is open
-  threat: '248, 113, 113', // red: hostile, rebelling or fading
   new: '125, 211, 252', // light sky: just revealed
 };
 const ATTENTION_LABEL: Record<AttentionKind, string> = {
-  danger: 'in danger',
+  broken: 'broken',
   raid: 'raided',
   reclaim: 'to win back',
   due: 'due',
   ready: 'ready',
-  threat: 'under threat',
   new: 'new',
 };
+/** Supply's colour: gold, like the towers that send it out. */
+const SUPPLY_RGB = '251, 191, 36';
+/** The light supply casts on the ground: pale gold, visible on any territory. */
+const SUPPLY_LIGHT = '255, 236, 179';
+/** A held word with less supply than this is thin: a node nearby would help (amber ring). */
+const THIN_SUPPLY = 0.2;
 
 type Props = {
   data: AppData;
@@ -99,30 +118,20 @@ type Props = {
   rootCharge?: Map<string, number>;
   /** Word id -> real time (ms) its wrong-answer lock ends. */
   cooldowns: Map<string, number>;
-  /** Influence game: control (0..1) of conquered words. */
-  control: Map<string, number>;
-  /** Hostile frontier words and rebelling conquered words. */
-  hostile: Set<string>;
-  /** Frontier word -> app time (ms) its grace period ends and it turns hostile. */
-  graceUntil: Map<string, number>;
   /** Current app time (ms). */
   nowMs: number;
   /** Claim progress of claimed words. */
   claims: Map<string, Claim | undefined>;
   /** Claimed words waiting for their next step: when it opens and the whole wait (app ms). */
   claimWaits: Map<string, { opensAt: number; total: number }>;
-  /** Hidden words in sight (reach below what conquering needs): drawn as ghosts. */
-  sighted: Map<string, number>;
-  /** Claims endangered by a miss: deadline (app ms) and the missed word (core/danger.ts). */
-  danger: Map<string, { until: number; from: string }>;
+  /** Your supply: lines, broken and cut-off words, supply nodes. */
+  supply?: SupplyView;
+  /** Placing a supply node: the word previewed and the supply it would bring. */
+  preview?: { id: string; value: Map<string, number> };
   /** Lost words one right answer wins back, what they were and until when (app ms). */
   reclaim: Map<string, { was: 'conquered' | 'claimed'; steps: number; until: number }>;
   /** Words with a bought hint -> their English cousin, drawn as a small node next to them. */
   hints: Map<string, string>;
-  /** Push of every won word (core/reach.ts pushOf), for the push flows. */
-  pushes: Map<string, number>;
-  /** Who pushes the selected word and how much: ringed on the map. */
-  pushSources?: Map<string, number>;
   /** Words that need attention, most urgent first: ripples, edge arrows, jump bar. */
   attention: Attention[];
   /** Word whose Italian name is the answer being asked: its name is hidden. */
@@ -133,9 +142,11 @@ type Props = {
   inspect: boolean;
   /** Draw shared roots as hub nodes (replaces word-to-word "shared root" links). */
   showRoots: boolean;
-  /** Categories whose landmark stands (core/landmark.ts). */
-  landmarks?: Set<number>;
+  /** Hidden words one link beyond your "?": drawn as ghosts, not conquerable yet. */
+  ghosts?: Set<string>;
   onNodeClick: (id: string) => void;
+  /** Hovering a word (placing a supply node previews it). */
+  onNodeHover?: (id: string | undefined) => void;
 };
 
 export default function GraphView({
@@ -147,25 +158,21 @@ export default function GraphView({
   unlockedRoots,
   rootCharge,
   cooldowns,
-  control,
-  hostile,
-  graceUntil,
   nowMs,
   claims,
   claimWaits,
-  sighted,
-  danger,
+  supply,
+  preview,
   reclaim,
   hints,
-  pushes,
-  pushSources,
   attention,
   answerId,
   recall,
   inspect,
   showRoots,
-  landmarks,
+  ghosts,
   onNodeClick,
+  onNodeHover,
 }: Props) {
   const wrap = useRef<HTMLDivElement>(null);
   const fg = useRef<ForceGraphMethods<N, L>>(undefined);
@@ -263,7 +270,7 @@ export default function GraphView({
   // A root appears once you've conquered one of its words (always in inspect mode).
   const visibleKey = [
     ...data.nodes
-      .filter((n) => inspect || data.states.get(n.id) !== 'locked' || sighted.has(n.id))
+      .filter((n) => inspect || data.states.get(n.id) !== 'locked' || ghosts?.has(n.id))
       .map((n) => n.id),
     ...hubs
       .filter((h) => inspect || h.words.some((w) => data.states.get(w) === 'conquered'))
@@ -282,31 +289,14 @@ export default function GraphView({
     return m;
   }, [data.edges, data.states]);
 
-  // Influence flows per link ("a|b" sorted): who attacks or supports whom.
-  const flowKey = useMemo(() => {
-    const out: string[] = [];
-    for (const e of data.edges) {
-      const [a, b] = [e.source, e.target];
-      const [sa, sb] = [data.states.get(a), data.states.get(b)];
-      if (hostile.has(a) && sb === 'conquered' && !hostile.has(b)) out.push(`${a}>${b}:attack`);
-      else if (hostile.has(b) && sa === 'conquered' && !hostile.has(a))
-        out.push(`${b}>${a}:attack`);
-      else if (sa === 'conquered' && sb === 'conquered' && !hostile.has(a) && !hostile.has(b)) {
-        const [ca, cb] = [control.get(a) ?? 1, control.get(b) ?? 1];
-        if (ca < 0.99 || cb < 0.99) out.push(ca < cb ? `${b}>${a}:support` : `${a}>${b}:support`);
-      }
-    }
-    return out.join(',');
-  }, [data.edges, data.states, hostile, control]);
-  // Something moves on screen: keep redrawing (energy bands, arrows, breathing glow).
+  // Something moves on screen: keep redrawing (supply lines, arrows, breathing glow).
   const animate =
     !inspect &&
     (cohesionOf.size > 0 ||
-      flowKey !== '' ||
       attentionOf.size > 0 ||
       claimWaits.size > 0 ||
-      sighted.size > 0 ||
-      danger.size > 0 ||
+      (supply?.cut.size ?? 0) > 0 ||
+      !!preview ||
       bursting);
 
   const hintKey = [...hints].map(([id, c]) => `${id}=${c}`).join(',');
@@ -377,16 +367,6 @@ export default function GraphView({
 
   const graphData = useMemo(() => {
     const visible = new Set(visibleKey.split(',').filter(Boolean));
-    const flows = new Map(
-      flowKey
-        .split(',')
-        .filter(Boolean)
-        .map((f) => {
-          const [pair, kind] = f.split(':');
-          const [from, to] = pair.split('>');
-          return [[from, to].sort().join('|'), { from, to, kind: kind as 'attack' | 'support' }];
-        }),
-    );
     const linkedTo = (id: string) =>
       data.edges.flatMap((e) => (e.source === id ? [e.target] : e.target === id ? [e.source] : []));
     const shown = shownBefore.current;
@@ -442,11 +422,7 @@ export default function GraphView({
     const links: GLink[] = data.edges
       .filter((e) => visible.has(e.source) && visible.has(e.target))
       .filter((e) => !(hubs.length && e.reason === 'etymological')) // the hub replaces these
-      .map((e) => {
-        const f = flows.get([e.source, e.target].sort().join('|'));
-        // Particles run source -> target, so orient the link along the flow.
-        return f ? { ...e, source: f.from, target: f.to, flow: f.kind } : { ...e };
-      });
+      .map((e) => ({ ...e }));
     // Discovered words of the same category attract each other (invisible
     // springs): categories gather into territories as you explore them.
     for (const r of data.graph.regions ?? []) {
@@ -488,7 +464,7 @@ export default function GraphView({
     shownBefore.current = new Set(nodes.map((n) => n.id));
     return { nodes, links };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visibleKey, data.edges, hubs, flowKey, hintKey, inspect]);
+  }, [visibleKey, data.edges, hubs, hintKey, inspect]);
 
   /** Centre the camera on a word (zooming in if far out) and open it, like a click. */
   const jumpTo = (id: string) => {
@@ -606,7 +582,6 @@ export default function GraphView({
         name: named ? r.name : '',
         color: REGION_RGB[colorOf.get(r.id) ?? 0],
         ids,
-        landmark: !inspect && !!landmarks?.has(r.id),
       },
     ];
   });
@@ -648,6 +623,8 @@ export default function GraphView({
   const territoryRadius = (id: string) => {
     if (inspect) return 24; // galaxy view: every word lights up its nebula
     const st = data.states.get(id);
+    // Cut off, a word barely holds any ground: the territory shrinks around the gap.
+    if (st === 'conquered' && supply?.cut.has(id)) return 14;
     if (st === 'conquered') {
       return 32 + 6 * (strength.get(id) ?? 0) + 4 * (verbLevels.get(id) ?? 0);
     }
@@ -657,6 +634,41 @@ export default function GraphView({
   };
 
   const endId = (x: unknown) => (typeof x === 'object' && x ? (x as N).id : (x as string));
+
+  /**
+   * Supply you can see: a gold glow under every word it reaches, bigger and
+   * brighter the more arrives, adding up where words cluster. Strong ground
+   * shines, the thin edges barely do, cut-off pockets stay dark: where a new
+   * supply node would help is plain to see. While placing one, the glow shows
+   * the supply you would have with it.
+   */
+  const drawSupplyField = (ctx: CanvasRenderingContext2D) => {
+    const field = preview?.value ?? supply?.value;
+    if (!field || !supply) return;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (const [id, v] of field) {
+      if (v < supply.min * 0.5 || supply.cut.has(id)) continue;
+      const st = data.states.get(id);
+      if (st === undefined || st === 'locked') continue;
+      const n = nodeCache.current.get(id);
+      if (n?.x === undefined || n.y === undefined) continue;
+      // Steep in supply, and a pale light rather than gold: it must read on every
+      // territory colour (Family's is gold) and set strong ground apart from thin.
+      const s = Math.min(1, v);
+      const k = s * s;
+      const r = 24 + 56 * s;
+      const g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, r);
+      g.addColorStop(0, `rgba(${SUPPLY_LIGHT}, ${0.04 + 0.42 * k})`);
+      g.addColorStop(0.5, `rgba(${SUPPLY_LIGHT}, ${0.02 + 0.16 * k})`);
+      g.addColorStop(1, `rgba(${SUPPLY_LIGHT}, 0)`);
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, r, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+    ctx.restore();
+  };
   const isHub = (id: string) => id.startsWith('root:');
   /** A word's name as the player may see it: fading words lose letters (see core/fade). */
   const shownName = (id: string) => {
@@ -731,17 +743,11 @@ export default function GraphView({
       if (p < 1) drawBurst(ctx, x, y, r, scale, burst.kind, p);
       else bursts.current.delete(node.id);
     }
-    const src = pushSources?.get(node.id);
-    if (src !== undefined && !inspect) {
-      // This word pushes the selected one: ring it and say by how much.
-      ctx.beginPath();
-      ctx.arc(x, y, r + 6, 0, 2 * Math.PI);
-      ctx.setLineDash([3, 2]);
-      ctx.strokeStyle = 'rgba(125, 211, 252, 0.9)';
-      ctx.lineWidth = 1.2;
-      ctx.stroke();
-      ctx.setLineDash([]);
-      badge(ctx, `+${Math.round(src * 100)}%`, x, y - r - 7, scale, '125, 211, 252');
+    const pv = preview?.value.get(node.id);
+    if (pv !== undefined && supply && !inspect && pv >= supply.min - 1e-9) {
+      // Placing a supply node: what it would supply glows gold, what it would add brightest.
+      const gain = (supply.value.get(node.id) ?? 0) < supply.min - 1e-9;
+      softGlow(ctx, x, y, r, r + (gain ? 14 : 9), SUPPLY_RGB, gain ? 0.55 : 0.22);
     }
     const attn = attentionOf.get(node.id);
     if (attn) drawRipple(ctx, x, y, r, scale, ATTENTION_RGB[attn]);
@@ -806,9 +812,8 @@ export default function GraphView({
       ctx.stroke();
     }
 
-    const reach = inspect ? undefined : sighted.get(node.id);
-    if (reach !== undefined) {
-      // Beyond the horizon: a faint ghost, its ring filling as your reach grows.
+    if (!inspect && ghosts?.has(node.id)) {
+      // Beyond the horizon: a faint ghost of what lies ahead.
       shapePath(ctx, shape, x, y, r);
       ctx.fillStyle = 'rgba(71, 85, 105, 0.15)';
       ctx.fill();
@@ -817,27 +822,11 @@ export default function GraphView({
       ctx.lineWidth = 0.8;
       ctx.stroke();
       ctx.setLineDash([]);
-      ctx.beginPath();
-      ctx.arc(
-        x,
-        y,
-        r + 2.5,
-        -Math.PI / 2,
-        -Math.PI / 2 + Math.min(1, reach / REACH.open) * 2 * Math.PI,
-      );
-      ctx.strokeStyle = 'rgba(125, 211, 252, 0.6)';
-      ctx.lineWidth = 1;
-      ctx.stroke();
-      if (scale > 0.9) {
-        ctx.font = `500 ${Math.max(3, 9 / scale)}px ${FONT_UI}`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'top';
-        ctx.fillStyle = 'rgba(125, 211, 252, 0.7)';
-        ctx.fillText(`${Math.round((reach / REACH.open) * 100)}%`, x, y + r + 4);
-      }
       ctx.restore();
       return;
     }
+    // Outside your supply, a word you win here is cut off from the start: drawn faint.
+    const outside = !inspect && !!supply && (supply.value.get(node.id) ?? 0) < supply.min - 1e-9;
     if (state === 'claimed') {
       // Freshly won but fragile: glassy, one ring segment per conquest step. The
       // name stays hidden ("?") until conquered, so producing it is real recall.
@@ -862,29 +851,6 @@ export default function GraphView({
         ctx.stroke();
       }
       ctx.lineCap = 'butt';
-      const d = danger.get(node.id);
-      if (d && !inspect) {
-        // In danger: a pulsing rose ring running down to the moment it falls.
-        const pulse = 0.6 + 0.4 * Math.sin(Date.now() / 180);
-        ctx.beginPath();
-        ctx.arc(x, y, r + 8, 0, 2 * Math.PI);
-        ctx.setLineDash([2, 2]);
-        ctx.strokeStyle = `rgba(244, 63, 94, ${0.5 * pulse})`;
-        ctx.lineWidth = 1;
-        ctx.stroke();
-        ctx.setLineDash([]);
-        const left = Math.max(0, Math.min(1, (d.until - appMs) / DANGER_MS));
-        ctx.beginPath();
-        ctx.arc(x, y, r + 8, -Math.PI / 2, -Math.PI / 2 + left * 2 * Math.PI);
-        ctx.strokeStyle = `rgba(244, 63, 94, ${0.7 + 0.3 * pulse})`;
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        ctx.font = `800 ${Math.max(4, 11 / scale)}px ${FONT_UI}`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'bottom';
-        ctx.fillStyle = `rgba(253, 164, 175, ${pulse})`;
-        ctx.fillText('!', x + r + 8, y - r - 4);
-      }
       const wait = claimWaits.get(node.id);
       if (wait) {
         // Time until the next step opens: a light ring that runs down.
@@ -900,23 +866,14 @@ export default function GraphView({
       return;
     }
     if (state !== 'conquered') {
-      const angry = hostile.has(node.id);
-      const rgb = state === 'locked' ? '100, 116, 139' : angry ? '220, 38, 38' : '71, 85, 105';
-      if (angry) {
-        // Hostile: smouldering, attacking its conquered neighbours.
-        const flicker = 0.8 + 0.2 * Math.sin(Date.now() / 300 + x);
-        softGlow(ctx, x, y, r * 0.6, r + 9, '239, 68, 68', 0.4 * flicker);
-      }
+      const rgb = state === 'locked' ? '100, 116, 139' : '71, 85, 105';
+      if (outside) ctx.globalAlpha = 0.55;
       shapePath(ctx, shape, x, y, r);
-      ctx.fillStyle = orbGradient(ctx, x, y, r, rgb, angry ? 0.85 : 0.8);
+      ctx.fillStyle = orbGradient(ctx, x, y, r, rgb, outside ? 0.5 : 0.8);
       ctx.fill();
-      ctx.setLineDash([2, 2]);
+      ctx.setLineDash(outside ? [1, 2.5] : [2, 2]);
       ctx.strokeStyle =
-        state === 'locked'
-          ? 'rgba(100, 116, 139, 0.6)'
-          : angry
-            ? 'rgba(252, 165, 165, 0.95)'
-            : 'rgba(148, 163, 184, 0.8)';
+        state === 'locked' ? 'rgba(100, 116, 139, 0.6)' : 'rgba(148, 163, 184, 0.8)';
       ctx.lineWidth = 1;
       ctx.stroke();
       ctx.setLineDash([]);
@@ -945,24 +902,25 @@ export default function GraphView({
           '94, 234, 212',
         );
       }
-      const grace = graceUntil.get(node.id);
-      if (state === 'frontier' && !angry && grace && !inspect) {
-        // Grace period left before this word turns hostile.
-        const left = Math.max(0, (grace - nowMs) / (INFLUENCE.hostileAfterHours * 3_600_000));
-        ctx.beginPath();
-        ctx.arc(x, y, r + 2.5, -Math.PI / 2, -Math.PI / 2 + left * 2 * Math.PI);
-        ctx.strokeStyle = 'rgba(251, 191, 36, 0.8)';
-        ctx.lineWidth = 1.2;
-        ctx.stroke();
-      }
-      glyph(ctx, '?', x, y, shape, angry ? '#fee2e2' : '#e2e8f0');
+      glyph(ctx, '?', x, y, shape, '#e2e8f0');
       ctx.restore();
       return;
     }
 
     const h = health.get(node.id) ?? 1;
     const band = healthBand(h);
-    const rgb = BAND_RGB[band];
+    const cut = inspect ? undefined : supply?.cut.get(node.id);
+    const broken = !inspect && !!supply?.broken.has(node.id);
+    // Cut off from supply: drained of colour until reconnected.
+    const rgb = cut && !broken ? '100, 116, 139' : BAND_RGB[band];
+    if (!inspect && supply?.nodes.has(node.id)) {
+      // A supply node: a gold tower over the word (grey while it isn't working).
+      const h = 12 + (node.id === data.seed ? 4 : 0);
+      ctx.save();
+      if (!supply.working.has(node.id)) ctx.globalAlpha = 0.45;
+      drawTower(ctx, x, y - r - h * 0.75, h, SUPPLY_RGB);
+      ctx.restore();
+    }
     const coh = inspect ? 0 : (cohesionOf.get(node.id) ?? 0);
     // Every word glows a little; embedded words glow bigger and brighter the more
     // strongly they are tied into conquered territory, breathing slowly.
@@ -974,14 +932,33 @@ export default function GraphView({
       r * 0.7,
       r + 5 + Math.min(10, coh * 3),
       rgb,
-      (0.2 + Math.min(0.3, coh * 0.12)) * (control.get(node.id) ?? 1) * breath,
+      (0.2 + Math.min(0.3, coh * 0.12)) * (cut ? 0.3 : 1) * breath,
     );
-    if (hostile.has(node.id)) {
-      // Rebelling: control collapsed, now pressuring its own neighbours.
+    const thin = !cut && !inspect && supply && (supply.value.get(node.id) ?? 0) < THIN_SUPPLY;
+    if (thin && !supply.nodes.has(node.id)) {
+      // Thin supply: it counts, but barely. A supply node nearby would help.
       ctx.beginPath();
       ctx.arc(x, y, r + 3.5, 0, 2 * Math.PI);
-      ctx.strokeStyle = 'rgba(239, 68, 68, 0.9)';
-      ctx.lineWidth = 1.5;
+      ctx.setLineDash([2.5, 2]);
+      ctx.strokeStyle = `rgba(${SUPPLY_RGB}, 0.8)`;
+      ctx.lineWidth = 1.1;
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    if (cut) {
+      // The siege clock: a ring running down to when it falls back to "?".
+      const left = Math.max(0, Math.min(1, (cut.until - nowMs) / (cut.until - cut.since || 1)));
+      ctx.beginPath();
+      ctx.arc(x, y, r + 3.5, 0, 2 * Math.PI);
+      ctx.setLineDash([1.5, 2]);
+      ctx.strokeStyle = broken ? 'rgba(244, 63, 94, 0.55)' : 'rgba(148, 163, 184, 0.5)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.arc(x, y, r + 3.5, -Math.PI / 2, -Math.PI / 2 + left * 2 * Math.PI);
+      ctx.strokeStyle = broken ? 'rgba(244, 63, 94, 0.95)' : 'rgba(203, 213, 225, 0.85)';
+      ctx.lineWidth = 1.6;
       ctx.stroke();
     }
     // One gold ring per tense mastered: verbs are the strongholds of a territory.
@@ -1069,8 +1046,10 @@ export default function GraphView({
     const dim = crossRegion(l) || l.descends ? (inspect ? 0.12 : 0.5) : 1;
     if (inspect) return (activeId === undefined ? 0.8 : 0.15) * dim;
     const [a, b] = [endId(l.source), endId(l.target)];
-    if (sighted.has(a) || sighted.has(b)) return 0.2 * dim; // towards the horizon
+    if (ghosts?.has(a) || ghosts?.has(b)) return 0.2 * dim; // towards the horizon
     if (hidden(a) || hidden(b)) return 0.4 * dim;
+    // Into or out of a cut-off pocket: the line is down.
+    if (supply?.cut.has(a) || supply?.cut.has(b)) return 0.25 * dim;
     return 0.8 * Math.max(0.3, edgeOpacity(health.get(a) ?? null, health.get(b) ?? null)) * dim;
   };
 
@@ -1098,85 +1077,38 @@ export default function GraphView({
       <div style="opacity:.8">strength ${Math.round(l.weight * 100)}%</div>`;
   };
 
-  /** A link between two conquered words: carries a moving band of light. */
-  const isEnergy = (l: L) =>
-    !inspect &&
-    !l.category &&
-    !l.descends &&
-    data.states.get(endId(l.source)) === 'conquered' &&
-    data.states.get(endId(l.target)) === 'conquered';
-
-  /** Push running from a won word into a ghost beyond the horizon: [from, to, push]. */
-  const pushFlow = (l: L): [N, N, number] | null => {
-    if (inspect || l.category || l.descends) return null;
+  /**
+   * A supply line: the link a held word's supply comes in by, from the word
+   * nearer the supply node [from, to]. Only supplied words have one.
+   */
+  const supplyLine = (l: L): [N, N] | null => {
+    if (inspect || !supply || l.category || l.descends || l.hint) return null;
     const a = l.source as N;
     const b = l.target as N;
     if (typeof a !== 'object' || typeof b !== 'object') return null;
-    if (pushes.has(a.id) && sighted.has(b.id)) return [a, b, pushes.get(a.id)!];
-    if (pushes.has(b.id) && sighted.has(a.id)) return [b, a, pushes.get(b.id)!];
+    const fed = (from: N, to: N) =>
+      supply.from.get(to.id) === from.id &&
+      data.states.get(to.id) === 'conquered' &&
+      !supply.cut.has(to.id);
+    if (fed(a, b)) return [a, b];
+    if (fed(b, a)) return [b, a];
     return null;
   };
-
-  /** The missed word threatening an endangered claim along this link: [from, to]. */
-  const dangerLink = (l: L): [N, N] | null => {
-    if (inspect || l.category || l.descends) return null;
-    const a = l.source as N;
-    const b = l.target as N;
-    if (typeof a !== 'object' || typeof b !== 'object') return null;
-    if (danger.get(b.id)?.from === a.id) return [a, b];
-    if (danger.get(a.id)?.from === b.id) return [b, a];
-    return null;
-  };
-
-  const drawDanger = (ctx: CanvasRenderingContext2D, l: L) => {
-    const f = dangerLink(l);
-    if (!f) return;
-    const [a, b] = f;
-    if (a.x === undefined || b.x === undefined) return;
-    ctx.save();
-    ctx.setLineDash([4, 4]);
-    ctx.lineDashOffset = -Date.now() / 30; // runs towards the endangered claim
-    ctx.lineCap = 'round';
-    ctx.strokeStyle = `rgba(244, 63, 94, ${0.55 + 0.35 * Math.sin(Date.now() / 180)})`;
-    ctx.lineWidth = 2.2;
-    ctx.beginPath();
-    ctx.moveTo(a.x, a.y!);
-    ctx.lineTo(b.x, b.y!);
-    ctx.stroke();
-    ctx.restore();
-  };
-
-  const drawPush = (ctx: CanvasRenderingContext2D, l: L) => {
-    const f = pushFlow(l);
-    if (!f) return;
-    const [a, b, push] = f;
-    if (a.x === undefined || b.x === undefined) return;
-    ctx.save();
-    ctx.setLineDash([2, 6]);
-    ctx.lineDashOffset = -Date.now() / 45; // flows towards the ghost
-    ctx.lineCap = 'round';
-    ctx.strokeStyle = `rgba(125, 211, 252, ${0.35 + 0.35 * Math.min(1, push)})`;
-    ctx.lineWidth = 0.8 + 1.6 * Math.min(1.5, push);
-    ctx.beginPath();
-    ctx.moveTo(a.x, a.y!);
-    ctx.lineTo(b.x, b.y!);
-    ctx.stroke();
-    ctx.restore();
-  };
+  const isEnergy = (l: L) => !!supplyLine(l);
 
   /**
-   * A link between two conquered words carries pulses of light, each link at its
-   * own pace and phase (from the words' ids), so the network hums instead of
-   * every link crawling in step.
+   * Supply flowing out along a supply line: pulses of gold light from the
+   * supply node outwards, each line at its own pace and phase (from the words'
+   * ids), brighter where more supply arrives.
    */
   const drawEnergy = (ctx: CanvasRenderingContext2D, l: L) => {
-    const s = l.source as N;
-    const e = l.target as N;
+    const line = supplyLine(l);
+    if (!line) return;
+    const [s, e] = line;
     if (s.x === undefined || e.x === undefined || s.y === undefined || e.y === undefined) return;
-    const strength = Math.min(control.get(s.id) ?? 1, control.get(e.id) ?? 1);
+    const strength = Math.min(1, (supply?.value.get(e.id) ?? 0) / 0.5);
     const seed = hashOf(`${s.id}|${e.id}`);
-    // Half the links pulse one way, half the other.
-    const [ax, ay, bx, by] = seed & 1 ? [e.x, e.y, s.x, s.y] : [s.x, s.y, e.x, e.y];
+    const [ax, ay, bx, by] = [s.x, s.y, e.x, e.y];
     const len = Math.hypot(bx - ax, by - ay);
     if (len < 1) return;
     const period = 2400 + (seed % 2000);
@@ -1190,8 +1122,8 @@ export default function GraphView({
     const rank = weightRank(l.weight);
     ctx.save();
     const g = ctx.createLinearGradient(x0, y0, x1, y1);
-    g.addColorStop(0, 'rgba(167, 243, 208, 0)');
-    g.addColorStop(1, `rgba(209, 250, 229, ${0.45 + 0.5 * strength})`);
+    g.addColorStop(0, 'rgba(253, 230, 138, 0)');
+    g.addColorStop(1, `rgba(254, 243, 199, ${0.35 + 0.6 * strength})`);
     ctx.strokeStyle = g;
     ctx.lineCap = 'round';
     ctx.lineWidth = 0.8 + 2.4 * rank ** 2 * strength;
@@ -1199,7 +1131,7 @@ export default function GraphView({
     ctx.moveTo(x0, y0);
     ctx.lineTo(x1, y1);
     ctx.stroke();
-    if (head < 1) softGlow(ctx, x1, y1, 0, 2.5 + 3 * rank, '209, 250, 229', 0.6 * strength);
+    if (head < 1) softGlow(ctx, x1, y1, 0, 2.5 + 3 * rank, SUPPLY_RGB, 0.6 * strength);
     ctx.restore();
   };
 
@@ -1229,10 +1161,10 @@ export default function GraphView({
         }}
         nodeLabel={(n) => {
           if (n.hintOf) {
-            return `💡 Hint: English cousin “${n.word.it}” · shields its word (hostile pressure halved)`;
+            return `💡 Hint: English cousin “${n.word.it}”`;
           }
           if (n.hub && !inspect && !unlockedRoots.has(n.id)) {
-            return `${n.hub.lang ?? ''} root ${n.hub.root}: opens by itself once enough of its words are in reach, and reveals them all`;
+            return `${n.hub.lang ?? ''} root ${n.hub.root}: opens by itself once enough of its words are inside your supply, and reveals them all`;
           }
           if (n.hub) {
             const known = n.hub.words.filter((w) => !hidden(w) && shownName(w)).map(shownName);
@@ -1248,12 +1180,13 @@ export default function GraphView({
           if (until && until > nowApp) {
             return `${hidden(n.id) ? 'Unknown word' : n.word.it} · locked ${Math.ceil((until - nowApp) / 1000)} s`;
           }
-          const inSight = inspect ? undefined : sighted.get(n.id);
-          if (inSight !== undefined) {
-            return `Beyond your reach (${Math.round((inSight / REACH.open) * 100)}%): conquer words around it`;
-          }
+          if (!inspect && ghosts?.has(n.id))
+            return 'Beyond your horizon: conquer a word next to it';
+          const outside = !inspect && supply && (supply.value.get(n.id) ?? 0) < supply.min - 1e-9;
           if (!inspect && state === 'frontier') {
-            return `Unknown ${n.word.pos ?? 'word'}: click to conquer`;
+            return `Unknown ${n.word.pos ?? 'word'}: click to conquer${
+              outside ? ' · outside your supply: won here, it is cut off' : ''
+            }`;
           }
           if (!inspect && state === 'claimed') {
             const steps = claimSteps(claims.get(n.id));
@@ -1263,9 +1196,17 @@ export default function GraphView({
           }
           if (!inspect && n.id === answerId) return 'The word you are recalling';
           const h = health.get(n.id);
-          const pct = h != null ? ` · health ${Math.round(h * 100)}%` : '';
+          const pct = h != null ? ` · recall ${Math.round(h * 100)}%` : '';
+          if (!inspect && supply?.broken.has(n.id)) {
+            return `Broken: ${shownName(n.id) || '?'} · no supply passes · click to mend it`;
+          }
+          const cutOff = inspect ? undefined : supply?.cut.get(n.id);
+          if (cutOff) {
+            const hours = Math.max(1, Math.round((cutOff.until - nowMs) / 3_600_000));
+            return `Cut off: ${shownName(n.id) || '?'} · falls back to "?" in ${hours} h unless reconnected`;
+          }
           if (!inspect && state === 'conquered' && h != null && h < FULL_NAME) {
-            return `Fading: ${shownName(n.id) || '?'}${pct} · click to defend`;
+            return `Due: ${shownName(n.id) || '?'}${pct} · click to review`;
           }
           const lvl = strength.get(n.id) ?? 0;
           const str =
@@ -1289,13 +1230,11 @@ export default function GraphView({
             ? `rgba(148, 170, 220, ${activeId === undefined ? 0.16 : 0.06})`
             : l.hint
               ? 'rgba(251, 191, 36, 0.55)'
-              : l.flow === 'attack'
-                ? `rgba(248, 113, 113, ${0.35 + 0.3 * Math.sin(Date.now() / 250)})` // pulsing threat
-                : l.via === 'user'
-                  ? `rgba(52, 211, 153, ${Math.max(0.5, linkAlpha(l))})` // planted by you
-                  : `rgba(${REASON_RGB[l.reason]}, ${linkAlpha(l)})`
+              : l.via === 'user'
+                ? `rgba(52, 211, 153, ${Math.max(0.5, linkAlpha(l))})` // planted by you
+                : `rgba(${REASON_RGB[l.reason]}, ${linkAlpha(l)})`
         }
-        // Strong links are much thicker (and carry more influence).
+        // Strong links are much thicker (and carry more supply).
         // By rank: the closest pairs (ghiaccio-gelato) stand out from mere same-theme ones.
         linkWidth={(l) =>
           inspect
@@ -1317,20 +1256,15 @@ export default function GraphView({
                 : null
         }
         linkHoverPrecision={6}
-        linkVisibility={(l) => !l.category}
-        // Keep animating while influence flows (particles); otherwise let the canvas idle.
+        // A ghost shows the link it will be reached by, not its links to other ghosts.
+        linkVisibility={(l) =>
+          !l.category &&
+          (inspect || !(ghosts?.has(endId(l.source)) && ghosts?.has(endId(l.target))))
+        }
+        // Keep animating while supply flows; otherwise let the canvas idle.
         autoPauseRedraw={!animate}
-        linkDirectionalParticles={(l) => (l.flow ? Math.max(1, Math.round(l.weight * 4)) : 0)}
-        linkDirectionalParticleSpeed={(l) =>
-          l.flow === 'attack' ? 0.004 + 0.01 * l.weight : 0.003 + 0.003 * l.weight
-        }
-        linkDirectionalParticleCanvasObject={(px, py, l, ctx) => drawChevron(ctx, px, py, l)}
-        linkCanvasObjectMode={(l) =>
-          isEnergy(l) || pushFlow(l) || dangerLink(l) ? 'after' : undefined
-        }
-        linkCanvasObject={(l, ctx) =>
-          dangerLink(l) ? drawDanger(ctx, l) : isEnergy(l) ? drawEnergy(ctx, l) : drawPush(ctx, l)
-        }
+        linkCanvasObjectMode={(l) => (isEnergy(l) ? 'after' : undefined)}
+        linkCanvasObject={(l, ctx) => drawEnergy(ctx, l)}
         onRenderFramePre={(ctx) => {
           labels.current = [];
           if (inspect) {
@@ -1339,6 +1273,7 @@ export default function GraphView({
           } else {
             drawBackdrop(ctx);
             drawTerritories(ctx, livePoints());
+            drawSupplyField(ctx);
           }
         }}
         onRenderFramePost={(ctx, scale) => {
@@ -1361,6 +1296,7 @@ export default function GraphView({
           if (hit) jumpTo(hit.id);
         }}
         linkLabel={linkTooltip}
+        onNodeHover={(n) => onNodeHover?.(n ? (n.hintOf ?? n.id) : undefined)}
         onNodeClick={(n) => {
           const id = n.hintOf ?? n.id; // a hint opens its word
           setCursorId(id);
@@ -1713,8 +1649,6 @@ type Territory = {
   name: string;
   color: string;
   pts: (readonly [number, number, number])[];
-  /** Its landmark stands (core/landmark.ts): a gold tower over the name. */
-  landmark?: boolean;
 };
 
 /** Device pixels per CSS pixel of the map canvas. */
@@ -1969,8 +1903,8 @@ function drawRegionNames(
     if (dy === undefined && galaxy) continue;
     cy += (dy ?? 0) * lh;
     placed.push(box(cy));
-    const rgb = t.landmark ? '252, 211, 77' : t.color;
-    const a = t.landmark ? Math.max(alpha, 0.75) : alpha;
+    const rgb = t.color;
+    const a = alpha;
     ctx.lineWidth = 5 / scale;
     ctx.strokeStyle = `rgba(1, 3, 11, ${0.7 * a})`;
     ctx.strokeText(text, cx, cy);
@@ -1979,11 +1913,6 @@ function drawRegionNames(
     ctx.fillStyle = `rgba(${mixRgb(rgb, '255, 255, 255', 0.12)}, ${a})`;
     ctx.fillText(text, cx, cy);
     ctx.shadowBlur = 0;
-    if (t.landmark) {
-      const h = (px * 1.2) / scale;
-      drawTower(ctx, cx, cy - lh * 1.15, h, t.color);
-      placed.push({ x0: cx - h / 2, x1: cx + h / 2, y0: cy - lh * 1.15 - h, y1: cy - lh / 2 });
-    }
   }
   ctx.restore();
   // While bold, the names are in the way of word labels (see drawLabels).
@@ -1991,8 +1920,8 @@ function drawRegionNames(
 }
 
 /**
- * A landmark: a crenellated gold tower of height `h` standing on (x, y + h/2),
- * with a pennant in its region's colour.
+ * A supply node: a crenellated gold tower of height `h` standing on (x, y + h/2),
+ * with a pennant in `rgb`.
  */
 function drawTower(ctx: CanvasRenderingContext2D, x: number, y: number, h: number, rgb: string) {
   const w = h * 0.62;
@@ -2270,29 +2199,6 @@ function badge(
 }
 
 /** A glowing chevron pointing along the link: the direction influence travels. */
-function drawChevron(ctx: CanvasRenderingContext2D, x: number, y: number, l: L) {
-  const a = l.source as N;
-  const b = l.target as N;
-  const angle = Math.atan2((b.y ?? 0) - (a.y ?? 0), (b.x ?? 0) - (a.x ?? 0));
-  const attack = l.flow === 'attack';
-  const size = (attack ? 3.2 : 2.4) + l.weight * 2;
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.rotate(angle);
-  ctx.shadowColor = attack ? 'rgba(248, 113, 113, 0.9)' : 'rgba(110, 231, 183, 0.9)';
-  ctx.shadowBlur = 6;
-  ctx.strokeStyle = attack ? 'rgba(254, 202, 202, 0.95)' : 'rgba(209, 250, 229, 0.95)';
-  ctx.lineWidth = attack ? 1.6 : 1.2;
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-  ctx.beginPath();
-  ctx.moveTo(-size * 0.6, -size);
-  ctx.lineTo(size * 0.6, 0);
-  ctx.lineTo(-size * 0.6, size);
-  ctx.stroke();
-  ctx.restore();
-}
-
 type BurstKind = 'step' | 'conquer' | 'verb';
 const BURST_MS: Record<BurstKind, number> = { step: 1200, conquer: 1800, verb: 2600 };
 

@@ -1,7 +1,7 @@
-/** Health at or above which a word's name is fully visible. */
+/** Recall at or above which a word's name is fully visible (below it, the word is due). */
 export const FULL_NAME = 0.9;
-/** Health at or below which the name is gone entirely. */
-export const NO_NAME = 0.5;
+/** Recall at or below which the name is gone entirely: the word breaks (config SUPPLY.breakRecall). */
+export const NO_NAME = 0.8;
 
 /** Stable pseudo-random order of letter positions, so erosion is gradual and repeatable. */
 function erosionOrder(word: string): number[] {
@@ -17,9 +17,9 @@ function erosionOrder(word: string): number[] {
 }
 
 /**
- * The name of a fading word: letters erode as health falls from 90% to 50%
- * ("la famiglia" -> "la f·m·gl·a"), then it is gone (""). Null health = not
- * reviewed yet, shown in full.
+ * The name of a fading word: letters erode as recall falls from 90% (due) to
+ * 80% ("la famiglia" -> "la f·m·gl·a"), then it is gone ("") and the word
+ * breaks. Null = not reviewed yet, shown in full.
  */
 export function fadedName(word: string, health: number | null): string {
   if (health === null || health >= FULL_NAME) return word;
@@ -34,7 +34,7 @@ export function fadedName(word: string, health: number | null): string {
  * Health a name is shown at while the word waits to be asked into Italian (an
  * en→it card due, or a raid): about a third of its letters, a nudge, not the answer.
  */
-export const RECALL_NAME = 0.62;
+export const RECALL_NAME = NO_NAME + 0.3 * (FULL_NAME - NO_NAME);
 
 /** The name as the map may show it: eroded further when it is about to be the answer. */
 export function hintedName(word: string, health: number | null, recall: boolean): string {

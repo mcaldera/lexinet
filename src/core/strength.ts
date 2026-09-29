@@ -1,4 +1,4 @@
-import { State, type Card } from './scheduler';
+import { dueAt, State, type Card } from './scheduler';
 
 /** Stability (days until recall drops to 90%) at which each strength level starts. */
 export const STRENGTH_LEVELS = [1, 3, 7, 21, 60];
@@ -19,6 +19,6 @@ export function nodeStrength(cards: Card[]): { level: number; days: number } {
 export function nextPractice(cards: Card[], now: Date): Date | null {
   const reviewed = cards.filter((c) => c.state !== State.New);
   if (reviewed.length < cards.length) return null; // an unreviewed direction is waiting
-  const due = Math.min(...reviewed.map((c) => c.due.getTime()));
+  const due = Math.min(...reviewed.map(dueAt));
   return due <= now.getTime() ? null : new Date(due);
 }

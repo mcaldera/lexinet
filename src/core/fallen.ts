@@ -1,5 +1,5 @@
 import { claimSteps, type Claim } from './claim';
-import type { Game } from './influence';
+import { without, type Game } from './game';
 import type { NodeState, StateChange } from './unlock';
 
 /**
@@ -29,7 +29,11 @@ export function recordFalls(
     const steps = was === 'claimed' ? claimSteps(claimsBefore.get(id)) : 0;
     // Nothing to win back from a claim with no step done.
     if (was === 'claimed' && steps === 0) continue;
-    nodes.set(id, { control: 0, ...nodes.get(id), fallen: { was, steps, at } });
+    // Lost: no longer broken or besieged, just remembered.
+    nodes.set(id, {
+      ...without(nodes.get(id), 'claim', 'missedAt', 'cutSince'),
+      fallen: { was, steps, at },
+    });
   }
   return { ...game, nodes };
 }
@@ -58,10 +62,10 @@ export function reclaim(
 ): { game: Game; change: StateChange; claim?: Claim } {
   const nodes = new Map(game.nodes);
   if (f.was === 'conquered') {
-    nodes.set(id, { control: 1 });
+    nodes.set(id, {});
     return { game: { ...game, nodes }, change: { id, state: 'conquered' } };
   }
   const claim: Claim = f.steps >= 2 ? { itEn: at, enIt: at } : { itEn: at };
-  nodes.set(id, { control: 1, claim });
+  nodes.set(id, { claim });
   return { game: { ...game, nodes }, change: { id, state: 'claimed' }, claim };
 }

@@ -3,42 +3,39 @@ import {
   CLAIM_GAPS,
   COOLDOWN_MS,
   EXPEDITION,
-  LANDMARK,
   RAID,
-  INFLUENCE,
   HINT_COST,
   PLANT_COST,
   PLANT_COST_PER_TIER,
-  REACH,
   RECLAIM_MS,
   ROOTS,
+  SUPPLY,
 } from './config';
-import { dangers } from './core/danger';
 import { reclaimable } from './core/fallen';
 import { attentionList, newlyRevealed } from './core/attention';
-import { claimNext, CLAIM_STEPS, claimSteps, unseen, type Claim } from './core/claim';
+import { claimNext, CLAIM_STEPS, unseen, type Claim } from './core/claim';
 import { FULL_NAME, hintedName } from './core/fade';
-import { cohesion, isHostile, neighbourWeights, pressureBreakdown } from './core/influence';
 import { appNow } from './core/clock';
 import { nodeHealth } from './core/health';
 import { buildQueue, closest, nearby, openOrder } from './core/queue';
 import { tierAllows, tierMap, type TierProgress } from './core/tiers';
-import { pushOf, reachMap, reachSources, sightedWords } from './core/reach';
+import { ghostWords } from './core/supply';
 import { rootCharge, rootNeed } from './core/roots';
 import { neighbourMap } from './core/unlock';
 import { nextDrill, TENSES, type Tense } from './core/verbs';
-import { computeProgress, reachInput, verbLevels as computeVerbLevels } from './progress';
-import { cardId, Rating, retrievability, type Grade } from './core/scheduler';
+import { computeProgress, verbLevels as computeVerbLevels } from './progress';
+import { cardId, dueAt, isDue, Rating, retrievability, type Grade } from './core/scheduler';
 import type { NodeState } from './core/unlock';
 import { nextPractice, nodeStrength } from './core/strength';
 import type { AppData, CardRow } from './db/repo';
 import { useSprawl, type GameEvent, type LevelUp } from './useSprawl';
+import { hangingOn, nodesToPlace, previewNode, supplyNodes, supplyNow } from './supplyState';
+import PlacePanel from './views/PlacePanel';
 import Menu from './views/Menu';
 import Guide from './views/Guide';
 import StartPicker from './views/StartPicker';
 import { pickStart } from './core/start';
 import { streak } from './core/streak';
-import { landmarks as builtLandmarks } from './core/landmark';
 import { expeditionStatus } from './core/expedition';
 import { newRun, switchRun, updateRun, deleteRun, runDbSuffix } from './runs';
 import { dbName } from './db';
@@ -78,7 +75,8 @@ export default function App() {
     runId,
     event,
     startExpedition,
-    shielded,
+    placeNode,
+    liftNode,
   } = useSprawl();
   const [lastCardId, setLastCardId] = useState<string>();
   const [session, setSession] = useState<Session | null>(null);
@@ -197,7 +195,9 @@ export default function App() {
   useEffect(() => {
     if (!lost || !data) return;
     const names = lost.ids.map((id) => data.nodes.find((n) => n.id === id)?.it ?? id);
-    setNotice(`Lost: ${names.join(', ')} · ↺ ${RECLAIM_MS / 86_400_000} days to win back`);
+    setNotice(
+      `Cut off too long: ${names.join(', ')} · ↺ ${RECLAIM_MS / 86_400_000} days to win back`,
+    );
     sfx('lost');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lost]);
@@ -229,14 +229,11 @@ export default function App() {
       m.set(
         id,
         data.states.get(id) === 'conquered'
-          ? // Displayed health: memory, but no more than the word's control.
-            Math.min(
-              nodeHealth(
-                cards.map((c) => c.card),
-                now,
-              ) ?? 1,
-              data.game.nodes.get(id)?.control ?? 1,
-            )
+          ? // Its weaker direction: due at 90%, broken at 80% (SUPPLY.breakRecall).
+            (nodeHealth(
+              cards.map((c) => c.card),
+              now,
+            ) ?? 1)
           : null,
       );
     }
@@ -258,23 +255,20 @@ export default function App() {
     () => (data ? computeProgress(data.nodes, data.states, data.tenseCards, now, data.home) : null),
     [data, now],
   );
-  const weights = useMemo(() => neighbourWeights(data?.edges ?? []), [data?.edges]);
   const neighbours = useMemo(() => neighbourMap(data?.edges ?? []), [data?.edges]);
-  const hostileSet = useMemo(
+  /** Supply (core/supply.ts): who carries it, who's broken, who's cut off. */
+  const supply = useMemo(() => (data ? supplyNow(data, now.getTime()) : null), [data, now]);
+  /** Hidden words one link beyond your "?": the ghosts of what lies ahead. */
+  const ghosts = useMemo(
     () =>
-      new Set(
-        data
-          ? [...data.states]
-              .filter(
-                ([id, st]) =>
-                  isHostile(data.game.nodes.get(id), st, now.getTime(), INFLUENCE) ||
-                  (st === 'conquered' &&
-                    (data.game.nodes.get(id)?.control ?? 1) < INFLUENCE.rebelBelow),
-              )
-              .map(([id]) => id)
-          : [],
-      ),
-    [data, now],
+      data && progress
+        ? ghostWords(
+            data.states,
+            neighbours,
+            tierAllows(tierMap(data.nodes), progress.tier, data.home),
+          )
+        : new Set<string>(),
+    [data, neighbours, progress],
   );
   const verbLevels = useMemo(
     () => (data ? computeVerbLevels(data.nodes, data.tenseCards, now) : new Map<string, number>()),
@@ -286,10 +280,13 @@ export default function App() {
     const m = new Map((data?.nodes ?? []).map((n) => [n.id, n.region ?? undefined]));
     return (id: string) => m.get(id);
   }, [data?.nodes]);
-  const clusters = useMemo(
-    () => (data ? clusterScores(data.states, data.edges, regionOf) : []),
-    [data, regionOf],
-  );
+  // Cut-off words don't score until they are reconnected.
+  const clusters = useMemo(() => {
+    if (!data) return [];
+    const scored = new Map(data.states);
+    for (const id of supply?.cut ?? []) scored.set(id, 'claimed');
+    return clusterScores(scored, data.edges, regionOf);
+  }, [data, regionOf, supply]);
   const score = totalScore(clusters);
 
   // Achievements: check the milestones whenever progress changes; new ones pay coins.
@@ -324,43 +321,18 @@ export default function App() {
   const [showProgress, setShowProgress] = useState(false);
   /** Conquered word whose plant picker is open. */
   const [planting, setPlanting] = useState<string | null>(null);
-  // How far the territory pushes: all reach, and the hidden words it lets you see.
-  const reachIn = useMemo(
-    () =>
-      data
-        ? reachInput(
-            data.nodes,
-            neighbours,
-            data.states,
-            new Map([...data.game.nodes].map(([id, g]) => [id, g.claim])),
-            data.seed,
-            verbLevels,
-          )
-        : null,
-    [data, neighbours, verbLevels],
-  );
-  const reach = useMemo(() => (reachIn ? reachMap(reachIn) : new Map<string, number>()), [reachIn]);
-  const sighted = useMemo(
-    () =>
-      data && progress
-        ? sightedWords(
-            data.states,
-            reach,
-            REACH,
-            tierAllows(tierMap(data.nodes), progress.tier, data.home),
-          )
-        : new Map<string, number>(),
-    [data, reach, progress],
-  );
+  /** Placing an earned supply node: the word whose preview the map shows. */
+  const [placing, setPlacing] = useState(false);
+  const [previewId, setPreviewId] = useState<string>();
 
-  /** Charge of each sealed root: its words' reach, each up to 1 (core/roots.ts). */
-  const rootCharges = useMemo(
-    () =>
-      data
-        ? rootCharge(data.graph.roots ?? [], reach, data.unlockedRoots)
-        : new Map<string, number>(),
-    [data, reach],
-  );
+  /** Charge of each sealed root: the supply at its words, each up to 1 (core/roots.ts). */
+  const rootCharges = useMemo(() => {
+    if (!data || !supply) return new Map<string, number>();
+    const charge = new Map(
+      [...supply.flow.value].map(([id, v]) => [id, Math.min(1, v / SUPPLY.min)]),
+    );
+    return rootCharge(data.graph.roots ?? [], charge, data.unlockedRoots);
+  }, [data, supply]);
 
   const queue = useMemo(() => {
     if (!data) return [];
@@ -371,14 +343,28 @@ export default function App() {
       const next = claimNext(data.game.nodes.get(c.nodeId)?.claim, CLAIM_GAPS);
       return !!next && next.directions.includes(c.direction) && next.opensAt <= now.getTime();
     };
-    return buildQueue({ cards: data.cards, states: data.states, now, lastCardId }).filter(
+    const open = buildQueue({ cards: data.cards, states: data.states, now, lastCardId }).filter(
       (c) =>
         !cooldowns.has(c.nodeId) &&
         stepOpen(c) &&
         // The raid bar names raided words in English: they wait for their en→it card.
         !(c.direction === 'it-en' && isRaided(data, c.nodeId)),
     );
-  }, [data, now, lastCardId, cooldowns]);
+    // Chokepoints first: of the due words, the one the most hangs on (a stable
+    // sort, so ties keep the queue's own order, weakest first).
+    if (!supply) return open;
+    const hang = new Map<string, number>();
+    const hangOf = (id: string) => {
+      if (!hang.has(id)) {
+        const held = data.states.get(id) === 'conquered' && !supply.cut.has(id);
+        hang.set(id, held || supply.broken.has(id) ? hangingOn(supply, id).length : 0);
+      }
+      return hang.get(id)!;
+    };
+    const sorted = [...open].sort((a, b) => hangOf(b.nodeId) - hangOf(a.nodeId));
+    if (sorted.length > 1 && sorted[0].id === lastCardId) sorted.push(sorted.shift()!);
+    return sorted;
+  }, [data, now, lastCardId, cooldowns, supply]);
 
   if (error) return <div className="p-6 text-red-400">Failed to open database: {error}</div>;
   if (!data) return <div className="p-6 text-slate-400">Loading…</div>;
@@ -396,7 +382,7 @@ export default function App() {
   const dueTense =
     !session && !current
       ? data.tenseCards.find(
-          (c) => c.card.due <= now && !cooldowns.has(c.nodeId) && isNear(c.nodeId),
+          (c) => isDue(c.card, now) && !cooldowns.has(c.nodeId) && isNear(c.nodeId),
         )
       : undefined;
   const activeDrill =
@@ -438,7 +424,7 @@ export default function App() {
   const recall = new Set([
     ...raided,
     ...(data.cards ?? [])
-      .filter((c) => c.direction === 'en-it' && c.card.due <= now)
+      .filter((c) => c.direction === 'en-it' && isDue(c.card, now))
       .map((c) => c.nodeId)
       .filter((id) => data.states.get(id) === 'conquered'),
   ]);
@@ -447,31 +433,9 @@ export default function App() {
     const w = data.nodes.find((n) => n.id === id);
     return w ? hintedName(w.it, health.get(id) ?? null, recall.has(id)) : '';
   };
-  const detailsInfluences = !detailsWord
-    ? []
-    : data.states.get(detailsWord.id) === 'conquered'
-      ? pressureBreakdown(
-          detailsWord.id,
-          data.game.nodes,
-          data.states,
-          weights,
-          verbLevels,
-          now.getTime(),
-          INFLUENCE,
-          shielded,
-          strength,
-        )
-      : (weights.get(detailsWord.id) ?? [])
-          .filter((n) => data.states.get(n.id) === 'conquered')
-          .map((n) => ({
-            id: n.id,
-            kind: 'attack' as const,
-            perDay: -INFLUENCE.hostilePressure * n.weight,
-          }));
 
   const claims = new Map([...data.game.nodes].map(([id, g]) => [id, g.claim]));
   const days = streak(data.activity, now);
-  const landmarkSet = builtLandmarks(data.graph.regions ?? [], data.states, LANDMARK);
   const expedition = data.expedition && {
     ...data.expedition,
     name: data.graph.regions?.find((r) => r.id === data.expedition!.region)?.name ?? '',
@@ -482,8 +446,31 @@ export default function App() {
       appMs(),
     ),
   };
-  /** Claimed words endangered by a miss: deadline and the word to win back. */
-  const dangerMap = dangers(data.game, data.states);
+  /** Broken held words and how many words hang on each (cut off until it's mended). */
+  const brokenHang = new Map(
+    [...(supply?.broken ?? [])].map((id) => [id, supply ? hangingOn(supply, id).length : 0]),
+  );
+  /** Supply as the map draws it: flow, broken words, supply nodes, siege clocks. */
+  const supplyView = supply && {
+    value: supply.flow.value,
+    from: supply.flow.from,
+    broken: supply.broken,
+    nodes: new Set(supplyNodes(data)),
+    working: supply.working,
+    cut: new Map(
+      [...supply.cut].map((id) => {
+        const since = data.game.nodes.get(id)?.cutSince ?? now.getTime();
+        return [id, { since, until: since + supply.world.holdMs(id) }] as const;
+      }),
+    ),
+    min: SUPPLY.min,
+  };
+  const toPlace = nodesToPlace(data);
+  /** While placing: the supply the previewed word would bring. */
+  const preview =
+    placing && supply && previewId && data.states.get(previewId) === 'conquered'
+      ? { id: previewId, ...previewNode(supply, previewId) }
+      : undefined;
   /** Lost words that one right answer still wins back as they were (core/fallen.ts). */
   const reclaimMap = new Map(
     [...data.game.nodes].flatMap(([id]) => {
@@ -504,18 +491,16 @@ export default function App() {
     raid: raided,
     states: data.states,
     claims,
-    health,
-    hostile: hostileSet,
+    broken: brokenHang,
     fresh,
     nowMs: now.getTime(),
     gaps: CLAIM_GAPS,
     blocked: (id) => (cooldowns.get(id) ?? 0) > appMs(),
-    danger: dangerMap,
     reclaim: new Set(reclaimMap.keys()),
     due: new Set([
       ...queue.map((c) => c.nodeId),
       ...data.tenseCards
-        .filter((c) => c.card.due <= now && !cooldowns.has(c.nodeId))
+        .filter((c) => isDue(c.card, now) && !cooldowns.has(c.nodeId))
         .map((c) => c.nodeId),
     ]),
   });
@@ -549,34 +534,40 @@ export default function App() {
       };
     });
 
-  // Push (core/reach.ts): how hard each won word pushes, and who pushes the selected word.
-  const pushes = new Map(
-    [...data.states]
-      .filter(([, st]) => st !== 'locked')
-      .map(([id]) => [id, reachIn ? pushOf(reachIn, id) : 0] as const)
-      .filter(([, v]) => v > 0),
-  );
-  const pushWhy = (id: string) => {
-    const w = data.nodes.find((n) => n.id === id);
-    const parts: string[] = [];
-    if (data.states.get(id) === 'claimed') {
-      parts.push(`claimed, ${claimSteps(claims.get(id))}/${CLAIM_STEPS} steps`);
-    }
-    const factor = REACH.pos[w?.pos?.toLowerCase() ?? ''];
-    if (factor && factor !== 1) parts.push(`${w?.pos} ×${factor}`);
-    const vl = verbLevels.get(id) ?? 0;
-    if (vl)
-      parts.push(
-        `${vl} ${vl === 1 ? 'tense' : 'tenses'} +${Math.round(vl * REACH.verbLevelBonus * 100)}%`,
-      );
-    if (id === data.seed) parts.push('your home');
-    return parts.join(', ') || 'conquered';
-  };
-  const detailsState = detailsWord ? data.states.get(detailsWord.id) : undefined;
-  const detailsReach =
-    detailsWord && reachIn && (sighted.has(detailsWord.id) || detailsState === 'frontier')
-      ? reachSources(reachIn, detailsWord.id).slice(0, 6)
-      : null;
+  /** The selected word's place in your supply (NodeDetails). */
+  const detailsSupply = (() => {
+    if (!detailsWord || !supply) return undefined;
+    const id = detailsWord.id;
+    const st = data.states.get(id);
+    const node = supplyNodes(data).includes(id);
+    const cut = supplyView?.cut.get(id);
+    return {
+      value: supply.flow.value.get(id) ?? 0,
+      min: SUPPLY.min,
+      node: node ? (id === data.seed ? ('capital' as const) : ('node' as const)) : undefined,
+      working: supply.working.has(id),
+      broken: supply.broken.has(id),
+      missed: data.game.nodes.get(id)?.missedAt !== undefined,
+      cutUntil: cut && !supply.broken.has(id) ? cut.until : undefined,
+      brokenUntil: cut && supply.broken.has(id) ? cut.until : undefined,
+      hanging:
+        st === 'conquered' && (!supply.cut.has(id) || supply.broken.has(id))
+          ? hangingOn(supply, id).length
+          : undefined,
+      onLift:
+        node && id !== data.seed
+          ? async () => {
+              await liftNode(id);
+              setPlacing(true);
+              setPreviewId(undefined);
+            }
+          : undefined,
+    };
+  })();
+  const detailsDue = (() => {
+    const cards = detailsWord ? (cardsByNode.get(detailsWord.id) ?? []) : [];
+    return cards.length ? Math.min(...cards.map((c) => dueAt(c.card))) : undefined;
+  })();
 
   const onRate = async (row: CardRow, grade: Grade, typed = true) => {
     const firstSight = unseen(cardsByNode.get(row.nodeId) ?? []);
@@ -601,9 +592,9 @@ export default function App() {
     if (grade === Rating.Again) {
       // Locked for a minute either way, so recalling it needs real memory.
       setCooldowns((m) => new Map(m).set(row.nodeId, appMs() + COOLDOWN_MS));
-      const n = outcome.endangered.length;
+      const n = outcome.cut;
       if (!firstSight)
-        setNotice(`Missed${n ? ` · ${n} ${n === 1 ? 'claim' : 'claims'} in danger` : ''}`);
+        setNotice(`Missed${n ? ` · ${n} ${n === 1 ? 'word' : 'words'} cut off` : ''}`);
       setSession((s) => (s?.nodeId === row.nodeId ? null : s));
       // Stay on the missed word (locked) instead of jumping to the next card.
       setWaitOn({ nodeId: row.nodeId, reason: 'locked', note: firstSight ? 'new' : 'missed' });
@@ -616,11 +607,13 @@ export default function App() {
     const opened = outcome.opened && !outcome.levelUp ? `+${outcome.opened} ?` : '';
     const said = outcome.reclaimed
       ? 'Won back'
-      : outcome.conquered
-        ? `${wordOf(row.nodeId)} ✓`
-        : outcome.claim
-          ? claimNotice(outcome.claim, appNow(data.offsetDays).getTime())
-          : '';
+      : outcome.repaired !== undefined
+        ? `Mended${outcome.repaired ? ` · ${outcome.repaired} reconnected` : ''}`
+        : outcome.conquered
+          ? `${wordOf(row.nodeId)} ✓`
+          : outcome.claim
+            ? claimNotice(outcome.claim, appNow(data.offsetDays).getTime())
+            : '';
     if ((said || opened) && !outcome.roots) setNotice([said, opened].filter(Boolean).join(' · '));
     setSession((s) => {
       if (!s) return s;
@@ -702,26 +695,22 @@ export default function App() {
           message: `${hub.meaning ? `“${hub.meaning}”` : ''}${english}`,
         };
       }
-      // Sealed: it opens by itself once enough of its words are in reach (core/roots.ts).
+      // Sealed: it opens by itself once enough of its words are supplied (core/roots.ts).
       const need = rootNeed(hub, ROOTS.open);
       const charge = rootCharges.get(hub.id) ?? 0;
       return {
         ...base,
         tone: 'reach' as const,
-        message: `Opens with ${need} of its ${hub.words.length} words in reach`,
+        message: `Opens with ${need} of its ${hub.words.length} words inside your supply`,
         progress: charge / need,
       };
     }
     if (w.reason === 'reach') {
-      const r = sighted.get(w.nodeId);
-      return r !== undefined
-        ? {
-            ...base,
-            tone: 'reach' as const,
-            message: 'Out of reach: win words around it',
-            progress: r / REACH.open,
-          }
-        : { ...base, tone: 'waiting' as const, message: '', action: retry('Conquer it') };
+      return {
+        ...base,
+        tone: 'reach' as const,
+        message: 'Out of reach: conquer a word next to it',
+      };
     }
     if (w.reason === 'locked') {
       return left > 0
@@ -749,7 +738,7 @@ export default function App() {
   const nextTask = (() => {
     const penalty = new Map<string, number>();
     for (const a of attention) {
-      if (a.kind === 'ready' || a.kind === 'danger' || a.kind === 'reclaim') penalty.set(a.id, 0);
+      if (a.kind === 'ready' || a.kind === 'broken' || a.kind === 'reclaim') penalty.set(a.id, 0);
     }
     for (const [id, st] of data.states) {
       if (st === 'frontier' && !penalty.has(id)) penalty.set(id, 2);
@@ -772,7 +761,7 @@ export default function App() {
     if (fresh.has(nodeId)) setFresh((f) => new Set([...f].filter((id) => id !== nodeId)));
     // A root isn't asked: it opens by itself (core/roots.ts). The card says how far it is.
     if (data.graph.roots?.some((r) => r.id === nodeId)) return wait({ nodeId, reason: 'root' });
-    if (sighted.has(nodeId)) return wait({ nodeId, reason: 'reach' });
+    if (ghosts.has(nodeId)) return wait({ nodeId, reason: 'reach' });
     if (!data.states.has(nodeId) || data.states.get(nodeId) === 'locked') return; // roots, hidden
     const until = cooldowns.get(nodeId);
     if (until && until > appMs()) return wait({ nodeId, reason: 'locked' });
@@ -793,9 +782,10 @@ export default function App() {
       return;
     }
     const conquered = data.states.get(nodeId) === 'conquered';
-    // Under pressure (health below 90%), a word can always be defended.
-    // Under pressure (fading, or raided), a word can always be defended.
-    const threatened = conquered && ((health.get(nodeId) ?? 1) < FULL_NAME || raided.has(nodeId));
+    // Due (fading), broken or raided: a word can always be defended.
+    const threatened =
+      conquered &&
+      ((health.get(nodeId) ?? 1) < FULL_NAME || raided.has(nodeId) || !!supply?.broken.has(nodeId));
     const next =
       conquered && !threatened
         ? nextPractice(
@@ -845,7 +835,7 @@ export default function App() {
       (c) => !raided.has(nodeId) || c.direction === 'en-it',
     );
     const due = openOrder(
-      own.filter((c) => c.card.due <= now),
+      own.filter((c) => isDue(c.card, now)),
       shown.current.get(nodeId),
     );
     const weakest = [...own].sort(
@@ -859,12 +849,26 @@ export default function App() {
 
   /** Click / arrow / jump on a word: a tick, or a dull tap when it can't be opened now. */
   const selectNode = (nodeId: string) => {
+    if (placing) return void placeHere(nodeId);
     let blocked = false;
     openNode(nodeId, (w) => {
       blocked = true;
       setWaitOn(w);
     });
     if (!inspect) sfx(blocked ? 'blocked' : 'select');
+  };
+
+  /** Put the earned supply node on a word you hold (placing mode). */
+  const placeHere = async (nodeId: string) => {
+    if (!(await placeNode(nodeId))) {
+      setNotice('Place it on a word you hold');
+      sfx('blocked');
+      return;
+    }
+    setPlacing(false);
+    setPreviewId(undefined);
+    setNotice(`⚡ ${wordOf(nodeId)} supplies its area`);
+    sfx('conquer');
   };
 
   return (
@@ -969,7 +973,7 @@ export default function App() {
           )}
           {verbUp && !levelUp && <VerbUpBanner word={wordOf(verbUp.nodeId)} level={verbUp.level} />}
           {earnedNow.length > 0 && !levelUp && !verbUp && <AchievementBanner earned={earnedNow} />}
-          {event && <EventBanner key={event.at} event={event} regionName={regionName} />}
+          {event && <EventBanner key={event.at} event={event} />}
           <Missions
             expedition={expedition}
             raid={data.raid.active}
@@ -986,8 +990,10 @@ export default function App() {
           {!data.started && (
             <StartPicker
               regions={data.graph.regions ?? []}
-              onPick={async (region) => {
-                const seed = pickStart(data.nodes, data.graph.edges, region);
+              nodes={data.nodes}
+              edges={data.graph.edges}
+              onPick={async (region, capital) => {
+                const seed = capital ?? pickStart(data.nodes, data.graph.edges, region);
                 if (!seed) return;
                 setSelectedId(undefined);
                 await reset(seed);
@@ -1006,14 +1012,12 @@ export default function App() {
             activeId={inspect ? inspectId : panelId}
             strength={strength}
             verbLevels={verbLevels}
-            control={new Map([...data.game.nodes].map(([id, g]) => [id, g.control]))}
-            hostile={hostileSet}
             nowMs={now.getTime()}
             claims={claims}
             claimWaits={claimWaits}
-            sighted={sighted}
-            pushes={pushes}
-            danger={dangerMap}
+            supply={supplyView ?? undefined}
+            ghosts={ghosts}
+            preview={preview && { id: preview.id, value: preview.flow.value }}
             reclaim={reclaimMap}
             hints={
               new Map(
@@ -1025,19 +1029,9 @@ export default function App() {
                 }),
               )
             }
-            pushSources={
-              detailsReach ? new Map(detailsReach.map((r) => [r.id, r.push])) : undefined
-            }
             attention={attention}
             answerId={answerId}
             recall={recall}
-            graceUntil={
-              new Map(
-                [...data.game.nodes]
-                  .filter(([id, g]) => data.states.get(id) === 'frontier' && g.since !== undefined)
-                  .map(([id, g]) => [id, g.since! + INFLUENCE.hostileAfterHours * 3_600_000]),
-              )
-            }
             unlockedRoots={data.unlockedRoots}
             rootCharge={
               new Map(
@@ -1051,7 +1045,7 @@ export default function App() {
             inspect={inspect}
             showRoots={showRoots}
             onNodeClick={selectNode}
-            landmarks={landmarkSet}
+            onNodeHover={placing ? setPreviewId : undefined}
           />
         </section>
         <aside
@@ -1100,7 +1094,35 @@ export default function App() {
             />
           ) : (
             <>
-              {planting && data.states.get(planting) === 'conquered' ? (
+              {toPlace > 0 && !placing && (
+                <button
+                  onClick={() => {
+                    setPlacing(true);
+                    setPreviewId(undefined);
+                    sfx('select');
+                  }}
+                  className="panel flex w-full shrink-0 items-center justify-between rounded-xl border-amber-300/40 px-3 py-2 text-left text-sm text-amber-100 hover:border-amber-300/80"
+                  title="A supply node keeps the words around it supplied: put it where it counts"
+                >
+                  <span>⚡ Supply node ready{toPlace > 1 ? ` ×${toPlace}` : ''}</span>
+                  <span className="text-xs text-amber-300">Place it</span>
+                </button>
+              )}
+              {placing && supply ? (
+                <PlacePanel
+                  data={data}
+                  supply={supply}
+                  nameOf={(id) => nameOf(id) || wordOf(id)}
+                  regionName={(id) => regionName(regionOf(id))}
+                  preview={preview}
+                  onPreview={setPreviewId}
+                  onPlace={placeHere}
+                  onClose={() => {
+                    setPlacing(false);
+                    setPreviewId(undefined);
+                  }}
+                />
+              ) : planting && data.states.get(planting) === 'conquered' ? (
                 <PlantPicker
                   key={planting}
                   anchorName={wordOf(planting)}
@@ -1217,20 +1239,10 @@ export default function App() {
                     }
                   : undefined
               }
-              control={data.game.nodes.get(detailsWord.id)?.control ?? 1}
-              influences={detailsInfluences}
-              nameOf={nameOf}
-              cohesion={cohesion(detailsWord.id, data.states, weights)}
-              hostile={hostileSet.has(detailsWord.id)}
-              graceHours={
-                ((data.game.nodes.get(detailsWord.id)?.since ?? now.getTime()) +
-                  INFLUENCE.hostileAfterHours * 3_600_000 -
-                  now.getTime()) /
-                3_600_000
-              }
+              supply={detailsSupply}
+              due={detailsDue}
               nowMs={appNow(data.offsetDays).getTime()}
               claimStep={claimNext(data.game.nodes.get(detailsWord.id)?.claim, CLAIM_GAPS)}
-              danger={dangerMap.get(detailsWord.id)}
               links={
                 data.states.get(detailsWord.id) === 'conquered'
                   ? {
@@ -1265,27 +1277,6 @@ export default function App() {
                   : undefined
               }
               reclaim={reclaimMap.get(detailsWord.id)}
-              endangers={(() => {
-                const ds = [...dangerMap.values()].filter((d) => d.from === detailsWord.id);
-                return ds.length
-                  ? { count: ds.length, until: Math.min(...ds.map((d) => d.until)) }
-                  : undefined;
-              })()}
-              appNowMs={appMs()}
-              dangerFrom={(id) => wordOf(id)}
-              reach={
-                detailsReach
-                  ? {
-                      value: reach.get(detailsWord.id) ?? 0,
-                      sources: detailsReach.map((r) => ({ name: nameOf(r.id), push: r.push })),
-                    }
-                  : undefined
-              }
-              push={
-                pushes.has(detailsWord.id)
-                  ? { value: pushes.get(detailsWord.id)!, why: pushWhy(detailsWord.id) }
-                  : undefined
-              }
               verb={
                 detailsWord.conjugations && data.states.get(detailsWord.id) === 'conquered'
                   ? {
@@ -1489,7 +1480,7 @@ function Missions(props: {
       {raid && (
         <div
           className="rounded-lg border border-orange-500/50 bg-orange-950/80 px-2.5 py-1.5 text-orange-200 shadow-[0_0_30px_-8px_rgba(249,115,22,0.6)] backdrop-blur-md"
-          title="Raid: answer each raided word right before time runs out, or it loses control"
+          title="Raid: answer each raided word right before time runs out, or it breaks and cuts off what hangs on it"
         >
           ⚔ Raid <span className="font-mono text-orange-300">{clock(raid.until)}</span>
           <div className="mt-1 flex flex-wrap gap-1">
@@ -1515,14 +1506,8 @@ function Missions(props: {
   );
 }
 
-/** A moment the game made on its own: raid, expedition end, landmark. Fades by itself. */
-function EventBanner({
-  event,
-  regionName,
-}: {
-  event: GameEvent;
-  regionName: (r: number) => string;
-}) {
+/** A moment the game made on its own: raid, expedition end, supply node. Fades by itself. */
+function EventBanner({ event }: { event: GameEvent }) {
   const [shown, setShown] = useState(true);
   useEffect(() => {
     sfx(
@@ -1534,7 +1519,7 @@ function EventBanner({
     return () => clearTimeout(t);
   }, [event]);
   if (!shown) return null;
-  const [title, sub, tone] = eventText(event, regionName);
+  const [title, sub, tone] = eventText(event);
   const cls = {
     orange: 'border-orange-400/70 text-orange-200',
     emerald: 'border-emerald-400/70 text-emerald-200',
@@ -1551,7 +1536,7 @@ function EventBanner({
   );
 }
 
-function eventText(e: GameEvent, regionName: (r: number) => string): [string, string, string] {
+function eventText(e: GameEvent): [string, string, string] {
   const words = (n: number) => `${n} ${n === 1 ? 'word' : 'words'}`;
   switch (e.kind) {
     case 'raid':
@@ -1559,15 +1544,15 @@ function eventText(e: GameEvent, regionName: (r: number) => string): [string, st
     case 'raid-won':
       return ['⚔ Raid repelled', `+${e.coins} 🪙`, 'emerald'];
     case 'raid-lost':
-      return ['⚔ The raid hit', `${words(e.count)} lost ground`, 'orange'];
+      return ['⚔ The raid hit', `${words(e.count)} broken: mend them`, 'orange'];
     case 'expedition-won':
       return ['⚑ Expedition done', `+${e.coins} 🪙`, 'emerald'];
     case 'expedition-lost':
       return ['⚑ Expedition over', 'Out of time', 'slate'];
-    case 'landmark':
+    case 'supply':
       return [
-        `🏰 ${e.regions.map(regionName).join(', ')}`,
-        `Landmark built · +${e.coins} 🪙 · its words hold better`,
+        `⚡ Supply node${e.count > 1 ? ` ×${e.count}` : ''} earned`,
+        'Place it on a word you hold',
         'amber',
       ];
   }

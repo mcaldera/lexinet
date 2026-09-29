@@ -1,34 +1,28 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { appNow } from './core/clock';
-import { newCard, rate, Rating, State, type Card, type Grade } from './core/scheduler';
-import { nodeStrength } from './core/strength';
+import { newCard, rate, Rating, State, type Grade } from './core/scheduler';
 import { tierAllows, tierMap } from './core/tiers';
 import { tenseCardId, type Tense, type TenseCard } from './core/verbs';
-import { computeProgress, computeReach, verbLevels } from './progress';
-import { afterAnswer, isHostile, neighbourWeights, simulate, type Game } from './core/influence';
+import { computeProgress } from './progress';
+import { without, type Game, type GameNode } from './core/game';
 import {
   CLAIM_EXPIRY_MS,
   CLAIM_GAPS,
-  DANGER_MS,
-  INFLUENCE,
-  REACH,
   RECLAIM_MS,
   COINS_PER_CONQUEST,
   EXPEDITION,
   HINT_COST,
-  LANDMARK,
   RAID,
   ROOTS,
+  SUPPLY,
 } from './config';
-import { landmarks, landmarkWords } from './core/landmark';
 import { expeditionStatus, planExpedition } from './core/expedition';
 import { defend, raidStarts, raidStatus, raidTargets } from './core/raid';
 import { dayKey } from './core/streak';
 import type { Achievement } from './core/achievements';
 import type { PlantOption } from './core/plant';
-import { recedeChanges, revealChanges } from './core/reach';
 import { rootOpenings } from './core/roots';
-import { dangerFalls, missed, rescue } from './core/danger';
+import { advanceSiege, horizonChanges, supplyFlow } from './core/supply';
 import { reclaim, reclaimable, recordFalls, type Fallen } from './core/fallen';
 import {
   applyChanges,
@@ -48,6 +42,7 @@ import {
 import { openDb, type SqlDb } from './db';
 import { currentRun, runDbSuffix } from './runs';
 import { currentGraphName, loadGraph } from './graphs';
+import { hangingOn, nodesEarned, nodesToPlace, siegeWorld, supplyNow } from './supplyState';
 import {
   loadAll,
   migrate,
@@ -69,6 +64,8 @@ import {
 const graphName = currentGraphName();
 const runId = currentRun(graphName);
 const claimsOf = (game: Game) => new Map([...game.nodes].map(([id, g]) => [id, g.claim]));
+const heldCount = (states: Map<string, NodeState>) =>
+  [...states.values()].filter((st) => st === 'conquered').length;
 
 // Module-level so StrictMode's double effect doesn't open/seed twice.
 let dbPromise: Promise<{ db: SqlDb; graph: Graph }> | null = null;
@@ -87,26 +84,28 @@ export type LevelUp = { tier: number; revealed: number };
 export type ReviewOutcome = {
   levelUp: LevelUp | null;
   conquered: boolean;
-  /** Claimed neighbours put in danger by a miss (they fall unless it is won back). */
-  endangered: string[];
+  /** A miss broke a held word: the words it cut off from supply. */
+  cut: number;
   /** Claim progress after a successful answer on a word not yet conquered. */
   claim?: Claim;
-  /** Hidden words the answer's push made conquerable. */
+  /** Hidden words the answer made conquerable. */
   opened?: number;
   /** A lost word won back with one answer, and what it was restored to. */
   reclaimed?: Fallen;
+  /** A broken word mended by a right answer: the words it reconnected. */
+  repaired?: number;
   /** Root hubs that opened (core/roots.ts): their names and the words they revealed. */
   roots?: { names: string[]; revealed: number };
 };
-/** Words lost to hostile pressure in the latest simulation step. */
+/** Words lost to the siege (cut off longer than they could hold out). */
 export type LostEvent = { at: number; ids: string[] };
-/** Something the game did on its own, for a banner (raids, expeditions, landmarks). */
+/** Something the game did on its own, for a banner (raids, expeditions, supply nodes). */
 export type GameEvent =
   | { kind: 'raid'; at: number; count: number }
   | { kind: 'raid-won' | 'expedition-won'; at: number; coins: number }
   | { kind: 'raid-lost'; at: number; count: number }
   | { kind: 'expedition-lost'; at: number }
-  | { kind: 'landmark'; at: number; regions: number[]; coins: number };
+  | { kind: 'supply'; at: number; count: number };
 
 /** Answers per day, one more for `at`'s day. */
 const counted = (activity: Map<string, number>, at: Date) =>
@@ -129,7 +128,7 @@ export function useSprawl() {
         setData(loaded);
       })
       .catch((e) => setError(String(e)));
-    // Refresh the clock so health keeps decaying while the app is open.
+    // Refresh the clock so memory keeps fading while the app is open.
     const t = setInterval(() => setTick((n) => n + 1), 60_000);
     return () => clearInterval(t);
   }, []);
@@ -140,36 +139,16 @@ export function useSprawl() {
   const neighbours = useMemo(() => neighbourMap(data?.edges ?? []), [data?.edges]);
   const tiers = useMemo(() => tierMap(data?.nodes ?? []), [data?.nodes]);
   const home = data?.home;
-  const weights = useMemo(() => neighbourWeights(data?.edges ?? []), [data?.edges]);
   const [lost, setLost] = useState<LostEvent | null>(null);
   const [event, setEvent] = useState<GameEvent | null>(null);
-  /** Memory strength per word (0-5, core/strength.ts): armour against hostile pressure. */
-  const armour = useMemo(() => {
-    const byNode = new Map<string, Card[]>();
-    for (const c of data?.cards ?? [])
-      byNode.set(c.nodeId, [...(byNode.get(c.nodeId) ?? []), c.card]);
-    return new Map([...byNode].map(([id, cards]) => [id, nodeStrength(cards).level]));
-  }, [data?.cards]);
-  /** Words shielded from hostile pressure: bought hints and standing landmarks' categories. */
-  const shielded = useMemo(() => {
-    if (!data) return new Set<string>();
-    const regions = data.graph.regions ?? [];
-    return new Set([
-      ...data.hints,
-      ...landmarkWords(regions, landmarks(regions, data.states, LANDMARK)),
-    ]);
-  }, [data]);
 
-  // Tick when the next claim step opens or a danger deadline passes, without waiting for the minute clock.
+  // Tick when the next claim step opens or a raid/expedition ends, without waiting for the minute clock.
   useEffect(() => {
     if (!data) return;
     const t = now.getTime();
     const opens = [...data.game.nodes]
       .filter(([id]) => data.states.get(id) === 'claimed')
-      .flatMap(([, g]) => [
-        claimNext(g.claim, CLAIM_GAPS)?.opensAt ?? Infinity,
-        g.danger?.until ?? Infinity,
-      ])
+      .map(([, g]) => claimNext(g.claim, CLAIM_GAPS)?.opensAt ?? Infinity)
       .concat([data.raid.active?.until ?? Infinity, data.expedition?.until ?? Infinity])
       .filter((o) => o > t && o < Infinity);
     if (!opens.length) return;
@@ -178,10 +157,12 @@ export function useSprawl() {
   }, [data, now]);
 
   /**
-   * Move the horizon (core/reach.ts): hidden words the territory now reaches
-   * become "?" (their grace period starts now), and untried "?" that lost their
-   * reach go back to ghosts. Root hubs with enough of their words in reach open
-   * (core/roots.ts) and reveal all their words, at any level.
+   * Move the horizon (core/supply.ts): hidden words next to your words and
+   * working supply nodes become "?", and so do words further out where strong
+   * supply seeps (SUPPLY.fog / reveal); untried "?" left alone go back to
+   * hidden. Root hubs with enough of their words inside your supply open
+   * (core/roots.ts) and reveal all their words, at any level. `nodes`: supply
+   * nodes to use instead of the saved ones (placing one moves the horizon).
    */
   const horizon = useCallback(
     (
@@ -189,35 +170,43 @@ export function useSprawl() {
       game: Game,
       tier: number,
       t: number,
+      nodes?: string[],
     ): {
       changes: StateChange[];
-      game: Game;
       opened: number;
       /** The new set of open roots, when some opened. */
       unlocked?: Set<string>;
       roots?: { names: string[]; revealed: number };
     } => {
-      if (!data) return { changes: [], game, opened: 0 };
-      const claims = new Map([...game.nodes].map(([id, g]) => [id, g.claim]));
-      const levels = verbLevels(data.nodes, data.tenseCards, appNow(data.offsetDays));
-      const reach = computeReach(data.nodes, neighbours, states, claims, data.seed, levels);
-      const revealed = revealChanges(states, reach, REACH, tierAllows(tiers, tier, home));
+      if (!data) return { changes: [], opened: 0 };
+      const supply = supplyNow(
+        { ...data, states, game, supplyNodes: nodes ?? data.supplyNodes },
+        t,
+      );
+      // Supply seeps past your words only from nodes you hold: a capital not won
+      // yet shows its neighbours, as at every start, not three rings of "?".
+      const reach = supplyFlow({
+        ...supply.input,
+        sources: [...supply.working].filter((id) => states.get(id) === 'conquered'),
+        fog: SUPPLY.fog,
+      }).value;
+      const anchors = new Set([
+        ...supply.working,
+        ...[...states].filter(([, st]) => st === 'conquered').map(([id]) => id),
+      ]);
+      // A root charges from the supply reaching its words (a full share of SUPPLY.min each).
+      const charge = new Map(
+        [...supply.flow.value].map(([id, v]) => [id, Math.min(1, v / SUPPLY.min)]),
+      );
       // A root shows on the map once one of its words is conquered; only then can it open.
       const hubs = rootOpenings(
         (data.graph.roots ?? []).filter((r) => r.words.some((w) => states.get(w) === 'conquered')),
-        reach,
+        charge,
         data.unlockedRoots,
         ROOTS.open,
       );
       const unlocked = hubs.length
         ? new Set([...data.unlockedRoots, ...hubs.map((h) => h.id)])
-        : undefined;
-      const viaRoots = [...new Set(hubs.flatMap((h) => h.words))]
-        .filter((w) => states.get(w) === 'locked' && !revealed.some((c) => c.id === w))
-        .map((id) => ({ id, state: 'frontier' as const }));
-      const opened = [...revealed, ...viaRoots];
-      const roots = hubs.length
-        ? { names: hubs.map((h) => h.root), revealed: viaRoots.length }
         : undefined;
       const rootWords = new Set(
         (data.graph.roots ?? [])
@@ -227,70 +216,70 @@ export function useSprawl() {
       const started = new Set(
         data.cards.filter((c) => c.card.state !== State.New).map((c) => c.nodeId),
       );
-      const receded = recedeChanges(
+      const moved = horizonChanges(
         states,
+        neighbours,
+        anchors,
+        tierAllows(tiers, tier, home),
+        (id) => id === data.seed || started.has(id) || rootWords.has(id),
         reach,
-        REACH,
-        (id) =>
-          id === data.seed ||
-          started.has(id) ||
-          rootWords.has(id) ||
-          isHostile(game.nodes.get(id), 'frontier', t, INFLUENCE),
+        SUPPLY.reveal,
       );
-      const changes = [...opened, ...receded];
-      if (!changes.length) return { changes, game, opened: 0, unlocked, roots };
-      const nodes = new Map(game.nodes);
-      for (const c of opened) nodes.set(c.id, { control: 0, since: t });
-      for (const c of receded) nodes.delete(c.id); // grace restarts if it comes back
-      return { changes, game: { ...game, nodes }, opened: opened.length, unlocked, roots };
+      const viaRoots = [...new Set(hubs.flatMap((h) => h.words))]
+        .filter((w) => states.get(w) === 'locked' && !moved.some((c) => c.id === w))
+        .map((id) => ({ id, state: 'frontier' as const }));
+      const changes = [...moved, ...viaRoots];
+      const roots = hubs.length
+        ? { names: hubs.map((h) => h.root), revealed: viaRoots.length }
+        : undefined;
+      const opened = changes.filter((c) => c.state === 'frontier').length;
+      return { changes, opened, unlocked, roots };
     },
     [data, neighbours, tiers, home],
   );
 
-  // Advance the influence game whenever app time moves (clock tick, time travel).
+  // The siege runs whenever app time moves (clock tick, time travel): cut-off
+  // words start their clock, reconnected ones stop it, and words cut off longer
+  // than their memory lasts fall back to "?" (core/supply.ts advanceSiege).
   useEffect(() => {
-    if (!db || !data) return;
+    if (!db || !data || !data.started) return;
     const t = now.getTime();
-    const dangerDue = [...data.game.nodes.values()].some((g) => g.danger && g.danger.until <= t);
-    if (t - data.game.simAt < 60_000 && !dangerDue) return;
-    const levels = verbLevels(data.nodes, data.tenseCards, now);
-    const next = simulate(
-      data.game,
-      data.states,
-      weights,
-      levels,
-      now.getTime(),
-      INFLUENCE,
-      shielded,
-      armour,
+    if (t - data.game.simAt < 60_000) return;
+    const cutBefore = new Map(
+      [...data.game.nodes].flatMap(([id, g]) =>
+        g.cutSince !== undefined ? [[id, g.cutSince] as const] : [],
+      ),
     );
+    const siege = advanceSiege(siegeWorld(data), cutBefore, data.game.simAt || t, t);
+    const nodes = new Map(data.game.nodes);
+    for (const [id, g] of nodes) {
+      if (g.cutSince !== undefined && !siege.cutSince.has(id))
+        nodes.set(id, without(g, 'cutSince'));
+    }
+    for (const [id, since] of siege.cutSince) nodes.set(id, { ...nodes.get(id), cutSince: since });
     // Unfinished claims slip back after a day: finish what you start.
     const expired: StateChange[] = [];
     for (const [id, st] of data.states) {
-      const g = next.game.nodes.get(id);
-      if (st === 'claimed' && now.getTime() - claimStartedAt(g?.claim) > CLAIM_EXPIRY_MS) {
+      if (
+        st === 'claimed' &&
+        t - claimStartedAt(data.game.nodes.get(id)?.claim) > CLAIM_EXPIRY_MS
+      ) {
         expired.push({ id, state: 'frontier' });
-        next.game.nodes.set(id, { control: 0, since: now.getTime() });
+        nodes.set(id, without(nodes.get(id), 'claim'));
       }
     }
-    // Words left in danger by a miss fall once their deadline passes.
-    const falls = dangerFalls(
-      next.game,
-      applyChanges(data.states, [...next.lost, ...expired]),
-      t,
-      INFLUENCE.hostileAfterHours * 3_600_000,
-    );
-    const fallen = [...next.lost, ...expired, ...falls.changes];
+    const falls: StateChange[] = siege.fallen.map((f) => ({ id: f.id, state: 'frontier' }));
+    const fallen = [...falls, ...expired];
     // Lost words remember what they were: one right answer wins them back for a while.
-    const remembered = recordFalls(falls.game, data.states, claimsOf(data.game), fallen, t);
+    const game = recordFalls({ simAt: t, nodes }, data.states, claimsOf(data.game), fallen, t);
     const states = applyChanges(data.states, fallen);
     const tier = computeProgress(data.nodes, states, data.tenseCards, now, data.home).tier;
-    const moved = fallen.length ? horizon(states, remembered, tier, t) : null;
-    const game = moved?.game ?? remembered;
+    // Supply moves with time too (words fading break): the horizon follows.
+    const moved = horizon(states, game, tier, t);
     const changes = [...fallen, ...(moved?.changes ?? [])];
     void saveGame(db, game, changes);
     if (moved?.unlocked) void saveMeta(db, 'unlocked_roots', [...moved.unlocked]);
-    if (fallen.length) setLost({ at: t, ids: fallen.map((l) => l.id) });
+    if (falls.length) setLost({ at: t, ids: falls.map((l) => l.id) });
     setData(
       (d) =>
         d && {
@@ -300,9 +289,9 @@ export function useSprawl() {
           unlockedRoots: moved?.unlocked ?? d.unlockedRoots,
         },
     );
-  }, [db, data, now, weights, horizon, shielded, armour]);
+  }, [db, data, now, horizon]);
 
-  // A raid whose time ran out hits every word left undefended.
+  // A raid whose time ran out breaks every word left undefended.
   useEffect(() => {
     const raid = data?.raid.active;
     if (!db || !data || !raid) return;
@@ -310,8 +299,9 @@ export function useSprawl() {
     if (status.state !== 'lost') return;
     const nodes = new Map(data.game.nodes);
     for (const id of status.hit) {
-      const g = nodes.get(id);
-      if (g) nodes.set(id, { ...g, control: Math.max(0.01, g.control - RAID.hit) });
+      if (data.states.get(id) === 'conquered') {
+        nodes.set(id, { ...nodes.get(id), missedAt: raid.until });
+      }
     }
     const game = { ...data.game, nodes };
     const next: RaidState = { last: data.raid.last };
@@ -339,21 +329,6 @@ export function useSprawl() {
     setData((d) => d && { ...d, expedition: null, coins });
   }, [db, data, now]);
 
-  // A landmark built for the first time pays out once.
-  useEffect(() => {
-    if (!db || !data) return;
-    const built = landmarks(data.graph.regions ?? [], data.states, LANDMARK);
-    const fresh = [...built].filter((r) => !(String(r) in data.landmarks));
-    if (!fresh.length) return;
-    const at = appNow(data.offsetDays).getTime();
-    const paid = { ...data.landmarks, ...Object.fromEntries(fresh.map((r) => [String(r), at])) };
-    const coins = data.coins + fresh.length * LANDMARK.coins;
-    void saveMeta(db, 'landmarks', paid);
-    void saveMeta(db, 'coins', coins);
-    setEvent({ kind: 'landmark', at, regions: fresh, coins: fresh.length * LANDMARK.coins });
-    setData((d) => d && { ...d, landmarks: paid, coins });
-  }, [db, data]);
-
   /** Start an expedition into a category with words to take (none if there's nothing open). */
   const startExpedition = useCallback(async () => {
     if (!db || !data || data.expedition) return false;
@@ -372,91 +347,93 @@ export function useSprawl() {
   const review = useCallback(
     /**
      * Rate a word card. Returns what happened for the UI: a newly opened tier,
-     * a claim completed into a conquest, and words a miss put in danger.
+     * a claim completed into a conquest, words a miss cut off.
      */
     async (row: CardRow, grade: Grade, typed = true): Promise<ReviewOutcome> => {
-      const none: ReviewOutcome = { levelUp: null, conquered: false, endangered: [] };
+      const none: ReviewOutcome = { levelUp: null, conquered: false, cut: 0 };
       if (!db || !data) return none;
       const at = appNow(data.offsetDays);
       const t = at.getTime();
       const card = rate(row.card, grade, at);
-      const stateBefore = data.states.get(row.nodeId);
+      const id = row.nodeId;
+      const stateBefore = data.states.get(id);
       const success = grade !== Rating.Again;
       // First sight of a word (neither direction ever answered): not knowing it is
-      // learning, so no hostility and no slips. Every later miss counts in the game.
-      const firstSight = unseen(data.cards.filter((c) => c.nodeId === row.nodeId));
+      // learning, nothing breaks. Every later miss counts in the game.
+      const firstSight = unseen(data.cards.filter((c) => c.nodeId === id));
       const before = computeProgress(data.nodes, data.states, data.tenseCards, at, data.home).tier;
+      const supplyBefore = supplyNow(data, t);
 
       // A word you had won and lost: one right answer brings its old status back.
-      const wasWon = reclaimable(data.game, data.states, row.nodeId, t, RECLAIM_MS);
-      let changes = unlockChanges(row.nodeId, grade, data.states);
-      let game =
-        firstSight && !success
-          ? data.game
-          : afterAnswer(data.game, row.nodeId, stateBefore, success, changes, t, INFLUENCE);
+      const wasWon = reclaimable(data.game, data.states, id, t, RECLAIM_MS);
+      let changes = unlockChanges(id, grade, data.states);
+      let game: Game = data.game;
+      const set = (fn: (nodes: Map<string, GameNode>) => void) => {
+        const nodes = new Map(game.nodes);
+        fn(nodes);
+        game = { ...game, nodes };
+      };
 
       // Claim bookkeeping: recognise, produce, then lock in after a break (core/claim.ts).
       let conquered = false;
       let claimed: Claim | undefined;
+      let repaired: number | undefined;
       if (success && wasWon) {
-        const back = reclaim(game, row.nodeId, wasWon, t);
+        const back = reclaim(game, id, wasWon, t);
         changes = [back.change];
         game = back.game;
         conquered = wasWon.was === 'conquered';
         claimed = back.claim;
       } else if (success && (stateBefore === 'frontier' || stateBefore === 'claimed')) {
         const claim = recordClaim(
-          data.game.nodes.get(row.nodeId)?.claim,
+          data.game.nodes.get(id)?.claim,
           row.direction,
           t,
           CLAIM_GAPS,
           // Picked from choices, it isn't known well enough for the fast track.
           firstSight && typed,
         );
-        const nodes = new Map(game.nodes);
         if (stateBefore === 'claimed' && claimComplete(claim)) {
-          changes = [...changes, { id: row.nodeId, state: 'conquered' }];
-          nodes.set(row.nodeId, { control: 1 });
+          changes = [...changes, { id, state: 'conquered' }];
+          set((nodes) => nodes.set(id, {}));
           conquered = true;
         } else {
-          nodes.set(row.nodeId, { ...nodes.get(row.nodeId), control: 1, claim });
+          set((nodes) => nodes.set(id, { ...nodes.get(id), claim }));
           claimed = claim;
         }
-        game = { ...game, nodes };
+      } else if (success && stateBefore === 'conquered' && supplyBefore.broken.has(id)) {
+        // A right answer mends a broken word and reconnects what hung on it.
+        repaired = hangingOn(supplyBefore, id).length;
+        set((nodes) => nodes.set(id, without(nodes.get(id), 'missedAt')));
       }
 
-      // A real miss: the word falls and turns hostile, and puts the fragile
-      // claims around it in danger (core/danger.ts). A win lifts its dangers.
-      let endangered: string[] = [];
+      // A real miss: a held word breaks (a gap in your supply until a right
+      // answer), a claim falls back to "?".
+      let cut = 0;
       if (!success && !firstSight) {
-        const miss = missed(
-          game,
-          row.nodeId,
-          applyChanges(data.states, changes),
-          neighbours,
-          t,
-          DANGER_MS,
-          INFLUENCE.hostileAfterHours * 3_600_000,
-        );
-        changes = [...changes, ...miss.changes];
-        game = recordFalls(miss.game, data.states, claimsOf(data.game), miss.changes, t);
-        endangered = miss.endangered;
+        if (stateBefore === 'conquered') {
+          set((nodes) => nodes.set(id, { ...nodes.get(id), missedAt: t }));
+          const after = supplyNow({ ...data, game }, t);
+          cut = [...after.cut].filter((x) => x !== id && !supplyBefore.cut.has(x)).length;
+        } else if (stateBefore === 'claimed') {
+          const falls: StateChange[] = [{ id, state: 'frontier' }];
+          changes = [...changes, ...falls];
+          game = recordFalls(game, data.states, claimsOf(data.game), falls, t);
+        }
       }
-      if (success) game = rescue(game, row.nodeId);
 
       const statesAfter = applyChanges(data.states, changes);
       const after = computeProgress(data.nodes, statesAfter, data.tenseCards, at, data.home).tier;
-      // What the new territory pushes into reach (and, on a level up, the new tier).
+      // What the new territory opens (and, on a level up, the new tier).
       const revealed = horizon(statesAfter, game, after, t);
       changes = [...changes, ...revealed.changes];
-      game = revealed.game;
       const levelUp: LevelUp | null =
         after > before ? { tier: after, revealed: revealed.opened } : null;
       // Conquest locks in both directions: the other card (right in step 1 or 2,
       // still in FSRS learning) graduates too, so the word isn't asked again at once.
       const other = conquered
         ? data.cards.find(
-            (c) => c.nodeId === row.nodeId && c.id !== row.id && c.card.state !== State.Review,
+            (c) => c.nodeId === id && c.id !== row.id && c.card.state !== State.Review,
           )
         : undefined;
       const graduated = other && { ...other, card: rate(other.card, Rating.Good, at) };
@@ -464,26 +441,34 @@ export function useSprawl() {
       if (graduated) await saveCard(db, graduated.id, graduated.card);
       await saveGame(db, game);
       if (revealed.unlocked) await saveMeta(db, 'unlocked_roots', [...revealed.unlocked]);
+
+      // The most words held at once: every SUPPLY.every of them earn a supply node.
+      const held = heldCount(applyChanges(data.states, changes));
+      const bestHeld = Math.max(data.bestHeld, held);
+      if (bestHeld > data.bestHeld) await saveMeta(db, 'best_held', bestHeld);
+      const earned = nodesEarned(bestHeld) - nodesEarned(data.bestHeld);
+
       // Raids: a right answer defends a raided word; now and then a new raid strikes.
       let raid = data.raid;
       let raidEvent: GameEvent | null = null;
       if (success && raid.active) {
-        const active = defend(raid.active, row.nodeId);
+        const active = defend(raid.active, id);
         raid = { ...raid, active };
         if (raidStatus(active, t).state === 'won') {
           raid = { last: raid.last };
           raidEvent = { kind: 'raid-won', at: t, coins: RAID.coins };
         }
-      } else if (success) {
-        const statesNow = applyChanges(data.states, changes);
-        const hostile = new Set(
-          [...statesNow]
-            .filter(([id, st]) => isHostile(game.nodes.get(id), st, t, INFLUENCE))
-            .map(([id]) => id),
+      } else if (success && raidStarts(raid.last, false, [id], t, RAID)) {
+        // The luck is in: strike the words the most hangs on (worth the work only now).
+        const s = supplyNow({ ...data, states: applyChanges(data.states, changes), game }, t);
+        const hang = new Map(
+          [...s.flow.value.keys()]
+            // Supply nodes are fortified: raids strike the words between them.
+            .filter((x) => s.input.carries(x) && !s.cut.has(x) && !s.world.nodes.includes(x))
+            .map((x) => [x, hangingOn(s, x).length] as const),
         );
-        const control = new Map([...game.nodes].map(([id, g]) => [id, g.control]));
-        const targets = raidTargets(statesNow, neighbours, hostile, control, RAID.targets);
-        if (raidStarts(raid.last, false, targets, t, RAID)) {
+        const targets = raidTargets(hang, RAID.targets);
+        if (targets.length) {
           raid = {
             last: t,
             active: { targets, defended: [], start: t, until: t + RAID.durationMs },
@@ -493,6 +478,7 @@ export function useSprawl() {
       }
       if (raid !== data.raid) await saveMeta(db, 'raid', raid);
       if (raidEvent) setEvent(raidEvent);
+      else if (earned > 0) setEvent({ kind: 'supply', at: t, count: earned });
       // Every real conquest (not a win-back) earns a coin; a won raid pays too.
       const coins =
         data.coins +
@@ -502,7 +488,7 @@ export function useSprawl() {
       setData((d) => {
         if (!d) return d;
         const firstReview = new Map(d.firstReview);
-        if (!firstReview.has(row.nodeId)) firstReview.set(row.nodeId, at.toISOString());
+        if (!firstReview.has(id)) firstReview.set(id, at.toISOString());
         return {
           ...d,
           cards: d.cards.map((c) =>
@@ -514,20 +500,22 @@ export function useSprawl() {
           game,
           coins,
           raid,
+          bestHeld,
           activity: counted(d.activity, at),
         };
       });
       return {
         levelUp,
         conquered,
-        endangered,
+        cut,
         claim: claimed,
         opened: revealed.opened,
         roots: revealed.roots,
+        repaired,
         reclaimed: success && wasWon ? wasWon : undefined,
       };
     },
-    [db, data, neighbours, horizon],
+    [db, data, horizon],
   );
 
   /**
@@ -540,22 +528,7 @@ export function useSprawl() {
       const at = appNow(data.offsetDays);
       const id = tenseCardId(nodeId, tense);
       const existing = data.tenseCards.find((c) => c.id === id);
-      const hit = (changes: StateChange[]) =>
-        afterAnswer(
-          data.game,
-          nodeId,
-          data.states.get(nodeId),
-          grade !== Rating.Again,
-          changes,
-          at.getTime(),
-          INFLUENCE,
-        );
-      if (!existing && grade === Rating.Again) {
-        const game = hit([]); // a failed drill still costs the verb control
-        await saveGame(db, game);
-        setData((d) => d && { ...d, game });
-        return null;
-      }
+      if (!existing && grade === Rating.Again) return null;
       const tc: TenseCard = {
         id,
         nodeId,
@@ -567,24 +540,20 @@ export function useSprawl() {
       const after = computeProgress(data.nodes, data.states, tenseCards, at, data.home).tier;
       let changes: StateChange[] = [];
       let levelUp: LevelUp | null = null;
-      let game = hit([]);
       let unlocked: Set<string> | undefined;
       if (after > before) {
-        const revealed = horizon(data.states, game, after, at.getTime());
+        const revealed = horizon(data.states, data.game, after, at.getTime());
         changes = revealed.changes;
-        game = revealed.game;
         unlocked = revealed.unlocked;
-        levelUp = { tier: after, revealed: changes.length };
+        levelUp = { tier: after, revealed: revealed.opened };
       }
       await saveTenseReview(db, tc, grade, at, changes);
-      await saveGame(db, game);
       if (unlocked) await saveMeta(db, 'unlocked_roots', [...unlocked]);
       setData(
         (d) =>
           d && {
             ...d,
             tenseCards,
-            game,
             states: applyChanges(d.states, changes),
             unlockedRoots: unlocked ?? d.unlockedRoots,
             activity: counted(d.activity, at),
@@ -613,11 +582,11 @@ export function useSprawl() {
   /**
    * Plant `option` next to the conquered word `anchor` (core/plant.ts): it
    * becomes a "?" there, joined by your link, for the option's cost in coins.
+   * The link carries supply too: a planted detour protects a chokepoint.
    */
   const plant = useCallback(
     async (anchor: string, option: PlantOption): Promise<boolean> => {
       if (!db || !data || data.coins < option.cost) return false;
-      const t = appNow(data.offsetDays).getTime();
       const edge: Edge = {
         source: anchor,
         target: option.id,
@@ -628,13 +597,10 @@ export function useSprawl() {
       const userEdges = option.linked ? data.userEdges : [...data.userEdges, edge];
       const changes: StateChange[] =
         data.states.get(option.id) === 'locked' ? [{ id: option.id, state: 'frontier' }] : [];
-      const nodes = new Map(data.game.nodes);
-      for (const c of changes) nodes.set(c.id, { control: 0, since: t }); // grace starts now
-      const game = { ...data.game, nodes };
       const coins = data.coins - option.cost;
       await saveMeta(db, 'user_edges', userEdges);
       await saveMeta(db, 'coins', coins);
-      await saveGame(db, game, changes);
+      await saveGame(db, data.game, changes);
       setData(
         (d) =>
           d && {
@@ -642,7 +608,6 @@ export function useSprawl() {
             userEdges,
             edges: option.linked ? d.edges : [...d.edges, edge],
             coins,
-            game,
             states: applyChanges(d.states, changes),
           },
       );
@@ -651,7 +616,7 @@ export function useSprawl() {
     [db, data],
   );
 
-  /** Buy a word's hint: its English cousin shows next to it and shields it. */
+  /** Buy a word's hint: its English cousin shows next to it. */
   const buyHint = useCallback(
     async (nodeId: string): Promise<boolean> => {
       const word = data?.nodes.find((n) => n.id === nodeId);
@@ -667,6 +632,55 @@ export function useSprawl() {
     [db, data],
   );
 
+  /** A supply node placed or taken back: the horizon moves with its supply. */
+  const moveHorizon = useCallback(
+    async (nodes: string[]) => {
+      if (!db || !data) return;
+      const at = appNow(data.offsetDays);
+      const tier = computeProgress(data.nodes, data.states, data.tenseCards, at, data.home).tier;
+      const moved = horizon(data.states, data.game, tier, at.getTime(), nodes);
+      if (!moved.changes.length && !moved.unlocked) return;
+      await saveGame(db, data.game, moved.changes);
+      if (moved.unlocked) await saveMeta(db, 'unlocked_roots', [...moved.unlocked]);
+      setData(
+        (d) =>
+          d && {
+            ...d,
+            states: applyChanges(d.states, moved.changes),
+            unlockedRoots: moved.unlocked ?? d.unlockedRoots,
+          },
+      );
+    },
+    [db, data, horizon],
+  );
+
+  /** Put an earned supply node on a word you hold. */
+  const placeNode = useCallback(
+    async (nodeId: string): Promise<boolean> => {
+      if (!db || !data || nodesToPlace(data) < 1) return false;
+      if (data.states.get(nodeId) !== 'conquered' || nodeId === data.seed) return false;
+      if (data.supplyNodes.includes(nodeId)) return false;
+      const supplyNodes = [...data.supplyNodes, nodeId];
+      await saveMeta(db, 'supply_nodes', supplyNodes);
+      await moveHorizon(supplyNodes);
+      setData((d) => d && { ...d, supplyNodes });
+      return true;
+    },
+    [db, data, moveHorizon],
+  );
+
+  /** Take a placed supply node back (to put it elsewhere); the capital stays. */
+  const liftNode = useCallback(
+    async (nodeId: string) => {
+      if (!db || !data || !data.supplyNodes.includes(nodeId)) return;
+      const supplyNodes = data.supplyNodes.filter((id) => id !== nodeId);
+      await saveMeta(db, 'supply_nodes', supplyNodes);
+      await moveHorizon(supplyNodes);
+      setData((d) => d && { ...d, supplyNodes });
+    },
+    [db, data, moveHorizon],
+  );
+
   const timeTravel = useCallback(
     async (days: number) => {
       if (!db) return;
@@ -678,7 +692,7 @@ export function useSprawl() {
     [db],
   );
 
-  /** Wipe progress; with a first word, a new game starts there (else the picker shows). */
+  /** Wipe progress; with a capital, a new game starts there (else the picker shows). */
   const reset = useCallback(
     async (seed?: string) => {
       if (!db || !data) return;
@@ -699,12 +713,13 @@ export function useSprawl() {
     earnAchievements,
     plant,
     buyHint,
+    placeNode,
+    liftNode,
     timeTravel,
     reset,
     graphName,
     runId,
     event,
     startExpedition,
-    shielded,
   };
 }

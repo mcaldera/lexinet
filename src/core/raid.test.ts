@@ -1,27 +1,28 @@
 import { defend, raidStarts, raidStatus, raidTargets } from './raid';
-import type { NodeState } from './unlock';
 
-const states = new Map<string, NodeState>([
-  ['a', 'conquered'],
-  ['b', 'conquered'],
-  ['c', 'conquered'],
-  ['h', 'frontier'],
-]);
-const neighbours = new Map([
-  ['a', ['h']],
-  ['b', ['h', 'c']],
-  ['c', ['b']],
-  ['h', ['a', 'b']],
-]);
 const rules = { durationMs: 180_000, targets: 3, gapMs: 1_200_000, chance: 0.2 };
 
-test('a raid hits the weakest words on a hostile border', () => {
-  const health = new Map([
-    ['a', 0.9],
-    ['b', 0.6],
+test('a raid hits random words, chokepoints more often', () => {
+  const hang = new Map([
+    ['a', 0],
+    ['b', 14],
+    ['c', 0],
   ]);
-  expect(raidTargets(states, neighbours, new Set(['h']), health, 3)).toEqual(['b', 'a']);
-  expect(raidTargets(states, neighbours, new Set(), health, 3)).toEqual([]);
+  // Weights 1, 8, 1: a draw at 0.05 of the total lands on a, at 0.5 on b.
+  expect(raidTargets(hang, 1, () => 0.05)).toEqual(['a']);
+  expect(raidTargets(hang, 1, () => 0.5)).toEqual(['b']);
+  expect(raidTargets(hang, 5).sort()).toEqual(['a', 'b', 'c']); // never twice
+  expect(raidTargets(new Map(), 3)).toEqual([]);
+  // Over many raids the chokepoint is hit most, but plain words are hit too.
+  let seed = 1;
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const hits = new Map<string, number>();
+  for (let i = 0; i < 2000; i++) {
+    const [t] = raidTargets(hang, 1, rnd);
+    hits.set(t, (hits.get(t) ?? 0) + 1);
+  }
+  expect(hits.get('b')!).toBeGreaterThan(hits.get('a')!);
+  expect(hits.get('a')!).toBeGreaterThan(100);
 });
 
 test('raids need a border, a pause since the last one and some luck', () => {

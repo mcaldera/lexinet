@@ -1,4 +1,4 @@
-import { State, retrievability, type Card } from './scheduler';
+import { dueAt, State, retrievability, type Card } from './scheduler';
 import type { NodeState } from './unlock';
 
 export type QueueCard = { id: string; nodeId: string; card: Card };
@@ -24,16 +24,16 @@ export function buildQueue<T extends QueueCard>(input: QueueInput<T>): T[] {
   const active = cards.filter((c) => states.get(c.nodeId) !== 'locked');
 
   const reviews = active
-    .filter((c) => c.card.state === State.Review && c.card.due.getTime() <= t)
+    .filter((c) => c.card.state === State.Review && dueAt(c.card) <= t)
     .sort((a, b) => (retrievability(a.card, now) ?? 0) - (retrievability(b.card, now) ?? 0));
 
   const learning = active
     .filter(
       (c) =>
         (c.card.state === State.Learning || c.card.state === State.Relearning) &&
-        c.card.due.getTime() <= t + learnAheadMs,
+        dueAt(c.card) <= t + learnAheadMs,
     )
-    .sort((a, b) => a.card.due.getTime() - b.card.due.getTime());
+    .sort((a, b) => dueAt(a.card) - dueAt(b.card));
 
   const touched = new Set(active.filter((c) => c.card.state !== State.New).map((c) => c.nodeId));
   const fresh = active.filter((c) => c.card.state === State.New && touched.has(c.nodeId));

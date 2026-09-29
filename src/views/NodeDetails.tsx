@@ -1,4 +1,3 @@
-import type { Influence } from '../core/influence';
 import { TENSES, type Drill } from '../core/verbs';
 import type { ClaimStep } from '../core/claim';
 import type { NodeState } from '../core/unlock';
@@ -13,26 +12,30 @@ type Props = {
   /** The name as the player may see it (faded words lose letters; '' = gone). */
   name: string;
   health: number | null;
-  control: number;
   /** Conquered words: memory strength (0-5), how many days it lasts, and recall right now (0-1). */
   memory?: { level: number; days: number; recall: number | null };
-  /** Conquered: who pushes its control up or down. Frontier: whom it attacks. */
-  influences: Influence[];
-  nameOf: (id: string) => string;
-  cohesion: { links: number; cluster: number };
-  hostile: boolean;
-  /** Hours until a neutral frontier word turns hostile. */
-  graceHours?: number;
+  /** When its next review is due (app ms). */
+  due?: number;
+  /** Its place in your supply (core/supply.ts). */
+  supply?: {
+    value: number;
+    min: number;
+    node?: 'capital' | 'node';
+    working: boolean;
+    broken: boolean;
+    /** Broken by a miss (else by fading past the line). */
+    missed: boolean;
+    /** Cut off (not broken itself): falls at this app time. */
+    cutUntil?: number;
+    /** Broken and so cut off too: falls at this app time. */
+    brokenUntil?: number;
+    /** Held words that would be cut off if it broke (or are, while it's broken). */
+    hanging?: number;
+    /** A placed node: take it back to place it elsewhere. */
+    onLift?: () => void;
+  };
   /** False while this word is being quizzed: etymology and meaning would give it away. */
   showEtymology: boolean;
-  /** Hidden or "?" words: their reach and who pushes them (names as the player may see them). */
-  reach?: { value: number; sources: { name: string; push: number }[] };
-  /** Won words: how hard they push the horizon, and why. */
-  push?: { value: number; why: string };
-  /** Claimed words endangered by a miss: the deadline and the word to win back. */
-  danger?: { until: number; from: string };
-  /** A missed word: how many claims it endangers and when the first falls. */
-  endangers?: { count: number; until: number };
   /** Conquered words: links into their category and out of it (score cohesion). */
   links?: { inside: number; outside: number; category: string };
   /** Words with an English cousin: buy it as a hint, or see the one bought. */
@@ -42,9 +45,6 @@ type Props = {
   coins?: number;
   /** A lost word one right answer wins back: what it was and until when (app ms). */
   reclaim?: { was: 'conquered' | 'claimed'; steps: number; until: number };
-  /** App time (ms), for the danger countdowns. */
-  appNowMs?: number;
-  dangerFrom?: (id: string) => string;
   /** Claimed words: the step to do next and when it opens (null = complete). */
   claimStep?: ClaimStep | null;
   /** Conquered verbs: level and what the next conjugation step is. */
@@ -65,6 +65,16 @@ const span = (days: number) =>
         ? `${Math.round(days / 7)} wk`
         : `${Math.round(days / 30)} mo`;
 
+/** "40 min", "5 h", "3 d": time until something. */
+const until = (ms: number) =>
+  ms < 3_600_000
+    ? `${Math.max(1, Math.round(ms / 60_000))} min`
+    : ms < 2 * 86_400_000
+      ? `${Math.round(ms / 3_600_000)} h`
+      : `${Math.round(ms / 86_400_000)} d`;
+
+const words = (n: number) => `${n} ${n === 1 ? 'word' : 'words'}`;
+
 /**
  * Memory strength: how long you'll remember the word (FSRS stability), as dots.
  * Only spaced reviews raise it. Stars are for verb tenses, not this.
@@ -73,7 +83,7 @@ export function MemoryDots({ level, days }: { level: number; days: number }) {
   return (
     <span
       className="flex items-center gap-1.5 text-slate-500"
-      title={`Memory strength ${level}/${MAX_STRENGTH}: you should still recall it after ~${span(days)}. It grows only with spaced reviews; the stronger it is, the slower the memory part of Hold fades, and each level takes 10% off hostile pressure.`}
+      title={`Memory strength ${level}/${MAX_STRENGTH}: you should still recall it after ~${span(days)}. It grows only with spaced reviews; cut off from supply, a word holds out this long.`}
     >
       <span className="flex gap-0.5">
         {Array.from({ length: MAX_STRENGTH }, (_, i) => (
@@ -87,62 +97,48 @@ export function MemoryDots({ level, days }: { level: number; days: number }) {
     </span>
   );
 }
-const perDay = (v: number) => `${v > 0 ? '+' : ''}${Math.round(v * 100)}%/d`;
-const KIND = {
-  attack: { text: 'hostile', cls: 'text-red-300' },
-  rebel: { text: 'rebel', cls: 'text-red-300' },
-  support: { text: 'support', cls: 'text-emerald-300' },
-} as const;
 const btn = 'btn rounded-md px-2 py-1 text-xs text-white disabled:opacity-40';
+
+/** Inside your supply or not, for a "?" or a claim: won out there, a word is cut off. */
+function SupplyHint({ supply }: { supply?: Props['supply'] }) {
+  if (!supply) return null;
+  return supply.value >= supply.min - 1e-9 ? (
+    <p className="text-amber-200/80" title="Supply reaches it: won, it will count">
+      ⚡ inside your supply ({pct(supply.value)})
+    </p>
+  ) : (
+    <p
+      className="text-slate-500"
+      title="Won out here, it is cut off from the start and holds out only as long as its memory lasts, unless a supply node comes near"
+    >
+      outside your supply
+    </p>
+  );
+}
 
 /** The selected word's status: a line or two, with the breakdown one click away. */
 export default function NodeDetails(props: Props) {
-  const { word, state, health, control, influences, nameOf, cohesion, hostile } = props;
-  const total = influences.reduce((a, i) => a + i.perDay, 0);
-  const clock = (until: number) => {
-    const s = Math.max(0, Math.ceil((until - (props.appNowMs ?? props.nowMs)) / 1000));
-    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
-  };
+  const { word, state, supply } = props;
   const hint = props.hint && <HintButton hint={props.hint} coins={props.coins ?? 0} />;
 
-  // Hidden words: the wait card above already shows their reach.
   if (state === 'locked') return null;
 
   if (state === 'frontier') {
-    const lines = [
-      props.reclaim && (
-        <p key="r" className="text-teal-300">
-          ↺ was {props.reclaim.was === 'conquered' ? 'yours' : `claimed (${props.reclaim.steps}/3)`}{' '}
-          · {timeLeft(props.reclaim.until - props.nowMs)} to win back
-        </p>
-      ),
-      props.endangers && (
-        <p key="e" className="text-rose-300">
-          ⚠ {props.endangers.count} {props.endangers.count === 1 ? 'claim falls' : 'claims fall'} in{' '}
-          <b className="font-mono">{clock(props.endangers.until)}</b>
-        </p>
-      ),
-      hostile ? (
-        <p key="h" className="text-red-300">
-          Hostile{influences.length ? ` · ${perDay(total)} on ${influences.length} of yours` : ''}
-        </p>
-      ) : (
-        <p key="h" className="text-slate-500">
-          Hostile in {Math.max(1, Math.round(props.graceHours ?? 0))} h
-        </p>
-      ),
-    ];
     return (
       <Panel>
         <div className="flex items-center justify-between gap-2">
-          <div className="space-y-0.5">{lines}</div>
+          <div className="space-y-0.5">
+            {props.reclaim && (
+              <p className="text-teal-300">
+                ↺ was{' '}
+                {props.reclaim.was === 'conquered' ? 'yours' : `claimed (${props.reclaim.steps}/3)`}{' '}
+                · {timeLeft(props.reclaim.until - props.nowMs)} to win back
+              </p>
+            )}
+            <SupplyHint supply={supply} />
+          </div>
           {hint}
         </div>
-        {props.reach && (
-          <More>
-            <ReachList reach={props.reach} />
-          </More>
-        )}
       </Panel>
     );
   }
@@ -161,56 +157,32 @@ export default function NodeDetails(props: Props) {
           </div>
           {hint}
         </div>
-        {props.danger && (
-          <p className="mt-1 text-rose-300">
-            ⚠ falls in <b className="font-mono">{clock(props.danger.until)}</b> unless{' '}
-            {props.dangerFrom?.(props.danger.from) || 'the missed word'} is won back
-          </p>
-        )}
+        <div className="mt-1">
+          <SupplyHint supply={supply} />
+        </div>
       </Panel>
     );
   }
   if (state !== 'conquered') return null;
 
-  const trendCls =
-    total < -0.001 ? 'text-red-300' : total > 0.001 ? 'text-emerald-300' : 'text-slate-500';
-  const daysLeft = total < 0 ? control / -total : null;
-  const h = health ?? 1;
   const verb = props.verb;
+  const dueIn = props.due !== undefined ? props.due - props.nowMs : undefined;
   return (
     <Panel>
       <div className="mb-1.5 text-sm text-slate-100">
         {props.name || '?'} {/* Not while it is being asked: the meaning would be the answer. */}
         {props.showEtymology && <span className="text-xs text-slate-500">{word.en}</span>}
       </div>
-      <div className="flex items-center gap-2">
-        <span
-          className="text-slate-500"
-          title={`Hold: the weaker of memory (${props.memory?.recall == null ? '—' : pct(props.memory.recall)} chance you recall it now) and control (${pct(control)}, worn down by hostile neighbours). A right answer restores both.`}
-        >
-          Hold
-        </span>
-        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/[0.08]">
-          <div
-            className={`h-full ${h >= 0.9 ? 'bg-emerald-400' : h >= 0.5 ? 'bg-amber-400' : 'bg-red-400'}`}
-            style={{ width: pct(h) }}
-          />
-        </div>
-        <span className="w-9 text-right text-slate-300">{pct(h)}</span>
-        {Math.abs(total) > 0.001 && <span className={trendCls}>{perDay(total)}</span>}
-      </div>
+      {supply && <SupplyLine supply={supply} nowMs={props.nowMs} />}
       {props.memory && (
-        <div className="mt-1 text-xs">
+        <div className="mt-1 flex items-center gap-2 text-xs">
           <MemoryDots level={props.memory.level} days={props.memory.days} />
+          {dueIn !== undefined && (
+            <span className={dueIn <= 0 ? 'text-violet-300' : 'text-slate-500'}>
+              · {dueIn <= 0 ? 'due now' : `due in ${until(dueIn)}`}
+            </span>
+          )}
         </div>
-      )}
-      {daysLeft !== null && (
-        <p className="mt-1 text-red-300">
-          Lost in ~
-          {daysLeft < 1
-            ? `${Math.max(1, Math.round(daysLeft * 24))} h`
-            : `${daysLeft.toFixed(1)} d`}
-        </p>
       )}
       {verb && (
         <div className="mt-2 flex items-center justify-between gap-2">
@@ -234,12 +206,21 @@ export default function NodeDetails(props: Props) {
           )}
         </div>
       )}
-      {(props.onPlant || hint) && (
+      {(props.onPlant || hint || supply?.onLift) && (
         <div className="mt-2 flex justify-end gap-1.5">
+          {supply?.onLift && (
+            <button
+              onClick={supply.onLift}
+              title="Take this supply node back and put it on another word you hold"
+              className={`${btn} bg-amber-800 hover:bg-amber-700`}
+            >
+              ⚡ Move
+            </button>
+          )}
           {props.onPlant && (
             <button
               onClick={props.onPlant}
-              title="Bring a hidden word next to this one"
+              title="Bring a hidden word next to this one: your link carries supply too"
               className={`${btn} bg-emerald-800 hover:bg-emerald-700`}
             >
               🌱 Plant
@@ -250,42 +231,69 @@ export default function NodeDetails(props: Props) {
       )}
       {props.showEtymology && <Etymology word={word} />}
       <More>
-        {influences.length > 0 && (
-          <ul className="space-y-0.5">
-            {[...influences]
-              .sort((a, b) => a.perDay - b.perDay)
-              .map((i) => (
-                <li key={i.id} className="flex justify-between gap-2">
-                  <span>
-                    {nameOf(i.id) || '?'}{' '}
-                    <span className={KIND[i.kind].cls}>{KIND[i.kind].text}</span>
-                  </span>
-                  <span className={i.perDay < 0 ? 'text-red-300' : 'text-emerald-300'}>
-                    {perDay(i.perDay)}
-                  </span>
-                </li>
-              ))}
-          </ul>
+        <p>
+          Recall {props.memory?.recall == null ? '—' : pct(props.memory.recall)} (due at 90%, breaks
+          at 80%)
+        </p>
+        {supply && (
+          <p>
+            Supply {pct(supply.value)} (counts from {pct(supply.min)})
+          </p>
         )}
-        <p>
-          Recall {props.memory?.recall == null ? '—' : pct(props.memory.recall)} · control{' '}
-          {pct(control)}
-        </p>
-        <p>
-          Cohesion {cohesion.links.toFixed(1)} · {cohesion.cluster}-word territory
-        </p>
         {props.links && (
           <p>
             {props.links.category}: {props.links.inside} links in, {props.links.outside} out
           </p>
         )}
-        {props.push && (
-          <p>
-            Push {pct(props.push.value)} ({props.push.why})
-          </p>
-        )}
       </More>
     </Panel>
+  );
+}
+
+/** One line: broken, cut off, or supplied (and how much hangs on it). */
+function SupplyLine({ supply, nowMs }: { supply: NonNullable<Props['supply']>; nowMs: number }) {
+  const hang = supply.hanging ?? 0;
+  if (supply.broken) {
+    return (
+      <p
+        className="text-rose-300"
+        title="A broken word passes no supply on: whatever hangs on it is cut off. One right answer mends it."
+      >
+        ⛓ Broken ({supply.missed ? 'missed' : 'forgotten'}) · mend it
+        {hang > 0 && ` · ${words(hang)} cut off`}
+        {supply.brokenUntil !== undefined && (
+          <span className="text-rose-300/70"> · falls in {until(supply.brokenUntil - nowMs)}</span>
+        )}
+      </p>
+    );
+  }
+  if (supply.cutUntil !== undefined) {
+    return (
+      <p
+        className="text-slate-400"
+        title="No supply reaches it: it doesn't count, and falls back to '?' when it can't hold out any longer. Mend the broken word on its way, place a supply node near it, or plant a link around the gap."
+      >
+        ✂ Cut off · falls in {until(supply.cutUntil - nowMs)}
+      </p>
+    );
+  }
+  return (
+    <p
+      className="text-amber-200/90"
+      title={
+        hang > 0
+          ? `If it broke, ${words(hang)} would be cut off: keep it strong, or give them another way (a planted link, a supply node)`
+          : 'Supplied: it counts, and passes supply on to its neighbours'
+      }
+    >
+      ⚡{' '}
+      {supply.node === 'capital'
+        ? 'Capital'
+        : supply.node === 'node'
+          ? `Supply node${supply.working ? '' : ' (not working)'}`
+          : `Supply ${pct(supply.value)}`}
+      {hang > 0 && <span className="text-amber-300"> · {words(hang)} hang on it</span>}
+    </p>
   );
 }
 
@@ -306,27 +314,11 @@ function More({ children }: { children: React.ReactNode }) {
   );
 }
 
-function ReachList({ reach }: { reach: NonNullable<Props['reach']> }) {
-  return (
-    <>
-      <p className="text-sky-300">Reach {pct(reach.value)}</p>
-      <ul className="space-y-0.5">
-        {reach.sources.map((s, i) => (
-          <li key={i} className="flex justify-between">
-            <span>{s.name || '?'}</span>
-            <span className="text-sky-300">+{pct(s.push)}</span>
-          </li>
-        ))}
-      </ul>
-    </>
-  );
-}
-
-/** The bought hint (English cousin, which also shields the word), or the offer to buy one. */
+/** The bought hint (the word's English cousin), or the offer to buy one. */
 function HintButton({ hint, coins }: { hint: NonNullable<Props['hint']>; coins: number }) {
   if (hint.bought) {
     return (
-      <span className="shrink-0 text-amber-200" title="Hint: hostile pressure on it is halved">
+      <span className="shrink-0 text-amber-200" title="Hint: its English cousin">
         ≈ {hint.cognate}
       </span>
     );
@@ -335,7 +327,7 @@ function HintButton({ hint, coins }: { hint: NonNullable<Props['hint']>; coins: 
     <button
       onClick={hint.onBuy}
       disabled={coins < hint.cost}
-      title="Its English cousin, shown next to it; also halves hostile pressure on it"
+      title="Its English cousin, shown next to it"
       className={`${btn} shrink-0 bg-amber-800 hover:bg-amber-700`}
     >
       💡 {hint.cost}

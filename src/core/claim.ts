@@ -8,11 +8,13 @@ import { State, type Card, type Direction } from './scheduler';
  * 3. lock in: either direction, once `recall` has passed since step 2.
  *
  * Fast track: a word recognised at first sight (never shown, answered right)
- * is one you already know, so producing it opens at once and conquers it.
+ * is one you already know, so producing it conquers it. It still opens after a
+ * short `known` break: right after the Italian was on screen, producing it
+ * would be copying.
  */
 export type Claim = { itEn?: number; enIt?: number; recall?: number; known?: boolean };
 export const CLAIM_STEPS = 3;
-export type ClaimGaps = { step: number; recall: number };
+export type ClaimGaps = { step: number; recall: number; known?: number };
 
 export const CLAIM_STEP_NAMES = ['Recognise', 'Produce', 'Lock in'] as const;
 
@@ -33,7 +35,7 @@ export function claimNext(c: Claim | undefined, gaps: ClaimGaps): ClaimStep | nu
     return {
       step: 2,
       directions: [c.itEn ? 'en-it' : 'it-en'],
-      opensAt: done + (c.known ? 0 : gaps.step),
+      opensAt: done + (c.known ? (gaps.known ?? 0) : gaps.step),
     };
   }
   if (!c.recall && !c.known) {

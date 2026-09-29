@@ -1,5 +1,5 @@
 import { appNow } from './clock';
-import { newCard, rate, Rating } from './scheduler';
+import { dueAt, newCard, rate, Rating } from './scheduler';
 import { nextPractice, nodeStrength } from './strength';
 
 const t0 = new Date(Date.UTC(2026, 0, 1));
@@ -21,6 +21,6 @@ test('practice waits until a card is due, unless a direction is unreviewed', () 
   const b = rate(newCard(t0), Rating.Easy, t0);
   expect(nextPractice([a, newCard(t0)], t0)).toBeNull();
   const next = nextPractice([a, b], t0)!;
-  expect(next.getTime()).toBe(Math.min(a.due.getTime(), b.due.getTime()));
+  expect(next.getTime()).toBe(Math.min(dueAt(a), dueAt(b)));
   expect(nextPractice([a, b], appNow(30, t0.getTime()))).toBeNull();
 });

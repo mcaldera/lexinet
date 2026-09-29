@@ -1,18 +1,17 @@
 import {
+  CLAIM_KNOWN_GAP_MS,
   CLAIM_RECALL_GAP_MS,
   CLAIM_STEP_GAP_MS,
   COINS_PER_CONQUEST,
-  DANGER_MS,
   EXPEDITION,
   HINT_COST,
-  LANDMARK,
   RAID,
   TIER_MIN_WORDS,
   TIER_UNLOCK_FRACTION,
-  INFLUENCE,
   PLANT_COST,
   RECLAIM_MS,
   ROOTS,
+  SUPPLY,
 } from '../config';
 import { BAND_COLOR, REASON_LABEL, REASON_RGB } from './visuals';
 
@@ -53,9 +52,9 @@ export default function Guide({ onClose }: { onClose: () => void }) {
             Click a <b>?</b> to claim it: say what it means. Then produce the Italian (
             {CLAIM_STEP_GAP_MS / 60_000} min later) and recall it once more (
             {CLAIM_RECALL_GAP_MS / 60_000} min after that) to conquer it. A new word asks you to
-            type its meaning; typed right at first sight, it skips the waits: produce it straight
-            away and it is yours. Not sure? ☰ Choose instead shows four meanings (no fast track,
-            and no going back to typing).
+            type its meaning; typed right at first sight, it skips the long waits: produce it{' '}
+            {CLAIM_KNOWN_GAP_MS / 1000} s later and it is yours. Not sure? ☰ Choose instead shows
+            four meanings (no fast track, and no going back to typing).
           </p>
           <p>
             Reviews of your words sometimes fill the gap in a sentence. 🔊 says a word aloud (the
@@ -69,46 +68,51 @@ export default function Guide({ onClose }: { onClose: () => void }) {
             on Windows and macOS. Restart the browser afterwards.
           </p>
           <p>
-            Won words push the horizon: words close enough appear as ghosts, then as <b>?</b>. Verbs
-            push further, adjectives less; a familiar category carries further.
+            Every word next to one of yours is a <b>?</b> you can conquer. Faint ones lie outside
+            your supply: won there, they are cut off from the start (see Supply).
           </p>
           <p>
             ⬢ A shared root appears once you conquer one of its words. It charges as more of its
-            words come into reach and opens by itself at {ROOTS.open} (all of a smaller family):
-            then every word of the family becomes a <b>?</b>, wherever it lies and at any level.
+            words come inside your supply and opens by itself at {ROOTS.open} (all of a smaller
+            family): then every word of the family becomes a <b>?</b>, wherever it lies and at any
+            level.
           </p>
         </Section>
 
-        <Section title="Holding">
+        <Section title="Memory">
           <p>
-            An unclaimed <b>?</b> turns hostile after {INFLUENCE.hostileAfterHours} h and wears down
-            its conquered neighbours; conquered neighbours hold each other up. Below{' '}
-            {Math.round(INFLUENCE.rebelBelow * 100)}% a word rebels, at 0 it is lost.
+            <b>Memory strength</b> (the dots, and the word's size on the map) is how long you'll
+            remember a word. It grows only with spaced reviews, never by cramming. A word is{' '}
+            <b>due</b> when your recall of it (its weaker direction) is down to 90%: its name starts
+            to fade letter by letter. Each right answer makes the next gap longer (days, weeks,
+            months); a miss makes it short again. Gold ★ are a verb's tenses.
+          </p>
+        </Section>
+
+        <Section title="Supply">
+          <p>
+            🏰 Your words count only while they are connected to a <b>supply node</b>. Your first
+            word is your capital; every {SUPPLY.every} words you hold earn another node, which you
+            put on any word you hold. Supply flows out along links through your words, and each link
+            passes on as much as it is strong (at most {Math.round(SUPPLY.maxLink * 100)}%): tight,
+            strongly linked clusters are easy to supply, thin bridges between categories are costly.
+            A word needs {Math.round(SUPPLY.min * 100)}% to count.
           </p>
           <p>
-            A miss locks the word for a minute and puts fragile claims next to it in danger for{' '}
-            {DANGER_MS / 60_000} min: win it back in time or they fall. Anything lost can be won
-            back with one right answer for {RECLAIM_MS / 86_400_000} days.
+            A word <b>breaks</b> when you miss it, or when you leave it due until its name has faded
+            completely (recall {Math.round(SUPPLY.breakRecall * 100)}%). A broken word passes no
+            supply on: whatever hangs on it is <b>cut off</b>. One right answer mends it, and
+            everything behind it lights up again.
           </p>
           <p>
-            Each word shows two things. <b>Hold</b> (the bar) is today: the weaker of your memory
-            (the chance you'd recall it now) and its control on the map. It drains between reviews
-            and a right answer fills it again. <b>Memory strength</b> (the dots, and the word's size
-            on the map) is the long run: how long you'll remember it. It grows only with spaced
-            reviews, never by cramming; the more dots, the slower Hold's memory part drains, and
-            each dot takes {Math.round(INFLUENCE.strengthArmour * 100)}% off hostile pressure. Gold
-            ★ are a verb's tenses.
+            Cut off, a word doesn't score and holds out as long as its memory lasts (at least a
+            day), then falls back to <b>?</b>. Mend the gap, put a supply node nearby, or plant a
+            link around it. Anything lost can be won back with one right answer for{' '}
+            {RECLAIM_MS / 86_400_000} days.
           </p>
           <p>
-            A word is <b>due</b> when you would likely start to forget it (recall down to about
-            90%). The first review comes a few days after you conquer it; each right answer makes
-            the next gap longer (a week, a month…), a miss makes it short again. Names fade letter
-            by letter as memory weakens: practise when a word is due.
-          </p>
-          <p>
-            🏰 Hold {Math.round(LANDMARK.share * 100)}% of a category (at most {LANDMARK.max} words)
-            and it builds a landmark: its words take less hostile pressure while it stands (+
-            {LANDMARK.coins} 🪙 the first time).
+            Chokepoints matter: a word's details say how many words hang on it. Keep those strong,
+            or give their words a second way (another link, another node).
           </p>
         </Section>
 
@@ -118,22 +122,23 @@ export default function Guide({ onClose }: { onClose: () => void }) {
             within {EXPEDITION.minutes} min for {EXPEDITION.coins} 🪙. Failing costs nothing.
           </p>
           <p>
-            ⚔ Raids: now and then hostile words strike your weakest border words. Answer each one
-            right within {RAID.durationMs / 60_000} min (click it in the raid box), or it loses{' '}
-            {Math.round(RAID.hit * 100)}% control. Repelling a raid pays {RAID.coins} 🪙.
+            ⚔ Raids: now and then a raid strikes a few of your words, chokepoints (the words the
+            most hangs on) more often than others. Answer each one into Italian within{' '}
+            {RAID.durationMs / 60_000} min (click it in the raid box), or it breaks. Repelling a
+            raid pays {RAID.coins} 🪙.
           </p>
           <p>🔥 Your streak counts the days you played; the calendar is in the 🏆 panel.</p>
         </Section>
 
         <Section title="Score and coins">
           <p>
-            Each category scores 10 × conquered words × (1 + 2 × cohesion), where cohesion is the
-            share of their links that stay inside the category.
+            Each category scores 10 × supplied words × (1 + 2 × cohesion), where cohesion is the
+            share of their links that stay inside the category. Cut-off words don't score.
           </p>
           <p>
             Coins: {COINS_PER_CONQUEST} per conquest, more for achievements. Spend them on a hint (
-            {HINT_COST}: the English cousin, and half the hostile pressure) or on planting a hidden
-            word next to one of yours (from {PLANT_COST}).
+            {HINT_COST}: the English cousin) or on planting a hidden word next to one of yours (from{' '}
+            {PLANT_COST}): your link carries supply too.
           </p>
           <p>
             Levels follow your run: the next opens at {Math.round(TIER_UNLOCK_FRACTION * 100)}% of
@@ -148,9 +153,10 @@ export default function Guide({ onClose }: { onClose: () => void }) {
           <div className="space-y-1.5 text-xs">
             <div className={row}>
               <span className={item}>{dot(BAND_COLOR.solid)} strong</span>
-              <span className={item}>{dot(BAND_COLOR.faded)} fading</span>
-              <span className={item}>{dot(BAND_COLOR.dashed)} weak</span>
-              <span className={item}>{dot(BAND_COLOR.cracked)} about to go</span>
+              <span className={item}>{dot(BAND_COLOR.faded)} due</span>
+              <span className={item}>{dot(BAND_COLOR.dashed)} fading</span>
+              <span className={item}>{dot(BAND_COLOR.cracked)} broken</span>
+              <span className={item}>{dot('rgba(100, 116, 139, 0.9)')} cut off</span>
               <span className={item}>{dot('rgba(71, 85, 105, 0.9)')} ? to conquer</span>
             </div>
             <div className={row}>
@@ -162,12 +168,14 @@ export default function Guide({ onClose }: { onClose: () => void }) {
             </div>
             <div className={row}>
               <span className="text-emerald-300">◌ claimed (3 steps)</span>
-              <span className="text-slate-400">◌ ghost: not in reach yet</span>
               <span className="text-slate-300">◯ next step opening</span>
-              <span className="text-amber-300">◔ turns hostile</span>
-              <span className="text-red-300">red: hostile, attacking</span>
-              <span className="text-emerald-300">green: support</span>
-              <span className="text-rose-300">rose: in danger</span>
+              <span className="text-amber-300">🏰 supply node</span>
+              <span className="text-amber-200">gold pulses: supply lines</span>
+              <span className="text-amber-100">glow: supply (brighter = more)</span>
+              <span className="text-amber-300">◌ amber: thin supply, a node nearby helps</span>
+              <span className="text-slate-400">faint ?: outside your supply</span>
+              <span className="text-slate-300">◔ cut off: falls when it runs out</span>
+              <span className="text-rose-300">rose: broken</span>
               <span className="text-teal-300">↺ win back</span>
               <span className="text-sky-300">ripple: needs you</span>
               <span className="text-amber-200">≈ hint</span>

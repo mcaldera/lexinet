@@ -1,8 +1,10 @@
 import { appNow } from './clock';
 import {
   deserializeCard,
+  dueAt,
   isDue,
   newCard,
+  recallTime,
   rate,
   Rating,
   retrievability,
@@ -40,4 +42,24 @@ test('serialization round-trips dates', () => {
   const back = deserializeCard(serializeCard(c));
   expect(back.due).toBeInstanceOf(Date);
   expect(back).toEqual(c);
+});
+
+test('recallTime finds when a card falls to a given recall', () => {
+  const card = rate(newCard(t0), Rating.Good, t0);
+  const at80 = recallTime(card, 0.8);
+  expect(retrievability(card, new Date(at80))).toBeCloseTo(0.8, 2);
+  // At 90% a card has lasted exactly its stability.
+  expect(recallTime(card, 0.9) - t0.getTime()).toBeCloseTo(card.stability * 86_400_000, -3);
+  expect(recallTime(newCard(t0), 0.9)).toBe(Infinity);
+});
+
+test('a card is due once its recall is down to 90%, even if scheduled later', () => {
+  // A miss, then right a minute later: stability stays ~0.4 d, but ts-fsrs
+  // schedules it days out (its intervals keep again < hard < good a day apart).
+  const missed = rate(newCard(t0), Rating.Again, t0);
+  const t1 = new Date(t0.getTime() + 60_000);
+  const card = rate(missed, Rating.Good, t1);
+  expect(card.due.getTime() - t1.getTime()).toBeGreaterThan(2 * 86_400_000);
+  expect(dueAt(card)).toBeLessThan(t1.getTime() + 86_400_000);
+  expect(isDue(card, new Date(t1.getTime() + 86_400_000))).toBe(true);
 });

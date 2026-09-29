@@ -1,5 +1,5 @@
 import { reclaim, reclaimable, recordFalls } from './fallen';
-import type { Game } from './influence';
+import type { Game } from './game';
 import type { NodeState } from './unlock';
 
 const DAY = 86_400_000;
@@ -14,16 +14,13 @@ const claims = new Map([
   ['k', { itEn: 1, enIt: 2 }],
   ['z', {}],
 ]);
-const game: Game = { simAt: 0, nodes: new Map([['c', { control: 0, since: t0 }]]) };
+const game: Game = { simAt: 0, nodes: new Map([['c', { missedAt: t0, cutSince: t0 }]]) };
 const falls = ['c', 'k', 'z', 'f'].map((id) => ({ id, state: 'frontier' as const }));
 
 test('falls remember what the word was (a claim with no step done is not worth it)', () => {
   const g = recordFalls(game, before, claims, falls, t0);
-  expect(g.nodes.get('c')).toEqual({
-    control: 0,
-    since: t0,
-    fallen: { was: 'conquered', steps: 0, at: t0 },
-  });
+  // A lost word is no longer broken or besieged, just remembered.
+  expect(g.nodes.get('c')).toEqual({ fallen: { was: 'conquered', steps: 0, at: t0 } });
   expect(g.nodes.get('k')?.fallen).toEqual({ was: 'claimed', steps: 2, at: t0 });
   expect(g.nodes.get('z')?.fallen).toBeUndefined();
   expect(g.nodes.get('f')?.fallen).toBeUndefined();
@@ -41,7 +38,7 @@ test('one right answer restores the old status', () => {
   const g = recordFalls(game, before, claims, falls, t0);
   const back = reclaim(g, 'c', g.nodes.get('c')!.fallen!, t0 + DAY);
   expect(back.change).toEqual({ id: 'c', state: 'conquered' });
-  expect(back.game.nodes.get('c')).toEqual({ control: 1 });
+  expect(back.game.nodes.get('c')).toEqual({});
   const claim = reclaim(g, 'k', g.nodes.get('k')!.fallen!, t0 + DAY);
   expect(claim.change).toEqual({ id: 'k', state: 'claimed' });
   expect(claim.claim).toEqual({ itEn: t0 + DAY, enIt: t0 + DAY });

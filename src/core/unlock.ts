@@ -24,7 +24,7 @@ export function neighbourMap(edges: { source: string; target: string }[]): Map<s
 /**
  * State change caused by rating one of `nodeId`'s cards: a frontier node rated
  * Hard or better is claimed (conquering it takes a few more steps). Which words
- * that reveals is up to reach (core/reach.ts).
+ * that reveals is up to the horizon (core/supply.ts `horizonChanges`).
  */
 export function unlockChanges(
   nodeId: string,

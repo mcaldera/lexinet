@@ -15,11 +15,10 @@ import type { Example } from '../core/cloze';
 import type { Expedition } from '../core/expedition';
 import type { Raid } from '../core/raid';
 import type { Tense, TenseCard } from '../core/verbs';
-import type { Game, GameNode } from '../core/influence';
+import type { Game, GameNode } from '../core/game';
 import { neighbourMap, type NodeState, type StateChange } from '../core/unlock';
-import { revealChanges } from '../core/reach';
-import { REACH } from '../config';
-import { computeProgress, computeReach, verbLevels } from '../progress';
+import { horizonChanges } from '../core/supply';
+import { computeProgress } from '../progress';
 import { SCHEMA } from './schema';
 import type { SqlDb, SqlValue } from './types';
 
@@ -124,8 +123,12 @@ export type AppData = {
   offsetDays: number;
   /** Root hubs the player has unlocked by naming their meaning. */
   unlockedRoots: Set<string>;
-  /** Influence game: control per conquered word, hostility of frontier words. */
+  /** Per-word game state: claims, misses, siege clocks, lost words (core/game.ts). */
   game: Game;
+  /** Supply nodes you placed (word ids); the capital (`seed`) is always one too. */
+  supplyNodes: string[];
+  /** The most words you have held at once: every SUPPLY.every of them earn a supply node. */
+  bestHeld: number;
   /** Achievement id -> app time (ms) it was earned (core/achievements.ts). */
   achievements: Record<string, number>;
   /** Coins to spend on planting words (core/plant.ts). */
@@ -140,8 +143,6 @@ export type AppData = {
   expedition: Expedition | null;
   /** The raid under way and when the last one started (core/raid.ts). */
   raid: RaidState;
-  /** Category id -> app time its landmark was first built (paid out once). */
-  landmarks: Record<string, number>;
 };
 export type RaidState = { active?: Raid; last?: number };
 
@@ -211,13 +212,30 @@ export async function syncGraph(db: SqlDb, graph: Graph, now: Date) {
   const home = homeWords(graph.nodes, seed);
   const open = computeProgress(graph.nodes, states, tenseRows.map(toTenseCard), now, home).tier;
   const allowed = tierAllows(tiers, open, home);
-  // Reveal what the territory reaches (new words, changed links, an empty map's seed).
-  const gameRow = await db.select<{ value: string }>("SELECT value FROM meta WHERE key = 'game'");
-  const claims = new Map([...parseGame(gameRow[0]?.value).nodes].map(([id, g]) => [id, g.claim]));
-  const levels = verbLevels(graph.nodes, tenseRows.map(toTenseCard), now);
-  const reach = computeReach(graph.nodes, neighbourMap(graph.edges), states, claims, seed, levels);
-  for (const c of revealChanges(states, reach, REACH, allowed)) {
-    await db.execute('UPDATE nodes SET state = ? WHERE id = ?', [c.state, c.id]);
+  // Reveal the words next to your territory and the capital (new words, changed
+  // links, an empty map's start). Nothing closes here: the app's horizon does that.
+  const anchors = new Set([
+    seed,
+    ...[...states].filter(([, st]) => st === 'conquered').map(([id]) => id),
+  ]);
+  const opened = horizonChanges(states, neighbourMap(graph.edges), anchors, allowed, () => true);
+  await saveStates(db, opened);
+}
+
+/**
+ * Write node state changes in as few statements as possible: sql.js exports the
+ * whole DB after every statement, so one UPDATE per word made a big horizon
+ * move (dozens of words) block the page for seconds.
+ */
+export async function saveStates(db: SqlDb, changes: StateChange[]) {
+  const last = new Map(changes.map((c) => [c.id, c.state])); // the latest change per word wins
+  const rows = [...last];
+  for (let i = 0; i < rows.length; i += 300) {
+    const part = rows.slice(i, i + 300);
+    await db.execute(
+      `UPDATE nodes SET state = CASE id ${part.map(() => 'WHEN ? THEN ?').join(' ')} END WHERE id IN (${part.map(() => '?').join(',')})`,
+      [...part.flat(), ...part.map(([id]) => id)],
+    );
   }
 }
 
@@ -269,7 +287,13 @@ export async function loadAll(db: SqlDb, graph: Graph): Promise<AppData> {
     activity,
     expedition: await loadMeta<Expedition | null>(db, 'expedition', null),
     raid: await loadMeta<RaidState>(db, 'raid', {}),
-    landmarks: await loadMeta<Record<string, number>>(db, 'landmarks', {}),
+    supplyNodes: (await loadMeta<string[]>(db, 'supply_nodes', [])).filter((id) => ids.has(id)),
+    // Saves from before supply count what they hold now.
+    bestHeld: await loadMeta<number>(
+      db,
+      'best_held',
+      nodeRows.filter((n) => ids.has(n.id) && n.state === 'conquered').length,
+    ),
     graph,
     seed: seed && ids.has(seed) ? seed : graph.seed,
     home: homeWords(graph.nodes, seed && ids.has(seed) ? seed : graph.seed),
@@ -314,26 +338,31 @@ export async function saveReview(
     grade,
     reviewedAt.toISOString(),
   ]);
-  for (const c of changes) {
-    await db.execute('UPDATE nodes SET state = ? WHERE id = ?', [c.state, c.id]);
-  }
+  await saveStates(db, changes);
 }
 
 function parseGame(json: string | undefined): Game {
   if (!json) return { simAt: 0, nodes: new Map() };
   const raw = JSON.parse(json) as { simAt: number; nodes: Record<string, GameNode> };
-  return { simAt: raw.simAt, nodes: new Map(Object.entries(raw.nodes)) };
+  // Only what the game still uses (older saves carry the influence game's fields).
+  const nodes = new Map<string, GameNode>();
+  for (const [id, g] of Object.entries(raw.nodes)) {
+    const { claim, fallen, missedAt, cutSince } = g;
+    const kept = Object.fromEntries(
+      Object.entries({ claim, fallen, missedAt, cutSince }).filter(([, v]) => v !== undefined),
+    );
+    if (Object.keys(kept).length) nodes.set(id, kept);
+  }
+  return { simAt: raw.simAt, nodes };
 }
 
-/** Persist the influence game (one JSON value: a single write, cheap for sql.js). */
+/** Persist the game (one JSON value: a single write, cheap for sql.js). */
 export async function saveGame(db: SqlDb, game: Game, changes: StateChange[] = []) {
   await db.execute(
     "INSERT INTO meta (key, value) VALUES ('game', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
     [JSON.stringify({ simAt: game.simAt, nodes: Object.fromEntries(game.nodes) })],
   );
-  for (const c of changes) {
-    await db.execute('UPDATE nodes SET state = ? WHERE id = ?', [c.state, c.id]);
-  }
+  await saveStates(db, changes);
 }
 
 /** Mark a root as unlocked and reveal its words (state changes computed by the caller). */
@@ -355,9 +384,7 @@ export async function saveRootUnlock(db: SqlDb, unlocked: Set<string>, changes: 
     "INSERT INTO meta (key, value) VALUES ('unlocked_roots', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
     [JSON.stringify([...unlocked])],
   );
-  for (const c of changes) {
-    await db.execute('UPDATE nodes SET state = ? WHERE id = ?', [c.state, c.id]);
-  }
+  await saveStates(db, changes);
 }
 
 /** Save a tense drill result (creating the tense card on first success). */
@@ -377,9 +404,7 @@ export async function saveTenseReview(
     grade,
     reviewedAt.toISOString(),
   ]);
-  for (const c of changes) {
-    await db.execute('UPDATE nodes SET state = ? WHERE id = ?', [c.state, c.id]);
-  }
+  await saveStates(db, changes);
 }
 
 export async function setOffsetDays(db: SqlDb, days: number) {

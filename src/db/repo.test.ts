@@ -7,6 +7,7 @@ import {
   resetAll,
   saveReview,
   saveRootUnlock,
+  saveStates,
   setOffsetDays,
   syncGraph,
   type Graph,
@@ -43,7 +44,7 @@ test('first sync seeds nodes, edges and two cards per node; resync is idempotent
     'abbaiare:en-it',
   ]);
   expect(data.states.get('il-cane')).toBe('frontier');
-  // The seed pushes from the start (core/reach.ts): its neighbours are in reach.
+  // The capital's neighbours open from the start (core/supply.ts horizonChanges).
   expect(data.states.get('abbaiare')).toBe('frontier');
   expect(data.offsetDays).toBe(0);
 });
@@ -127,4 +128,18 @@ test('unlocked roots and the words they reveal persist; reset clears them', asyn
   await resetAll(db, graph, t0);
   data = await loadAll(db, graph);
   expect(data.unlockedRoots.size).toBe(0);
+});
+
+test('state changes are written in one go, the latest change per word winning', async () => {
+  const db = await freshDb();
+  await syncGraph(db, graph, t0);
+  await saveStates(db, [
+    { id: 'il-cane', state: 'claimed' },
+    { id: 'abbaiare', state: 'conquered' },
+    { id: 'il-cane', state: 'conquered' },
+  ]);
+  const data = await loadAll(db, graph);
+  expect(data.states.get('il-cane')).toBe('conquered');
+  expect(data.states.get('abbaiare')).toBe('conquered');
+  await saveStates(db, []);
 });

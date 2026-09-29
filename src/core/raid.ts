@@ -1,31 +1,32 @@
-import type { NodeState } from './unlock';
-
 /**
- * Raids: now and then hostile words strike a weak border. The raided words
- * must each be answered right before `until` (app time); any left undefended
- * lose control. Defending all of them pays coins.
+ * Raids: now and then a raid strikes your chokepoints. The raided words must
+ * each be answered right before `until` (app time); any left undefended break,
+ * cutting off whatever hangs on them. Defending all of them pays coins.
  */
 export type Raid = { targets: string[]; defended: string[]; start: number; until: number };
 export type RaidRules = { durationMs: number; targets: number; gapMs: number; chance: number };
 
 /**
- * Conquered words next to a hostile word, weakest (lowest health) first: the
- * border a raid would hit. Empty when nothing borders a hostile word.
+ * What a raid hits: up to `max` supplied words drawn at random, a word weighing
+ * 1 + half the words hanging on it (core/supply.ts `hanging`). Mostly plain
+ * words, now and then a chokepoint: the stakes aren't always high.
  */
 export function raidTargets(
-  states: Map<string, NodeState>,
-  neighbours: Map<string, string[]>,
-  hostile: Set<string>,
-  health: Map<string, number | null>,
+  hang: Map<string, number>,
   max: number,
+  random: () => number = Math.random,
 ): string[] {
-  return [...states]
-    .filter(
-      ([id, st]) => st === 'conquered' && (neighbours.get(id) ?? []).some((n) => hostile.has(n)),
-    )
-    .map(([id]) => id)
-    .sort((a, b) => (health.get(a) ?? 1) - (health.get(b) ?? 1))
-    .slice(0, max);
+  const pool = [...hang].map(([id, n]) => ({ id, w: 1 + n / 2 }));
+  const out: string[] = [];
+  while (out.length < max && pool.length) {
+    let r = random() * pool.reduce((a, p) => a + p.w, 0);
+    const i = Math.max(
+      0,
+      pool.findIndex((p) => (r -= p.w) < 0),
+    );
+    out.push(pool.splice(i, 1)[0].id);
+  }
+  return out;
 }
 
 /** Whether a raid starts now: none on, long enough since the last, a border to hit, luck. */

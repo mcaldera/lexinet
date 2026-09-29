@@ -5,21 +5,21 @@ test('healthy and unreviewed words keep their full name', () => {
   expect(fadedName('la famiglia', null)).toBe('la famiglia');
 });
 
-test('letters erode gradually and stably as health falls', () => {
-  const a = fadedName('la famiglia', 0.8);
-  const b = fadedName('la famiglia', 0.6);
+test('letters erode gradually and stably as recall falls from due (90%) to broken (80%)', () => {
+  const a = fadedName('la famiglia', 0.87);
+  const b = fadedName('la famiglia', 0.83);
   const hiddenCount = (s: string) => [...s].filter((c) => c === '·').length;
   expect(hiddenCount(a)).toBeGreaterThan(0);
   expect(hiddenCount(b)).toBeGreaterThan(hiddenCount(a));
-  expect(fadedName('la famiglia', 0.8)).toBe(a); // same every render
+  expect(fadedName('la famiglia', 0.87)).toBe(a); // same every render
   expect(a.length).toBe('la famiglia'.length);
   expect(a[2]).toBe(' '); // spaces are never eroded
-  // Letters hidden at 80% stay hidden at 60%.
+  // Letters hidden at 87% stay hidden at 83%.
   [...a].forEach((c, i) => c === '·' && expect(b[i]).toBe('·'));
 });
 
-test('badly faded words lose their name entirely', () => {
-  expect(fadedName('la famiglia', 0.5)).toBe('');
+test('a broken word has lost its name entirely', () => {
+  expect(fadedName('la famiglia', 0.8)).toBe('');
   expect(fadedName('la famiglia', 0.2)).toBe('');
 });
 

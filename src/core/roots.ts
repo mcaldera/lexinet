@@ -1,13 +1,13 @@
 /**
  * Root hubs are hyperdrives. A sealed root charges from its words: each counts
- * its reach (core/reach.ts) up to 1, so a word in reach counts fully and a
- * ghost partly. It opens by itself at `need` (a word opens at reach 1; a root
- * needs several of its words in reach, or all of a smaller family). Opening
- * turns all its hidden words into "?", wherever they lie on the map.
+ * the supply reaching it (core/supply.ts, as a share of what a word needs) up
+ * to 1, so a word inside your supply counts fully and one at its edge partly.
+ * It opens by itself at `need` (several of its words, or all of a smaller
+ * family). Opening turns all its hidden words into "?", wherever they lie.
  */
 export type Family = { id: string; words: string[] };
 
-/** Charge of each sealed root: the reach at its words, summed. */
+/** Charge of each sealed root: the supply at its words (each up to 1), summed. */
 export function rootCharge(
   hubs: Family[],
   reach: Map<string, number>,
