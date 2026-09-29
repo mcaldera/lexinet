@@ -1357,6 +1357,9 @@ export default function GraphView({
         onRenderFramePost={(ctx, scale) => {
           // Names on top, so links and words never cover them.
           const names = drawRegionNames(ctx, scale, livePoints(), inspect);
+          // The rings around the selected word's suppliers go under the names,
+          // their badges over them: text stays on top.
+          if (flow && !inspect) drawFlowRings(ctx, scale, flow, nodeCache.current);
           drawLabels(ctx, scale, labels.current, names);
           if (flow && !inspect) {
             drawFlow(ctx, scale, flow, nodeCache.current, (id) => {
@@ -2373,17 +2376,37 @@ function badge(
   ctx.fillText(text, x, y);
 }
 
+/** A gold ring around each word the selected word's signal comes from (under the labels). */
+function drawFlowRings(
+  ctx: CanvasRenderingContext2D,
+  scale: number,
+  flow: FlowView,
+  nodes: Map<string, N>,
+) {
+  ctx.save();
+  ctx.strokeStyle = `rgba(${SUPPLY_RGB}, 0.85)`;
+  ctx.lineWidth = Math.max(1.2, 1.6 / scale);
+  for (const id of flow.sources.keys()) {
+    const n = nodes.get(id);
+    if (n?.x === undefined || n.y === undefined) continue;
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, 13, 0, 2 * Math.PI);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
 /**
- * The selected word's suppliers: a gold ring and "+N%" (the share each sends
- * it, above its tower if it has one); over the word itself its total against
- * what it needs; a "?" nearby that would help: "+N% if won" in green.
+ * Over the labels, the selected word's signal in numbers: "+N%" over each
+ * supplier (clear of its rays), over the word itself its total against what it
+ * needs, and over a "?" nearby that would help "+N% if learned" in green.
  */
 function drawFlow(
   ctx: CanvasRenderingContext2D,
   scale: number,
   flow: FlowView,
   nodes: Map<string, N>,
-  /** The height of the tower over a word, if any (map units). */
+  /** How far the rays around a word reach (core, anchors), if any (map units). */
   tower: (id: string) => number,
 ) {
   const pct = (v: number) => `+${Math.max(1, Math.round(v * 100))}%`;
@@ -2395,13 +2418,8 @@ function drawFlow(
   ctx.save();
   for (const [id, share] of flow.sources) {
     const p = at(id);
-    if (!p) continue;
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, 13, 0, 2 * Math.PI);
-    ctx.strokeStyle = `rgba(${SUPPLY_RGB}, 0.85)`;
-    ctx.lineWidth = Math.max(1.2, 1.6 / scale);
-    ctx.stroke();
-    badge(ctx, share > 0 ? `+${share}%` : '+<1%', p.x, p.y - 15 - lift(id), scale, SUPPLY_LIGHT);
+    if (p)
+      badge(ctx, share > 0 ? `+${share}%` : '+<1%', p.x, p.y - 15 - lift(id), scale, SUPPLY_LIGHT);
   }
   const t = at(flow.target);
   if (t && flow.total) {

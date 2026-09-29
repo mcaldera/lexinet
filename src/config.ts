@@ -68,6 +68,21 @@ export const CLAIM_GAPS = {
   recall: CLAIM_RECALL_GAP_MS,
   known: CLAIM_KNOWN_GAP_MS,
 };
+/**
+ * Fast-forward (App): while nothing can be answered and something opens within
+ * `horizonMs` (a learning step, a lock, a review), app time runs `speed` times
+ * faster until it does, one jump every `tickMs`. Never sooner than `afterAnswerMs`
+ * (real time) after an answer: the fast track's gap, so a step can't be answered
+ * by copying what was just on screen. Reviews further off than `horizonMs` are
+ * never pulled forward (that would be cramming). The author asked for it (Sep 2026):
+ * waiting minutes for a step with nothing to do felt dead.
+ */
+export const FAST_FORWARD = {
+  speed: 60,
+  horizonMs: 15 * 60_000,
+  afterAnswerMs: CLAIM_KNOWN_GAP_MS,
+  tickMs: 500,
+};
 /** A lost word can be won back as it was with one right answer for this long (app time). */
 export const RECLAIM_MS = 3 * 24 * 3_600_000;
 /** An unfinished claim slips back to "?" after this long (app time). */

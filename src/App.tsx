@@ -3,6 +3,7 @@ import {
   CLAIM_GAPS,
   COOLDOWN_MS,
   EXPEDITION,
+  FAST_FORWARD,
   RAID,
   HINT_COST,
   PLANT_COST,
@@ -24,7 +25,7 @@ import { rootCharge, rootNeed } from './core/roots';
 import { neighbourMap } from './core/unlock';
 import { nextDrill, TENSES, type Tense } from './core/verbs';
 import { computeProgress, verbLevels as computeVerbLevels } from './progress';
-import { cardId, isDue, Rating, retrievability, type Grade } from './core/scheduler';
+import { cardId, dueAt, isDue, Rating, retrievability, type Grade } from './core/scheduler';
 import type { NodeState } from './core/unlock';
 import { memoryOutlook, nextPractice, nodeStrength } from './core/strength';
 import type { AppData, CardRow } from './db/repo';
@@ -73,6 +74,7 @@ export default function App() {
     plant,
     buyHint,
     timeTravel,
+    skipAhead,
     reset,
     graphName,
     runId,
@@ -293,18 +295,20 @@ export default function App() {
     [data, now],
   );
 
-  // Score (core/score.ts): conquered words per category, weighted by cohesion.
+  // Score (core/score.ts): connected words per category, by memory strength.
   const regionOf = useMemo(() => {
     const m = new Map((data?.nodes ?? []).map((n) => [n.id, n.region ?? undefined]));
     return (id: string) => m.get(id);
   }, [data?.nodes]);
-  // Cut-off words don't score until they are reconnected.
+  // Only connected words score (cut off or broken ones wait until they're back),
+  // more the better you know them.
   const clusters = useMemo(() => {
     if (!data) return [];
     const scored = new Map(data.states);
     for (const id of supply?.cut ?? []) scored.set(id, 'claimed');
-    return clusterScores(scored, data.edges, regionOf);
-  }, [data, regionOf, supply]);
+    for (const id of supply?.broken ?? []) scored.set(id, 'claimed');
+    return clusterScores(scored, data.edges, regionOf, (id) => strength.get(id) ?? 0);
+  }, [data, regionOf, supply, strength]);
   const score = totalScore(clusters);
 
   // Achievements: check the milestones whenever progress changes; new ones pay coins.
@@ -380,6 +384,34 @@ export default function App() {
     if (sorted.length > 1 && sorted[0].id === lastCardId) sorted.push(sorted.shift()!);
     return sorted;
   }, [data, now, lastCardId, cooldowns, supply]);
+
+  /**
+   * Fast-forward (FAST_FORWARD): when nothing can be answered, the app time (ms)
+   * of the next thing to open, worked out while rendering (`fastTo` below); the
+   * clock jumps towards it twice a second, from `afterAnswerMs` after the last answer.
+   */
+  const fastTo = useRef<number | null>(null);
+  const lastAnswer = useRef(0);
+  useEffect(() => {
+    const t = setInterval(() => {
+      const until = fastTo.current;
+      if (until === null || Date.now() - lastAnswer.current < FAST_FORWARD.afterAnswerMs) return;
+      // A little past it, so the step is open when the clock lands.
+      skipAhead(FAST_FORWARD.speed * FAST_FORWARD.tickMs, until + 500);
+    }, FAST_FORWARD.tickMs);
+    return () => clearInterval(t);
+  }, [skipAhead]);
+  /** When learned words' cards and verb tenses come due (app ms): what fast-forward may run to. */
+  // Not keyed on `data`: fast-forward replaces it twice a second.
+  const [cardRows, tenseRows, nodeStates] = [data?.cards, data?.tenseCards, data?.states];
+  const dueTimes = useMemo(
+    () =>
+      [
+        ...(cardRows ?? []).filter((c) => nodeStates?.get(c.nodeId) === 'conquered'),
+        ...(tenseRows ?? []),
+      ].map((c) => dueAt(c.card)),
+    [cardRows, tenseRows, nodeStates],
+  );
 
   if (error) return <div className="p-6 text-red-400">Failed to open database: {error}</div>;
   if (!data) return <div className="p-6 text-slate-400">Loading…</div>;
@@ -546,6 +578,33 @@ export default function App() {
     ]),
   });
 
+  // Nothing to answer (new words aside: they are always there) and no challenge
+  // clock running: time may run fast to whatever opens next, if that is soon.
+  const locked = (id: string) => (cooldowns.get(id) ?? 0) > appMs();
+  const idle =
+    data.started &&
+    !inspect &&
+    !current &&
+    !activeDrill &&
+    !data.raid.active &&
+    !data.expedition &&
+    !queue.length &&
+    !attention.some((a) => a.kind !== 'new' && !locked(a.id));
+  // Only what lies ahead: a card due already but not asked (a raided word's
+  // other direction, a lock not yet cleared) is no reason to wait.
+  const nextOpen = idle
+    ? Math.min(
+        ...[
+          ...[...claimWaits.values()].map((w) => w.opensAt),
+          ...cooldowns.values(),
+          ...dueTimes,
+        ].filter((at) => at > appMs()),
+      )
+    : Infinity;
+  fastTo.current = nextOpen - appMs() <= FAST_FORWARD.horizonMs ? nextOpen : null;
+  const fastForward =
+    fastTo.current !== null && Date.now() - lastAnswer.current >= FAST_FORWARD.afterAnswerMs;
+
   const states = [...data.states.values()];
   const conquered = states.filter((s) => s === 'conquered').length;
   const claimed = states.filter((s) => s === 'claimed').length;
@@ -606,6 +665,7 @@ export default function App() {
   })();
 
   const onRate = async (row: CardRow, grade: Grade, typed = true) => {
+    lastAnswer.current = Date.now();
     const firstSight = unseen(cardsByNode.get(row.nodeId) ?? []);
     const outcome = await review(row, grade, typed);
     shown.current.delete(row.nodeId);
@@ -1085,6 +1145,18 @@ export default function App() {
             meaning={(id) => data.nodes.find((n) => n.id === id)?.en ?? '?'}
             onRaidWord={(id) => selectNode(id)}
           />
+          {fastForward && fastTo.current !== null && (
+            <div
+              className="glass pointer-events-none absolute bottom-5 left-3 z-10 flex items-center gap-2 rounded-full px-3 py-1 text-xs text-sky-100"
+              title="Nothing to answer right now: time runs fast until the next step, unlock or review opens"
+            >
+              <Icon name="fastForward" className="animate-pulse text-sky-300" />
+              Fast-forward ×{FAST_FORWARD.speed}
+              <span className="font-mono text-slate-400">
+                {clockText(fastTo.current - now.getTime())}
+              </span>
+            </div>
+          )}
           {notice && (
             <div className="glass rise-in pointer-events-none absolute bottom-5 left-1/2 z-10 -translate-x-1/2 rounded-full px-4 py-1.5 text-sm text-slate-100">
               {notice}
@@ -1250,6 +1322,7 @@ export default function App() {
                       );
                   }}
                   onDone={async (grade) => {
+                    lastAnswer.current = Date.now();
                     const { nodeId, tense, kind } = activeDrill;
                     setVerbDrill(null);
                     setTurn((t) => t + 1);
@@ -1317,6 +1390,12 @@ export default function App() {
       </main>
     </div>
   );
+}
+
+/** "4:05": minutes and seconds left. */
+function clockText(ms: number) {
+  const s = Math.max(0, Math.ceil(ms / 1000));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 }
 
 /** When a word's next learning step opens, e.g. "step 2/3 in 45 s". */

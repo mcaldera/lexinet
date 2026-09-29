@@ -20,7 +20,7 @@ type Props = {
 
 const pct = (v: number) => `${Math.round(v * 100)}%`;
 
-/** Score by topic and achievements (how scoring works is in the guide). */
+/** Score by topic (strongest first) and achievements (how scoring works is in the guide). */
 export default function ProgressPanel(props: Props) {
   const { score, clusters, regionName, achievements, coins, counts, onClose } = props;
   const earned = ACHIEVEMENTS.filter((a) => a.id in achievements).length;
@@ -51,16 +51,19 @@ export default function ProgressPanel(props: Props) {
             <li
               key={c.region}
               className="text-xs"
-              title={`${c.inside} links inside, ${c.outside} out`}
+              title={`${c.words} connected ${c.words === 1 ? 'word' : 'words'}: 10 points each, plus 10 per memory dot`}
             >
               <div className="flex justify-between">
                 <span className="text-slate-300">
                   {regionName(c.region)} <span className="text-slate-500">{c.words}</span>
                 </span>
-                <span className="text-amber-300">{c.points}</span>
+                <span className="tabular-nums text-amber-200">{c.points}</span>
               </div>
-              <div className="mt-0.5 h-0.5 overflow-hidden rounded bg-slate-800">
-                <div className="h-full bg-emerald-400/80" style={{ width: pct(c.cohesion) }} />
+              <div className="mt-0.5 h-0.5 overflow-hidden rounded bg-white/[0.06]">
+                <div
+                  className="h-full bg-amber-300/70"
+                  style={{ width: pct(c.points / clusters[0].points) }}
+                />
               </div>
             </li>
           ))}

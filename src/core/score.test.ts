@@ -1,4 +1,4 @@
-import { clusterPoints, clusterScores, totalScore, wordLinks } from './score';
+import { clusterScores, totalScore, wordLinks, wordPoints } from './score';
 
 const region: Record<string, number> = { a: 0, b: 0, c: 0, x: 1, y: 1 };
 const edges = [
@@ -8,8 +8,10 @@ const edges = [
   { source: 'x', target: 'y' },
 ];
 const regionOf = (id: string) => region[id];
+const dots: Record<string, number> = { a: 2, b: 5, x: 0 };
+const strengthOf = (id: string) => dots[id] ?? 0;
 
-test('a category scores its conquered words, weighted by how tightly they hang together', () => {
+test('every conquered word scores 10, plus 10 per memory dot, summed per category', () => {
   const states = new Map([
     ['a', 'conquered'],
     ['b', 'conquered'],
@@ -17,16 +19,17 @@ test('a category scores its conquered words, weighted by how tightly they hang t
     ['x', 'conquered'],
     ['y', 'locked'],
   ]);
-  const s = clusterScores(states, edges, regionOf);
-  // Category 0: a-b inside, a-x outside -> cohesion 1/2 -> 10 * 2 * (1 + 1) = 40.
-  expect(s[0]).toEqual({ region: 0, words: 2, inside: 1, outside: 1, cohesion: 0.5, points: 40 });
-  // Category 1: x alone, one link out -> 10 * 1 * 1 = 10.
+  const s = clusterScores(states, edges, regionOf, strengthOf);
+  // Category 0: a (2 dots) 30 + b (5 dots) 60; a-b inside, a-x outside -> cohesion 1/2.
+  expect(s[0]).toEqual({ region: 0, words: 2, inside: 1, outside: 1, cohesion: 0.5, points: 90 });
+  // Category 1: x (no dots) 10; one link out, none inside.
   expect(s[1]).toMatchObject({ region: 1, words: 1, inside: 0, outside: 1, points: 10 });
-  expect(totalScore(s)).toBe(50);
+  expect(totalScore(s)).toBe(100);
 });
 
-test('tighter clusters beat loose ones of the same size', () => {
-  expect(clusterPoints(5, 0.8)).toBeGreaterThan(clusterPoints(5, 0.2));
+test('cohesion no longer weighs the score: better known words do', () => {
+  expect(wordPoints(5)).toBeGreaterThan(wordPoints(2));
+  expect(wordPoints(0)).toBe(10);
 });
 
 test('a word links into its category and out of it', () => {

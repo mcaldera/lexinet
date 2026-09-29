@@ -247,21 +247,18 @@ export function WordTimeline({
     <div className="space-y-1.5">
       <div
         className="flex items-center justify-between gap-2"
-        title={`Memory strength ${o.level}/${MAX_STRENGTH}: after a review you still recall it (90%) for ~${span(o.days)}. It grows only when you answer right while it's due, never by cramming; the stronger, the more signal it sends out.`}
+        title={`Memory strength ${o.level} of ${MAX_STRENGTH} dots: after a review you still recall it (90%) for ~${span(o.days)}. It grows only when you answer right while it's due, never by cramming; the stronger, the more signal it sends out.`}
       >
         <span className="flex items-center gap-2">
           <span className="eyebrow">Memory</span>
           <Dots level={o.level} />
-          <span className="tabular-nums text-slate-300">
-            {o.level}/{MAX_STRENGTH}
-          </span>
         </span>
         {next && (
           <span
             className="whitespace-nowrap text-[11px] text-slate-500"
-            title={`${next.level}/${MAX_STRENGTH} after ${next.reviews === 1 ? 'the next right answer' : `${next.reviews} right answers`}, each given when due${next.reachedAt > nowMs + 60_000 ? `: in ~${until(next.reachedAt - nowMs)}` : ''}`}
+            title={`${next.level} dots after ${next.reviews === 1 ? 'the next right answer' : `${next.reviews} right answers`}, each given when due${next.reachedAt > nowMs + 60_000 ? `: in ~${until(next.reachedAt - nowMs)}` : ''}`}
           >
-            → {next.level}/{MAX_STRENGTH}{' '}
+            <span className="text-sky-300/80">level up</span>{' '}
             {next.reviews === 1 ? 'next review' : `in ${next.reviews} reviews`}
           </span>
         )}

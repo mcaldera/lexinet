@@ -1,7 +1,11 @@
 /**
- * Score: how good your territories are. Per category, the conquered words
- * count, weighted by cohesion = links among them / all their links (links
- * leaving the category pull it apart). Computed, never stored.
+ * Score: every connected word counts, more the better you know it: 10 points,
+ * plus 10 per memory dot (`wordPoints`). Words that are cut off or broken don't
+ * count: the caller leaves them out of `states`. Summed per category for the
+ * progress panel. Cohesion (links among a category's words / all their links)
+ * is still worked out, for two achievements, but no longer weighs the score:
+ * the author found the old 10 × words × (1 + 2 × cohesion) opaque (Sep 2026).
+ * Computed, never stored.
  */
 export type ScoreEdge = { source: string; target: string };
 export type ClusterScore = {
@@ -15,23 +19,28 @@ export type ClusterScore = {
   points: number;
 };
 
-export const clusterPoints = (words: number, cohesion: number) =>
-  Math.round(10 * words * (1 + 2 * cohesion));
+/** A connected word's points by its memory strength (0-5 dots). */
+export const wordPoints = (strength: number) => 10 * (1 + strength);
 
 export function clusterScores(
   states: Map<string, string>,
   edges: ScoreEdge[],
   regionOf: (id: string) => number | undefined,
+  /** A conquered word's memory strength (dots). */
+  strengthOf: (id: string) => number,
 ): ClusterScore[] {
-  const by = new Map<number, { words: number; inside: number; outside: number }>();
+  const by = new Map<number, { words: number; inside: number; outside: number; points: number }>();
   const get = (r: number) => {
     let c = by.get(r);
-    if (!c) by.set(r, (c = { words: 0, inside: 0, outside: 0 }));
+    if (!c) by.set(r, (c = { words: 0, inside: 0, outside: 0, points: 0 }));
     return c;
   };
   for (const [id, st] of states) {
     const r = regionOf(id);
-    if (st === 'conquered' && r !== undefined) get(r).words++;
+    if (st !== 'conquered' || r === undefined) continue;
+    const c = get(r);
+    c.words++;
+    c.points += wordPoints(strengthOf(id));
   }
   for (const { source: a, target: b } of edges) {
     const [ra, rb] = [regionOf(a), regionOf(b)];
@@ -48,7 +57,7 @@ export function clusterScores(
     .filter(([, c]) => c.words > 0)
     .map(([region, c]) => {
       const cohesion = c.inside + c.outside ? c.inside / (c.inside + c.outside) : 0;
-      return { region, ...c, cohesion, points: clusterPoints(c.words, cohesion) };
+      return { region, ...c, cohesion };
     })
     .sort((a, b) => b.points - a.points);
 }

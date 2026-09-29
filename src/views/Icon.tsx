@@ -82,6 +82,8 @@ const ICONS = {
       <path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4" />
     </>
   ),
+  /** Time running fast (nothing to do but wait). */
+  fastForward: <path d="m13 19 9-7-9-7zM2 19l9-7-9-7z" />,
   /** Choosing from a list. */
   list: <path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01" />,
 } satisfies Record<string, ReactNode>;

@@ -4,6 +4,7 @@ import {
   CLAIM_STEP_GAP_MS,
   COINS_PER_CONQUEST,
   EXPEDITION,
+  FAST_FORWARD,
   HINT_COST,
   RAID,
   OVERALL_SHARE,
@@ -146,13 +147,22 @@ export default function Guide({ onClose }: { onClose: () => void }) {
             {RAID.durationMs / 60_000} min (click it in the quiz box), or it slips. Passing pays{' '}
             {RAID.coins} sparks.
           </p>
+          <p>
+            <b>Fast-forward</b>: when there is nothing to answer (new words aside) and a step, a
+            locked word or a review opens within {FAST_FORWARD.horizonMs / 60_000} min, time runs{' '}
+            {FAST_FORWARD.speed}× faster until it does, from {FAST_FORWARD.afterAnswerMs / 1000} s
+            after your last answer. Reviews further off are never pulled forward: that would be
+            cramming.
+          </p>
           <p>Your streak counts the days you played; the calendar is in the score panel.</p>
         </Section>
 
         <Section title="Score and sparks">
           <p>
-            Each topic scores 10 × connected words × (1 + 2 × cohesion), where cohesion is the share
-            of their links that stay inside the topic. Disconnected words don't score.
+            Every connected word scores 10 points, plus 10 for each of its memory dots: the better
+            you know your words, the higher your score. Words that slipped or are disconnected don't
+            score until they are back. Two achievements count <b>cohesion</b>: the share of a
+            topic's links that stay inside it.
           </p>
           <p>
             Sparks: {COINS_PER_CONQUEST} per word learned, more for achievements. Spend them on a

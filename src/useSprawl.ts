@@ -137,6 +137,8 @@ export function useSprawl() {
   const [tick, setTick] = useState(0);
   // Latest offset, updated synchronously so rapid time-travel clicks accumulate.
   const offsetRef = useRef(0);
+  /** Real time of the last fast-forward jump (skipAhead): the siege waits until it settles. */
+  const skipping = useRef(0);
 
   useEffect(() => {
     getDb()
@@ -261,6 +263,8 @@ export function useSprawl() {
     if (!db || !data || !data.started) return;
     const t = now.getTime();
     if (t - data.game.simAt < 60_000) return;
+    // Not on every jump of a fast-forward (each would save the whole DB): once it settles.
+    if (Date.now() - skipping.current < 1000) return;
     const cutBefore = new Map(
       [...data.game.nodes].flatMap(([id, g]) =>
         g.cutSince !== undefined ? [[id, g.cutSince] as const] : [],
@@ -666,6 +670,30 @@ export function useSprawl() {
     [db, data],
   );
 
+  /**
+   * Fast-forward (App, FAST_FORWARD): app time moves on by up to `maxMs`, never
+   * past `until` (app ms). Called twice a second while it runs, so the offset is
+   * saved only once it settles.
+   */
+  const saveOffset = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const skipAhead = useCallback(
+    (maxMs: number, until: number) => {
+      if (!db) return;
+      const ms = Math.min(maxMs, until - appNow(offsetRef.current).getTime());
+      if (ms <= 0) return;
+      const next = offsetRef.current + ms / 86_400_000;
+      offsetRef.current = next;
+      skipping.current = Date.now();
+      setData((d) => d && { ...d, offsetDays: next });
+      clearTimeout(saveOffset.current);
+      saveOffset.current = setTimeout(() => {
+        void setOffsetDays(db, offsetRef.current);
+        setTick((n) => n + 1); // the siege catches up (see above)
+      }, 1500);
+    },
+    [db],
+  );
+
   const timeTravel = useCallback(
     async (days: number) => {
       if (!db) return;
@@ -699,6 +727,7 @@ export function useSprawl() {
     plant,
     buyHint,
     timeTravel,
+    skipAhead,
     reset,
     graphName,
     runId,
