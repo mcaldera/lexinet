@@ -84,6 +84,10 @@ const ICONS = {
   ),
   /** Time running fast (nothing to do but wait). */
   fastForward: <path d="m13 19 9-7-9-7zM2 19l9-7-9-7z" />,
+  /** Relaxing the map's layout: loose waves. */
+  relax: (
+    <path d="M2 8c2.5-3 5-3 7.5 0s5 3 7.5 0 3.5-2 5-1M2 16c2.5-3 5-3 7.5 0s5 3 7.5 0 3.5-2 5-1" />
+  ),
   /** Choosing from a list. */
   list: <path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01" />,
 } satisfies Record<string, ReactNode>;

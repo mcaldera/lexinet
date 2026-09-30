@@ -36,6 +36,8 @@ type Options = {
   onSelect: () => void;
   /** N outside text fields: jump to the next word that needs attention. */
   onNext?: () => void;
+  /** R outside text fields: relax the layout. */
+  onRelax?: () => void;
 };
 
 /**
@@ -96,6 +98,8 @@ export function useKeyboardCamera(cam: RefObject<Camera | undefined>, options: O
         c.zoom(c.zoom() / 1.25, 150);
       } else if (c && k === 'f') {
         c.zoomToFit(400, 60);
+      } else if (k === 'r') {
+        opts.current.onRelax?.();
       } else if (k === 'n') {
         e.preventDefault(); // or the "n" lands in the answer box the jump opens
         opts.current.onNext?.();

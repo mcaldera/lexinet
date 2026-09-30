@@ -234,7 +234,7 @@ export default function Guide({ onClose }: { onClose: () => void }) {
             <span>↑↓←→ move between words</span>
             <span>Enter open · next word</span>
             <span>N next word that needs you</span>
-            <span>WASD pan · +/− zoom · F fit</span>
+            <span>WASD pan · +/− zoom · F fit · R relax the layout</span>
             <span>Esc leave the answer box</span>
             <span>? this guide</span>
           </div>

@@ -33,6 +33,7 @@ import {
   shapePath,
   type Shape,
 } from './visuals';
+import Icon from './Icon';
 
 /** Word node, or a root hub (then `word` holds the root's name/meaning for labels). */
 /** Word node, a root hub, or a bought hint (`hintOf`: the word it belongs to). */
@@ -346,6 +347,31 @@ export default function GraphView({
    * from full heat would drift it (the map is never quite at rest).
    */
   const hold = useRef(false);
+  /** Links the tether holds to a maximum length: your map's (the whole network spreads out). */
+  const tethered = useRef<L[]>([]);
+  /**
+   * Relax (button, R): dragged words let go, words far from their topic jump
+   * back to it (`shake`), and the layout reruns from full heat for one quick
+   * pass (a few seconds; press again if it isn't calm yet). A new word only
+   * settles in locally, so the map can drift into a strained shape over time.
+   * A slow anneal with several rounds took too long (author, Sep 2026).
+   */
+  const [relaxing, setRelaxing] = useState(false);
+  const relax = () => {
+    for (const n of nodeCache.current.values()) {
+      [n.fx, n.fy, n.vx, n.vy] = [undefined, undefined, 0, 0];
+    }
+    shake(graphData.nodes);
+    shakes.current = SHAKES;
+    ticks.current = 0;
+    hold.current = false;
+    settled.current = false;
+    cameraMoved.current = false;
+    setRelaxing(true);
+    fg.current?.d3ReheatSimulation();
+  };
+  /** The whole network's first layout cools slowly, with rounds of shakes. */
+  const anneal = inspect && !relaxing;
   /** The player panned or zoomed: stop refitting the view to the map. */
   const cameraMoved = useRef(false);
   // Switching views keeps the layout and camera of the one you leave and brings back
@@ -525,8 +551,10 @@ export default function GraphView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeId]);
 
+  tethered.current = inspect ? [] : graphData.links;
   useKeyboardCamera(fg, {
     onNext: () => jumpNext(),
+    onRelax: () => relax(),
     onArrow: (dx, dy) => {
       const pos = (id: string) => nodeCache.current.get(id);
       const visible = graphData.nodes.filter((n) => n.x !== undefined && !n.hintOf);
@@ -589,6 +617,10 @@ export default function GraphView({
       forceCollide<N>((n) => (n.hintOf ? 6 : n.hub ? 14 : 20)).iterations(2),
     );
     fg.current?.d3Force('cluster', clusterForce());
+    fg.current?.d3Force(
+      'tether',
+      tetherForce(() => tethered.current),
+    );
     // Set once: a page shows one graph, and its regions never change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -1400,23 +1432,27 @@ export default function GraphView({
           n.fy = n.y;
         }}
         // The whole network is big: it cools slowly to find a better layout.
-        d3AlphaDecay={inspect ? 0.006 : 0.0228}
+        d3AlphaDecay={anneal ? 0.006 : relaxing ? 0.04 : 0.0228}
         warmupTicks={fitted.current ? 0 : 80}
-        cooldownTicks={hold.current ? 0 : inspect ? 2500 : 300}
+        cooldownTicks={hold.current ? 0 : anneal ? 2500 : relaxing ? 200 : 300}
+        // A relax is one short pass (press again for more), however slow the frames.
+        cooldownTime={relaxing ? 4000 : 15000}
         onEngineTick={() => {
           // The whole network spreads out as it lays out: keep it in view until you
           // take the camera yourself.
-          if (inspect && !cameraMoved.current && ++ticks.current % 60 === 0) fitView();
+          if ((inspect || relaxing) && !cameraMoved.current && ++ticks.current % 60 === 0)
+            fitView();
         }}
         onEngineStop={() => {
           // A first layout can trap words in the wrong cluster: send strays home and rerun.
-          if (inspect && shakes.current < SHAKES && shake(graphData.nodes)) {
+          if (anneal && shakes.current < SHAKES && shake(graphData.nodes)) {
             shakes.current++;
             fg.current?.d3ReheatSimulation();
             return;
           }
           settled.current = true;
           hold.current = false;
+          if (relaxing) setRelaxing(false);
           // The camera follows the growing map until you pan or zoom it yourself (F refits).
           if (fitted.current && cameraMoved.current) return;
           fitted.current = true;
@@ -1425,6 +1461,14 @@ export default function GraphView({
       />
       {/* Darker corners draw the eye to the middle of the map. */}
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_55%,rgba(0,0,0,0.5)_100%)]" />
+      <button
+        onClick={relax}
+        title="Lay the map out afresh: dragged words let go, and it settles into a calmer shape (R)"
+        className="glass absolute bottom-5 right-3 z-10 flex items-center gap-1.5 rounded-full px-3 py-1 text-xs text-slate-300 hover:text-white"
+      >
+        <Icon name="relax" className={relaxing ? 'animate-pulse text-sky-300' : ''} />
+        Relax
+      </button>
       {!inspect && attention.length > 0 && (
         <div className="glass absolute right-3 top-3 flex items-center gap-1 rounded-full px-1.5 py-1 text-xs">
           {ATTENTION_ORDER.map((k) => {
@@ -1674,6 +1718,39 @@ function shake(nodes: N[]): boolean {
     n.y! += (Math.random() - 0.5) * 20;
   }
   return strays > 0;
+}
+
+/**
+ * No link stretches across the map: one longer than `max` pulls its ends
+ * together, harder the further it is stretched. The charge pushes every word
+ * from every other one, so a weak link between two territories (a root shared
+ * across topics, a loose bridge) lost to it and ran far across the map
+ * (author, Sep 2026). Invisible category springs and hints are left out.
+ */
+function tetherForce(links: () => L[], max = 180, strength = 1) {
+  return (alpha: number) => {
+    for (const l of links()) {
+      if (l.category || l.hint) continue;
+      const [a, b] = [l.source as N | string, l.target as N | string];
+      if (typeof a !== 'object' || typeof b !== 'object') continue;
+      if (a.x === undefined || a.y === undefined || b.x === undefined || b.y === undefined)
+        continue;
+      const [dx, dy] = [b.x - a.x, b.y - a.y];
+      const d = Math.hypot(dx, dy);
+      // A root hub sits between its words: at half the length, they stay within one link.
+      const cap = l.descends ? max / 2 : max;
+      if (d <= cap) continue;
+      const k = (((d - cap) / d) * strength * alpha) / 2;
+      if (a.fx === undefined) {
+        a.vx = (a.vx ?? 0) + dx * k;
+        a.vy = (a.vy ?? 0) + dy * k;
+      }
+      if (b.fx === undefined) {
+        b.vx = (b.vx ?? 0) - dx * k;
+        b.vy = (b.vy ?? 0) - dy * k;
+      }
+    }
+  };
 }
 
 /**
