@@ -428,6 +428,17 @@ export default function App() {
     [cardRows, tenseRows, nodeStates],
   );
 
+  /**
+   * A word the panel stays on that changed meanwhile (its wait is over, or its
+   * word card no longer fits): reopened after the render that found it (below).
+   */
+  const reopen = useRef<{ id?: string; open?: (id: string) => void }>({});
+  useEffect(() => {
+    const { id, open } = reopen.current;
+    reopen.current.id = undefined;
+    if (id && open) open(id);
+  });
+
   if (error) return <div className="p-6 text-red-400">Failed to open database: {error}</div>;
   if (!data) return <div className="p-6 text-slate-400">Loading…</div>;
 
@@ -876,6 +887,10 @@ export default function App() {
   })();
   const goNext = () => nextTask && selectNode(nextTask);
 
+  /** A learned word that fades, is quizzed or slipped: it can always be defended. */
+  const isThreatened = (id: string) =>
+    (health.get(id) ?? 1) < FULL_NAME || raided.has(id) || !!supply?.broken.has(id);
+
   const openNode = (nodeId: string, wait: (w: NonNullable<typeof waitOn>) => void) => {
     if (inspect) return setInspectId(nodeId);
     setInfo(null);
@@ -909,9 +924,7 @@ export default function App() {
     }
     const conquered = data.states.get(nodeId) === 'conquered';
     // Due (fading), broken or raided: a word can always be defended.
-    const threatened =
-      conquered &&
-      ((health.get(nodeId) ?? 1) < FULL_NAME || raided.has(nodeId) || !!supply?.broken.has(nodeId));
+    const threatened = conquered && isThreatened(nodeId);
     const next =
       conquered && !threatened
         ? nextPractice(
@@ -970,6 +983,25 @@ export default function App() {
     });
     if (!inspect) sfx(blocked ? 'blocked' : 'select');
   };
+
+  // Staying on a word shows what it is now: a step or lock that opened meanwhile
+  // opens its card, and a word card whose word slipped, came due or fell back to
+  // "?" gives way to what that word needs. (It used to keep the stale card until
+  // you clicked elsewhere and back.)
+  reopen.current.open = (id) => openNode(id, (w) => setWaitOn(w));
+  if (
+    waitOn &&
+    (waitOn.reason === 'claim' || waitOn.reason === 'locked') &&
+    'action' in waitCard(waitOn)
+  ) {
+    reopen.current.id = waitOn.nodeId;
+  } else if (
+    info &&
+    !planting &&
+    (data.states.get(info.nodeId) !== 'conquered' || isThreatened(info.nodeId))
+  ) {
+    reopen.current.id = info.nodeId;
+  }
 
   /** A click into empty map: let go of the word and close what's open over it. */
   const clearSelection = () => {
