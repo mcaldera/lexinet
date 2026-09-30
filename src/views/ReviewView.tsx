@@ -25,6 +25,8 @@ type Props = {
   dueCount: number;
   /** Idle: go to the next thing to do (an open claim step or the nearest "?"). */
   onNext?: () => void;
+  /** Idle with nothing new in reach: how long until something opens (ms). */
+  opensIn?: number;
   /** A lost word one right answer wins back: what it was and until when (app ms). */
   reclaim?: { was: 'conquered' | 'claimed'; steps: number; until: number };
   nowMs?: number;
@@ -168,7 +170,12 @@ export default function ReviewView(props: Props) {
               Next word <span className="text-xs opacity-60">(enter)</span>
             </button>
           ) : (
-            !elsewhere && <p>Pick a new word on the map.</p>
+            !elsewhere &&
+            (props.opensIn !== undefined ? (
+              <p>Next word ready in {clock(props.opensIn)}</p>
+            ) : (
+              <p>Pick a new word on the map.</p>
+            ))
           )}
         </div>
       ) : (
@@ -401,6 +408,12 @@ export function StepDots({ done, current }: { done: number; current?: number }) 
       ))}
     </span>
   );
+}
+
+/** "4:05" under an hour, else as `timeLeft`. */
+function clock(ms: number): string {
+  const s = Math.max(0, Math.ceil(ms / 1000));
+  return s < 3600 ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}` : timeLeft(ms);
 }
 
 /** "2 d 5 h", "5 h", "40 min" */

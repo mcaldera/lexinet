@@ -149,10 +149,10 @@ export default function Guide({ onClose }: { onClose: () => void }) {
           </p>
           <p>
             <b>Fast-forward</b>: when there is nothing to answer (new words aside) and a step, a
-            locked word or a review opens within {FAST_FORWARD.horizonMs / 60_000} min, time runs{' '}
-            {FAST_FORWARD.speed}× faster until it does, from {FAST_FORWARD.afterAnswerMs / 1000} s
-            after your last answer. Reviews further off are never pulled forward: that would be
-            cramming.
+            locked word or a review opens within {FAST_FORWARD.horizonMs / 60_000} min, time runs up
+            to {FAST_FORWARD.speed}× faster until it does, from a moment after your last answer (a
+            word you answered comes back {FAST_FORWARD.sameWordMs / 1000} s later at the soonest).
+            Reviews further off are never pulled forward: that would be cramming.
           </p>
           <p>Your streak counts the days you played; the calendar is in the score panel.</p>
         </Section>

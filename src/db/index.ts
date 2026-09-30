@@ -15,4 +15,9 @@ export async function openDb(graphName = 'default', runSuffix = ''): Promise<Sql
   return (await import('./sqljs')).openBrowserDb(name);
 }
 
+/** Forget a run's database (the browser's; a desktop run's file stays). */
+export async function deleteDb(graphName: string, runSuffix: string) {
+  if (!isTauri()) await (await import('./store')).deleteSnapshot(dbName(graphName, runSuffix));
+}
+
 export type { SqlDb } from './types';

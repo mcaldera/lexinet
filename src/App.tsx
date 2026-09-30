@@ -16,7 +16,7 @@ import { reclaimable } from './core/fallen';
 import { attentionList, newlyRevealed } from './core/attention';
 import { claimNext, CLAIM_STEPS, unseen, type Claim } from './core/claim';
 import { FULL_NAME, hintedName } from './core/fade';
-import { appNow } from './core/clock';
+import { appNow, fastRate } from './core/clock';
 import { nodeHealth } from './core/health';
 import { buildQueue, closest, nearby, openOrder } from './core/queue';
 import { levelAllows, openTierOf, type Levels } from './core/tiers';
@@ -38,7 +38,8 @@ import { pickStart } from './core/start';
 import { streak } from './core/streak';
 import { expeditionStatus } from './core/expedition';
 import { newRun, switchRun, updateRun, deleteRun, runDbSuffix } from './runs';
-import { dbName } from './db';
+import { deleteDb } from './db';
+import { onStorageProblem } from './db/store';
 import GraphView, { flowKey, type FlowView } from './views/GraphView';
 import { roundShares } from './views/visuals';
 import InspectPanel from './views/InspectPanel';
@@ -76,6 +77,7 @@ export default function App() {
     timeTravel,
     skipAhead,
     reset,
+    reload,
     graphName,
     runId,
     event,
@@ -189,6 +191,7 @@ export default function App() {
   }, [readyCount, data]);
   useEffect(() => resumeOnGesture(), []);
   useEffect(() => onSpeechProblem((m) => setNotice(m)), []);
+  useEffect(() => onStorageProblem((m) => setNotice(m)), []);
   // Keep the run list's summary current (menu → Runs).
   const conqueredCount = data
     ? [...data.states.values()].filter((st) => st === 'conquered').length
@@ -386,18 +389,30 @@ export default function App() {
   }, [data, now, lastCardId, cooldowns, supply]);
 
   /**
-   * Fast-forward (FAST_FORWARD): when nothing can be answered, the app time (ms)
-   * of the next thing to open, worked out while rendering (`fastTo` below); the
-   * clock jumps towards it twice a second, from `afterAnswerMs` after the last answer.
+   * Fast-forward (FAST_FORWARD): when nothing can be answered, where the clock
+   * runs to, worked out while rendering (below): `until`, the app time (ms) of the
+   * next thing to open; from `from` (real ms, a moment after the last answer),
+   * arriving no sooner than `notBefore` (real ms, `sameWordMs` after that word's
+   * last answer). The clock jumps towards it twice a second.
    */
-  const fastTo = useRef<number | null>(null);
+  const fast = useRef<{ until: number; from: number; notBefore: number; offsetDays: number }>(
+    undefined,
+  );
   const lastAnswer = useRef(0);
+  /** Word id -> real time of its last answer. */
+  const answeredAt = useRef(new Map<string, number>());
+  const answered = (id: string) => {
+    lastAnswer.current = Date.now();
+    answeredAt.current.set(id, Date.now());
+  };
   useEffect(() => {
     const t = setInterval(() => {
-      const until = fastTo.current;
-      if (until === null || Date.now() - lastAnswer.current < FAST_FORWARD.afterAnswerMs) return;
+      const f = fast.current;
+      if (!f || Date.now() < f.from) return;
+      const left = f.until - appNow(f.offsetDays).getTime();
+      const rate = fastRate(left, f.notBefore - Date.now(), FAST_FORWARD.speed);
       // A little past it, so the step is open when the clock lands.
-      skipAhead(FAST_FORWARD.speed * FAST_FORWARD.tickMs, until + 500);
+      if (rate > 1) skipAhead((rate - 1) * FAST_FORWARD.tickMs, f.until + 500);
     }, FAST_FORWARD.tickMs);
     return () => clearInterval(t);
   }, [skipAhead]);
@@ -409,7 +424,7 @@ export default function App() {
       [
         ...(cardRows ?? []).filter((c) => nodeStates?.get(c.nodeId) === 'conquered'),
         ...(tenseRows ?? []),
-      ].map((c) => dueAt(c.card)),
+      ].map((c) => [dueAt(c.card), c.nodeId] as const),
     [cardRows, tenseRows, nodeStates],
   );
 
@@ -592,18 +607,29 @@ export default function App() {
     !attention.some((a) => a.kind !== 'new' && !locked(a.id));
   // Only what lies ahead: a card due already but not asked (a raided word's
   // other direction, a lock not yet cleared) is no reason to wait.
-  const nextOpen = idle
-    ? Math.min(
-        ...[
-          ...[...claimWaits.values()].map((w) => w.opensAt),
-          ...cooldowns.values(),
-          ...dueTimes,
-        ].filter((at) => at > appMs()),
-      )
-    : Infinity;
-  fastTo.current = nextOpen - appMs() <= FAST_FORWARD.horizonMs ? nextOpen : null;
-  const fastForward =
-    fastTo.current !== null && Date.now() - lastAnswer.current >= FAST_FORWARD.afterAnswerMs;
+  const [nextOpen, nextWord] = idle
+    ? [
+        ...[...claimWaits].map(([id, w]) => [w.opensAt, id] as const),
+        ...[...cooldowns].map(([id, at]) => [at, id] as const),
+        ...dueTimes,
+      ]
+        .filter(([at]) => at > appMs())
+        .reduce<readonly [number, string?]>((a, b) => (b[0] < a[0] ? b : a), [Infinity])
+    : [Infinity];
+  fast.current =
+    nextOpen - appMs() <= FAST_FORWARD.horizonMs
+      ? {
+          until: nextOpen,
+          from: lastAnswer.current + FAST_FORWARD.settleMs,
+          notBefore: (answeredAt.current.get(nextWord ?? '') ?? 0) + FAST_FORWARD.sameWordMs,
+          offsetDays: data.offsetDays,
+        }
+      : undefined;
+  /** How many times faster time runs now (fast-forward), 1 when it doesn't. */
+  const fastSpeed =
+    fast.current && Date.now() >= fast.current.from
+      ? fastRate(nextOpen - appMs(), fast.current.notBefore - Date.now(), FAST_FORWARD.speed)
+      : 1;
 
   const states = [...data.states.values()];
   const conquered = states.filter((s) => s === 'conquered').length;
@@ -665,7 +691,7 @@ export default function App() {
   })();
 
   const onRate = async (row: CardRow, grade: Grade, typed = true) => {
-    lastAnswer.current = Date.now();
+    answered(row.nodeId);
     const firstSight = unseen(cardsByNode.get(row.nodeId) ?? []);
     const outcome = await review(row, grade, typed);
     shown.current.delete(row.nodeId);
@@ -1106,13 +1132,15 @@ export default function App() {
           runId={runId}
           onNewRun={() => {
             newRun(graphName);
-            window.location.reload();
+            void reload();
           }}
           onSwitchRun={(id) => {
             switchRun(graphName, id);
-            window.location.reload();
+            void reload();
           }}
-          onDeleteRun={(id) => deleteRun(graphName, id, dbName(graphName, runDbSuffix(id)))}
+          onDeleteRun={(id) => {
+            if (deleteRun(graphName, id)) void deleteDb(graphName, runDbSuffix(id));
+          }}
           onRestart={async () => {
             setSession(null);
             select(undefined);
@@ -1145,16 +1173,14 @@ export default function App() {
             meaning={(id) => data.nodes.find((n) => n.id === id)?.en ?? '?'}
             onRaidWord={(id) => selectNode(id)}
           />
-          {fastForward && fastTo.current !== null && (
+          {fastSpeed >= 1.5 && (
             <div
               className="glass pointer-events-none absolute bottom-5 left-3 z-10 flex items-center gap-2 rounded-full px-3 py-1 text-xs text-sky-100"
               title="Nothing to answer right now: time runs fast until the next step, unlock or review opens"
             >
               <Icon name="fastForward" className="animate-pulse text-sky-300" />
-              Fast-forward ×{FAST_FORWARD.speed}
-              <span className="font-mono text-slate-400">
-                {clockText(fastTo.current - now.getTime())}
-              </span>
+              Fast-forward ×{Math.round(fastSpeed)}
+              <span className="font-mono text-slate-400">{clockText(nextOpen - appMs())}</span>
             </div>
           )}
           {notice && (
@@ -1322,7 +1348,7 @@ export default function App() {
                       );
                   }}
                   onDone={async (grade) => {
-                    lastAnswer.current = Date.now();
+                    answered(activeDrill.nodeId);
                     const { nodeId, tense, kind } = activeDrill;
                     setVerbDrill(null);
                     setTurn((t) => t + 1);
@@ -1368,6 +1394,7 @@ export default function App() {
                     data.tenseCards.filter((c) => c.card.due <= now && !isNear(c.nodeId)).length
                   }
                   onNext={nextTask ? goNext : undefined}
+                  opensIn={idle && nextOpen < Infinity ? nextOpen - appMs() : undefined}
                   reclaim={current ? reclaimMap.get(current.nodeId) : undefined}
                   nowMs={now.getTime()}
                   claimStep={

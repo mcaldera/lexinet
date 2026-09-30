@@ -71,16 +71,12 @@ export function switchRun(graph: string, id: string) {
   save(r);
 }
 
-/** Forget a run and delete its database (not the current one). */
-export function deleteRun(graph: string, id: string, dbKey: string) {
+/** Forget a run (not the current one); true if it was forgotten, and its database may go. */
+export function deleteRun(graph: string, id: string): boolean {
   const r = load();
   const e = entry(r, graph);
-  if (id === e.current) return;
+  if (id === e.current) return false;
   e.runs = e.runs.filter((run) => run.id !== id);
   save(r);
-  try {
-    localStorage.removeItem(dbKey);
-  } catch {
-    // nothing stored
-  }
+  return true;
 }

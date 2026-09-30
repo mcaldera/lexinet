@@ -71,16 +71,19 @@ export const CLAIM_GAPS = {
 /**
  * Fast-forward (App): while nothing can be answered and something opens within
  * `horizonMs` (a learning step, a lock, a review), app time runs `speed` times
- * faster until it does, one jump every `tickMs`. Never sooner than `afterAnswerMs`
- * (real time) after an answer: the fast track's gap, so a step can't be answered
- * by copying what was just on screen. Reviews further off than `horizonMs` are
- * never pulled forward (that would be cramming). The author asked for it (Sep 2026):
- * waiting minutes for a step with nothing to do felt dead.
+ * faster until it does, one jump every `tickMs`. It starts `settleMs` (real time)
+ * after an answer, but never sooner than `sameWordMs` after the word that opens
+ * next was answered: the fast track's gap, so a step can't be answered by copying
+ * what was just on screen. (It used to wait `sameWordMs` after any answer: early
+ * on, with two or three words all waiting, that was half a minute of nothing.)
+ * Reviews further off than `horizonMs` are never pulled forward (that would be
+ * cramming). The author asked for it (Sep 2026): waiting with nothing to do felt dead.
  */
 export const FAST_FORWARD = {
   speed: 60,
   horizonMs: 15 * 60_000,
-  afterAnswerMs: CLAIM_KNOWN_GAP_MS,
+  settleMs: 2000,
+  sameWordMs: CLAIM_KNOWN_GAP_MS,
   tickMs: 500,
 };
 /** A lost word can be won back as it was with one right answer for this long (app time). */

@@ -716,6 +716,12 @@ export function useSprawl() {
     [db, data],
   );
 
+  /** Reload the page (another run) once everything written is stored. */
+  const reload = useCallback(async () => {
+    await db?.flush?.();
+    window.location.reload();
+  }, [db]);
+
   return {
     data,
     now,
@@ -729,6 +735,7 @@ export function useSprawl() {
     timeTravel,
     skipAhead,
     reset,
+    reload,
     graphName,
     runId,
     event,
