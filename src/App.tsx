@@ -49,7 +49,7 @@ import WordInfo from './views/WordInfo';
 import WaitCard from './views/WaitCard';
 import ProgressPanel from './views/ProgressPanel';
 import PlantPicker from './views/PlantPicker';
-import { clusterScores, totalScore, wordLinks } from './core/score';
+import { clusterScores, totalScore } from './core/score';
 import { newlyEarned, type Achievement, type Stats } from './core/achievements';
 import { plantOptions } from './core/plant';
 import { resumeOnGesture, sfx } from './audio';
@@ -1004,14 +1004,6 @@ export default function App() {
         supply={detailsSupply}
         nowMs={appNow(data.offsetDays).getTime()}
         claimStep={claimNext(data.game.nodes.get(detailsWord.id)?.claim, CLAIM_GAPS)}
-        links={
-          data.states.get(detailsWord.id) === 'conquered'
-            ? {
-                ...wordLinks(detailsWord.id, data.edges, regionOf),
-                category: regionName(regionOf(detailsWord.id)),
-              }
-            : undefined
-        }
         onPlant={
           data.states.get(detailsWord.id) === 'conquered' && planting !== detailsWord.id
             ? () => {

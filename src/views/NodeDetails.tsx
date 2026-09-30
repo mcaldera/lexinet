@@ -41,8 +41,6 @@ type Props = {
   showEtymology: boolean;
   /** In the word's own card: its example sentence, between its status and its origin. */
   showExample?: boolean;
-  /** Learned words: links into their topic and out of it (score cohesion). */
-  links?: { inside: number; outside: number; category: string };
   /** Words with an English cousin: buy it as a hint, or see the one bought. */
   hint?: { cognate: string; bought: boolean; cost: number; onBuy: () => void };
   /** Learned words: open the connect picker (core/plant.ts). */
@@ -420,7 +418,7 @@ export default function NodeDetails(props: Props) {
         {props.showExample && word.example && <ExampleLine example={word.example} />}
         {props.showEtymology && <Etymology word={word} />}
       </div>
-      <div className="mt-3 flex items-center gap-1.5">
+      <div className="mt-3 flex items-center gap-1.5 border-t border-white/[0.06] pt-3">
         {props.onPlant && (
           <button
             onClick={props.onPlant}
@@ -432,27 +430,6 @@ export default function NodeDetails(props: Props) {
           </button>
         )}
         {hint}
-        <More>
-          <p>
-            Recall {props.memory?.recall == null ? '—' : pct(props.memory.recall)} (due at 90%,
-            slips at 80%)
-          </p>
-          {supply && (
-            <p>
-              Signal {pct(supply.value)} (connected from {pct(supply.min)})
-            </p>
-          )}
-          {supply?.sends !== undefined && (
-            <p title="What it passes to its neighbours: more the better you know it">
-              Sends out {pct(supply.sends)}
-            </p>
-          )}
-          {props.links && (
-            <p>
-              {props.links.category}: {props.links.inside} links in, {props.links.outside} out
-            </p>
-          )}
-        </More>
       </div>
     </Panel>
   );
@@ -546,20 +523,6 @@ function SignalLine({
 
 function Panel({ children }: { children: ReactNode }) {
   return <div className="text-xs text-slate-300">{children}</div>;
-}
-
-/** Numbers most players never need: folded away. */
-function More({ children }: { children: ReactNode }) {
-  return (
-    <details className="group ml-auto text-slate-500 [&[open]]:basis-full">
-      <summary className="flex cursor-pointer list-none items-center justify-end gap-0.5 text-[11px] hover:text-slate-300">
-        <span className="group-open:hidden">More</span>
-        <span className="hidden group-open:inline">Less</span>
-        <Icon name="chevronRight" className="transition group-open:rotate-90" />
-      </summary>
-      <div className="mt-1.5 space-y-0.5 text-slate-400">{children}</div>
-    </details>
-  );
 }
 
 /** The bought hint (the word's English cousin), or the offer to buy one. */
