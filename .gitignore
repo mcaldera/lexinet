@@ -15,3 +15,8 @@ data/fixes_oic.csv
 data/review_oic.csv
 data/vocab/
 data/sources/
+._.DS_Store
+data/._.DS_Store
+pipeline/._.DS_Store
+src/._.DS_Store
+src-tauri/._.DS_Store
