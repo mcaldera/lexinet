@@ -106,7 +106,7 @@ export const HINT_COST = 3;
 export const PLANT_COST_PER_TIER = 2;
 
 /** Expeditions (core/expedition.ts): take `goal` words of one category within `minutes`. */
-export const EXPEDITION = { minutes: 10, goal: 5, coins: 10 };
+export const EXPEDITION = { minutes: 10, goal: 5, minGoal: 3, coins: 10 };
 /**
  * Raids (core/raid.ts): after a right answer, with `chance`, at most every `gapMs`,
  * a raid strikes up to `targets` supplied words (chokepoints more likely); each one left
@@ -118,4 +118,7 @@ export const RAID = {
   gapMs: 20 * 60_000,
   chance: 0.15,
   coins: 3,
+  /** Passing fast pays more: `bonus` per full `bonusEveryMs` left. */
+  bonus: 1,
+  bonusEveryMs: 30_000,
 };

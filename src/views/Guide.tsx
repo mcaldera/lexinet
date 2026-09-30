@@ -138,14 +138,18 @@ export default function Guide({ onClose }: { onClose: () => void }) {
 
         <Section title="Events">
           <p>
-            <b>Focus</b> (header): learn {EXPEDITION.goal} words of one topic (started ones count)
-            within {EXPEDITION.minutes} min for {EXPEDITION.coins} sparks. Failing costs nothing.
+            <b>Focus</b> (header): start {EXPEDITION.goal} new words of one topic within{' '}
+            {EXPEDITION.minutes} min for {EXPEDITION.coins} sparks: answering a new word once
+            counts, so no waiting for later steps. It picks a topic with that many new words open
+            (or at least {EXPEDITION.minGoal}, for a smaller goal), and Next word goes there first.
+            Failing costs nothing.
           </p>
           <p>
             <b>Pop quiz</b>: now and then a few of your words are quizzed, the ones many words
             depend on more often than others. Answer each one into Italian within{' '}
-            {RAID.durationMs / 60_000} min (click it in the quiz box), or it slips. Passing pays{' '}
-            {RAID.coins} sparks.
+            {RAID.durationMs / 60_000} min, or it slips: the panel asks them one after another.
+            Passing pays {RAID.coins} sparks, plus {RAID.bonus} for every {RAID.bonusEveryMs / 1000}{' '}
+            s left on the clock.
           </p>
           <p>
             <b>Fast-forward</b>: when there is nothing to answer (new words aside) and a step, a

@@ -48,6 +48,19 @@ export const defend = (raid: Raid, id: string): Raid =>
     ? { ...raid, defended: [...raid.defended, id] }
     : raid;
 
+/**
+ * What a passed raid pays at `t`: `coins`, plus `bonus` for every full
+ * `bonusEveryMs` left on the clock (answering fast is the fun of it).
+ */
+export function raidReward(
+  raid: Raid,
+  t: number,
+  rules: { coins: number; bonus: number; bonusEveryMs: number },
+) {
+  const speed = Math.max(0, Math.floor((raid.until - t) / rules.bonusEveryMs)) * rules.bonus;
+  return { coins: rules.coins + speed, speed, tookMs: t - raid.start };
+}
+
 /** Still on, won (all defended) or over (time's up: `hit` lists the undefended). */
 export function raidStatus(raid: Raid, t: number) {
   const open = raid.targets.filter((id) => !raid.defended.includes(id));

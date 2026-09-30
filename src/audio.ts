@@ -19,7 +19,9 @@ export type Sfx =
   | 'verbUp'
   | 'levelUp'
   | 'achievement'
-  | 'plant';
+  | 'plant'
+  | 'alarm'
+  | 'fanfare';
 
 /** `speech`: say Italian words aloud automatically (see speech.ts). */
 type Settings = { music: boolean; sfx: boolean; speech: boolean };
@@ -206,6 +208,25 @@ const SFX: Record<Sfx, (g: Graph) => void> = {
     // A soft rising "bloop" with a leafy shimmer.
     tone(g, 300, 0, 0.18, { vol: 0.12, slideTo: 700 });
     tone(g, hz(D5 + 16), 0.15, 0.6, { vol: 0.05, reverb: 0.5 });
+  },
+  alarm: (g) => {
+    // A pop quiz strikes: three quick two-tone calls over a low hit.
+    tone(g, 90, 0, 0.5, { type: 'triangle', vol: 0.2, slideTo: 45 });
+    for (let i = 0; i < 3; i++) {
+      tone(g, hz(D5 + 12), i * 0.24, 0.11, { type: 'square', vol: 0.05, reverb: 0.25 });
+      tone(g, hz(D5 + 7), i * 0.24 + 0.12, 0.11, { type: 'square', vol: 0.05, reverb: 0.25 });
+    }
+  },
+  fanfare: (g) => {
+    // A passed quiz: a bright brass run up to a held major chord, then sparkle.
+    [0, 4, 7, 12].forEach((s, i) =>
+      tone(g, hz(D5 + s), i * 0.09, 0.2, { type: 'sawtooth', vol: 0.035, reverb: 0.3 }),
+    );
+    [0, 7, 12, 16, 19].forEach((s) =>
+      tone(g, hz(D5 + s), 0.4, 1.6, { type: 'triangle', vol: 0.06, reverb: 0.6 }),
+    );
+    for (let i = 0; i < 8; i++)
+      tone(g, hz(D5 + 24 + ((i * 5) % 12)), 0.5 + i * 0.07, 0.18, { vol: 0.03, reverb: 0.6 });
   },
   levelUp: (g) => {
     const phrase = [0, 4, 7, 4, 7, 12];

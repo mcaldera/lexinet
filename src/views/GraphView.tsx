@@ -171,6 +171,8 @@ type Props = {
   onNodeClick: (id: string) => void;
   /** A click into empty map (not on a word or an edge arrow): let go of the selection. */
   onBackgroundClick?: () => void;
+  /** Words to flash now: a pop-quiz word saved, or all of them when the quiz is passed. */
+  flash?: { ids: string[]; at: number; kind: 'save' | 'verb' };
 };
 
 export default function GraphView({
@@ -198,6 +200,7 @@ export default function GraphView({
   reach,
   onNodeClick,
   onBackgroundClick,
+  flash,
 }: Props) {
   const wrap = useRef<HTMLDivElement>(null);
   const fg = useRef<ForceGraphMethods<N, L>>(undefined);
@@ -287,6 +290,14 @@ export default function GraphView({
     const t = setTimeout(() => setBursting(false), BURST_MS.verb + 200);
     return () => clearTimeout(t);
   }, [data.states, claims, verbLevels]);
+
+  useEffect(() => {
+    if (!flash) return;
+    for (const id of flash.ids) bursts.current.set(id, { at: Date.now(), kind: flash.kind });
+    setBursting(true);
+    const t = setTimeout(() => setBursting(false), BURST_MS.verb + 200);
+    return () => clearTimeout(t);
+  }, [flash]);
 
   /** Per kind, the index of the word the jump bar showed last. */
   const jumpIndex = useRef<Partial<Record<AttentionKind, number>>>({});
@@ -2525,12 +2536,13 @@ function drawFlow(
 }
 
 /** A glowing chevron pointing along the link: the direction influence travels. */
-type BurstKind = 'step' | 'conquer' | 'verb';
-const BURST_MS: Record<BurstKind, number> = { step: 1200, conquer: 1800, verb: 2600 };
+type BurstKind = 'step' | 'conquer' | 'verb' | 'save';
+const BURST_MS: Record<BurstKind, number> = { step: 1200, conquer: 1800, verb: 2600, save: 1600 };
 
 /**
  * Celebration on the map, `p` from 0 to 1: expanding rings for a claim step,
- * a bigger emerald wave for a conquest, a golden starburst for a verb level.
+ * a bigger emerald wave for a conquest, a golden starburst for a verb level
+ * (and a passed pop quiz), an orange-gold wave for a word saved from a quiz.
  */
 function drawBurst(
   ctx: CanvasRenderingContext2D,
@@ -2543,7 +2555,7 @@ function drawBurst(
 ) {
   const ease = 1 - (1 - p) ** 3;
   const reach = (kind === 'step' ? 22 : kind === 'conquer' ? 40 : 55) / scale;
-  const rgb = kind === 'verb' ? '251, 191, 36' : '52, 211, 153';
+  const rgb = kind === 'verb' ? '251, 191, 36' : kind === 'save' ? '251, 146, 60' : '52, 211, 153';
   ctx.save();
   for (const lag of kind === 'step' ? [0] : [0, 0.2]) {
     const q = Math.max(0, (ease - lag) / (1 - lag));

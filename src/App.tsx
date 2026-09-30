@@ -40,6 +40,7 @@ import { expeditionStatus } from './core/expedition';
 import { newRun, switchRun, updateRun, deleteRun, runDbSuffix } from './runs';
 import { deleteDb } from './db';
 import { onStorageProblem } from './db/store';
+import { QuizEdge, QuizMoment, QuizStrip } from './views/Quiz';
 import GraphView, { flowKey, type FlowView } from './views/GraphView';
 import { roundShares } from './views/visuals';
 import InspectPanel from './views/InspectPanel';
@@ -91,6 +92,11 @@ export default function App() {
   const [levelUp, setLevelUp] = useState<LevelUp | null>(null);
   /** A verb that just mastered a new tense: celebrated over the map. */
   const [verbUp, setVerbUp] = useState<{ nodeId: string; level: number } | null>(null);
+  /** Words flashing on the map: a pop-quiz word saved, or all of them when it's passed. */
+  const [flash, setFlash] = useState<{ ids: string[]; at: number; kind: 'save' | 'verb' }>();
+  useEffect(() => {
+    if (event?.kind === 'raid-won') setFlash({ ids: event.ids, at: event.at, kind: 'verb' });
+  }, [event]);
   /** Node id -> real time (ms) until which it is locked after a wrong answer. */
   const [cooldowns, setCooldowns] = useState<Map<string, number>>(new Map());
   const [notice, setNotice] = useState<string | null>(null);
@@ -704,7 +710,10 @@ export default function App() {
   const onRate = async (row: CardRow, grade: Grade, typed = true) => {
     answered(row.nodeId);
     const firstSight = unseen(cardsByNode.get(row.nodeId) ?? []);
+    const quizzed = isRaided(data, row.nodeId);
     const outcome = await review(row, grade, typed);
+    if (quizzed && grade !== Rating.Again)
+      setFlash({ ids: [row.nodeId], at: Date.now(), kind: 'save' });
     shown.current.delete(row.nodeId);
     if (outcome.levelUp) setLevelUp(outcome.levelUp);
     sfx(
@@ -877,8 +886,13 @@ export default function App() {
     for (const a of attention) {
       if (a.kind === 'ready' || a.kind === 'broken' || a.kind === 'reclaim') penalty.set(a.id, 0);
     }
+    // During a focus, its topic's "?" come first.
+    const focus = data.expedition?.region;
+    const inFocus = (id: string) =>
+      focus !== undefined && data.nodes.find((n) => n.id === id)?.region === focus;
     for (const [id, st] of data.states) {
-      if (st === 'frontier' && !penalty.has(id)) penalty.set(id, 2);
+      if (st === 'frontier' && !penalty.has(id))
+        penalty.set(id, focus === undefined ? 2 : inFocus(id) ? 0 : 4);
     }
     for (const id of [...penalty.keys()]) {
       if ((cooldowns.get(id) ?? 0) > appMs() || id === waitOn?.nodeId) penalty.delete(id);
@@ -989,12 +1003,25 @@ export default function App() {
   // "?" gives way to what that word needs. (It used to keep the stale card until
   // you clicked elsewhere and back.)
   reopen.current.open = (id) => openNode(id, (w) => setWaitOn(w));
+  const quizNext = [...raided].find((id) => (cooldowns.get(id) ?? 0) <= appMs());
   if (
     waitOn &&
     (waitOn.reason === 'claim' || waitOn.reason === 'locked') &&
     'action' in waitCard(waitOn)
   ) {
     reopen.current.id = waitOn.nodeId;
+  } else if (
+    quizNext &&
+    !session &&
+    !waitOn &&
+    !info &&
+    !verbDrill &&
+    !planting &&
+    !deselected &&
+    !inspect
+  ) {
+    // A pop quiz runs: its words come one after another, no clicking needed.
+    reopen.current.id = quizNext;
   } else if (
     info &&
     !planting &&
@@ -1115,11 +1142,11 @@ export default function App() {
         <button
           onClick={async () => {
             if (data.expedition) return;
-            if (await startExpedition()) sfx('reveal');
-            else setNotice('No new words for a focus session');
+            if (!(await startExpedition()))
+              setNotice(`No topic has ${EXPEDITION.minGoal} new words open yet`);
           }}
           disabled={!!data.expedition || !data.started}
-          title={`Focus: learn ${EXPEDITION.goal} words of one topic in ${EXPEDITION.minutes} min for ${EXPEDITION.coins} sparks`}
+          title={`Focus: start ${EXPEDITION.goal} new words of one topic in ${EXPEDITION.minutes} min for ${EXPEDITION.coins} sparks (answering a new word once counts)`}
           className="chip ml-auto py-1 text-slate-300 disabled:opacity-40"
         >
           <Icon name="target" className="text-sky-300" />
@@ -1188,15 +1215,14 @@ export default function App() {
           )}
           {verbUp && !levelUp && <VerbUpBanner word={wordOf(verbUp.nodeId)} level={verbUp.level} />}
           {earnedNow.length > 0 && !levelUp && !verbUp && <AchievementBanner earned={earnedNow} />}
-          {event && <EventBanner key={event.at} event={event} />}
-          <Missions
-            expedition={expedition}
-            raid={data.raid.active}
-            nowMs={appMs()}
-            wordName={(id) => nameOf(id) || '?'}
-            meaning={(id) => data.nodes.find((n) => n.id === id)?.en ?? '?'}
-            onRaidWord={(id) => selectNode(id)}
-          />
+          {event &&
+            (event.kind === 'raid' || event.kind === 'raid-won' ? (
+              <QuizMoment key={event.at} event={event} />
+            ) : (
+              <EventBanner key={event.at} event={event} />
+            ))}
+          {data.raid.active && !inspect && <QuizEdge />}
+          <Missions expedition={expedition} nowMs={appMs()} />
           {fastSpeed >= 1.5 && (
             <div
               className="glass pointer-events-none absolute bottom-5 left-3 z-10 flex items-center gap-2 rounded-full px-3 py-1 text-xs text-sky-100"
@@ -1232,6 +1258,7 @@ export default function App() {
           )}
           <GraphView
             key={data.seed}
+            flash={flash}
             data={data}
             health={health}
             activeId={inspect ? inspectId : panelId}
@@ -1286,6 +1313,15 @@ export default function App() {
         <aside
           className={`flex w-80 flex-col gap-3 overflow-y-auto border-l border-white/[0.06] bg-gradient-to-b from-slate-950 to-[#050a1a] p-4 ${data.started ? '' : 'invisible'}`}
         >
+          {data.raid.active && !inspect && (
+            <QuizStrip
+              {...data.raid.active}
+              nowMs={appMs()}
+              meaning={(id) => data.nodes.find((n) => n.id === id)?.en ?? '?'}
+              name={(id) => nameOf(id) || '?'}
+              onWord={(id) => selectNode(id)}
+            />
+          )}
           {showProgress && !inspect && (
             <ProgressPanel
               score={score}
@@ -1598,66 +1634,27 @@ function TierBadge({
 /** Top-left over the map: the focus session and the pop quiz under way, with their clocks. */
 function Missions(props: {
   expedition: { name: string; goal: number; taken: number; until: number } | null;
-  raid?: { targets: string[]; defended: string[]; until: number };
   nowMs: number;
-  wordName: (id: string) => string;
-  /** Raided words are asked into Italian, so the bar names them in English. */
-  meaning: (id: string) => string;
-  onRaidWord: (id: string) => void;
 }) {
-  const { expedition, raid, nowMs } = props;
-  const clock = (until: number) => {
-    const s = Math.max(0, Math.ceil((until - nowMs) / 1000));
-    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
-  };
-  if (!expedition && !raid) return null;
+  const { expedition, nowMs } = props;
+  if (!expedition) return null;
+  const s = Math.max(0, Math.ceil((expedition.until - nowMs) / 1000));
   return (
-    <div className="absolute left-3 top-3 z-10 space-y-1.5 text-xs">
-      {expedition && (
-        <div
-          className="glass flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-slate-200"
-          title="Focus: learn words of this topic (a started one counts) before time runs out"
-        >
-          <Icon name="target" className="text-sky-300" />
-          {expedition.name}
-          <b className="tabular-nums text-sky-200">
-            {expedition.taken}/{expedition.goal}
-          </b>
-          <span className="font-mono text-slate-400">{clock(expedition.until)}</span>
-        </div>
-      )}
-      {raid && (
-        <div
-          className="rounded-lg border border-orange-500/50 bg-orange-950/80 px-2.5 py-1.5 text-orange-200 shadow-[0_0_30px_-8px_rgba(249,115,22,0.6)] backdrop-blur-md"
-          title="Pop quiz: answer each word right before time runs out, or it slips and disconnects what depends on it"
-        >
-          <span className="flex items-center gap-2">
-            <Icon name="timer" className="text-orange-300" />
-            Pop quiz <span className="font-mono text-orange-300">{clock(raid.until)}</span>
-          </span>
-          <div className="mt-1 flex flex-wrap gap-1">
-            {raid.targets.map((id) =>
-              raid.defended.includes(id) ? (
-                <span
-                  key={id}
-                  className="inline-flex items-center gap-1 rounded bg-emerald-900/60 px-1.5 text-emerald-200"
-                >
-                  <Icon name="check" />
-                  {props.wordName(id)}
-                </span>
-              ) : (
-                <button
-                  key={id}
-                  onClick={() => props.onRaidWord(id)}
-                  className="rounded bg-orange-800/70 px-1.5 hover:bg-orange-700"
-                >
-                  {props.meaning(id)}
-                </button>
-              ),
-            )}
-          </div>
-        </div>
-      )}
+    <div className="absolute left-3 top-3 z-10 text-xs">
+      <div
+        className="glass flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-slate-200"
+        title="Focus: start new words of this topic (answering one once counts) before time runs out"
+      >
+        <Icon name="target" className="text-sky-300" />
+        {expedition.name}
+        <b className="tabular-nums text-sky-200">
+          {expedition.taken}/{expedition.goal}
+        </b>
+        <span className="text-slate-500">started</span>
+        <span className="font-mono text-slate-400">
+          {Math.floor(s / 60)}:{String(s % 60).padStart(2, '0')}
+        </span>
+      </div>
     </div>
   );
 }
@@ -1669,7 +1666,9 @@ function EventBanner({ event }: { event: GameEvent }) {
     sfx(
       event.kind === 'raid' || event.kind === 'raid-lost' || event.kind === 'expedition-lost'
         ? 'lost'
-        : 'achievement',
+        : event.kind === 'expedition'
+          ? 'reveal'
+          : 'achievement',
     );
     const t = setTimeout(() => setShown(false), 4500);
     return () => clearTimeout(t);
@@ -1681,7 +1680,8 @@ function EventBanner({ event }: { event: GameEvent }) {
     emerald: 'border-emerald-400/70 text-emerald-200',
     slate: 'border-slate-500 text-slate-300',
     amber: 'border-amber-300/70 text-amber-200',
-  }[tone as 'orange' | 'emerald' | 'slate' | 'amber'];
+    sky: 'border-sky-400/70 text-sky-100',
+  }[tone as 'orange' | 'emerald' | 'slate' | 'amber' | 'sky'];
   return (
     <div
       className={`glass rise-in pointer-events-none absolute left-1/2 top-16 z-10 -translate-x-1/2 rounded-xl px-5 py-2 text-center ${cls}`}
@@ -1723,6 +1723,13 @@ function eventText(e: GameEvent): [string, ReactNode, string, IconName] {
           +<Sparks n={e.coins} />
         </>,
         'emerald',
+        'target',
+      ];
+    case 'expedition':
+      return [
+        `Focus: ${e.region}`,
+        `Start ${words(e.goal)} of it in ${EXPEDITION.minutes} min (answering one once counts)`,
+        'sky',
         'target',
       ];
     case 'expedition-lost':

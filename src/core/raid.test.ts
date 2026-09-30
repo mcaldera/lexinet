@@ -1,4 +1,4 @@
-import { defend, raidStarts, raidStatus, raidTargets } from './raid';
+import { defend, raidReward, raidStarts, raidStatus, raidTargets } from './raid';
 
 const rules = { durationMs: 180_000, targets: 3, gapMs: 1_200_000, chance: 0.2 };
 
@@ -40,4 +40,11 @@ test('defend every target in time to win; the rest are hit when time runs out', 
   expect(one.defended).toEqual(['a']);
   expect(raidStatus(one, 100)).toEqual({ state: 'lost', hit: ['b'] });
   expect(raidStatus(defend(one, 'b'), 100)).toEqual({ state: 'won', hit: [] });
+});
+
+test('a passed raid pays more the more time is left', () => {
+  const raid = { targets: ['a'], defended: ['a'], start: 0, until: 180_000 };
+  const rules = { coins: 3, bonus: 1, bonusEveryMs: 30_000 };
+  expect(raidReward(raid, 50_000, rules)).toEqual({ coins: 7, speed: 4, tookMs: 50_000 });
+  expect(raidReward(raid, 179_000, rules)).toEqual({ coins: 3, speed: 0, tookMs: 179_000 });
 });

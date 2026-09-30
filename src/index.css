@@ -97,3 +97,78 @@ body,
 .rise-in {
   animation: rise-in 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
+
+/* Pop quiz (views/Quiz.tsx): it strikes, it runs, it's passed. */
+@keyframes quiz-in {
+  0% {
+    opacity: 0;
+    transform: scale(1.7);
+    letter-spacing: 0.6em;
+  }
+  55% {
+    opacity: 1;
+    transform: scale(0.97);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes quiz-out {
+  to {
+    opacity: 0;
+    transform: scale(1.06);
+  }
+}
+.quiz-in {
+  animation:
+    quiz-in 650ms cubic-bezier(0.2, 0.8, 0.2, 1) both,
+    quiz-out 500ms ease-in 2.3s forwards;
+}
+@keyframes quiz-flash {
+  0% {
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.quiz-flash {
+  animation: quiz-flash 2s ease-out both;
+}
+.quiz-flash-orange {
+  box-shadow: inset 0 0 180px 50px rgba(249, 115, 22, 0.55);
+  background: radial-gradient(ellipse at center, rgba(249, 115, 22, 0.14), transparent 70%);
+}
+.quiz-flash-gold {
+  box-shadow: inset 0 0 180px 50px rgba(251, 191, 36, 0.5);
+  background: radial-gradient(ellipse at center, rgba(251, 191, 36, 0.16), transparent 70%);
+}
+@keyframes quiz-edge {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.75;
+  }
+}
+.quiz-edge {
+  box-shadow: inset 0 0 90px 12px rgba(249, 115, 22, 0.4);
+  animation: quiz-edge 1.6s ease-in-out infinite;
+}
+@keyframes quiz-saved {
+  0% {
+    transform: scale(1.35);
+    box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 8px rgba(52, 211, 153, 0);
+  }
+}
+.quiz-saved {
+  animation: quiz-saved 500ms ease-out both;
+}

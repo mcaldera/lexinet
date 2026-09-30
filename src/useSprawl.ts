@@ -17,7 +17,7 @@ import {
   SUPPLY,
 } from './config';
 import { expeditionStatus, planExpedition } from './core/expedition';
-import { defend, raidStarts, raidStatus, raidTargets } from './core/raid';
+import { defend, raidReward, raidStarts, raidStatus, raidTargets } from './core/raid';
 import { dayKey } from './core/streak';
 import type { Achievement } from './core/achievements';
 import type { PlantOption } from './core/plant';
@@ -119,8 +119,11 @@ export type ReviewOutcome = {
 export type LostEvent = { at: number; ids: string[] };
 /** Something the game did on its own, for a banner (raids, expeditions, strongholds). */
 export type GameEvent =
-  | { kind: 'raid'; at: number; count: number }
-  | { kind: 'raid-won' | 'expedition-won'; at: number; coins: number }
+  | { kind: 'raid'; at: number; count: number; ids: string[] }
+  /** A passed pop quiz: what it paid (`speed` of it for time left), how long it took. */
+  | { kind: 'raid-won'; at: number; coins: number; speed: number; tookMs: number; ids: string[] }
+  | { kind: 'expedition-won'; at: number; coins: number }
+  | { kind: 'expedition'; at: number; region: string; goal: number }
   | { kind: 'raid-lost'; at: number; count: number }
   | { kind: 'expedition-lost'; at: number }
   /** A word you know so well it sends out full supply (core/supply.ts wordOutput). */
@@ -361,6 +364,8 @@ export function useSprawl() {
     if (!exp) return false;
     await saveMeta(db, 'expedition', exp);
     setData((d) => d && { ...d, expedition: exp });
+    const region = data.graph.regions?.find((r) => r.id === exp.region)?.name ?? '';
+    setEvent({ kind: 'expedition', at: exp.start, region, goal: exp.goal });
     return true;
   }, [db, data]);
 
@@ -478,7 +483,12 @@ export function useSprawl() {
         raid = { ...raid, active };
         if (raidStatus(active, t).state === 'won') {
           raid = { last: raid.last };
-          raidEvent = { kind: 'raid-won', at: t, coins: RAID.coins };
+          raidEvent = {
+            kind: 'raid-won',
+            at: t,
+            ...raidReward(active, t, RAID),
+            ids: active.targets,
+          };
         }
       } else if (success && raidStarts(raid.last, false, [id], t, RAID)) {
         // The luck is in: strike the words the most hangs on (worth the work only now).
@@ -499,7 +509,7 @@ export function useSprawl() {
             last: t,
             active: { targets, defended: [], start: t, until: t + RAID.durationMs },
           };
-          raidEvent = { kind: 'raid', at: t, count: targets.length };
+          raidEvent = { kind: 'raid', at: t, count: targets.length, ids: targets };
         }
       }
       if (raid !== data.raid) await saveMeta(db, 'raid', raid);
@@ -512,7 +522,7 @@ export function useSprawl() {
       const coins =
         data.coins +
         (conquered && !wasWon ? COINS_PER_CONQUEST : 0) +
-        (raidEvent?.kind === 'raid-won' ? RAID.coins : 0);
+        (raidEvent?.kind === 'raid-won' ? raidEvent.coins : 0);
       if (coins !== data.coins) await saveMeta(db, 'coins', coins);
       setData((d) => {
         if (!d) return d;
