@@ -169,6 +169,8 @@ type Props = {
   /** Supply seeping past your words (core/supply.ts, fog) at every word it reaches: the glow. */
   reach?: Map<string, number>;
   onNodeClick: (id: string) => void;
+  /** Tab: the next word that can be worked on. */
+  onNextTask?: () => void;
   /** A click into empty map (not on a word or an edge arrow): let go of the selection. */
   onBackgroundClick?: () => void;
   /** Words to flash now: a pop-quiz word saved, or all of them when the quiz is passed. */
@@ -199,6 +201,7 @@ export default function GraphView({
   ghosts,
   reach,
   onNodeClick,
+  onNextTask,
   onBackgroundClick,
   flash,
 }: Props) {
@@ -565,6 +568,7 @@ export default function GraphView({
   tethered.current = inspect ? [] : graphData.links;
   useKeyboardCamera(fg, {
     onNext: () => jumpNext(),
+    onNextTask,
     onRelax: () => relax(),
     onArrow: (dx, dy) => {
       const pos = (id: string) => nodeCache.current.get(id);
@@ -587,7 +591,6 @@ export default function GraphView({
         dx,
         dy,
         pts.filter((p) => linked.has(p.id)),
-        pts.filter((p) => p.id !== from.id),
       );
       if (!next) return;
       setCursorId(next);

@@ -1306,6 +1306,7 @@ export default function App() {
                   )
                 : undefined
             }
+            onNextTask={goNext}
             onNodeClick={selectNode}
             onBackgroundClick={clearSelection}
           />

@@ -236,7 +236,8 @@ export default function Guide({ onClose }: { onClose: () => void }) {
 
         <Section title="Keys">
           <div className="grid grid-cols-2 gap-x-4 text-xs">
-            <span>↑↓←→ move between words</span>
+            <span>↑↓←→ move along links</span>
+            <span>Tab next word you can work on</span>
             <span>Enter open · next word</span>
             <span>N next word that needs you</span>
             <span>WASD pan · +/− zoom · F fit · R relax the layout</span>

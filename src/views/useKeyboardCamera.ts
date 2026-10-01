@@ -36,6 +36,8 @@ type Options = {
   onSelect: () => void;
   /** N outside text fields: jump to the next word that needs attention. */
   onNext?: () => void;
+  /** Tab: go to the nearest word that can be worked on now (linked path). */
+  onNextTask?: () => void;
   /** R outside text fields: relax the layout. */
   onRelax?: () => void;
 };
@@ -84,6 +86,11 @@ export function useKeyboardCamera(cam: RefObject<Camera | undefined>, options: O
         opts.current.onArrow(...ARROWS[k]);
         return;
       }
+      if (k === 'tab' && !e.shiftKey) {
+        e.preventDefault();
+        opts.current.onNextTask?.();
+        return;
+      }
       if (isTyping(e.target)) return;
       const c = cam.current;
       if ((k === 'enter' || k === ' ') && !(e.target instanceof HTMLButtonElement)) {
@@ -121,16 +128,15 @@ export function useKeyboardCamera(cam: RefObject<Camera | undefined>, options: O
 }
 
 /**
- * The node to move to from `from` in direction (dx, dy): prefer linked
- * neighbours within 70° of the direction, else the nearest visible node within
- * 45°. Scores favour straight-ahead over near.
+ * The linked neighbour to move to from `from` in direction (dx, dy): within 100°
+ * of it, favouring straight-ahead over near. Only links are followed, never a
+ * word with no edge to the current one.
  */
 export function stepCursor(
   from: { x: number; y: number },
   dx: number,
   dy: number,
   neighbours: { id: string; x: number; y: number }[],
-  others: { id: string; x: number; y: number }[],
 ): string | undefined {
   const pick = (cands: { id: string; x: number; y: number }[], maxDeg: number) => {
     let best: { id: string; score: number } | undefined;
@@ -146,5 +152,5 @@ export function stepCursor(
     }
     return best?.id;
   };
-  return pick(neighbours, 70) ?? pick(others, 45);
+  return pick(neighbours, 100);
 }
