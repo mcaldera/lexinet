@@ -57,7 +57,15 @@ export function checkConjugation(
   inputs: string[],
   expected: string[],
 ): { rows: Verdict[]; grade: Grade } {
-  const rows = expected.map((e, i) => checkAnswer(inputs[i] ?? '', e, 'it').verdict);
+  // A form may list alternatives ("würde gehen / ginge"): the best one counts.
+  const rank = { correct: 0, almost: 1, wrong: 2 } as const;
+  const rows = expected.map(
+    (e, i) =>
+      e
+        .split(' / ')
+        .map((option) => checkAnswer(inputs[i] ?? '', option, 'it').verdict)
+        .sort((x, y) => rank[x] - rank[y])[0],
+  );
   const grade = rows.includes('wrong')
     ? Rating.Again
     : rows.includes('almost')

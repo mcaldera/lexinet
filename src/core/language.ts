@@ -18,6 +18,13 @@ export type Language = {
   letters: readonly string[];
   /** A word's article at its start: group 1 before a space, group 2 elided ("l'"). */
   article: RegExp;
+  /**
+   * A wrong article is a wrong answer, not "almost": in German the gender is
+   * part of the word (der Hund, not die Hund). A missing one is still "almost".
+   */
+  strictArticle?: boolean;
+  /** Letters with a standard plain spelling, which counts as right (ä = ae, ß = ss). */
+  spellings?: readonly (readonly [string, string])[];
   /** Verb tenses in the order they are taught: each is a verb level. */
   tenses: readonly string[];
   /** The persons of a conjugation table, in the order of its forms. */
@@ -52,6 +59,23 @@ export const LANGUAGES: Record<string, Language> = {
       'subjuntivo',
     ],
     persons: ['yo', 'tú', 'él/ella', 'nosotros', 'vosotros', 'ellos'],
+  },
+  de: {
+    code: 'de',
+    name: 'German',
+    locale: 'de-DE',
+    greeting: "Hallo! Wie geht's?",
+    letters: ['ä', 'ö', 'ü', 'ß'],
+    article: /^(?:(der|die|das|ein|eine)\s+)/,
+    strictArticle: true,
+    spellings: [
+      ['ä', 'ae'],
+      ['ö', 'oe'],
+      ['ü', 'ue'],
+      ['ß', 'ss'],
+    ],
+    tenses: ['Präsens', 'Perfekt', 'Präteritum', 'Futur I', 'Konjunktiv II'],
+    persons: ['ich', 'du', 'er/sie/es', 'wir', 'ihr', 'sie/Sie'],
   },
 };
 

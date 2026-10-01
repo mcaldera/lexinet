@@ -144,8 +144,9 @@ def counterparts(words: list[dict], sem: np.ndarray) -> dict[int, int]:
             by_cat.setdefault((w["cat"], w["pos"]), []).append(i)
 
     def ending_pair(a: str, b: str) -> bool:
+        # (a[: len(a) - len(m)], not a[:-len(m)]: German's "" + "in" ending, Lehrer / Lehrerin)
         return any(
-            a.endswith(m) and len(a) > len(m) + 2 and b == a[: -len(m)] + f for m, f in L.current.gender
+            a.endswith(m) and len(a) > len(m) + 2 and b == a[: len(a) - len(m)] + f for m, f in L.current.gender
         )
 
     found: list[tuple[float, int, int]] = []
@@ -205,6 +206,16 @@ def build(words: list[dict], embed: bg.Embedder, ranks: dict[str, int], verb_for
                     same_root[a, b] = True
                 elif bg.stem(words[a]["it"]) == bg.stem(words[b]["it"]) and sem[a, b] >= STEM_MIN_SEM:
                     same_stem[a, b] = True
+    # German compounds: a word inside another of related meaning is family
+    # (die Hand / der Handschuh); "Hand" in "das Handy" (phone) is not.
+    if L.current.compounds:
+        lem = [bg.lemma(w["it"]) for w in words]
+        for a in range(n):
+            if len(lem[a]) < 4 or " " in lem[a]:
+                continue
+            for b in range(n):
+                if a != b and lem[a] != lem[b] and (lem[b].startswith(lem[a]) or lem[b].endswith(lem[a])) and sem[a, b] >= STEM_MIN_SEM:
+                    same_stem[a, b] = same_stem[b, a] = True
     fam = (same_stem | same_root).astype(float)
     same_cat = np.array(cat)[:, None] == np.array(cat)[None, :]
     total = np.clip(0.7 * sem + FAMILY * fam + 0.15 * same_cat, 0, None)
@@ -236,6 +247,13 @@ def build(words: list[dict], embed: bg.Embedder, ranks: dict[str, int], verb_for
             kin = [a for a in grp[:k] if fam[a, b]]
             if kin:
                 add(max(kin, key=lambda a: sem[a, b]), b, "family")
+
+    # German compounds link to their closest-meaning part (der Handschuh - die Hand).
+    if L.current.compounds:
+        for b in range(n):
+            parts = [a for a in range(n) if same_stem[a, b] and len(lem[a]) < len(lem[b]) and lem[a] in lem[b]]
+            if parts:
+                add(max(parts, key=lambda a: sem[a, b]), b, "family")
 
     # 3. Strong meaning links across categories, one per word. Not between
     # words whose English shares a word: that is often an English homograph
@@ -422,6 +440,20 @@ def build(words: list[dict], embed: bg.Embedder, ranks: dict[str, int], verb_for
     }
 
 
+def english_cognate(word: str, entry: dict) -> str:
+    """German: the English cognate Wiktionary names ("Cognate with English hound")
+    when it looks like the word (Hund / hound, Hand / hand); Zeit / tide doesn't."""
+    import difflib
+
+    for t in entry.get("etymology_templates", []):
+        a = t.get("args", {})
+        cog = (a.get("2") or "").strip()
+        if t.get("name") == "cog" and a.get("1") == "en" and cog and " " not in cog:
+            if difflib.SequenceMatcher(None, word.lower(), cog.lower()).ratio() >= 0.4:
+                return cog
+    return ""
+
+
 def enrich(folder: Path, words: list[dict]) -> int:
     """Look up missing etymology in Wiktionary and write it into the files."""
     import make_wordlist as mw
@@ -431,9 +463,14 @@ def enrich(folder: Path, words: list[dict]) -> int:
     found = 0
     for w in words:
         base = V.lemma(w["it"])
-        if w.get("root") or " " in base or base not in lemmas:
+        if " " in base or base not in lemmas:
             continue
-        ety = mw.etymon(max(lemmas[base], key=lambda e: len(e["senses"])), lemmas)
+        entry = max(lemmas[base], key=lambda e: len(e["senses"]))
+        if L.current.code == "de" and not w.get("cousin"):
+            w.update(cousin=english_cognate(base, entry) or None)
+        if w.get("root"):
+            continue
+        ety = mw.etymon(entry, lemmas)
         if not ety:
             continue
         root, lang, gloss = ety

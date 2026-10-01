@@ -48,6 +48,9 @@ LANGS = {
     "grc": "Ancient Greek",
     "frk": "Frankish",
     "gem-pro": "Proto-Germanic",
+    "gmw-pro": "Proto-West Germanic",
+    "osx": "Old Saxon",
+    "odt": "Old Dutch",
     "lng": "Lombardic",
     "got": "Gothic",
     "fr": "French",
@@ -203,7 +206,7 @@ def compact(e: dict) -> dict:
         "etymology_templates": [
             {"name": t.get("name"), "args": {k: t["args"].get(k) for k in ("1", "2", "3", "5", "t", "gloss")}}
             for t in e.get("etymology_templates", [])
-            if t.get("name") in ETY_TEMPLATES | AFFIX_TEMPLATES | UNCERTAIN_TEMPLATES
+            if t.get("name") in ETY_TEMPLATES | AFFIX_TEMPLATES | UNCERTAIN_TEMPLATES | {"cog"}
         ],
     }
 

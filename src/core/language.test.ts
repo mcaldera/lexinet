@@ -1,7 +1,14 @@
 import { checkAnswer } from './answer';
 import { setLanguage, lang } from './language';
 import { newCard, rate, Rating } from './scheduler';
-import { nextDrill, tenseCardId, verbLevel, type TenseCard } from './verbs';
+import {
+  checkConjugation,
+  nextDrill,
+  tenseCardId,
+  tenses,
+  verbLevel,
+  type TenseCard,
+} from './verbs';
 
 afterEach(() => setLanguage('it'));
 
@@ -41,4 +48,33 @@ test('the tense ladder follows the language', () => {
   expect(verbLevel([learned('presente'), learned('pretérito perfecto')], t0)).toBe(2);
   // Italian tense names don't count in Spanish.
   expect(verbLevel([learned('presente'), learned('passato prossimo')], t0)).toBe(1);
+});
+
+test('German: a wrong article is wrong, a missing one almost', () => {
+  setLanguage('de');
+  const de = (input: string, expected: string) => checkAnswer(input, expected, 'it');
+  expect(de('der Hund', 'der Hund').verdict).toBe('correct');
+  expect(de('Der hund', 'der Hund').verdict).toBe('correct'); // capitals don't matter
+  expect(de('die Hund', 'der Hund')).toMatchObject({
+    verdict: 'wrong',
+    notes: ['Article: der hund'],
+  });
+  expect(de('Hund', 'der Hund').verdict).toBe('almost');
+});
+
+test('German: ae, oe, ue and ss are right, a plain a is almost', () => {
+  setLanguage('de');
+  const de = (input: string, expected: string) => checkAnswer(input, expected, 'it');
+  expect(de('das Maedchen', 'das Mädchen').verdict).toBe('correct');
+  expect(de('die Strasse', 'die Straße').verdict).toBe('correct');
+  expect(de('ueber', 'über').verdict).toBe('correct');
+  expect(de('das Madchen', 'das Mädchen').notes).toEqual(['Mind the accent']);
+});
+
+test('German conjugations accept any listed alternative', () => {
+  setLanguage('de');
+  const forms = ['würde gehen / ginge', 'würdest gehen / gingest'];
+  expect(checkConjugation(['ginge', 'würdest gehen'], forms).grade).toBe(Rating.Good);
+  expect(checkConjugation(['ginge', 'gehst'], forms).grade).toBe(Rating.Again);
+  expect(tenses()).toHaveLength(5);
 });

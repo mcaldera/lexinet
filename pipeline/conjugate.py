@@ -1,4 +1,4 @@
-"""Verb conjugations from Wiktionary (kaikki.org extract), Italian and Spanish.
+"""Verb conjugations from Wiktionary (kaikki.org extract): Italian, Spanish, German.
 
 Tenses are drilled in the order courses teach them; each becomes a verb level
 (the app's core/language.ts lists the same names):
@@ -7,6 +7,7 @@ Tenses are drilled in the order courses teach them; each becomes a verb level
   Spanish (Spain: vosotros): presente, pretérito perfecto, pretérito indefinido,
     imperfecto, futuro, condicional, subjuntivo (present). The perfecto is built
     from haber + the participle; reflexive verbs (lavarse) from their base verb.
+  German: Präsens, Perfekt, Präteritum, Futur I, Konjunktiv II (see `german`).
 """
 
 from __future__ import annotations
@@ -173,4 +174,81 @@ def table(verbs: dict[str, dict], infinitive: str) -> dict[str, list[str]] | Non
     """The conjugation table of a verb in the current language, or None."""
     if L.current.code == "es":
         return spanish(verbs, infinitive)
+    if L.current.code == "de":
+        return german(verbs, infinitive)
     return conjugations(verbs[infinitive], infinitive) if infinitive in verbs else None
+
+
+DE_TENSES = ["Präsens", "Perfekt", "Präteritum", "Futur I", "Konjunktiv II"]
+DE_TAGS = {
+    "Präsens": {"indicative", "present"},
+    "Perfekt": {"indicative", "perfect"},
+    "Präteritum": {"indicative", "preterite"},
+    "Futur I": {"indicative", "future-i"},
+}
+DE_REFLEXIVE = ["mich", "dich", "sich", "uns", "euch", "sich"]
+SEIN = {"bin", "bist", "ist", "sind", "seid"}
+# Verbs whose own Konjunktiv II is what people say (wäre, hätte, könnte); for
+# the others "würde + infinitive" is, and a strong verb's own form (ginge) also counts.
+DE_OWN_SUBJUNCTIVE = {"sein", "haben", "werden", "wissen", "können", "müssen", "dürfen", "sollen", "wollen", "mögen"}
+DE_SKIP = {"archaic", "obsolete", "dated", "nonstandard", "subordinate-clause", "error-unknown-tag", "poetic"}
+
+
+def german(verbs: dict[str, dict], infinitive: str) -> dict[str, list[str]] | None:
+    """Six persons (ich .. sie/Sie) per tense in DE_TENSES, or None. Separable
+    verbs come as said ("rufe an", "habe angerufen", "werde anrufen"); a
+    reflexive verb (sich freuen) takes its base verb's forms with the pronoun
+    after the first word ("freue mich", "habe mich gefreut")."""
+    reflexive = infinitive.startswith("sich ")
+    base = infinitive[5:] if reflexive else infinitive
+    entry = verbs.get(base)
+    if not entry:
+        return None
+    usable = [(f, set(t)) for f, t in entry["forms"] if not DE_SKIP & set(t)]
+
+    def form(want: set[str], person: str, number: str, without: frozenset = frozenset()) -> str | None:
+        """The first form with these tags that isn't marked rare or formal."""
+        return next(
+            (f for f, t in usable if want <= t and person in t and number in t and not ({"rare", "formal"} | without) & t),
+            None,
+        )
+
+    table: dict[str, list[str]] = {}
+    for tense, want in DE_TAGS.items():
+        row = [form(want, p, n) for p, n in PERSONS]
+        if None in row:
+            return None
+        table[tense] = row  # type: ignore[assignment]
+    # Verbs listed with both auxiliaries (aufstehen, fahren) use sein in the
+    # everyday sense; haben belongs to rarer or regional ones.
+    sein = [
+        next((f for f, t in usable if DE_TAGS["Perfekt"] <= t and p in t and n in t and f.split(" ")[0] in SEIN), None)
+        for p, n in PERSONS
+    ]
+    if None not in sein:
+        table["Perfekt"] = sein  # type: ignore[assignment]
+    # The verb's own Konjunktiv II (wäre, ginge; weak verbs' are marked rare), the
+    # shortest where there are two (gingst, not gingest), and the würde-form
+    # (tagged future-i + subjunctive-ii).
+    multiword = {"multiword-construction", "future-i", "future-ii", "rare", "formal"}
+    own = [
+        min((f for f, t in usable if "subjunctive-ii" in t and p in t and n in t and not multiword & t), key=len, default=None)
+        for p, n in PERSONS
+    ]
+    wuerde = [form({"subjunctive-ii", "future-i"}, p, n) for p, n in PERSONS]
+    if None in wuerde:
+        return None
+    if base in DE_OWN_SUBJUNCTIVE and None not in own:
+        table["Konjunktiv II"] = own  # type: ignore[assignment]
+    elif None not in own:
+        table["Konjunktiv II"] = [f"{w} / {o}" for w, o in zip(wuerde, own)]  # type: ignore[misc]
+    else:
+        table["Konjunktiv II"] = wuerde  # type: ignore[assignment]
+    if reflexive:
+        def with_pronoun(f: str, i: int) -> str:
+            return " / ".join(
+                " ".join([o.split(" ")[0], DE_REFLEXIVE[i], *o.split(" ")[1:]]) for o in f.split(" / ")
+            )
+
+        table = {t: [with_pronoun(f, i) for i, f in enumerate(row)] for t, row in table.items()}
+    return {t: table[t] for t in DE_TENSES}

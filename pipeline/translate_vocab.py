@@ -45,14 +45,20 @@ POS = {"noun", "verb", "adj", "adv", "pron", "conj", "prep", "num", "intj", "det
 # Wiktionary's names where they differ from the vocabulary's.
 POS_ALIASES = {"interj": {"intj"}, "pron": {"pron", "det"}, "num": {"num", "adj", "noun"}, "adj": {"adj", "det"}}
 
-# Article -> (gender, plural) per language.
+# Article -> (genders it fits, as Wiktionary's first letter: m, f, n, p = plural only).
 ARTICLES = {
     "es": {
-        "el": ("m", False), "un": ("m", False), "la": ("f", False), "una": ("f", False),
-        "los": ("m", True), "unos": ("m", True), "las": ("f", True), "unas": ("f", True),
+        "el": "m", "un": "m", "la": "f", "una": "f",
+        "los": "mp", "unos": "mp", "las": "fp", "unas": "fp",
     },
+    "de": {"der": "m", "das": "n", "die": "fp", "ein": "mn", "eine": "f"},
 }
-PLURAL_ARTICLE = {"es": {"el": "los", "la": "las", "un": "unos", "una": "unas"}}
+PLURAL_ARTICLE = {
+    "es": {"el": "los", "la": "las", "un": "unos", "una": "unas"},
+    "de": {"der": "die", "die": "die", "das": "die"},
+}
+# Plural forms Wiktionary lists but nobody should learn (Hünde, Mädchens).
+ODD_FORM = {"nonstandard", "archaic", "obsolete", "dated", "regional", "dialectal", "uncommon", "rare", "error-unknown-tag", "diminutive", "feminine"}
 
 
 def plain(s: str) -> str:
@@ -78,7 +84,7 @@ def lexicon(lang: L.Lang) -> dict[str, list[dict]]:
             plurals = [
                 x["form"]
                 for x in e.get("forms", [])
-                if "plural" in x.get("tags", []) and "feminine" not in x.get("tags", [])
+                if "plural" in x.get("tags", []) and not ODD_FORM & set(x.get("tags", []))
             ]
             lex.setdefault(word.lower(), []).append(
                 {"pos": pos, "gender": str(head.get("1", "")), "plurals": plurals, "glosses": glosses}
@@ -121,6 +127,8 @@ def lookup(word: str, lex: dict[str, list[dict]], depth: int = 0) -> list[dict]:
 def problems(w: dict, lex: dict[str, list[dict]], lang: L.Lang) -> list[str]:
     """What doesn't fit Wiktionary (empty: fine)."""
     article, base = split_article(w["it"], lang)
+    if lang.code == "de" and base.startswith("sich "):
+        base = base[5:]  # sich freuen: Wiktionary has freuen
     entries = lookup(base, lex)
     if not entries:
         return ["not in Wiktionary"]
@@ -133,9 +141,9 @@ def problems(w: dict, lex: dict[str, list[dict]], lang: L.Lang) -> list[str]:
         return [f"Wiktionary has it as {'/'.join(sorted({e['pos'] for e in entries}))}, not {w['pos']}"]
     out = []
     if w["pos"] == "noun" and article in ARTICLES.get(lang.code, {}):
-        gender, plural = ARTICLES[lang.code][article]
+        gender = ARTICLES[lang.code][article]
         genders = {e["gender"] for e in same}
-        fits = any(g.startswith(gender) or g.startswith("mf") or "m" in g and "f" in g for g in genders)
+        fits = any(g[:1] in gender or g.startswith("mf") or "m" in g and "f" in g for g in genders)
         # Feminine nouns starting with a stressed a take "el": el agua, el alma.
         if not fits and lang.code == "es" and article in ("el", "un") and any(g.startswith("f") for g in genders):
             fits = plain(base)[:1] == "a" or plain(base)[:2] == "ha"
@@ -222,7 +230,7 @@ def merge(src: Path, italian: Path, out: Path, lex: dict[str, list[dict]]) -> li
             }
             if shares_root(w["it"], it):
                 w.update({k: it[k] for k in ("root", "root_lang", "root_meaning", "cousin") if it.get(k)})
-            if it.get("pl") and w["pos"] == "noun":
+            if (it.get("pl") or lang.all_plurals) and w["pos"] == "noun":
                 pl = plural_of(w["it"], lex, lang)
                 if pl and pl.lower() != w["it"].lower():
                     w["pl"] = pl

@@ -59,14 +59,22 @@ const result = (verdict: Verdict, notes: string[] = []): AnswerCheck => ({
   notes,
 });
 
+/** A word in its plain spelling (Mädchen -> maedchen), where the language has one. */
+const plainSpelling = (s: string) =>
+  (lang().spellings ?? []).reduce((t, [letter, plain]) => t.replaceAll(letter, plain), s);
+
 function checkWord(input: string, expected: string): AnswerCheck {
   const a = splitArticle(input);
   const e = splitArticle(expected);
   const notes: string[] = [];
   if (a.article !== e.article) {
     notes.push(e.article ? `Article: ${expected}` : 'No article needed');
+    // German: die Hund is a mistake about the word itself.
+    if (lang().strictArticle && a.article && e.article) return result('wrong', notes);
   }
-  if (a.core === e.core) return result(notes.length ? 'almost' : 'correct', notes);
+  if (a.core === e.core || plainSpelling(a.core) === plainSpelling(e.core)) {
+    return result(notes.length ? 'almost' : 'correct', notes);
+  }
   const ca = stripAccents(a.core);
   const ce = stripAccents(e.core);
   if (ca === ce) return result('almost', [...notes, 'Mind the accent']);

@@ -37,9 +37,14 @@ def test_roundtrip_and_validation(tmp_path):
     assert len(loaded) == len(words)
     assert next(w for w in loaded if w["it"] == "la cucina")["pl"] == "le cucine"
     assert V.validate(loaded) == []
-    bad = loaded + [{"it": "la casa", "en": "home", "pos": "thing", "cat": "home", "colour": "x"}]
+    bad = loaded + [
+        {"it": "la casa", "en": "home", "pos": "thing", "cat": "home", "colour": "x"},
+        {"it": "la casa", "en": "home", "pos": "noun", "cat": "home"},
+    ]
     problems = V.validate(bad)
     assert any("listed twice" in p for p in problems)
+    # The same word as another part of speech is another word (German sein "to be" / "his").
+    assert not any("listed twice" in p for p in V.validate(loaded + [{"it": "la casa", "en": "x", "pos": "verb", "cat": "home", "id": "casa-v"}]))
     assert any("pos 'thing'" in p for p in problems)
     assert any("unknown fields" in p for p in problems)
 

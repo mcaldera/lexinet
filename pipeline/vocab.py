@@ -129,7 +129,7 @@ def validate(words: list[dict]) -> list[str]:
     """Problems that would break the build or confuse a player."""
     problems: list[str] = []
     ids: dict[str, str] = {}
-    seen: dict[str, str] = {}
+    seen: dict[tuple, str] = {}
     for w in words:
         where = f"{w.get('cat')}: {w.get('it')!r}"
         for f in ("it", "en", "pos"):
@@ -146,7 +146,9 @@ def validate(words: list[dict]) -> list[str]:
         if i in ids:
             problems.append(f"{where}: id {i!r} also used by {ids[i]}")
         ids[i] = where
-        key = str(w.get("it", "")).lower()
+        # The same word may be two words of different parts of speech (German
+        # sein "to be" / sein "his"); the card shows the part of speech.
+        key = (str(w.get("it", "")).lower(), w.get("pos"))
         if key in seen:
             problems.append(f"{where}: listed twice (also {seen[key]})")
         seen[key] = where

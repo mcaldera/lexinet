@@ -21,6 +21,8 @@ class Lang:
     gender: list[tuple[str, str]]  # masculine -> feminine endings (figlio / figlia)
     pairs: str  # manythings.org file stem ("ita": ita-eng.zip, ita.txt)
     older: set[str] = field(default_factory=set)  # Wiktionary codes of older stages to look past
+    compounds: bool = False  # a word inside another is family (Handschuh / Hand), meaning permitting
+    all_plurals: bool = False  # every noun shows its plural, not only those the Italian list gave one
 
     @property
     def kaikki(self) -> str:
@@ -52,6 +54,19 @@ LANGS = {
         gender=[("o", "a"), ("or", "ora"), ("tor", "triz"), ("e", "a"), ("e", "esa"), ("on", "ona")],
         pairs="spa",
         older={"osp"},
+    ),
+    "de": Lang(
+        code="de",
+        name="German",
+        article_re=re.compile(r"^(der|die|das|ein|eine)\s+", re.IGNORECASE),
+        ending_re=re.compile(r"(ung|en|er|e|n)$"),
+        # Lehrer/Lehrerin, Kollege/Kollegin, Student/Studentin
+        gender=[("", "in"), ("e", "in")],
+        pairs="deu",
+        # Middle and Old High German, Proto-West Germanic: on to Proto-Germanic or Latin.
+        older={"gmh", "goh", "gmw-pro"},
+        compounds=True,
+        all_plurals=True,
     ),
 }
 
