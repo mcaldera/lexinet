@@ -4,6 +4,7 @@ import { neighbourWeights } from '../core/game';
 import { startCandidates } from '../core/start';
 import { coverage } from '../core/supply';
 import type { Edge, Region, WordNode } from '../db/repo';
+import { currentGraphName, GRAPH_NAMES, graphLabel, switchGraph } from '../graphs';
 import Icon from './Icon';
 
 type Props = {
@@ -21,7 +22,8 @@ const REACH = 0.1;
  * A new game: pick a topic, then your core word, the first word, which always
  * sends out full signal. Each candidate says how many words its signal would
  * reach once they are learned (core/supply.ts coverage), by its English
- * meaning: the Italian is earned.
+ * meaning: the word itself is earned. With more than one word list, the
+ * language to learn can be switched here too.
  */
 export default function StartPicker({ regions, nodes, edges, onPick }: Props) {
   const sorted = [...regions].sort((a, b) => a.name.localeCompare(b.name));
@@ -93,6 +95,7 @@ export default function StartPicker({ regions, nodes, edges, onPick }: Props) {
         </div>
       ) : (
         <div className="w-full max-w-2xl">
+          {GRAPH_NAMES.length > 1 && <LanguageSwitch />}
           <h2 className="mb-2 text-center font-title text-3xl font-bold tracking-[0.08em] text-slate-100">
             Where to begin?
           </h2>
@@ -122,6 +125,31 @@ export default function StartPicker({ regions, nodes, edges, onPick }: Props) {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+/** Which language to learn: each has its own map, progress and runs. */
+function LanguageSwitch() {
+  const current = currentGraphName();
+  return (
+    <div className="mb-6 flex items-center justify-center gap-2 text-sm">
+      <span className="eyebrow">Learn</span>
+      <div className="flex rounded-full border border-white/10 bg-white/[0.03] p-0.5">
+        {GRAPH_NAMES.map((n) => (
+          <button
+            key={n}
+            onClick={() => n !== current && switchGraph(n)}
+            className={`rounded-full px-3 py-1 transition ${
+              n === current
+                ? 'bg-white/[0.12] text-slate-100'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            {graphLabel(n)}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

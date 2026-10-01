@@ -1,3 +1,4 @@
+import { lang } from '../core/language';
 import {
   CLAIM_KNOWN_GAP_MS,
   CLAIM_RECALL_GAP_MS,
@@ -55,7 +56,7 @@ export default function Guide({ onClose }: { onClose: () => void }) {
         <Section title="Learning words">
           <p>
             Your words form a mind map: each one is linked to the words it belongs with. Click a{' '}
-            <b>?</b> (a new word) and say what it means. Then produce the Italian (
+            <b>?</b> (a new word) and say what it means. Then produce the {lang().name} (
             {CLAIM_STEP_GAP_MS / 60_000} min later) and recall it once more (
             {CLAIM_RECALL_GAP_MS / 60_000} min after that): it is learned. Typed right at first
             sight, a word skips the long waits: produce it {CLAIM_KNOWN_GAP_MS / 1000} s later and
@@ -67,11 +68,11 @@ export default function Guide({ onClose }: { onClose: () => void }) {
             word aloud (the menu switches automatic pronunciation off and picks the voice).
           </p>
           <p className="text-xs text-slate-400">
-            Voices come from your system. No Italian voice in the menu? Windows: Settings → Time &
-            language → Speech → Add voices → Italian. macOS: System Settings → Accessibility →
-            Spoken Content → System voice → Manage Voices → Italian. Linux: install
-            speech-dispatcher with espeak-ng. Chrome also offers an online “Google italiano” voice
-            on Windows and macOS. Restart the browser afterwards.
+            Voices come from your system. No {lang().name} voice in the menu? Windows: Settings →
+            Time & language → Speech → Add voices → {lang().name}. macOS: System Settings →
+            Accessibility → Spoken Content → System voice → Manage Voices → {lang().name}. Linux:
+            install speech-dispatcher with espeak-ng. Chrome also offers online Google voices on
+            Windows and macOS. Restart the browser afterwards.
           </p>
           <p>
             Every word next to one of yours is a <b>?</b> you can learn. Faint ones are out of reach
@@ -146,7 +147,7 @@ export default function Guide({ onClose }: { onClose: () => void }) {
           </p>
           <p>
             <b>Pop quiz</b>: now and then a few of your words are quizzed, the ones many words
-            depend on more often than others. Answer each one into Italian within{' '}
+            depend on more often than others. Answer each one into {lang().name} within{' '}
             {RAID.durationMs / 60_000} min, or it slips: the panel asks them one after another.
             Passing pays {RAID.coins} sparks, plus {RAID.bonus} for every {RAID.bonusEveryMs / 1000}{' '}
             s left on the clock.

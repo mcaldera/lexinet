@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { lang } from '../core/language';
 import { sfx } from '../audio';
 import type { GameEvent } from '../useSprawl';
 import Icon, { Sparks } from './Icon';
@@ -52,7 +53,9 @@ export function QuizMoment({
               )}
             </>
           ) : (
-            <>Answer {words(event.count)} into Italian before the clock runs out</>
+            <>
+              Answer {words(event.count)} into {lang().name} before the clock runs out
+            </>
           )}
         </div>
       </div>

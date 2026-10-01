@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { PRONOUNS, TENSES, type TenseCard } from '../core/verbs';
+import { persons, tenses, type TenseCard } from '../core/verbs';
 import type { WordNode } from '../db/repo';
 import Icon from './Icon';
 import { ExampleLine, SpeakButton } from './ReviewView';
@@ -19,7 +19,7 @@ type Props = {
  */
 export default function WordInfo(props: Props) {
   const { word, verbLevel, tenseCards, onClose, children } = props;
-  const learned = TENSES.filter((t) => tenseCards.some((c) => c.tense === t));
+  const learned = tenses().filter((t) => tenseCards.some((c) => c.tense === t));
   return (
     <div className="panel p-4 text-sm">
       <HeadWord
@@ -42,7 +42,7 @@ export default function WordInfo(props: Props) {
               <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-xs">
                 {word.conjugations![t]?.map((f, i) => (
                   <span key={i}>
-                    <span className="text-slate-500">{PRONOUNS[i]}</span> {f}
+                    <span className="text-slate-500">{persons()[i]}</span> {f}
                   </span>
                 ))}
               </div>

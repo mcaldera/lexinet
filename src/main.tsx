@@ -7,7 +7,12 @@ import '@fontsource-variable/newsreader/opsz-italic.css';
 import '@fontsource/cormorant-garamond/500-italic.css';
 import '@fontsource/cormorant-garamond/600-italic.css';
 import App from './App';
+import { setLanguage } from './core/language';
+import { currentGraphName, languageOf } from './graphs';
 import './index.css';
+
+// Before anything renders: answers, tenses and the voice follow the word list's language.
+setLanguage(languageOf(currentGraphName()));
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

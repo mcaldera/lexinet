@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { lang } from '../core/language';
 import { checkAnswer, type AnswerCheck } from '../core/answer';
 import { meaningChoices } from '../core/choices';
 import { cloze } from '../core/cloze';
@@ -220,7 +221,7 @@ export default function ReviewView(props: Props) {
           )}
           <div data-gloss className="mb-3 text-center text-xs text-slate-500">
             {gap ? `${word.en} · ` : ''}
-            {toItalian ? 'in Italian' : 'in English'}
+            {toItalian ? `in ${lang().name}` : 'in English'}
             {word.pos && ` · ${word.pos}`}
           </div>
           {choices && !choosing && !check && (

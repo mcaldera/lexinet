@@ -10,7 +10,7 @@ import { appNow } from '../core/clock';
 import { hintedName, FULL_NAME } from '../core/fade';
 import { edgeOpacity, healthBand } from '../core/health';
 import { MAX_STRENGTH } from '../core/strength';
-import { TENSES } from '../core/verbs';
+import { tenses } from '../core/verbs';
 import { CLAIM_STEPS, claimSteps, type Claim } from '../core/claim';
 import { ATTENTION_ORDER, type Attention, type AttentionKind } from '../core/attention';
 import type { AppData, Edge, RootHub, WordNode } from '../db/repo';
@@ -1082,7 +1082,7 @@ export default function GraphView({
     ctx.lineWidth = 0.6;
     ctx.stroke();
     if (vl > 0) {
-      ctx.strokeStyle = vl >= TENSES.length ? '#fde047' : 'rgba(251, 191, 36, 0.95)';
+      ctx.strokeStyle = vl >= tenses().length ? '#fde047' : 'rgba(251, 191, 36, 0.95)';
       ctx.lineWidth = 1 + vl * 0.25;
       ctx.stroke();
     }
@@ -1113,7 +1113,7 @@ export default function GraphView({
       // The verb's rank: stars and the tense it has reached.
       if (vl > 0 && scale > 0.5) {
         lines.push({
-          text: `${'★'.repeat(vl)} ${TENSES[vl - 1]}`,
+          text: `${'★'.repeat(vl)} ${tenses()[vl - 1]}`,
           px: 9,
           rgb: '251, 191, 36',
           alpha: 0.95,
@@ -1336,7 +1336,7 @@ export default function GraphView({
           const verb =
             vl === undefined
               ? ''
-              : ` · verb level ${vl}/${TENSES.length}${vl < TENSES.length ? ` (next: ${TENSES[vl]})` : ''}`;
+              : ` · verb level ${vl}/${tenses().length}${vl < tenses().length ? ` (next: ${tenses()[vl]})` : ''}`;
           const ety = n.word.root
             ? ` · from ${n.word.root_lang ?? ''} ${n.word.root}${n.word.cognate ? ` (cf. ${n.word.cognate})` : ''}`
             : '';

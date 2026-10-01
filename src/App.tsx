@@ -23,7 +23,7 @@ import { levelAllows, openTierOf, type Levels } from './core/tiers';
 import { ghostWords } from './core/supply';
 import { rootCharge, rootNeed } from './core/roots';
 import { neighbourMap } from './core/unlock';
-import { nextDrill, TENSES, type Tense } from './core/verbs';
+import { nextDrill, tenses, type Tense } from './core/verbs';
 import { computeProgress, verbLevels as computeVerbLevels } from './progress';
 import { cardId, dueAt, isDue, Rating, retrievability, type Grade } from './core/scheduler';
 import type { NodeState } from './core/unlock';
@@ -1427,7 +1427,7 @@ export default function App() {
                       setCooldowns((m) => new Map(m).set(nodeId, appMs() + COOLDOWN_MS));
                       setWaitOn({ nodeId, reason: 'locked' });
                     } else if (kind === 'learn') {
-                      setVerbUp({ nodeId, level: TENSES.indexOf(tense) + 1 });
+                      setVerbUp({ nodeId, level: tenses().indexOf(tense) + 1 });
                     }
                   }}
                 />
@@ -1532,11 +1532,11 @@ function VerbUpBanner({ word, level }: { word: string; level: number }) {
       </div>
       <div className="text-2xl font-bold text-amber-100">{word}</div>
       <div className="mt-1 text-sm text-amber-100">
-        {level > 1 ? TENSES[level - 2] : 'infinitive'} →{' '}
-        <b className="text-amber-300">{TENSES[level - 1]}</b>
+        {level > 1 ? tenses()[level - 2] : 'infinitive'} →{' '}
+        <b className="text-amber-300">{tenses()[level - 1]}</b>
       </div>
       <div className="mt-2 flex justify-center gap-1">
-        {TENSES.map((t, i) => (
+        {tenses().map((t, i) => (
           <span
             key={t}
             title={t}

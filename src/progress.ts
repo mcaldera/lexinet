@@ -1,7 +1,7 @@
 import { OVERALL_SHARE, TOPIC_SHARE, VERB_POINTS_PER_TIER } from './config';
 import { bandsOf, computeLevels, type Levels } from './core/tiers';
 import type { NodeState } from './core/unlock';
-import { TENSES, verbLevel, type TenseCard } from './core/verbs';
+import { tenses, verbLevel, type TenseCard } from './core/verbs';
 import type { WordNode } from './db/repo';
 
 /** Verb level per conjugable verb. */
@@ -33,7 +33,7 @@ export function computeProgress(
       overallShare: OVERALL_SHARE,
       topicShare: TOPIC_SHARE,
       perTier: VERB_POINTS_PER_TIER,
-      maxLevel: TENSES.length,
+      maxLevel: tenses().length,
     },
     bandsOf(names),
   );

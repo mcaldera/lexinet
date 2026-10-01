@@ -4,14 +4,15 @@ import { listRuns } from '../runs';
 import {
   canSpeak,
   chosenVoice,
-  italianVoices,
+  languageVoices,
   mayBeSilent,
   onVoices,
   setVoice,
   speak,
   voiceCount,
 } from '../speech';
-import { GRAPH_NAMES, graphLabel } from '../graphs';
+import { lang } from '../core/language';
+import { GRAPH_NAMES, graphLabel, switchGraph } from '../graphs';
 import Icon from './Icon';
 
 type Props = {
@@ -93,17 +94,12 @@ export default function Menu(props: Props) {
           {GRAPH_NAMES.length > 1 && (
             <select
               value={props.graphName}
-              onChange={(e) => {
-                const url = new URL(window.location.href);
-                if (e.target.value === 'default') url.searchParams.delete('graph');
-                else url.searchParams.set('graph', e.target.value);
-                window.location.href = url.toString();
-              }}
+              onChange={(e) => switchGraph(e.target.value)}
               className="mb-1 w-full rounded bg-slate-800 px-2 py-1.5"
             >
               {GRAPH_NAMES.map((n) => (
                 <option key={n} value={n}>
-                  {graphLabel(n)}
+                  Learn {graphLabel(n)}
                 </option>
               ))}
             </select>
@@ -181,9 +177,9 @@ export default function Menu(props: Props) {
   );
 }
 
-/** Which Italian voice speaks, with a test button; says so when there is none. */
+/** Which voice speaks, with a test button; says so when the language has none. */
 function VoicePicker() {
-  const voices = italianVoices();
+  const voices = languageVoices();
   const current = chosenVoice();
   return (
     <div className="px-2 pb-1.5 text-xs">
@@ -193,7 +189,7 @@ function VoicePicker() {
             value={current?.name}
             onChange={(e) => {
               setVoice(e.target.value);
-              speak('Ciao! Come stai?');
+              speak(lang().greeting);
             }}
             className="min-w-0 flex-1 rounded bg-slate-800 px-1.5 py-1"
             title="Voice"
@@ -207,7 +203,7 @@ function VoicePicker() {
             ))}
           </select>
           <button
-            onClick={() => speak('Ciao! Come stai?')}
+            onClick={() => speak(lang().greeting)}
             className="rounded bg-slate-800 px-2 py-1 hover:bg-slate-700"
             title="Test the voice"
           >
@@ -217,7 +213,7 @@ function VoicePicker() {
       ) : (
         <p className="text-amber-300">
           {voiceCount()
-            ? 'No Italian voice installed on this system (see “How it works”).'
+            ? `No ${lang().name} voice installed on this system (see “How it works”).`
             : 'The browser offers no voices yet.'}
         </p>
       )}

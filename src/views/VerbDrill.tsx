@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import type { Verdict } from '../core/answer';
 import type { Grade } from '../core/scheduler';
-import { checkConjugation, PRONOUNS, TENSES, type Tense } from '../core/verbs';
+import { checkConjugation, persons, tenses, type Tense } from '../core/verbs';
 import type { WordNode } from '../db/repo';
 import Icon from './Icon';
 import { HeadWord } from './WordInfo';
@@ -21,13 +21,13 @@ const ROW = {
   wrong: 'border-red-500/60 text-red-200',
 } as const;
 
-/** Conjugate one tense in all six persons. */
+/** Conjugate one tense in every person. */
 export default function VerbDrill({ word, tense, kind, onDone, onCancel }: Props) {
   const forms = word.conjugations?.[tense] ?? [];
   const [inputs, setInputs] = useState<string[]>(() => forms.map(() => ''));
   const [result, setResult] = useState<{ rows: Verdict[]; grade: Grade } | null>(null);
   const refs = useRef<(HTMLInputElement | null)[]>([]);
-  const level = TENSES.indexOf(tense) + 1;
+  const level = tenses().indexOf(tense) + 1;
 
   const check = () => setResult(checkConjugation(inputs, forms));
   const passed = result && !result.rows.includes('wrong');
@@ -49,7 +49,7 @@ export default function VerbDrill({ word, tense, kind, onDone, onCancel }: Props
       <div className="space-y-1.5">
         {forms.map((form, i) => (
           <div key={i} className="flex items-center gap-2">
-            <span className="w-14 shrink-0 text-right text-slate-400">{PRONOUNS[i]}</span>
+            <span className="w-14 shrink-0 text-right text-slate-400">{persons()[i]}</span>
             <input
               ref={(el) => {
                 refs.current[i] = el;

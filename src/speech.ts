@@ -1,16 +1,19 @@
 import { audioSettings } from './audio';
+import { lang } from './core/language';
 
 /**
- * Pronunciation with the browser's speech synthesis: an Italian voice from the
- * operating system (or Chrome's online "Google italiano"). Where speech isn't
- * available, the speaker buttons hide; where no Italian voice is installed, the
- * menu says so and failures are reported through `onSpeechProblem`.
+ * Pronunciation with the browser's speech synthesis: a voice of the language
+ * being learned from the operating system (or Chrome's online ones, "Google
+ * italiano"). Where speech isn't available, the speaker buttons hide; where no
+ * voice of the language is installed, the menu says so and failures are
+ * reported through `onSpeechProblem`.
  */
 const synth = typeof window !== 'undefined' ? window.speechSynthesis : undefined;
 
 export const canSpeak = () => !!synth && typeof SpeechSynthesisUtterance !== 'undefined';
 
-const VOICE_KEY = 'sprawl.voice';
+// Italian keeps the key it had before there were other languages.
+const voiceKey = () => (lang().code === 'it' ? 'sprawl.voice' : `sprawl.voice.${lang().code}`);
 const listeners = new Set<() => void>();
 const problems = new Set<(message: string) => void>();
 
@@ -31,36 +34,41 @@ const rank = (v: SpeechSynthesisVoice) =>
         ? 1
         : 2;
 
-/** Italian voices, the most dependable first. */
-export function italianVoices(): SpeechSynthesisVoice[] {
+/**
+ * Voices of the language being learned, the most dependable first; its own
+ * country's before others (es-ES before es-MX).
+ */
+export function languageVoices(): SpeechSynthesisVoice[] {
   if (!synth) return [];
+  const tag = (v: SpeechSynthesisVoice) => v.lang.toLowerCase().replace('_', '-');
+  const locale = lang().locale.toLowerCase();
   return synth
     .getVoices()
-    .filter((v) => v.lang.toLowerCase().replace('_', '-').startsWith('it'))
-    .sort((a, b) => rank(a) - rank(b));
+    .filter((v) => tag(v).startsWith(lang().code))
+    .sort((a, b) => Number(tag(b) === locale) - Number(tag(a) === locale) || rank(a) - rank(b));
 }
 
-/** Every voice the browser offers (to tell "no Italian voice" from "no voices at all"). */
+/** Every voice the browser offers (to tell "no voice of the language" from "no voices at all"). */
 export const voiceCount = () => synth?.getVoices().length ?? 0;
 
 function storedVoice(): string | null {
   try {
-    return localStorage.getItem(VOICE_KEY);
+    return localStorage.getItem(voiceKey());
   } catch {
     return null;
   }
 }
 
-/** The voice to use: the one picked in the menu, else the best Italian one. */
+/** The voice to use: the one picked in the menu, else the best of the language. */
 export function chosenVoice(): SpeechSynthesisVoice | undefined {
-  const voices = italianVoices();
+  const voices = languageVoices();
   const name = storedVoice();
   return voices.find((v) => v.name === name) ?? voices[0];
 }
 
 export function setVoice(name: string) {
   try {
-    localStorage.setItem(VOICE_KEY, name);
+    localStorage.setItem(voiceKey(), name);
   } catch {
     // private mode: not remembered
   }
@@ -84,18 +92,18 @@ const problem = (message: string) => problems.forEach((f) => f(message));
 // Chrome drops an utterance that is garbage-collected mid-speech: keep it alive.
 let current: SpeechSynthesisUtterance | null = null;
 
-/** Say Italian text now (interrupting anything still being said). */
+/** Say text in the language being learned now (interrupting anything still being said). */
 export function speak(text: string, rate = 0.9) {
   if (!canSpeak() || !text.trim()) return;
   const s = synth!;
   const u = new SpeechSynthesisUtterance(text);
-  u.lang = 'it-IT';
+  u.lang = lang().locale;
   u.rate = rate;
   const v = chosenVoice();
   try {
     if (v) u.voice = v;
   } catch {
-    // a stale voice object: the system default for it-IT speaks instead
+    // a stale voice object: the system default for the locale speaks instead
   }
   let started = false;
   u.onstart = () => {
@@ -109,7 +117,7 @@ export function speak(text: string, rate = 0.9) {
     if (e.error !== 'interrupted' && e.error !== 'canceled') problem(`Speech failed (${e.error})`);
   };
   current = u;
-  if (!v && voiceCount() > 0) problem('No Italian voice installed: see Menu → Voice');
+  if (!v && voiceCount() > 0) problem(`No ${lang().name} voice installed: see Menu → Voice`);
   // Chrome can swallow an utterance queued right after cancel(), and sometimes
   // sits paused after a tab switch: cancel only when busy, then speak a tick later.
   if (s.speaking || s.pending) s.cancel();

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { TENSES, type Drill } from '../core/verbs';
+import { tenses, type Drill } from '../core/verbs';
 import type { ClaimStep } from '../core/claim';
 import type { NodeState } from '../core/unlock';
 import type { WordNode } from '../db/repo';
@@ -390,12 +390,14 @@ export default function NodeDetails(props: Props) {
           <div className="flex items-center justify-between gap-2">
             <span
               className="flex items-center gap-2"
-              title={`Verb level ${verb.level}/${TENSES.length}`}
+              title={`Verb level ${verb.level}/${tenses().length}`}
             >
               <span className="eyebrow">Verb</span>
               <span className="tracking-[0.15em] text-amber-300">
                 {'★'.repeat(verb.level)}
-                <span className="text-white/[0.12]">{'★'.repeat(TENSES.length - verb.level)}</span>
+                <span className="text-white/[0.12]">
+                  {'★'.repeat(tenses().length - verb.level)}
+                </span>
               </span>
               {verb.drill.kind === 'wait' && (
                 <span className="text-[11px] text-slate-500">

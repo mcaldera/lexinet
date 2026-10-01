@@ -1,9 +1,9 @@
+import { lang } from './language';
 import { Rating, type Grade } from './scheduler';
 
 export type Verdict = 'correct' | 'almost' | 'wrong';
 export type AnswerCheck = { verdict: Verdict; grade: Grade; notes: string[] };
 
-const IT_ARTICLE = /^(?:(il|lo|la|i|gli|le|un|uno|una)\s+|(l'|un'))/;
 const EN_PREFIX = /^(to|the|a|an)\s+/;
 
 export function normalize(s: string): string {
@@ -43,7 +43,7 @@ export function allowedTypos(length: number): number {
 }
 
 function splitArticle(s: string): { article: string; core: string } {
-  const m = s.match(IT_ARTICLE);
+  const m = s.match(lang().article);
   if (!m) return { article: '', core: s };
   return { article: (m[1] ?? m[2]).trim(), core: s.slice(m[0].length) };
 }
@@ -59,7 +59,7 @@ const result = (verdict: Verdict, notes: string[] = []): AnswerCheck => ({
   notes,
 });
 
-function checkItalian(input: string, expected: string): AnswerCheck {
+function checkWord(input: string, expected: string): AnswerCheck {
   const a = splitArticle(input);
   const e = splitArticle(expected);
   const notes: string[] = [];
@@ -93,13 +93,16 @@ function checkEnglish(input: string, expected: string): AnswerCheck {
   return result('wrong');
 }
 
-/** Compare a typed answer with the expected one and suggest an FSRS grade. */
-export function checkAnswer(input: string, expected: string, lang: 'it' | 'en'): AnswerCheck {
+/**
+ * Compare a typed answer with the expected one and suggest an FSRS grade.
+ * `side`: 'it' for the language being learned (whichever it is), 'en' for English.
+ */
+export function checkAnswer(input: string, expected: string, side: 'it' | 'en'): AnswerCheck {
   const a = normalize(input);
   const e = normalize(expected);
   if (!a) return result('wrong');
   if (a === e) return result('correct');
-  return lang === 'it' ? checkItalian(a, e) : checkEnglish(a, e);
+  return side === 'it' ? checkWord(a, e) : checkEnglish(a, e);
 }
 
 const STOPWORDS = new Set([
