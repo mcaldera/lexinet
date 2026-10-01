@@ -12,8 +12,6 @@ const synth = typeof window !== 'undefined' ? window.speechSynthesis : undefined
 
 export const canSpeak = () => !!synth && typeof SpeechSynthesisUtterance !== 'undefined';
 
-// Italian keeps the key it had before there were other languages.
-const voiceKey = () => (lang().code === 'it' ? 'sprawl.voice' : `sprawl.voice.${lang().code}`);
 const listeners = new Set<() => void>();
 const problems = new Set<(message: string) => void>();
 
@@ -51,29 +49,8 @@ export function languageVoices(): SpeechSynthesisVoice[] {
 /** Every voice the browser offers (to tell "no voice of the language" from "no voices at all"). */
 export const voiceCount = () => synth?.getVoices().length ?? 0;
 
-function storedVoice(): string | null {
-  try {
-    return localStorage.getItem(voiceKey());
-  } catch {
-    return null;
-  }
-}
-
-/** The voice to use: the one picked in the menu, else the best of the language. */
-export function chosenVoice(): SpeechSynthesisVoice | undefined {
-  const voices = languageVoices();
-  const name = storedVoice();
-  return voices.find((v) => v.name === name) ?? voices[0];
-}
-
-export function setVoice(name: string) {
-  try {
-    localStorage.setItem(voiceKey(), name);
-  } catch {
-    // private mode: not remembered
-  }
-  listeners.forEach((f) => f());
-}
+/** The voice to use: the best of the language (Google's online one where there is one). */
+export const chosenVoice = (): SpeechSynthesisVoice | undefined => languageVoices()[0];
 
 /** Voices arrive asynchronously in Chrome: re-render menus when they do. */
 export function onVoices(f: () => void) {
@@ -117,7 +94,7 @@ export function speak(text: string, rate = 0.9) {
     if (e.error !== 'interrupted' && e.error !== 'canceled') problem(`Speech failed (${e.error})`);
   };
   current = u;
-  if (!v && voiceCount() > 0) problem(`No ${lang().name} voice installed: see Menu → Voice`);
+  if (!v && voiceCount() > 0) problem(`No ${lang().name} voice installed (see “How it works”)`);
   // Chrome can swallow an utterance queued right after cancel(), and sometimes
   // sits paused after a tab switch: cancel only when busy, then speak a tick later.
   if (s.speaking || s.pending) s.cancel();
@@ -135,7 +112,7 @@ export function speak(text: string, rate = 0.9) {
     problem(
       stuck
         ? "The browser's speech is stuck: quit Chrome completely and reopen"
-        : `${v?.name ?? 'The voice'} didn't speak: pick another in the menu`,
+        : `${v?.name ?? 'The voice'} didn't speak`,
     );
   }, 2500);
 }

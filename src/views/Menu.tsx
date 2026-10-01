@@ -1,16 +1,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { audioSettings, onAudioSettings, setMusic, setSfx, setSpeech } from '../audio';
 import { listRuns } from '../runs';
-import {
-  canSpeak,
-  chosenVoice,
-  languageVoices,
-  mayBeSilent,
-  onVoices,
-  setVoice,
-  speak,
-  voiceCount,
-} from '../speech';
+import { canSpeak, chosenVoice, languageVoices, onVoices, speak, voiceCount } from '../speech';
 import { lang } from '../core/language';
 import { GRAPH_NAMES, graphLabel, switchGraph } from '../graphs';
 import Icon from './Icon';
@@ -48,8 +39,9 @@ export default function Menu(props: Props) {
     const close = (e: MouseEvent) => {
       if (!box.current?.contains(e.target as Node)) setOpen(false);
     };
-    window.addEventListener('mousedown', close);
-    return () => window.removeEventListener('mousedown', close);
+    // Capture phase: the map's canvas handles pointer events itself and may stop them bubbling.
+    window.addEventListener('pointerdown', close, true);
+    return () => window.removeEventListener('pointerdown', close, true);
   }, [open]);
 
   const toggle = (label: string, on: boolean, set: (v: boolean) => void) => (
@@ -185,23 +177,10 @@ function VoicePicker() {
     <div className="px-2 pb-1.5 text-xs">
       {voices.length ? (
         <div className="flex items-center gap-1.5">
-          <select
-            value={current?.name}
-            onChange={(e) => {
-              setVoice(e.target.value);
-              speak(lang().greeting);
-            }}
-            className="min-w-0 flex-1 rounded bg-slate-800 px-1.5 py-1"
-            title="Voice"
-          >
-            {voices.map((v) => (
-              <option key={v.name} value={v.name}>
-                {v.name}
-                {v.localService ? '' : ' (online)'}
-                {mayBeSilent(v) ? ' (silent in Chrome)' : ''}
-              </option>
-            ))}
-          </select>
+          <span className="min-w-0 flex-1 truncate rounded bg-slate-800 px-1.5 py-1" title="Voice">
+            {current?.name}
+            {current && !current.localService ? ' (online)' : ''}
+          </span>
           <button
             onClick={() => speak(lang().greeting)}
             className="rounded bg-slate-800 px-2 py-1 hover:bg-slate-700"
