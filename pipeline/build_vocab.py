@@ -1,7 +1,7 @@
-"""Build the app's graph from the vocabulary folder (data/vocab/*.yaml).
+"""Build the app's graph from a vocabulary folder (data/vocab/<lang>/*.yaml).
 
 Usage:
-    python pipeline/build_vocab.py data/vocab -o data/graph_oic.json [--enrich]
+    python pipeline/build_vocab.py data/vocab/it -o data/graph_oic.json [--enrich]
     python pipeline/build_vocab.py data/vocab/es --lang es   (-> data/graph_es.json)
 
 Every word belongs to a category (its file), and the links are made so the

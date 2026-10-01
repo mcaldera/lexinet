@@ -1,4 +1,4 @@
-"""The vocabulary: one YAML file per category in data/vocab/, one line per word.
+"""The vocabulary: one YAML file per category in data/vocab/<lang>/ (Italian: it/), one line per word.
 
 Each file looks like:
 

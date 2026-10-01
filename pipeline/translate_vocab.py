@@ -1,7 +1,7 @@
 """A vocabulary in another language, translated from the Italian one, and checked.
 
 Usage:
-    python pipeline/translate_vocab.py --lang es TRANSLATIONS data/vocab data/vocab/es
+    python pipeline/translate_vocab.py --lang es TRANSLATIONS data/vocab/it data/vocab/es
     python pipeline/translate_vocab.py --lang es --check data/vocab/es
 
 TRANSLATIONS holds one <category>.txt per category file, one line per Italian
