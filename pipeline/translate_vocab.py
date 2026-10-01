@@ -107,7 +107,7 @@ def gloss_stems(en: str) -> set[str]:
 
 
 # Wiktionary entries that only point at another word: follow them.
-POINTER = re.compile(r"^(?:infinitive of (\S+) combined with \w+|(?:feminine |masculine )?plural of (\S+?))(?:\s|$|[,;.(])")
+POINTER = re.compile(r"^(?:infinitive of (\S+) combined with \w+|(?:[\w/]+ )?plural of (\S+?))(?:\s|$|[,;.(])")
 
 
 def lookup(word: str, lex: dict[str, list[dict]], depth: int = 0) -> list[dict]:
@@ -142,8 +142,14 @@ def problems(w: dict, lex: dict[str, list[dict]], lang: L.Lang) -> list[str]:
     out = []
     if w["pos"] == "noun" and article in ARTICLES.get(lang.code, {}):
         gender = ARTICLES[lang.code][article]
-        genders = {e["gender"] for e in same}
+        # "m,(e)s,e" -> "m"; "((<m,s,en>" -> "m"; "+" marks German adjectival nouns
+        # (der/die Verwandte), which take any article.
+        genders = {e["gender"].lstrip("(<") for e in same}
+        if any(g.startswith("+") for g in genders):
+            genders = set()
         fits = any(g[:1] in gender or g.startswith("mf") or "m" in g and "f" in g for g in genders)
+        # A plural (die Haare, las gafas) takes the plural article whatever its gender.
+        fits = fits or ("p" in gender and any(e.get("plural_only") for e in same))
         # Feminine nouns starting with a stressed a take "el": el agua, el alma.
         if not fits and lang.code == "es" and article in ("el", "un") and any(g.startswith("f") for g in genders):
             fits = plain(base)[:1] == "a" or plain(base)[:2] == "ha"

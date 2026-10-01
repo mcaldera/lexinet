@@ -160,3 +160,13 @@ def test_german_articles_genders_and_plurals(german):
     assert check("das Hund", "dog")[0].startswith("article 'das'")
     assert tv.plural_of("der Hund", lex, german) == "die Hunde"
     assert V.lemma("der Hund") == "hund"
+
+
+def test_a_prefixed_word_takes_its_base_root_not_the_prefix(german):
+    import make_wordlist as mw
+
+    anbieten = {"etymology_templates": [{"name": "af", "args": {"1": "de", "2": "an-", "3": "bieten"}}]}
+    assert mw.affix_base(anbieten, "de") == "bieten"
+    prefix = {"etymology_templates": [{"name": "prefix", "args": {"1": "de", "2": "auf", "3": "hören"}}]}
+    assert mw.affix_base(prefix, "de") == "hören"
+    assert "*ana" in german.particle_roots

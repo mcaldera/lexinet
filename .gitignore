@@ -12,6 +12,7 @@ __pycache__
 data/words_oic.csv
 data/graph_oic.json
 data/graph_es.json
+data/graph_de.json
 data/fixes_oic.csv
 data/review_oic.csv
 data/vocab/

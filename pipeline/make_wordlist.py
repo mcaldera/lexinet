@@ -161,6 +161,9 @@ def affix_base(entry: dict, lang: str) -> str:
         a = t.get("args", {})
         if t.get("name") in AFFIX_TEMPLATES and a.get("1") == lang:
             base = a.get("2") or ""
+            # A prefix and its base ({{af|de|an-|bieten}}): the base is the word.
+            if base.endswith("-") or t.get("name") == "prefix":
+                base = a.get("3") or ""
             if base and not base.startswith("-") and not base.endswith("-"):
                 return base
     return ""

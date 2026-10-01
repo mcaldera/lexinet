@@ -23,6 +23,8 @@ class Lang:
     older: set[str] = field(default_factory=set)  # Wiktionary codes of older stages to look past
     compounds: bool = False  # a word inside another is family (Handschuh / Hand), meaning permitting
     all_plurals: bool = False  # every noun shows its plural, not only those the Italian list gave one
+    # Roots of prefixes and particles (an-, auf-, zu-): words sharing one aren't family.
+    particle_roots: set[str] = field(default_factory=set)
 
     @property
     def kaikki(self) -> str:
@@ -67,6 +69,7 @@ LANGS = {
         older={"gmh", "goh", "gmw-pro"},
         compounds=True,
         all_plurals=True,
+        particle_roots={"*ta", "*ana", "*in", "*ubiri", "*upp", "*swa", "*uz", "*ab", "*bi", "*ga", "*fur", "*fura", "*mid", "*þurh", "*ūt", "*umbi", "*under", "*fram", "*widrą", "*wiþra", "*tō", "*far"},
     ),
 }
 

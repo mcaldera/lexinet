@@ -382,10 +382,27 @@ def build(words: list[dict], embed: bg.Embedder, ranks: dict[str, int], verb_for
         nodes.append(node)
     if english:
         bg.add_cognates(nodes, english, embed, only=lambda nd: not words[ids.index(nd["id"])].get("cousin"))
+    if L.current.code == "de":
+        # Wiktionary's cognates are etymology, not hints: klein / clean or tragen /
+        # draw say nothing of the meaning. Keep those that evoke it, as for generated
+        # Italian cousins.
+        # ... and only everyday English words help (not forstand, iwis, outgive).
+        common = bg.load_frequency_ranks(bg.FREQUENCY_DIR / "en_50k.txt")
+        for nd in nodes:
+            if nd.get("cognate") and common.get(nd["cognate"].lower(), 10**9) > 20_000:
+                nd["cognate"] = None
+        heads = {bg.gloss_head(nd["en"]) for nd in nodes if nd.get("cognate")}
+        related = bg.relatedness(embed, heads | {nd["cognate"] for nd in nodes if nd.get("cognate")})
+        for nd in nodes:
+            cousin = (nd.get("cognate") or "").lower()
+            # A cousin that is the answer (trinken / drink) would give it away.
+            if cousin and (cousin in meanings(nd["en"]) or related(cousin, bg.gloss_head(nd["en"])) < bg.COGNATE_MIN_RELATED):
+                nd["cognate"] = None
     roots = bg.root_hubs(nodes, english, embed)
     if conjugate:
         for node in nodes:
-            if node["pos"] == "verb" and " " not in node["it"]:
+            # One word, or a German reflexive (sich freuen).
+            if node["pos"] == "verb" and " " not in node["it"].removeprefix("sich "):
                 table = conjugate(node["it"])
                 if table:
                     node["conjugations"] = table
@@ -465,7 +482,11 @@ def enrich(folder: Path, words: list[dict]) -> int:
         base = V.lemma(w["it"])
         if " " in base or base not in lemmas:
             continue
-        entry = max(lemmas[base], key=lambda e: len(e["senses"]))
+        # The entry of the word's own part of speech (sein "to be" is not sein "his").
+        same_pos = [e for e in lemmas[base] if e["pos"] == w.get("pos")]
+        if not same_pos:
+            continue
+        entry = max(same_pos, key=lambda e: len(e["senses"]))
         if L.current.code == "de" and not w.get("cousin"):
             w.update(cousin=english_cognate(base, entry) or None)
         if w.get("root"):
@@ -474,6 +495,8 @@ def enrich(folder: Path, words: list[dict]) -> int:
         if not ety:
             continue
         root, lang, gloss = ety
+        if root in L.current.particle_roots:
+            continue
         gloss = mw.short_gloss(gloss, "") if gloss else ""
         if "Latin" in lang:
             top = mw.latin_ancestor(root, parent, meanings)
