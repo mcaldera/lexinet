@@ -16,11 +16,11 @@ import urllib.request
 import zipfile
 from pathlib import Path
 
-CACHE = Path.home() / ".cache" / "sprawl"
-PAIRS_URL = "https://www.manythings.org/anki/ita-eng.zip"
-PAIRS_PATH = CACHE / "ita-eng.zip"
+import languages as L
 
-ARTICLES = ("il ", "lo ", "la ", "i ", "gli ", "le ", "un ", "uno ", "una ", "l'", "un'")
+CACHE = Path.home() / ".cache" / "sprawl"
+# Per language: ita-eng.zip, spa-eng.zip, ... (the current language's).
+PAIRS_URL = "https://www.manythings.org/anki/{stem}-eng.zip"
 MIN_WORDS, MAX_WORDS = 3, 10
 TOKEN = re.compile(r"[^\W\d_]+", re.UNICODE)
 
@@ -28,11 +28,8 @@ TOKEN = re.compile(r"[^\W\d_]+", re.UNICODE)
 def lemma(it: str) -> str:
     """The word without its article: "il cane" -> "cane", "l'acqua" -> "acqua"."""
     w = it.strip()
-    low = w.lower()
-    for a in ARTICLES:
-        if low.startswith(a) and len(w) > len(a):
-            return w[len(a) :].strip()
-    return w
+    m = L.current.article_re.match(w)
+    return w[m.end() :].strip() if m and m.end() < len(w) else w
 
 
 def find(word: str, sentence: str) -> tuple[int, int] | None:
@@ -41,19 +38,23 @@ def find(word: str, sentence: str) -> tuple[int, int] | None:
     return m.span() if m else None
 
 
-def load_pairs(path: Path = PAIRS_PATH) -> list[tuple[str, str]]:
-    """(Italian, English) sentence pairs, one per Italian sentence, 3-10 words (cached)."""
+def load_pairs(path: Path | None = None) -> list[tuple[str, str]]:
+    """(word's language, English) sentence pairs, one per sentence, 3-10 words (cached)."""
+    stem = L.current.pairs
+    path = path or CACHE / f"{stem}-eng.zip"
     cache = path.with_suffix(".pairs.pkl")
     if cache.exists() and cache.stat().st_mtime > path.stat().st_mtime:
         return pickle.loads(cache.read_bytes())
     if not path.exists():
         path.parent.mkdir(parents=True, exist_ok=True)
-        # manythings.org refuses Python's default user agent.
-        req = urllib.request.Request(PAIRS_URL, headers={"User-Agent": "Mozilla/5.0"})
+        # manythings.org refuses Python's default user agent, and a bare "Mozilla/5.0"
+        # gets an HTML error page (saved as the zip) from its firewall.
+        agent = "Mozilla/5.0 (X11; Linux x86_64)"
+        req = urllib.request.Request(PAIRS_URL.format(stem=stem), headers={"User-Agent": agent})
         path.write_bytes(urllib.request.urlopen(req).read())
     seen: set[str] = set()
     pairs: list[tuple[str, str]] = []
-    text = zipfile.ZipFile(path).read("ita.txt").decode("utf-8")
+    text = zipfile.ZipFile(path).read(f"{stem}.txt").decode("utf-8")
     for line in text.splitlines():
         cols = line.split("\t")
         if len(cols) < 2:

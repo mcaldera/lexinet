@@ -1,8 +1,12 @@
-"""Italian verb conjugations from Wiktionary (kaikki.org extract).
+"""Verb conjugations from Wiktionary (kaikki.org extract), Italian and Spanish.
 
-Tenses are drilled in the order courses teach them; each becomes a verb level:
-presente, passato prossimo, imperfetto, futuro, condizionale, congiuntivo.
-Passato prossimo is built from the auxiliary (essere/avere) + past participle.
+Tenses are drilled in the order courses teach them; each becomes a verb level
+(the app's core/language.ts lists the same names):
+  Italian: presente, passato prossimo, imperfetto, futuro, condizionale, congiuntivo.
+    Passato prossimo is built from the auxiliary (essere/avere) + past participle.
+  Spanish (Spain: vosotros): presente, pretérito perfecto, pretérito indefinido,
+    imperfecto, futuro, condicional, subjuntivo (present). The perfecto is built
+    from haber + the participle; reflexive verbs (lavarse) from their base verb.
 """
 
 from __future__ import annotations
@@ -13,6 +17,8 @@ import pickle
 import re
 import unicodedata
 from pathlib import Path
+
+import languages as L
 
 CACHE = Path.home() / ".cache" / "sprawl"
 PERSONS = [
@@ -109,3 +115,62 @@ def conjugations(entry: dict, infinitive: str = "") -> dict[str, list[str]] | No
         for i, a in enumerate(AUX[aux])
     ]
     return {t: table[t] for t in TENSES}
+
+
+ES_SIMPLE = {
+    "presente": {"indicative", "present"},
+    "pretérito indefinido": {"indicative", "preterite"},
+    "imperfecto": {"indicative", "imperfect"},
+    "futuro": {"indicative", "future"},
+    "condicional": {"conditional"},
+    "subjuntivo": {"subjunctive", "present"},
+}
+ES_TENSES = [
+    "presente",
+    "pretérito perfecto",
+    "pretérito indefinido",
+    "imperfecto",
+    "futuro",
+    "condicional",
+    "subjuntivo",
+]
+HABER = ["he", "has", "ha", "hemos", "habéis", "han"]
+ES_REFLEXIVE = ["me", "te", "se", "nos", "os", "se"]
+# Latin American voseo forms (hablás) are not the Spain Spanish being taught.
+ES_SKIP = {"archaic", "rare", "obsolete", "poetic", "vos-form"}
+
+
+def spanish(verbs: dict[str, dict], infinitive: str) -> dict[str, list[str]] | None:
+    """Six persons (yo .. ellos) for each tense in ES_TENSES, or None.
+    A reflexive verb takes its base verb's forms with its pronoun ("me lavo",
+    "me he lavado"): Wiktionary has full tables for only some of them."""
+    reflexive = infinitive.endswith("se") and infinitive[:-2] in verbs
+    entry = verbs.get(infinitive[:-2] if reflexive else infinitive)
+    if not entry:
+        return None
+    usable = [(f, set(t)) for f, t in entry["forms"] if not ES_SKIP & set(t)]
+    table: dict[str, list[str]] = {}
+    for tense, want in ES_SIMPLE.items():
+        row = []
+        for person, number in PERSONS:
+            match = next((f for f, t in usable if want <= t and person in t and number in t), None)
+            if not match:
+                return None
+            row.append(match)
+        table[tense] = row
+    participle = next((f for f, t in usable if t == {"participle", "past"}), None) or next(
+        (f for f, t in usable if {"participle", "past", "masculine", "singular"} <= t), None
+    )
+    if not participle:
+        return None
+    table["pretérito perfecto"] = [f"{h} {participle}" for h in HABER]
+    if reflexive:
+        table = {t: [f"{ES_REFLEXIVE[i]} {f}" for i, f in enumerate(row)] for t, row in table.items()}
+    return {t: table[t] for t in ES_TENSES}
+
+
+def table(verbs: dict[str, dict], infinitive: str) -> dict[str, list[str]] | None:
+    """The conjugation table of a verb in the current language, or None."""
+    if L.current.code == "es":
+        return spanish(verbs, infinitive)
+    return conjugations(verbs[infinitive], infinitive) if infinitive in verbs else None

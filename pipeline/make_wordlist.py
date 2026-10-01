@@ -25,6 +25,8 @@ import urllib.request
 from collections import Counter
 from pathlib import Path
 
+import languages as L
+
 CACHE = Path.home() / ".cache" / "sprawl"
 KAIKKI = "https://kaikki.org/dictionary/{lang}/kaikki.org-dictionary-{lang}.jsonl.gz"
 FREQ_URL = "https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/it/it_50k.txt"
@@ -33,6 +35,9 @@ CONTENT_POS = {"noun": "noun", "verb": "verb", "adj": "adj", "adv": "adv"}
 SKIP_TAGS = {"vulgar", "offensive", "derogatory", "slur", "slang", "obsolete", "archaic", "rare", "dated"}
 ETY_TEMPLATES = {"inh", "inh+", "der", "der+", "bor", "bor+", "lbor", "slbor"}
 AFFIX_TEMPLATES = {"af", "affix", "suffix", "prefix", "compound", "com"}
+# Wiktionary's "origin unknown / uncertain": its guesses (zorro "perhaps from Middle
+# French sor") are no etymology to show, as a wrong one is worse than none.
+UNCERTAIN_TEMPLATES = {"unk", "unc", "unknown", "uncertain"}
 LANGS = {
     "la": "Latin",
     "la-lat": "Late Latin",
@@ -75,6 +80,21 @@ LANGS = {
     "sa": "Sanskrit",
     "ru": "Russian",
     "ja": "Japanese",
+    "it": "Italian",
+    "eu": "Basque",
+    "gl": "Galician",
+    "xaa": "Andalusian Arabic",
+    "la-ecc": "Ecclesiastical Latin",
+    "roa-oca": "Old Catalan",
+    "nci": "Classical Nahuatl",
+    "cel-pro": "Proto-Celtic",
+    "xce": "Celtiberian",
+    "gkm": "Byzantine Greek",
+    "qu": "Quechua",
+    "tnq": "Taíno",
+    "rmq": "Caló",
+    "tt": "Tatar",
+    "pl": "Polish",
 }
 NON_GLOSS = re.compile(r"\b(form|degree|participle|plural|spelling|abbreviation|synonym) of\b", re.I)
 FIELDS = ["italian", "english", "pos", "theme", "root", "root_lang", "root_meaning", "cognate", "cognate_note"]
@@ -147,17 +167,19 @@ def etymon(entry: dict, lemmas: dict | None = None, depth: int = 0) -> tuple[str
     """(root, language, gloss) from the first inherited/derived/borrowed template
     that leaves Italian (skipping Old Italian steps). Words formed inside Italian
     ("ferito" = ferire + -ito) inherit the root of their Italian base."""
-    base = affix_base(entry, "it")
+    if any(t.get("name") in UNCERTAIN_TEMPLATES for t in entry.get("etymology_templates", [])):
+        return None
+    base = affix_base(entry, L.current.code)
     if base and lemmas and base in lemmas and depth < 3:
         found = etymon(lemmas[base][0], lemmas, depth + 1)
         if found:
             return found
     for t in entry.get("etymology_templates", []):
         a = t.get("args", {})
-        if t.get("name") not in ETY_TEMPLATES or a.get("1") != "it":
+        if t.get("name") not in ETY_TEMPLATES or a.get("1") != L.current.code:
             continue
         code, term = a.get("2", ""), a.get("3", "")
-        if not term or code in ("it", "roa-oit", "und") or term.startswith("-"):
+        if not term or code in {L.current.code, "und", *L.current.older} or term.startswith("-"):
             continue
         gloss = a.get("5") or a.get("t") or a.get("gloss") or ""
         return term, LANGS.get(code, code), gloss
@@ -173,7 +195,7 @@ def compact(e: dict) -> dict:
                 "glosses": s.get("glosses", [])[:1],
                 "tags": s.get("tags", []),
                 "form_of": s.get("form_of"),
-                "cats": [c["orig"][3:] for c in s.get("categories", []) if str(c.get("orig", "")).startswith("it:")],
+                "cats": [c["orig"][3:] for c in s.get("categories", []) if str(c.get("orig", "")).startswith(f"{L.current.code}:")],
             }
             for s in e.get("senses", [])
         ],
@@ -181,7 +203,7 @@ def compact(e: dict) -> dict:
         "etymology_templates": [
             {"name": t.get("name"), "args": {k: t["args"].get(k) for k in ("1", "2", "3", "5", "t", "gloss")}}
             for t in e.get("etymology_templates", [])
-            if t.get("name") in ETY_TEMPLATES | AFFIX_TEMPLATES
+            if t.get("name") in ETY_TEMPLATES | AFFIX_TEMPLATES | UNCERTAIN_TEMPLATES
         ],
     }
 

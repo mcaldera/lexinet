@@ -14,6 +14,8 @@ export type Language = {
   locale: string;
   /** A sentence the menu's voice test says. */
   greeting: string;
+  /** Letters a plain keyboard lacks, offered as buttons under the answer field. */
+  letters: readonly string[];
   /** A word's article at its start: group 1 before a space, group 2 elided ("l'"). */
   article: RegExp;
   /** Verb tenses in the order they are taught: each is a verb level. */
@@ -28,6 +30,7 @@ export const LANGUAGES: Record<string, Language> = {
     name: 'Italian',
     locale: 'it-IT',
     greeting: 'Ciao! Come stai?',
+    letters: ['à', 'è', 'é', 'ì', 'ò', 'ù'],
     article: /^(?:(il|lo|la|i|gli|le|un|uno|una)\s+|(l'|un'))/,
     tenses: ['presente', 'passato prossimo', 'imperfetto', 'futuro', 'condizionale', 'congiuntivo'],
     persons: ['io', 'tu', 'lui/lei', 'noi', 'voi', 'loro'],
@@ -37,6 +40,7 @@ export const LANGUAGES: Record<string, Language> = {
     name: 'Spanish',
     locale: 'es-ES',
     greeting: '¡Hola! ¿Qué tal?',
+    letters: ['á', 'é', 'í', 'ó', 'ú', 'ñ', 'ü'],
     article: /^(?:(el|la|los|las|un|una|unos|unas)\s+)/,
     tenses: [
       'presente',

@@ -10,8 +10,6 @@ import type { AppData, CardRow } from '../db/repo';
 import Etymology from './Etymology';
 import Icon from './Icon';
 
-const ACCENTS = ['à', 'è', 'é', 'ì', 'ò', 'ù'];
-
 const VERDICT = {
   correct: { text: 'Correct', cls: 'border-emerald-500/50 bg-emerald-500/10 text-emerald-300' },
   almost: { text: 'Almost', cls: 'border-amber-500/50 bg-amber-500/10 text-amber-300' },
@@ -295,7 +293,7 @@ export default function ReviewView(props: Props) {
             <>
               {toItalian && (
                 <div className="mt-1.5 flex gap-1">
-                  {ACCENTS.map((ch) => (
+                  {lang().letters.map((ch) => (
                     <button
                       key={ch}
                       onClick={() => insert(ch)}

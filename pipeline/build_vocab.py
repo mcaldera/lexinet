@@ -2,6 +2,7 @@
 
 Usage:
     python pipeline/build_vocab.py data/vocab -o data/graph_oic.json [--enrich]
+    python pipeline/build_vocab.py data/vocab/es --lang es   (-> data/graph_es.json)
 
 Every word belongs to a category (its file), and the links are made so the
 map reads sensibly:
@@ -19,7 +20,10 @@ map reads sensibly:
   6. hand-made `links` / `unlink` in the vocabulary win.
 
 Rebuilding is not deterministic in layout, but node ids come from the
-vocabulary (the Italian's slug or an explicit `id`), so progress is kept.
+vocabulary (the word's slug or an explicit `id`), so progress is kept.
+Other languages' files are translations of the Italian ones: same categories,
+the word under its language code (`es: la mano`) and `concept`, the id of the
+Italian word it translates (for linking the languages later).
 With --enrich, words without etymology get it from Wiktionary and it is
 written back into the vocabulary files (review it there).
 """
@@ -38,6 +42,7 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import build_graph as bg  # noqa: E402
+import languages as L  # noqa: E402
 import layout  # noqa: E402
 import vocab as V  # noqa: E402
 
@@ -111,9 +116,6 @@ GENDER_PAIRS = [
 ]
 GENDER_SWAP = {a: b for a, b in GENDER_PAIRS} | {b: a for a, b in GENDER_PAIRS}
 GENDER_RE = re.compile("|".join(sorted(GENDER_SWAP, key=len, reverse=True)))
-# Italian feminine endings for a masculine one (figlio/figlia, signore/signora,
-# attore/attrice, studente/studentessa).
-IT_GENDER = [("o", "a"), ("e", "a"), ("tore", "trice"), ("e", "essa")]
 
 
 def meanings(en: str) -> set[str]:
@@ -143,7 +145,7 @@ def counterparts(words: list[dict], sem: np.ndarray) -> dict[int, int]:
 
     def ending_pair(a: str, b: str) -> bool:
         return any(
-            a.endswith(m) and len(a) > len(m) + 2 and b == a[: -len(m)] + f for m, f in IT_GENDER
+            a.endswith(m) and len(a) > len(m) + 2 and b == a[: -len(m)] + f for m, f in L.current.gender
         )
 
     found: list[tuple[float, int, int]] = []
@@ -424,7 +426,7 @@ def enrich(folder: Path, words: list[dict]) -> int:
     """Look up missing etymology in Wiktionary and write it into the files."""
     import make_wordlist as mw
 
-    lemmas, _ = mw.load_italian(mw.fetch(mw.KAIKKI.format(lang="Italian"), mw.CACHE / "kaikki.org-dictionary-Italian.jsonl.gz"))
+    lemmas, _ = mw.load_italian(mw.fetch(mw.KAIKKI.format(lang=L.current.name), mw.CACHE / L.current.kaikki))
     meanings, parent = mw.latin_index(mw.fetch(mw.KAIKKI.format(lang="Latin"), mw.CACHE / "kaikki.org-dictionary-Latin.jsonl.gz"))
     found = 0
     for w in words:
@@ -453,11 +455,14 @@ def enrich(folder: Path, words: list[dict]) -> int:
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("folder")
-    p.add_argument("-o", "--out", default="data/graph_oic.json")
+    p.add_argument("-o", "--out", help="default: data/graph_oic.json (Italian), else data/graph_<lang>.json")
+    p.add_argument("--lang", default="it", choices=sorted(L.LANGS), help="the language of the words (default it)")
     p.add_argument("--model", default=bg.DEFAULT_MODEL)
     p.add_argument("--enrich", action="store_true", help="fill missing etymology from Wiktionary into the files first")
     p.add_argument("--check", action="store_true", help="only validate the vocabulary")
     args = p.parse_args(argv)
+    L.use(args.lang)
+    args.out = args.out or ("data/graph_oic.json" if args.lang == "it" else f"data/graph_{args.lang}.json")
 
     folder = Path(args.folder)
     words = V.load(folder)
@@ -477,7 +482,7 @@ def main(argv: list[str] | None = None) -> int:
     import examples as exm
 
     ranks = bg.load_frequency_ranks()
-    verbs = cj.load_verbs(cj.CACHE / "kaikki.org-dictionary-Italian.jsonl.gz")
+    verbs = cj.load_verbs(cj.CACHE / L.current.kaikki)
     verb_forms = {v: [f for f, _ in e["forms"] if " " not in f] for v, e in verbs.items()}
     index, derived = english_roots.load_index(), english_roots.load_latin_derived()
     graph = build(
@@ -486,10 +491,11 @@ def main(argv: list[str] | None = None) -> int:
         ranks,
         verb_forms,
         english=lambda root: english_roots.english_for(root, index, derived),
-        conjugate=lambda v: cj.conjugations(verbs[v], v) if v in verbs else None,
+        conjugate=lambda v: cj.table(verbs, v),
         example=exm.Examples(exm.load_pairs(), ranks).pick,
     )
     graph["params"]["model"] = args.model
+    graph["params"]["lang"] = args.lang
     bg.validate_graph(graph)
     Path(args.out).write_text(json.dumps(graph, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     vias: dict[str, int] = {}

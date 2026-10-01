@@ -43,6 +43,7 @@ import numpy as np
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import languages as L  # noqa: E402
 import layout  # noqa: E402
 
 DEFAULT_MODEL = "numberbatch"  # or any sentence-transformers model id, e.g. BAAI/bge-m3
@@ -56,11 +57,11 @@ CANDIDATES = 8  # strongest partners per word exported for the in-app inspector
 ARTICLE_RE = re.compile(r"^(il|lo|la|i|gli|le|un|uno|una)\s+|^(l'|un')", re.IGNORECASE)
 EN_PREFIX_RE = re.compile(r"^(to|the|a|an)\s+", re.IGNORECASE)
 # Infinitive and past-participle endings, else a single final vowel.
-ENDING_RE = re.compile(r"(are|ere|ire|at[oaie]|ut[oaie]|it[oaie]|[aeiou])$")
 
 OPTIONAL_COLUMNS = ("pos", "theme", "root", "root_lang", "root_meaning", "cognate", "cognate_note", "tier", "level")
-FREQUENCY_URL = "https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/it/it_50k.txt"
-FREQUENCY_PATH = Path.home() / ".cache" / "sprawl" / "it_50k.txt"
+# OpenSubtitles word frequencies per language ({code}/{code}_50k.txt).
+FREQUENCY_URL = "https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/{code}/{code}_50k.txt"
+FREQUENCY_DIR = Path.home() / ".cache" / "sprawl"
 MAX_TIERS = 10
 MIN_TIER_SIZE = 15
 
@@ -86,7 +87,7 @@ def load_words(path: str | Path) -> pd.DataFrame:
 
 def lemma(word: str) -> str:
     """Lowercase, strip the article and accents: "l'Uccello" -> "uccello"."""
-    word = ARTICLE_RE.sub("", word.strip().lower())
+    word = L.current.article_re.sub("", word.strip().lower())
     word = unicodedata.normalize("NFKD", word)
     return "".join(ch for ch in word if not unicodedata.combining(ch))
 
@@ -99,7 +100,7 @@ def root_key(root: str) -> str:
 
 def stem(word: str) -> str:
     """Strip one inflectional ending: "parlato" -> "parl", "la cucina" -> "cucin"."""
-    return ENDING_RE.sub("", lemma(word))
+    return L.current.ending_re.sub("", lemma(word))
 
 
 def morph_similarity(a: str, b: str) -> float:
@@ -183,13 +184,15 @@ def make_embedder(model: str) -> Embedder:
     return numberbatch_embedder() if model == "numberbatch" else sentence_transformer_embedder(model)
 
 
-def load_frequency_ranks(path: Path = FREQUENCY_PATH) -> dict[str, int]:
-    """Word -> rank (1 = most frequent) from a "word count" per line list."""
+def load_frequency_ranks(path: Path | None = None) -> dict[str, int]:
+    """Word -> rank (1 = most frequent) from a "word count" per line list
+    (the current language's subtitle frequencies unless `path` is given)."""
+    path = path or FREQUENCY_DIR / L.current.frequency
     if not path.exists():
         import urllib.request
 
         path.parent.mkdir(parents=True, exist_ok=True)
-        urllib.request.urlretrieve(FREQUENCY_URL, path)
+        urllib.request.urlretrieve(FREQUENCY_URL.format(code=L.current.code), path)
     ranks: dict[str, int] = {}
     with open(path, encoding="utf-8") as f:
         for i, line in enumerate(f, 1):

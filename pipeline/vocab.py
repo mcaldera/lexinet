@@ -35,6 +35,8 @@ from pathlib import Path
 
 import yaml
 
+import languages as L
+
 # Category file stem -> display name, in map order (related categories near each other).
 CATEGORIES: dict[str, str] = {
     "body": "Body",
@@ -84,9 +86,7 @@ CATEGORIES: dict[str, str] = {
 }
 POS = {"noun", "verb", "adj", "adv", "pron", "conj", "prep", "num", "interj"}
 CEFR = ["A1", "A2", "B1", "B2", "C1"]
-FIELDS = ["it", "en", "pos", "pl", "level", "id", "root", "root_lang", "root_meaning", "cousin", "links", "unlink", "note"]
-
-ARTICLE_RE = re.compile(r"^(il|lo|la|i|gli|le|un|uno|una)\s+|^(l'|un')", re.IGNORECASE)
+FIELDS = ["it", "en", "pos", "pl", "level", "id", "concept", "root", "root_lang", "root_meaning", "cousin", "links", "unlink", "note"]
 
 
 def slug(word: str) -> str:
@@ -98,7 +98,7 @@ def slug(word: str) -> str:
 
 def lemma(it: str) -> str:
     """The word without its article: "l'occhio" -> "occhio"."""
-    return ARTICLE_RE.sub("", it.strip().lower())
+    return L.current.article_re.sub("", it.strip().lower())
 
 
 def load(folder: str | Path) -> list[dict]:
@@ -111,7 +111,10 @@ def load(folder: str | Path) -> list[dict]:
             continue
         doc = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
         for w in doc.get("words") or []:
-            words.append({**{k: v for k, v in w.items() if v is not None}, "cat": cat})
+            w = {k: v for k, v in w.items() if v is not None}
+            if L.current.code != "it" and L.current.code in w:
+                w["it"] = w.pop(L.current.code)  # the word is `it` in code, whatever its language
+            words.append({**w, "cat": cat})
     extra = sorted(p.stem for p in folder.glob("*.yaml") if p.stem not in CATEGORIES)
     if extra:
         raise ValueError(f"unknown category files: {extra} (add them to vocab.CATEGORIES)")
@@ -154,7 +157,7 @@ def dump_category(path: str | Path, cat: str, words: list[dict]) -> None:
     """Write one category file: a header and one flow mapping per word."""
     lines = [f"name: {CATEGORIES[cat]}", "words:"]
     for w in words:
-        entry = {k: w[k] for k in FIELDS if w.get(k) not in (None, "", [])}
+        entry = {(L.current.code if k == "it" else k): w[k] for k in FIELDS if w.get(k) not in (None, "", [])}
         text = yaml.safe_dump(entry, default_flow_style=True, allow_unicode=True, width=10_000, sort_keys=False)
         lines.append("- " + text.strip())
     Path(path).write_text("\n".join(lines) + "\n", encoding="utf-8")
