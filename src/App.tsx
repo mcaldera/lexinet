@@ -42,7 +42,7 @@ import { deleteDb } from './db';
 import { onStorageProblem } from './db/store';
 import { onBackButton } from './platform';
 import { QuizEdge, QuizMoment, QuizStrip } from './views/Quiz';
-import GraphView, { flowKey, type FlowView } from './views/GraphView';
+import GraphView, { flowKey, type FlowView, type MapActions } from './views/GraphView';
 import { roundShares } from './views/visuals';
 import InspectPanel from './views/InspectPanel';
 import ReviewView from './views/ReviewView';
@@ -1051,6 +1051,48 @@ export default function App() {
     setTurn((t) => t + 1);
   };
 
+  /** Connect a word to the details word (a learned one): in its status and on the map beside it. */
+  const startPlanting =
+    detailsWord && data.states.get(detailsWord.id) === 'conquered' && planting !== detailsWord.id
+      ? () => {
+          setWaitOn(null);
+          setInfo(null);
+          setPlanting(detailsWord.id);
+          sfx('select');
+        }
+      : undefined;
+  /** Its English cousin: shown, or for sale (status and map). */
+  const cousin =
+    detailsWord?.cognate && data.states.get(detailsWord.id) !== 'locked'
+      ? {
+          cognate: detailsWord.cognate,
+          bought: data.hints.has(detailsWord.id),
+          cost: HINT_COST,
+          onBuy: async () => {
+            if (data.coins < HINT_COST)
+              return setNotice(`A cousin costs ${HINT_COST} sparks (you have ${data.coins})`);
+            if (!(await buyHint(detailsWord.id))) return;
+            sfx('plant');
+            setNotice(`Cousin: ${detailsWord.cognate}`);
+          },
+        }
+      : undefined;
+  /**
+   * The map's buttons beside the ringed word, when it is the details word and
+   * isn't being asked (its cousin would be a hint, connecting a distraction).
+   */
+  const mapActions: MapActions | undefined =
+    detailsWord && detailsWord.id === panelId && current?.nodeId !== detailsWord.id
+      ? {
+          id: detailsWord.id,
+          connect: startPlanting,
+          cousin:
+            cousin && !cousin.bought
+              ? { cost: HINT_COST, affordable: data.coins >= HINT_COST, buy: cousin.onBuy }
+              : undefined,
+        }
+      : undefined;
+
   /**
    * The selected word's status; `bare` inside its own card (word card, wait card),
    * `example` in the word card (its sentence goes between status and origin).
@@ -1069,31 +1111,9 @@ export default function App() {
         supply={detailsSupply}
         nowMs={appNow(data.offsetDays).getTime()}
         claimStep={claimNext(data.game.nodes.get(detailsWord.id)?.claim, CLAIM_GAPS)}
-        onPlant={
-          data.states.get(detailsWord.id) === 'conquered' && planting !== detailsWord.id
-            ? () => {
-                setWaitOn(null);
-                setInfo(null);
-                setPlanting(detailsWord.id);
-                sfx('select');
-              }
-            : undefined
-        }
+        onPlant={startPlanting}
         coins={data.coins}
-        hint={
-          detailsWord.cognate && data.states.get(detailsWord.id) !== 'locked'
-            ? {
-                cognate: detailsWord.cognate,
-                bought: data.hints.has(detailsWord.id),
-                cost: HINT_COST,
-                onBuy: async () => {
-                  if (!(await buyHint(detailsWord.id))) return;
-                  sfx('plant');
-                  setNotice(`Cousin: ${detailsWord.cognate}`);
-                },
-              }
-            : undefined
-        }
+        hint={cousin}
         reclaim={reclaimMap.get(detailsWord.id)}
         verb={
           detailsWord.conjugations && data.states.get(detailsWord.id) === 'conquered'
@@ -1191,6 +1211,7 @@ export default function App() {
           <Sparks n={data.coins} />
         </button>
         <Menu
+          onReload={() => void reload()}
           graphName={graphName}
           inspect={inspect}
           onInspect={setInspect}
@@ -1330,6 +1351,7 @@ export default function App() {
             }
             onNextTask={goNext}
             jump={jump}
+            actions={mapActions}
             onNodeClick={selectNode}
             onBackgroundClick={clearSelection}
           />

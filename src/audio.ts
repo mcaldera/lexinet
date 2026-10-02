@@ -65,7 +65,8 @@ type Graph = {
   ctx: AudioContext;
   sfx: GainNode;
   music: GainNode;
-  reverb: ConvolverNode;
+  /** The reverb's input (a convolver behind it, or feedback delays on a phone). */
+  reverb: GainNode;
   analyser: AnalyserNode;
 };
 let graph: Graph | null = null;
@@ -83,9 +84,10 @@ function ensure(): Graph | null {
     (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
   if (!AC) return null;
   // A phone's audio thread misses its deadlines while the map redraws (the music
-  // stuttered): bigger buffers there, and a shorter reverb tail, the heaviest node.
+  // dropped out): bigger buffers there, half the sample rate (ambient pads and
+  // plucks need no more) and a cheap reverb instead of the convolver.
   const touch = isTouch();
-  const ctx = new AC(touch ? { latencyHint: 'playback' } : undefined);
+  const ctx = new AC(touch ? { latencyHint: 'playback', sampleRate: 24000 } : undefined);
   const master = ctx.createDynamicsCompressor();
   const analyser = ctx.createAnalyser();
   master.connect(analyser).connect(ctx.destination);
@@ -95,18 +97,37 @@ function ensure(): Graph | null {
   const music = ctx.createGain();
   music.gain.value = 0;
   music.connect(master);
-  // Reverb: a few seconds of decaying noise as the impulse response.
-  const reverb = ctx.createConvolver();
-  const len = ctx.sampleRate * (touch ? 2 : 3.5);
-  const ir = ctx.createBuffer(2, len, ctx.sampleRate);
-  for (let ch = 0; ch < 2; ch++) {
-    const d = ir.getChannelData(ch);
-    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len) ** 3;
-  }
-  reverb.buffer = ir;
+  const reverb = ctx.createGain();
   const wet = ctx.createGain();
-  wet.gain.value = 0.35;
-  reverb.connect(wet).connect(master);
+  wet.connect(master);
+  if (touch) {
+    // Four damped feedback delays (a Schroeder reverb), ~2 s of tail: a few
+    // multiplications per sample, where convolving with an impulse is thousands.
+    wet.gain.value = 0.12;
+    for (const d of [0.05, 0.063, 0.07, 0.074]) {
+      const delay = ctx.createDelay(0.1);
+      delay.delayTime.value = d;
+      const damp = ctx.createBiquadFilter();
+      damp.type = 'lowpass';
+      damp.frequency.value = 2500;
+      const feedback = ctx.createGain();
+      feedback.gain.value = 0.82;
+      reverb.connect(delay).connect(damp).connect(feedback).connect(delay);
+      damp.connect(wet);
+    }
+  } else {
+    // A few seconds of decaying noise as the impulse response.
+    const conv = ctx.createConvolver();
+    const len = ctx.sampleRate * 3.5;
+    const ir = ctx.createBuffer(2, len, ctx.sampleRate);
+    for (let ch = 0; ch < 2; ch++) {
+      const d = ir.getChannelData(ch);
+      for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len) ** 3;
+    }
+    conv.buffer = ir;
+    wet.gain.value = 0.35;
+    reverb.connect(conv).connect(wet);
+  }
   graph = { ctx, sfx, music, reverb, analyser };
   // No music in a background tab.
   document.addEventListener('visibilitychange', () => {

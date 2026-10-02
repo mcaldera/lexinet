@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { audioSettings, onAudioSettings, setMusic, setSfx, setSpeech } from '../audio';
 import { listRuns } from '../runs';
-import { isNative } from '../platform';
+import { isNative, isTouch } from '../platform';
+import { setViewPref, useViewPrefs } from '../viewPrefs';
 import { canSpeak, chosenVoice, languageVoices, onVoices, speak, voiceCount } from '../speech';
 import { lang } from '../core/language';
 import { GRAPH_NAMES, graphLabel, switchGraph } from '../graphs';
@@ -16,6 +17,8 @@ type Props = {
   onTravel: (days: number) => void;
   /** Offer the "say words aloud" switch. */
   speechToggle?: boolean;
+  /** Reload once everything is saved (the map's resolution is set at start). */
+  onReload: () => void;
   runId: string;
   onNewRun: () => void;
   onSwitchRun: (id: string) => void;
@@ -34,6 +37,8 @@ export default function Menu(props: Props) {
   useEffect(() => onVoices(() => setVoicesSeen((n) => n + 1)), []);
   // Read fresh on every render: names and counts change while playing.
   const [, setDeleted] = useState(0);
+  const view = useViewPrefs();
+  const touch = isTouch();
   const runs = listRuns(props.graphName).runs;
   useEffect(() => {
     if (!open) return;
@@ -101,6 +106,12 @@ export default function Menu(props: Props) {
           {toggle('Sounds', audio.sfx, setSfx)}
           {props.speechToggle && canSpeak() && toggle('Say words aloud', audio.speech, setSpeech)}
           {props.speechToggle && canSpeak() && <VoicePicker />}
+          {touch && toggle('Direction pad', view.pad, (on) => setViewPref('pad', on))}
+          {touch &&
+            toggle('Sharper map', view.sharp, (on) => {
+              setViewPref('sharp', on);
+              props.onReload();
+            })}
           {toggle('Whole network', props.inspect, (on) => {
             setOpen(false);
             props.onInspect(on);

@@ -1,4 +1,5 @@
 import { Capacitor } from '@capacitor/core';
+import { viewPrefs } from './viewPrefs';
 
 /**
  * What differs between the website and the Android app (Capacitor wraps the same
@@ -23,9 +24,9 @@ export const isTouch = () =>
  */
 const TOUCH_MAX_PIXEL_RATIO = 2;
 
-/** Before the map is created (main.tsx). */
+/** Before the map is created (main.tsx); "Sharper map" in the menu lifts the cap. */
 export function capPixelRatio() {
-  if (!isTouch() || window.devicePixelRatio <= TOUCH_MAX_PIXEL_RATIO) return;
+  if (!isTouch() || viewPrefs().sharp || window.devicePixelRatio <= TOUCH_MAX_PIXEL_RATIO) return;
   Object.defineProperty(window, 'devicePixelRatio', { get: () => TOUCH_MAX_PIXEL_RATIO });
 }
 

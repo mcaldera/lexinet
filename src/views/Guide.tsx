@@ -249,7 +249,13 @@ export default function Guide({ onClose }: { onClose: () => void }) {
         <Section title="On a phone">
           <div className="grid grid-cols-2 gap-x-4 text-xs">
             <span>Tap a word to open it · drag to pan · pinch to zoom</span>
-            <span>The pad (bottom right) moves along links; its middle fits the map</span>
+            <span>
+              The pad (bottom right) moves along links, its middle fits the map (switch it off in
+              the menu)
+            </span>
+            <span>
+              Beside the selected word: + connects a word, the bulb shows its English cousin
+            </span>
             <span>Next word: the next thing to do</span>
             <span>“N due elsewhere” or the bar at the top: words that need you</span>
             <span>Back closes what's open</span>

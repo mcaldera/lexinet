@@ -35,6 +35,7 @@ import {
 } from './visuals';
 import Icon from './Icon';
 import { isTouch } from '../platform';
+import { useViewPrefs } from '../viewPrefs';
 
 /** Word node, or a root hub (then `word` holds the root's name/meaning for labels). */
 /** Word node, a root hub, or a bought hint (`hintOf`: the word it belongs to). */
@@ -174,6 +175,8 @@ type Props = {
   onNextTask?: () => void;
   /** Changes when the panel asks to jump to the next word needing attention (like N). */
   jump?: number;
+  /** Beside the selected word on the map: connect a word to it, buy its English cousin. */
+  actions?: MapActions;
   /** A click into empty map (not on a word or an edge arrow): let go of the selection. */
   onBackgroundClick?: () => void;
   /** Words to flash now: a pop-quiz word saved, or all of them when the quiz is passed. */
@@ -208,10 +211,16 @@ export default function GraphView({
   onBackgroundClick,
   flash,
   jump,
+  actions,
 }: Props) {
   const wrap = useRef<HTMLDivElement>(null);
   const fg = useRef<ForceGraphMethods<N, L>>(undefined);
   const touch = useMemo(isTouch, []);
+  const view = useViewPrefs();
+  /** The direction pad: touch screens, unless switched off in the menu; not on the whole network. */
+  const pad = touch && view.pad && !inspect;
+  /** The selected word's map buttons, moved to it every frame (onRenderFramePost). */
+  const actionsEl = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ width: 800, height: 600 });
   /** Names collected while drawing the words, drawn last where they fit (drawLabels). */
   const labels = useRef<Label[]>([]);
@@ -538,6 +547,26 @@ export default function GraphView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visibleKey, data.edges, hubs, hintKey, inspect]);
 
+  /**
+   * The map buttons sit on the selected word's upper diagonals, just past the
+   * ticks of its white target (drawn in screen pixels: radius + 9 px, ticks to
+   * +11 px), at any zoom.
+   */
+  const placeActions = (scale: number) => {
+    const el = actionsEl.current;
+    if (!el) return;
+    const n = actions && nodeCache.current.get(actions.id);
+    const p = n?.x !== undefined && n.y !== undefined && fg.current?.graph2ScreenCoords(n.x, n.y);
+    if (!n || !p) {
+      el.style.visibility = 'hidden';
+      return;
+    }
+    const d = (wordRadius(n.id) * 1.35 * scale + 9 + 26) * Math.SQRT1_2;
+    el.style.visibility = 'visible';
+    el.style.transform = `translate(${p.x}px, ${p.y}px)`;
+    el.style.setProperty('--d', `${d}px`);
+  };
+
   /** Centre the camera on a word (zooming in if far out) and open it, like a click. */
   const jumpTo = (id: string) => {
     const n = nodeCache.current.get(id);
@@ -765,6 +794,12 @@ export default function GraphView({
   const touchesActive = (l: L) =>
     inspect && activeId !== undefined && [endId(l.source), endId(l.target)].includes(activeId);
 
+  /** A word's radius on the map: stronger words are bigger, a verb more so with every tense. */
+  const wordRadius = (id: string) =>
+    data.states.get(id) === 'conquered'
+      ? 5 + (strength.get(id) ?? 0) * 0.8 + (verbLevels.get(id) ?? 0) * 0.9
+      : 6;
+
   const drawNode = (node: N, ctx: CanvasRenderingContext2D, scale: number) => {
     const x = node.x ?? 0;
     const y = node.y ?? 0;
@@ -774,9 +809,7 @@ export default function GraphView({
     // Stronger words are bigger; every tense a verb masters makes it bigger still.
     const active = node.id === activeId;
     // The selected word is drawn bigger: where you are must be found at a glance.
-    const r =
-      (state === 'conquered' ? 5 + (strength.get(node.id) ?? 0) * 0.8 + vl * 0.9 : 6) *
-      (active && !inspect ? 1.35 : 1);
+    const r = wordRadius(node.id) * (active && !inspect ? 1.35 : 1);
     /** Queue a name under the word; drawLabels places it last, where it fits. */
     const label = (lines: LabelLine[], priority: number, below = r + 2.5) => {
       // Zoomed far out, word labels give way to region names.
@@ -1420,6 +1453,7 @@ export default function GraphView({
           }
         }}
         onRenderFramePost={(ctx, scale) => {
+          placeActions(scale);
           // Names on top, so links and words never cover them.
           const names = drawRegionNames(ctx, scale, livePoints(), inspect);
           // The rings around the selected word's suppliers go under the names,
@@ -1494,15 +1528,45 @@ export default function GraphView({
       />
       {/* Darker corners draw the eye to the middle of the map. */}
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_55%,rgba(0,0,0,0.5)_100%)]" />
-      <button
-        onClick={relax}
-        title="Lay the map out afresh: dragged words let go, and it settles into a calmer shape (R)"
-        className="glass absolute bottom-5 right-3 z-10 flex items-center [@media(pointer:coarse)]:hidden gap-1.5 rounded-full px-3 py-1 text-xs text-slate-300 hover:text-white"
-      >
-        <Icon name="relax" className={relaxing ? 'animate-pulse text-sky-300' : ''} />
-        Relax
-      </button>
-      {!inspect && touch && (
+      {/* With the pad, Relax is one of its corners. */}
+      {!pad && (
+        <button
+          onClick={relax}
+          title="Lay the map out afresh: dragged words let go, and it settles into a calmer shape (R)"
+          className="glass absolute bottom-5 right-3 z-10 flex items-center gap-1.5 rounded-full px-3 py-1 text-xs text-slate-300 hover:text-white"
+        >
+          <Icon name="relax" className={relaxing ? 'animate-pulse text-sky-300' : ''} />
+          Relax
+        </button>
+      )}
+      {actions && !inspect && (actions.connect || actions.cousin) && (
+        <div
+          ref={actionsEl}
+          className="pointer-events-none absolute left-0 top-0 z-10"
+          style={{ visibility: 'hidden' }}
+        >
+          {actions.cousin && (
+            <MapAction
+              side={-1}
+              icon="bulb"
+              tone="amber"
+              dim={!actions.cousin.affordable}
+              title={`Show its English cousin (${actions.cousin.cost} sparks)`}
+              onClick={actions.cousin.buy}
+            />
+          )}
+          {actions.connect && (
+            <MapAction
+              side={1}
+              icon="plus"
+              tone="emerald"
+              title="Connect a word to this one"
+              onClick={actions.connect}
+            />
+          )}
+        </div>
+      )}
+      {pad && (
         <ArrowPad
           onArrow={arrow}
           onFit={() => fg.current?.zoomToFit(400, 60)}
@@ -1534,6 +1598,43 @@ export default function GraphView({
         </div>
       )}
     </div>
+  );
+}
+
+export type MapActions = {
+  id: string;
+  /** Learned words: open the picker of words to connect (core/plant.ts). */
+  connect?: () => void;
+  /** A word with an English cousin not shown yet. */
+  cousin?: { cost: number; affordable: boolean; buy: () => void };
+};
+
+/** A small round button beside the selected word, on its upper left (-1) or right (1) diagonal. */
+function MapAction(props: {
+  side: -1 | 1;
+  icon: 'plus' | 'bulb';
+  tone: 'emerald' | 'amber';
+  dim?: boolean;
+  title: string;
+  onClick: () => void;
+}) {
+  const tone =
+    props.tone === 'emerald'
+      ? 'border-emerald-300/60 text-emerald-200'
+      : 'border-amber-300/60 text-amber-200';
+  return (
+    <button
+      onClick={props.onClick}
+      title={props.title}
+      aria-label={props.title}
+      // The visible circle is small; the tap area reaches a little past it.
+      className={`pointer-events-auto absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-full border bg-slate-950/85 text-sm shadow-[0_2px_10px_rgba(0,0,0,0.6)] transition after:absolute after:-inset-2 after:content-[''] hover:bg-slate-800 active:scale-95 ${tone} ${props.dim ? 'opacity-50' : ''}`}
+      style={{
+        transform: `translate(calc(var(--d) * ${props.side} - 50%), calc(var(--d) * -1 - 50%))`,
+      }}
+    >
+      <Icon name={props.icon} />
+    </button>
   );
 }
 
