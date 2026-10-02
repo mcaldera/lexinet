@@ -5,6 +5,7 @@
  * Settings persist in localStorage. The audio context starts on the first
  * user gesture (browsers block audio before that).
  */
+import { isTouch } from './platform';
 
 export type Sfx =
   | 'select'
@@ -81,7 +82,10 @@ function ensure(): Graph | null {
     window.AudioContext ??
     (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
   if (!AC) return null;
-  const ctx = new AC();
+  // A phone's audio thread misses its deadlines while the map redraws (the music
+  // stuttered): bigger buffers there, and a shorter reverb tail, the heaviest node.
+  const touch = isTouch();
+  const ctx = new AC(touch ? { latencyHint: 'playback' } : undefined);
   const master = ctx.createDynamicsCompressor();
   const analyser = ctx.createAnalyser();
   master.connect(analyser).connect(ctx.destination);
@@ -93,7 +97,7 @@ function ensure(): Graph | null {
   music.connect(master);
   // Reverb: a few seconds of decaying noise as the impulse response.
   const reverb = ctx.createConvolver();
-  const len = ctx.sampleRate * 3.5;
+  const len = ctx.sampleRate * (touch ? 2 : 3.5);
   const ir = ctx.createBuffer(2, len, ctx.sampleRate);
   for (let ch = 0; ch < 2; ch++) {
     const d = ir.getChannelData(ch);

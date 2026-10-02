@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { tenses, type Drill } from '../core/verbs';
 import type { ClaimStep } from '../core/claim';
 import type { NodeState } from '../core/unlock';
@@ -321,12 +321,31 @@ function SignalHint({ supply }: { supply?: Props['supply'] }) {
 export default function NodeDetails(props: Props) {
   const { word, state, supply } = props;
   const hint = props.hint && <HintButton hint={props.hint} coins={props.coins ?? 0} />;
+  /** Phones: the status unfolded (it starts as one line, the map needs the room). */
+  const [open, setOpen] = useState(false);
+  const fold = (summary: ReactNode, children: ReactNode) => (
+    <Panel>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className="flex w-full items-center gap-2 text-left md:hidden"
+      >
+        {summary}
+        <Icon
+          name="chevronDown"
+          className={`ml-auto shrink-0 text-base text-slate-500 transition ${open ? 'rotate-180' : ''}`}
+        />
+      </button>
+      <div className={open ? 'max-md:mt-2.5' : 'max-md:hidden'}>{children}</div>
+    </Panel>
+  );
 
   if (state === 'locked') return null;
 
   if (state === 'frontier') {
-    return (
-      <Panel>
+    return fold(
+      !open && <HintSummary supply={supply} />,
+      <>
         {props.reclaim && (
           <p className="mb-2 flex items-center gap-1.5 text-teal-300">
             <Icon name="recover" />
@@ -339,15 +358,16 @@ export default function NodeDetails(props: Props) {
         )}
         <SignalHint supply={supply} />
         {hint && <div className="mt-2.5 flex">{hint}</div>}
-      </Panel>
+      </>,
     );
   }
 
   if (state === 'claimed') {
     const next = props.claimStep;
     const wait = next ? next.opensAt - props.nowMs : 0;
-    return (
-      <Panel>
+    return fold(
+      !open && <HintSummary supply={supply} />,
+      <>
         {!props.bare && next && (
           <div className="mb-2 flex items-center gap-2">
             <StepDots done={next.step - 1} />
@@ -358,7 +378,7 @@ export default function NodeDetails(props: Props) {
         )}
         <SignalHint supply={supply} />
         {hint && <div className="mt-2.5 flex">{hint}</div>}
-      </Panel>
+      </>,
     );
   }
   if (state !== 'conquered') return null;
@@ -366,11 +386,32 @@ export default function NodeDetails(props: Props) {
   const verb = props.verb;
   const o = props.memory?.outlook;
   const due = !!o && !supply?.broken && props.nowMs >= o.due;
-  return (
-    <Panel>
+  const status = supply && statusOf(supply);
+  return fold(
+    <>
+      {!props.bare && props.name && (
+        <span className="flex min-w-0 items-baseline gap-2">
+          <span className="headword shrink-0 text-lg">{props.name}</span>
+          {props.showEtymology && <span className="truncate text-slate-400">{word.en}</span>}
+        </span>
+      )}
+      {/* Unfolded, the box below says it all. */}
+      {!open && (
+        <span
+          className={`flex shrink-0 items-center gap-1.5 ${!props.bare && props.name ? 'ml-auto' : ''}`}
+        >
+          {status && <Chip tone={status.tone}>{status.label}</Chip>}
+          {due && <Chip tone="due">Due</Chip>}
+          {supply && !supply.broken && (
+            <span className="tabular-nums text-slate-300">{pct(supply.value)}</span>
+          )}
+        </span>
+      )}
+    </>,
+    <>
       {/* Not while it is being asked (no name then): the meaning would be the answer. */}
       {!props.bare && props.name && (
-        <div className="mb-2 flex items-baseline gap-2">
+        <div className="mb-2 flex items-baseline gap-2 max-md:hidden">
           <span className="headword text-xl">{props.name}</span>
           {props.showEtymology && <span className="text-slate-400">{word.en}</span>}
         </div>
@@ -433,7 +474,33 @@ export default function NodeDetails(props: Props) {
         )}
         {hint}
       </div>
-    </Panel>
+    </>,
+  );
+}
+
+/** A learned word's state in a word: slipped, disconnected, or its role. */
+function statusOf(supply: NonNullable<Props['supply']>): { tone: Tone; label: string } {
+  if (supply.broken) return { tone: 'bad', label: 'Slipped' };
+  if (supply.cutUntil !== undefined) return { tone: 'warn', label: 'Disconnected' };
+  return {
+    tone: 'good',
+    label: supply.capital ? 'Core' : supply.stronghold ? 'Anchor' : 'Connected',
+  };
+}
+
+/** Folded (phones): a word you don't hold yet, its signal against the line. */
+function HintSummary({ supply }: { supply?: Props['supply'] }) {
+  if (!supply) return <span className="eyebrow">Signal</span>;
+  if (supply.capital) return <Chip tone="good">Core</Chip>;
+  const inside = supply.value >= supply.min - 1e-9;
+  return (
+    <span className="flex items-center gap-2">
+      <span className="eyebrow">Signal</span>
+      <span className={`tabular-nums ${inside ? 'text-slate-300' : 'text-orange-300'}`}>
+        {pct(supply.value)}
+        {!inside && <span className="text-slate-500"> / {pct(supply.min)}</span>}
+      </span>
+    </span>
   );
 }
 

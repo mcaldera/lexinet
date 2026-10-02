@@ -158,13 +158,14 @@ export default function ReviewView(props: Props) {
   };
 
   return (
-    <div className="panel p-4">
+    <div className={`panel p-4 ${!current || !word ? 'max-md:p-2' : 'max-md:p-3'}`}>
+      {/* Idle on a phone: one slim row, Next word and what's due elsewhere. */}
       {!current || !word ? (
-        <div className="py-4 text-center text-sm text-slate-400">
+        <div className="py-4 text-center text-sm text-slate-400 max-md:flex max-md:items-center max-md:gap-2 max-md:py-0">
           {elsewhere ? (
             <button
               onClick={props.onElsewhere}
-              className="mb-3 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 hover:bg-white/[0.06] hover:text-slate-200"
+              className="mb-3 inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 hover:bg-white/[0.06] hover:text-slate-200 max-md:order-2 max-md:mb-0"
             >
               {elsewhere} due elsewhere
               <kbd className="text-slate-200 [@media(pointer:coarse)]:hidden">N</kbd>
@@ -172,7 +173,7 @@ export default function ReviewView(props: Props) {
             </button>
           ) : null}
           {onNext ? (
-            <button autoFocus onClick={onNext} className="w-full btn-primary py-2">
+            <button autoFocus onClick={onNext} className="w-full btn-primary py-2 max-md:flex-1">
               Next word{' '}
               <span className="text-xs opacity-60 [@media(pointer:coarse)]:hidden">(enter)</span>
             </button>

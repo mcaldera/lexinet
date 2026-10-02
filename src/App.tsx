@@ -1218,7 +1218,7 @@ export default function App() {
         />
       </header>
       {showGuide && <Guide onClose={() => setShowGuide(false)} />}
-      {/* Phones: the map on top, the panel under it (it rises with the keyboard and takes more of a short screen). */}
+      {/* Phones: the map on top, the panel under it (it rises with the keyboard, and while typing shows only the card). */}
       <main className="flex min-h-0 flex-1 flex-col md:flex-row">
         <section className="relative min-h-0 min-w-0 flex-1">
           {levelUp && (
@@ -1253,8 +1253,11 @@ export default function App() {
             </div>
           )}
           {notice && (
-            <div className="glass rise-in pointer-events-none absolute bottom-5 left-1/2 z-10 -translate-x-1/2 rounded-full px-4 py-1.5 text-sm text-slate-100">
-              {notice}
+            // On a phone: above the fast-forward pill, clear of the pad on the right.
+            <div className="pointer-events-none absolute inset-x-0 bottom-5 z-10 flex justify-center px-3 max-md:bottom-14 max-md:justify-start max-md:pr-[9.5rem]">
+              <div className="glass rise-up rounded-2xl px-4 py-1.5 text-sm text-slate-100">
+                {notice}
+              </div>
             </div>
           )}
           {!data.started && (
@@ -1332,7 +1335,7 @@ export default function App() {
           />
         </section>
         <aside
-          className={`flex max-h-[50%] shrink-0 flex-col [@media(max-height:600px)]:max-h-[72%] gap-3 overflow-y-auto border-t border-white/[0.06] bg-gradient-to-b from-slate-950 to-[#050a1a] p-3 md:max-h-none md:w-80 md:border-l md:border-t-0 md:p-4 ${data.started ? '' : 'max-md:hidden md:invisible'}`}
+          className={`group flex max-h-[50%] shrink-0 flex-col gap-3 max-md:has-[input.field:not([readonly])]:max-h-[85%] overflow-y-auto border-t border-white/[0.06] bg-gradient-to-b from-slate-950 to-[#050a1a] p-3 md:max-h-none md:w-80 md:border-l md:border-t-0 md:p-4 ${data.started ? '' : 'max-md:hidden md:invisible'}`}
         >
           {data.raid.active && !inspect && (
             <QuizStrip
@@ -1494,7 +1497,12 @@ export default function App() {
               )}
             </>
           )}
-          {!inspect && !embedded && details(false)}
+          {/* Answering on a phone: only the card (the keyboard is up); the rest waits below. Not tied to focus: tapping Check blurs the field, and a layout change under the finger made the tap miss. */}
+          {!inspect && !embedded && (
+            <div className="empty:hidden max-md:group-has-[input.field:not([readonly])]:hidden">
+              {details(false)}
+            </div>
+          )}
         </aside>
       </main>
     </div>

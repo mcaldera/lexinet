@@ -1490,13 +1490,18 @@ export default function GraphView({
       <button
         onClick={relax}
         title="Lay the map out afresh: dragged words let go, and it settles into a calmer shape (R)"
-        className="glass absolute bottom-5 right-3 z-10 [@media(pointer:coarse)]:right-[8.25rem] flex items-center gap-1.5 rounded-full px-3 py-1 text-xs text-slate-300 hover:text-white"
+        className="glass absolute bottom-5 right-3 z-10 flex items-center [@media(pointer:coarse)]:hidden gap-1.5 rounded-full px-3 py-1 text-xs text-slate-300 hover:text-white"
       >
         <Icon name="relax" className={relaxing ? 'animate-pulse text-sky-300' : ''} />
         Relax
       </button>
       {!inspect && touch && (
-        <ArrowPad onArrow={arrow} onFit={() => fg.current?.zoomToFit(400, 60)} />
+        <ArrowPad
+          onArrow={arrow}
+          onFit={() => fg.current?.zoomToFit(400, 60)}
+          onRelax={relax}
+          relaxing={relaxing}
+        />
       )}
       {!inspect && attention.length > 0 && (
         <div className="glass absolute right-3 top-3 flex items-center gap-1 rounded-full px-1.5 py-1 text-xs">
@@ -1527,14 +1532,19 @@ export default function GraphView({
 
 /**
  * A phone has no arrow keys: four buttons do what they do (move along a link
- * that way and open the word), the middle one fits the map into view (F).
+ * that way and open the word), the middle one fits the map into view (F), the
+ * corner one relaxes the layout (R; the map's Relax button, on a phone).
  */
 function ArrowPad({
   onArrow,
   onFit,
+  onRelax,
+  relaxing,
 }: {
   onArrow: (dx: number, dy: number) => void;
   onFit: () => void;
+  onRelax: () => void;
+  relaxing: boolean;
 }) {
   const btn =
     'flex h-9 w-9 items-center justify-center rounded-full text-lg text-slate-200 active:bg-white/[0.15]';
@@ -1563,6 +1573,13 @@ function ArrowPad({
         title="Right"
       >
         <Icon name="chevronRight" />
+      </button>
+      <button
+        className={`${btn} col-start-1 row-start-3 text-sm text-slate-400`}
+        onClick={onRelax}
+        title="Relax: lay the map out afresh"
+      >
+        <Icon name="relax" className={relaxing ? 'animate-pulse text-sky-300' : ''} />
       </button>
       <button
         className={`${btn} col-start-2 row-start-3`}
