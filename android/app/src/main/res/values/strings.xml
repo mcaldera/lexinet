@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Plexus</string>
+    <string name="title_activity_main">Plexus</string>
+    <string name="package_name">com.mcaldera.plexus</string>
+    <string name="custom_url_scheme">com.mcaldera.plexus</string>
+</resources>
