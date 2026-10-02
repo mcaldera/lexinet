@@ -31,6 +31,8 @@ type Props = {
   nowMs?: number;
   /** Cards due away from the word you're on (the review doesn't jump there). */
   elsewhere?: number;
+  /** Go to the next of them (as N does). */
+  onElsewhere?: () => void;
   /** Word not conquered yet: the claim step this answer completes. */
   claimStep?: ClaimStep | null;
   /** `typed`: false when the answer was picked from choices (no fast track). */
@@ -160,9 +162,14 @@ export default function ReviewView(props: Props) {
       {!current || !word ? (
         <div className="py-4 text-center text-sm text-slate-400">
           {elsewhere ? (
-            <p className="mb-3">
-              {elsewhere} due elsewhere · <kbd className="text-slate-200">N</kbd>
-            </p>
+            <button
+              onClick={props.onElsewhere}
+              className="mb-3 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 hover:bg-white/[0.06] hover:text-slate-200"
+            >
+              {elsewhere} due elsewhere
+              <kbd className="text-slate-200 [@media(pointer:coarse)]:hidden">N</kbd>
+              <Icon name="chevronRight" className="hidden [@media(pointer:coarse)]:inline" />
+            </button>
           ) : null}
           {onNext ? (
             <button autoFocus onClick={onNext} className="w-full btn-primary py-2">

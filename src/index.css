@@ -95,6 +95,14 @@ body,
   .glass {
     @apply border border-white/10 bg-slate-900/75 shadow-[0_10px_40px_-12px_rgba(0,0,0,0.8)] backdrop-blur-md;
   }
+  /* Phones: a blur over the map is redone every frame it moves; a denser glass instead. */
+  @media (pointer: coarse) {
+    .glass {
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+      background-color: rgba(15, 23, 42, 0.92);
+    }
+  }
 }
 
 @keyframes rise-in {

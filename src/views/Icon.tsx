@@ -11,6 +11,7 @@ const ICONS = {
   check: <path d="M20 6 9 17l-5-5" />,
   chevronRight: <path d="m9 18 6-6-6-6" />,
   chevronDown: <path d="m6 9 6 6 6-6" />,
+  fit: <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />,
   arrowLeft: <path d="m12 19-7-7 7-7M19 12H5" />,
   volume: (
     <>

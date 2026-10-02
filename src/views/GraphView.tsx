@@ -34,6 +34,7 @@ import {
   type Shape,
 } from './visuals';
 import Icon from './Icon';
+import { isTouch } from '../platform';
 
 /** Word node, or a root hub (then `word` holds the root's name/meaning for labels). */
 /** Word node, a root hub, or a bought hint (`hintOf`: the word it belongs to). */
@@ -171,6 +172,8 @@ type Props = {
   onNodeClick: (id: string) => void;
   /** Tab: the next word that can be worked on. */
   onNextTask?: () => void;
+  /** Changes when the panel asks to jump to the next word needing attention (like N). */
+  jump?: number;
   /** A click into empty map (not on a word or an edge arrow): let go of the selection. */
   onBackgroundClick?: () => void;
   /** Words to flash now: a pop-quiz word saved, or all of them when the quiz is passed. */
@@ -204,9 +207,11 @@ export default function GraphView({
   onNextTask,
   onBackgroundClick,
   flash,
+  jump,
 }: Props) {
   const wrap = useRef<HTMLDivElement>(null);
   const fg = useRef<ForceGraphMethods<N, L>>(undefined);
+  const touch = useMemo(isTouch, []);
   const [size, setSize] = useState({ width: 800, height: 600 });
   /** Names collected while drawing the words, drawn last where they fit (drawLabels). */
   const labels = useRef<Label[]>([]);
@@ -565,39 +570,47 @@ export default function GraphView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeId]);
 
+  // "N due elsewhere" in the panel: the same jump as N.
+  useEffect(() => {
+    if (jump) jumpNext();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jump]);
+
+  /** Arrow keys (and the pad on a phone): move to the linked word that lies that way, and open it. */
+  const arrow = (dx: number, dy: number) => {
+    const pos = (id: string) => nodeCache.current.get(id);
+    const visible = graphData.nodes.filter((n) => n.x !== undefined && !n.hintOf);
+    const start = cursorId ?? lastCursor.current;
+    const from = (start && pos(start)) || visible[0];
+    if (!from) return;
+    if (!start || !pos(start)) return setCursorId(from.id);
+    const linked = new Set(
+      graphData.links
+        .filter((l) => !l.category && !l.hint)
+        .flatMap((l) => {
+          const [a, b] = [endId(l.source), endId(l.target)];
+          return a === from.id ? [b] : b === from.id ? [a] : [];
+        }),
+    );
+    const pts = visible.map((n) => ({ id: n.id, x: n.x!, y: n.y! }));
+    const next = stepCursor(
+      { x: from.x!, y: from.y! },
+      dx,
+      dy,
+      pts.filter((p) => linked.has(p.id)),
+    );
+    if (!next) return;
+    setCursorId(next);
+    const n = pos(next)!;
+    fg.current?.centerAt(n.x, n.y, 250);
+    onNodeClick(next); // moving the cursor selects the word, like a click
+  };
   tethered.current = inspect ? [] : graphData.links;
   useKeyboardCamera(fg, {
     onNext: () => jumpNext(),
     onNextTask,
     onRelax: () => relax(),
-    onArrow: (dx, dy) => {
-      const pos = (id: string) => nodeCache.current.get(id);
-      const visible = graphData.nodes.filter((n) => n.x !== undefined && !n.hintOf);
-      const start = cursorId ?? lastCursor.current;
-      const from = (start && pos(start)) || visible[0];
-      if (!from) return;
-      if (!start || !pos(start)) return setCursorId(from.id);
-      const linked = new Set(
-        graphData.links
-          .filter((l) => !l.category && !l.hint)
-          .flatMap((l) => {
-            const [a, b] = [endId(l.source), endId(l.target)];
-            return a === from.id ? [b] : b === from.id ? [a] : [];
-          }),
-      );
-      const pts = visible.map((n) => ({ id: n.id, x: n.x!, y: n.y! }));
-      const next = stepCursor(
-        { x: from.x!, y: from.y! },
-        dx,
-        dy,
-        pts.filter((p) => linked.has(p.id)),
-      );
-      if (!next) return;
-      setCursorId(next);
-      const n = pos(next)!;
-      fg.current?.centerAt(n.x, n.y, 250);
-      onNodeClick(next); // moving the cursor selects the word, like a click
-    },
+    onArrow: arrow,
     onSelect: () => cursorId && onNodeClick(cursorId),
   });
 
@@ -1396,8 +1409,7 @@ export default function GraphView({
             drawStarfield(ctx);
             drawNebulae(ctx, livePoints());
           } else {
-            drawBackdrop(ctx);
-            drawTerritories(ctx, livePoints(), !!supply);
+            drawGround(ctx, livePoints(), !!supply, animate);
           }
         }}
         onRenderFramePost={(ctx, scale) => {
@@ -1478,11 +1490,14 @@ export default function GraphView({
       <button
         onClick={relax}
         title="Lay the map out afresh: dragged words let go, and it settles into a calmer shape (R)"
-        className="glass absolute bottom-5 right-3 z-10 flex items-center gap-1.5 rounded-full px-3 py-1 text-xs text-slate-300 hover:text-white"
+        className="glass absolute bottom-5 right-3 z-10 [@media(pointer:coarse)]:right-[8.25rem] flex items-center gap-1.5 rounded-full px-3 py-1 text-xs text-slate-300 hover:text-white"
       >
         <Icon name="relax" className={relaxing ? 'animate-pulse text-sky-300' : ''} />
         Relax
       </button>
+      {!inspect && touch && (
+        <ArrowPad onArrow={arrow} onFit={() => fg.current?.zoomToFit(400, 60)} />
+      )}
       {!inspect && attention.length > 0 && (
         <div className="glass absolute right-3 top-3 flex items-center gap-1 rounded-full px-1.5 py-1 text-xs">
           {ATTENTION_ORDER.map((k) => {
@@ -1506,6 +1521,56 @@ export default function GraphView({
           })}
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * A phone has no arrow keys: four buttons do what they do (move along a link
+ * that way and open the word), the middle one fits the map into view (F).
+ */
+function ArrowPad({
+  onArrow,
+  onFit,
+}: {
+  onArrow: (dx: number, dy: number) => void;
+  onFit: () => void;
+}) {
+  const btn =
+    'flex h-9 w-9 items-center justify-center rounded-full text-lg text-slate-200 active:bg-white/[0.15]';
+  return (
+    <div className="glass absolute bottom-3 right-3 z-10 grid grid-cols-3 grid-rows-3 rounded-full p-1">
+      <button className={`${btn} col-start-2`} onClick={() => onArrow(0, -1)} title="Up">
+        <Icon name="chevronDown" className="rotate-180" />
+      </button>
+      <button
+        className={`${btn} col-start-1 row-start-2`}
+        onClick={() => onArrow(-1, 0)}
+        title="Left"
+      >
+        <Icon name="chevronRight" className="rotate-180" />
+      </button>
+      <button
+        className={`${btn} col-start-2 row-start-2 text-sm text-slate-400`}
+        onClick={onFit}
+        title="Fit the map into view"
+      >
+        <Icon name="fit" />
+      </button>
+      <button
+        className={`${btn} col-start-3 row-start-2`}
+        onClick={() => onArrow(1, 0)}
+        title="Right"
+      >
+        <Icon name="chevronRight" />
+      </button>
+      <button
+        className={`${btn} col-start-2 row-start-3`}
+        onClick={() => onArrow(0, 1)}
+        title="Down"
+      >
+        <Icon name="chevronDown" />
+      </button>
     </div>
   );
 }
@@ -1871,6 +1936,90 @@ function screenBlobs(ctx: CanvasRenderingContext2D, t: Territory, spread: number
   return { blobs, bounds, empty: bounds.x0 >= bounds.x1 || bounds.y0 >= bounds.y1 };
 }
 
+/**
+ * The ground (dot grid and territories) is most of a frame's cost: a density
+ * field, contours, wide glow strokes and the light, for every region. It's drawn
+ * into a canvas of its own and redrawn when the words, their weights or the
+ * camera change. While the map animates (frames keep coming, so it catches up)
+ * that's at most every GROUND_MS, or three times as long as the last one took,
+ * so it never takes more than a quarter of the time on a slow phone; in between,
+ * the last one moves and scales with the camera. On a phone (a 4× slower CPU in
+ * Chrome) this took the map from ~5 frames a second to ~35.
+ */
+const groundCanvas = typeof document !== 'undefined' ? document.createElement('canvas') : null;
+let ground = { key: NaN, at: 0, cost: 0, T: new DOMMatrix() };
+const GROUND_MS = 100;
+
+function drawGround(
+  ctx: CanvasRenderingContext2D,
+  regions: Territory[],
+  lit: boolean,
+  animating: boolean,
+) {
+  const gctx = groundCanvas?.getContext('2d');
+  const { width: W, height: H } = ctx.canvas;
+  if (!groundCanvas || !gctx || !W || !H) {
+    drawBackdrop(ctx);
+    drawTerritories(ctx, regions, lit);
+    return;
+  }
+  const T = ctx.getTransform();
+  const dpr = dprOf(ctx);
+  const key = groundKey(regions, lit, T, W, H, dpr);
+  const now = performance.now();
+  const resized = groundCanvas.width !== W || groundCanvas.height !== H;
+  const wait = Math.max(GROUND_MS, 3 * ground.cost);
+  if (key !== ground.key && (resized || !animating || now - ground.at >= wait)) {
+    if (resized) {
+      groundCanvas.width = W;
+      groundCanvas.height = H;
+    } else {
+      gctx.setTransform(1, 0, 0, 1, 0, 0);
+      gctx.clearRect(0, 0, W, H);
+    }
+    gctx.setTransform(T);
+    drawBackdrop(gctx, dpr);
+    drawTerritories(gctx, regions, lit, dpr);
+    ground = { key, at: now, cost: performance.now() - now, T };
+  }
+  ctx.save();
+  // From the camera it was drawn with to the camera now (the identity when unchanged).
+  ctx.setTransform(T.multiply(ground.T.inverse()));
+  ctx.drawImage(groundCanvas, 0, 0);
+  ctx.restore();
+}
+
+/**
+ * A hash of what the ground shows: each word's place on screen to the device
+ * pixel, its radius and light, the zoom, the size. The layout never quite comes
+ * to rest (words drift by hundredths): exact positions redrew it every time.
+ */
+function groundKey(
+  regions: Territory[],
+  lit: boolean,
+  T: DOMMatrix,
+  W: number,
+  H: number,
+  dpr: number,
+) {
+  let h = 0x811c9dc5;
+  const mix = (v: number) => {
+    h = Math.imul(h ^ Math.round(v), 0x01000193);
+  };
+  [lit ? 1 : 0, T.a * 1000, T.b * 1000, W, H, dpr * 100, regions.length].forEach(mix);
+  for (const t of regions) {
+    mix(t.pts.length);
+    for (let i = 0; i < t.color.length; i++) mix(t.color.charCodeAt(i));
+    for (const [x, y, r, w] of t.pts) {
+      mix(T.a * x + T.c * y + T.e);
+      mix(T.b * x + T.d * y + T.f);
+      mix(r * 10);
+      mix(w * 100);
+    }
+  }
+  return h;
+}
+
 /** Buffers for the supply light on the territories: one sample per territory grid point. */
 const lightCanvas = typeof document !== 'undefined' ? document.createElement('canvas') : null;
 let lightSum = new Float32Array(0);
@@ -1898,10 +2047,14 @@ const LIT_WASH = 0.35;
  * cut-off pockets on the bare wash. The light is summed on the contour grid into
  * a small image the browser scales up, under the terrace lines and the rim.
  */
-function drawTerritories(ctx: CanvasRenderingContext2D, regions: Territory[], lit: boolean) {
+function drawTerritories(
+  ctx: CanvasRenderingContext2D,
+  regions: Territory[],
+  lit: boolean,
+  dpr = dprOf(ctx),
+) {
   const { width: W, height: H } = ctx.canvas;
   if (!W || !H) return;
-  const dpr = dprOf(ctx);
   // About 4 CSS px per sample, coarser on huge canvases (the curves hide the grid).
   const cell = Math.max(4 * dpr, Math.sqrt((W * H) / 90000));
   // Read the map transform before drawing in device pixels.
@@ -2110,12 +2263,11 @@ const gridTile = typeof document !== 'undefined' ? document.createElement('canva
  * Territory view: a faint grid of dots fixed to the map, so panning and zooming
  * feel like moving over ground. Dots stay 22–44 px apart at any zoom.
  */
-function drawBackdrop(ctx: CanvasRenderingContext2D) {
+function drawBackdrop(ctx: CanvasRenderingContext2D, dpr = dprOf(ctx)) {
   const tctx = gridTile?.getContext('2d');
   if (!gridTile || !tctx) return;
   const T = ctx.getTransform();
   const s = Math.hypot(T.a, T.b);
-  const dpr = dprOf(ctx);
   let step = 40; // map units
   while (step * s < 22 * dpr) step *= 2;
   const size = Math.max(4, Math.round(step * s));

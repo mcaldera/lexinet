@@ -245,6 +245,16 @@ export default function Guide({ onClose }: { onClose: () => void }) {
             <span>? this guide</span>
           </div>
         </Section>
+
+        <Section title="On a phone">
+          <div className="grid grid-cols-2 gap-x-4 text-xs">
+            <span>Tap a word to open it · drag to pan · pinch to zoom</span>
+            <span>The pad (bottom right) moves along links; its middle fits the map</span>
+            <span>Next word: the next thing to do</span>
+            <span>“N due elsewhere” or the bar at the top: words that need you</span>
+            <span>Back closes what's open</span>
+          </div>
+        </Section>
       </div>
     </div>
   );

@@ -9,7 +9,10 @@ import '@fontsource/cormorant-garamond/600-italic.css';
 import App from './App';
 import { setLanguage } from './core/language';
 import { currentGraphName, languageOf } from './graphs';
+import { capPixelRatio } from './platform';
 import './index.css';
+
+capPixelRatio();
 
 // Before anything renders: answers, tenses and the voice follow the word list's language.
 setLanguage(languageOf(currentGraphName()));

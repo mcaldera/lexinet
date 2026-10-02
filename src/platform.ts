@@ -8,6 +8,25 @@ import { Capacitor } from '@capacitor/core';
  */
 export const isNative = () => Capacitor.isNativePlatform();
 
+/** A phone or tablet (in the app or a browser): a finger, not a mouse. */
+export const isTouch = () =>
+  typeof matchMedia !== 'undefined' && matchMedia('(pointer: coarse)').matches;
+
+/**
+ * Phones draw the map at most this many device pixels per CSS pixel. The map
+ * redraws every frame while anything moves on it, and a Pixel 7's 2.6 made it
+ * crawl: the cost follows the pixel count (2.6² against 1.5²). force-graph
+ * reads `devicePixelRatio` wherever it sizes or draws, so the cap goes there;
+ * HTML text stays sharp, as the browser doesn't read the property back.
+ */
+const TOUCH_MAX_PIXEL_RATIO = 1.5;
+
+/** Before the map is created (main.tsx). */
+export function capPixelRatio() {
+  if (!isTouch() || window.devicePixelRatio <= TOUCH_MAX_PIXEL_RATIO) return;
+  Object.defineProperty(window, 'devicePixelRatio', { get: () => TOUCH_MAX_PIXEL_RATIO });
+}
+
 /**
  * Android's back button. `handler` returns true when it closed something;
  * otherwise the app goes to the background, as Back does in other apps.

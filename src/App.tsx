@@ -115,6 +115,8 @@ export default function App() {
   };
   const [showVerbGoals, setShowVerbGoals] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
+  /** "N due elsewhere" tapped: the map jumps to the next of them (GraphView, like N). */
+  const [jump, setJump] = useState(0);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const typing =
@@ -1324,6 +1326,7 @@ export default function App() {
                 : undefined
             }
             onNextTask={goNext}
+            jump={jump}
             onNodeClick={selectNode}
             onBackgroundClick={clearSelection}
           />
@@ -1471,6 +1474,7 @@ export default function App() {
                     queue.filter((c) => !isNear(c.nodeId)).length +
                     data.tenseCards.filter((c) => c.card.due <= now && !isNear(c.nodeId)).length
                   }
+                  onElsewhere={() => setJump(Date.now())}
                   onNext={nextTask ? goNext : undefined}
                   opensIn={idle && nextOpen < Infinity ? nextOpen - appMs() : undefined}
                   reclaim={current ? reclaimMap.get(current.nodeId) : undefined}
