@@ -1289,13 +1289,18 @@ export default function GraphView({
         backgroundColor={inspect ? SPACE_BG : GROUND_BG}
         nodeRelSize={6}
         nodeCanvasObject={drawNode}
-        nodePointerAreaPaint={(node, color, ctx) => {
+        nodePointerAreaPaint={(node, color, ctx, scale) => {
           ctx.fillStyle = color;
           ctx.beginPath();
-          ctx.arc(node.x ?? 0, node.y ?? 0, 9, 0, 2 * Math.PI);
+          // At least a fingertip (or a few pixels for a mouse) on screen however far out:
+          // zoomed out on the whole network, 9 map units shrank to a speck.
+          const r = Math.max(9, (touch ? 16 : 6) / scale);
+          ctx.arc(node.x ?? 0, node.y ?? 0, r, 0, 2 * Math.PI);
           ctx.fill();
         }}
         nodeLabel={(n) => {
+          // A finger has no hover: a tooltip would stick after the tap (the panel says it all).
+          if (touch) return '';
           if (n.hintOf) {
             return `English cousin “${n.word.it}”`;
           }
@@ -1310,6 +1315,8 @@ export default function GraphView({
               ...(unknown ? [`${unknown} unknown`] : []),
             ].join(', ')}${n.hub.english?.length ? ` · English: ${n.hub.english.join(', ')}` : ''}`;
           }
+          // The whole network is a picture for players: the word and its meaning.
+          if (inspect) return `${n.word.it} · ${n.word.en}`;
           const state = data.states.get(n.id);
           const until = cooldowns.get(n.id);
           const nowApp = appNow(data.offsetDays).getTime();
@@ -1346,7 +1353,7 @@ export default function GraphView({
           }
           const lvl = strength.get(n.id) ?? 0;
           const str = state === 'conquered' ? ` · memory ${lvl}/${MAX_STRENGTH}` : '';
-          const hint = inspect ? `${state} · tier ${n.word.tier ?? 1}` : 'click to practise';
+          const hint = 'click to practise';
 
           const vl = verbLevels.get(n.id);
           const verb =
@@ -1444,7 +1451,7 @@ export default function GraphView({
           setCursorId(undefined);
           onBackgroundClick?.();
         }}
-        linkLabel={linkTooltip}
+        linkLabel={touch ? undefined : linkTooltip}
         onNodeClick={(n) => {
           const id = n.hintOf ?? n.id; // a hint opens its word
           setCursorId(id);

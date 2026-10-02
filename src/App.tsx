@@ -1153,7 +1153,7 @@ export default function App() {
             className="chip border-pink-400/40 bg-pink-500/15 text-pink-100 hover:bg-pink-500/25"
           >
             <Icon name="network" className="text-pink-300" />
-            Whole network
+            <span className="hidden sm:inline">Whole network</span>
             <Icon name="x" className="text-pink-300" />
           </button>
         )}
@@ -1384,12 +1384,7 @@ export default function App() {
             </LevelPanel>
           )}
           {inspect ? (
-            <InspectPanel
-              data={data}
-              health={health}
-              selectedId={inspectId}
-              onSelect={setInspectId}
-            />
+            <InspectPanel data={data} selectedId={inspectId} onSelect={setInspectId} />
           ) : (
             <>
               {planting && data.states.get(planting) === 'conquered' ? (

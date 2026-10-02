@@ -15,11 +15,13 @@ export const isTouch = () =>
 /**
  * Phones draw the map at most this many device pixels per CSS pixel. The map
  * redraws every frame while anything moves on it, and a Pixel 7's 2.6 made it
- * crawl: the cost follows the pixel count (2.6² against 1.5²). force-graph
- * reads `devicePixelRatio` wherever it sizes or draws, so the cap goes there;
- * HTML text stays sharp, as the browser doesn't read the property back.
+ * crawl: the cost follows the pixel count. force-graph reads `devicePixelRatio`
+ * wherever it sizes or draws, so the cap goes there; HTML text stays sharp, as
+ * the browser doesn't read the property back. 1.5 looked soft on the phone; with
+ * the ground cached (GraphView `drawGround`), 2 keeps ~85% of 1.5's frame rate
+ * (2.6: ~60%; Chrome, CPU ×4 slower).
  */
-const TOUCH_MAX_PIXEL_RATIO = 1.5;
+const TOUCH_MAX_PIXEL_RATIO = 2;
 
 /** Before the map is created (main.tsx). */
 export function capPixelRatio() {

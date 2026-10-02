@@ -1,205 +1,116 @@
-import type { AppData, Components, EdgeReason } from '../db/repo';
+import type { AppData, EdgeReason } from '../db/repo';
 import Etymology from './Etymology';
-import { isWeakBridge, REASON_LABEL, REASON_RGB, reasonText } from './visuals';
+import { SpeakButton } from './ReviewView';
+import { REASON_LABEL, REASON_RGB } from './visuals';
 
 type Props = {
   data: AppData;
-  health: Map<string, number | null>;
   selectedId?: string;
   onSelect: (id: string) => void;
 };
 
-const pct = (v: number) => `${Math.round(v * 100)}%`;
+/** Where a word stands for you, in a few words. */
+const STANDING: Record<string, string> = {
+  conquered: 'Learned',
+  claimed: 'Learning',
+  frontier: 'On your map',
+  locked: 'Not found yet',
+};
 
-function Chips({ c }: { c: Components }) {
-  const chip = (on: boolean, reason: EdgeReason, text: string) => (
-    <span
-      className="rounded px-1"
-      style={{
-        background: on ? `rgba(${REASON_RGB[reason]}, 0.2)` : 'transparent',
-        color: on ? `rgb(${REASON_RGB[reason]})` : 'rgb(100, 116, 139)',
-      }}
-    >
-      {text}
-    </span>
-  );
-  return (
-    <span className="flex gap-1 text-[11px]">
-      {chip(c.semantic >= 0.45, 'semantic', `meaning ${pct(c.semantic)}`)}
-      {chip(c.morphological > 0, 'morphological', 'family')}
-      {chip(c.etymological > 0, 'etymological', 'root')}
-      {chip(c.thematic > 0, 'thematic', 'theme')}
-    </span>
-  );
-}
-
-export default function InspectPanel({ data, health, selectedId, onSelect }: Props) {
+/**
+ * The whole network's side panel, for players (not for building the network:
+ * its old link statistics and scoring lived here). Nothing selected: what the
+ * picture is. A word: what it means, where it stands for you, its origin and
+ * the words it's linked to (tap to go). A root: its words.
+ */
+export default function InspectPanel({ data, selectedId, onSelect }: Props) {
   const { graph } = data;
-  const params = graph.params;
   const byId = new Map(data.nodes.map((n) => [n.id, n]));
   const word = selectedId ? byId.get(selectedId) : undefined;
   const hub = graph.roots?.find((r) => r.id === selectedId);
+  const chip = (id: string, reason?: EdgeReason) => {
+    const w = byId.get(id);
+    if (!w) return null;
+    return (
+      <button
+        key={id}
+        onClick={() => onSelect(id)}
+        title={reason && REASON_LABEL[reason]}
+        className="inline-flex items-baseline gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-0.5 hover:border-white/25 hover:bg-white/[0.07]"
+      >
+        {reason && (
+          <span
+            className="inline-block h-1.5 w-1.5 shrink-0 self-center rounded-full"
+            style={{ background: `rgb(${REASON_RGB[reason]})` }}
+          />
+        )}
+        <span className="text-slate-100">{w.it}</span>
+        <span className="text-xs text-slate-500">{w.en}</span>
+      </button>
+    );
+  };
 
   if (hub) {
     return (
-      <div className="panel border-pink-500/40 p-4 text-sm">
-        <div className="mb-2 text-xs uppercase tracking-wider text-pink-300/80">Shared root</div>
+      <div className="panel p-4 text-sm">
+        <div className="eyebrow mb-1.5 text-pink-300/80">Shared root</div>
         <div className="text-xl">
-          <i className="text-pink-200">{hub.root}</i>
+          <i className="font-latin text-pink-200">{hub.root}</i>
           {hub.meaning && <span className="text-slate-400"> “{hub.meaning}”</span>}
         </div>
-        <div className="mb-3 text-xs text-slate-500">{hub.lang}</div>
+        <div className="text-xs text-slate-500">{hub.lang}</div>
         {!!hub.english?.length && (
-          <div className="mb-3 text-slate-300">
-            <span className="text-slate-500">English: </span>
+          <p className="mt-2 text-slate-300">
+            <span className="text-slate-500">In English: </span>
             {hub.english.join(', ')}
-          </div>
+          </p>
         )}
-        <div className="mb-1 text-xs uppercase tracking-wider text-slate-400">
-          Descendants ({hub.words.length})
-        </div>
-        <ul className="space-y-1">
-          {hub.words.map((id) => {
-            const w = byId.get(id)!;
-            return (
-              <li key={id} className="flex justify-between gap-2">
-                <button className="hover:underline" onClick={() => onSelect(id)}>
-                  {w.it}
-                </button>
-                <span className="text-xs text-slate-400">
-                  {w.en}
-                  {w.cognate && ` · ≈ ${w.cognate}`}
-                </span>
-              </li>
-            );
-          })}
-        </ul>
+        <div className="eyebrow mb-1.5 mt-3">{hub.words.length} words from it</div>
+        <div className="flex flex-wrap gap-1.5">{hub.words.map((id) => chip(id))}</div>
       </div>
     );
   }
 
   if (!word) {
-    const counts = data.edges.reduce<Record<string, number>>(
-      (m, e) => ({ ...m, [e.reason]: (m[e.reason] ?? 0) + 1 }),
-      {},
-    );
     return (
       <div className="panel p-4 text-sm text-slate-300">
-        <div className="mb-2 text-xs uppercase tracking-wider text-slate-400">Inspect network</div>
-        <p className="mb-2">
-          {data.nodes.length} words · {data.edges.length} links (
-          {Object.entries(counts)
-            .map(([r, n]) => `${n} ${REASON_LABEL[r as EdgeReason]}`)
-            .join(', ')}
-          ). Click any word to see its links and strongest candidates.
+        <div className="eyebrow mb-1.5">Whole network</div>
+        <p>
+          Every word you can learn: {data.nodes.length.toLocaleString()} words in{' '}
+          {graph.regions?.length ?? 0} topics. Each star is a word, and lines join words that belong
+          together. Tap one to look closer.
         </p>
-        <p className="mb-1 font-medium text-slate-200">How links are built</p>
-        <ol className="list-decimal space-y-1 pl-4 text-slate-400">
-          <li>
-            Every pair of words gets a strength: meaning similarity of the English glosses
-            {params && ` (${params.model})`}, plus bonuses for same word family, shared root and
-            same theme.
-          </li>
-          <li>
-            A maximum spanning tree links all words with the strongest links that keep the network
-            connected. Some of those are weak bridges between groups (dashed).
-          </li>
-          <li>
-            Each word also links to its top {params?.bonus_k ?? 3} partners scoring at least{' '}
-            {pct(params?.bonus_threshold ?? 0.25)}. Everything else stays unlinked so themes don't
-            become tangles where everything connects to everything.
-          </li>
-          {params?.theme_k !== undefined && (
-            <li>
-              Within a category the bar is lower, so categories stay together on the map: each
-              category's words are joined by their own spanning tree, and each word also links to
-              its top {params.theme_k} partners in its category from{' '}
-              {pct(params.theme_threshold ?? 0.3)}.
-            </li>
-          )}
-        </ol>
       </div>
     );
   }
 
   const links = data.edges.filter((e) => e.source === word.id || e.target === word.id);
-  const cands = graph.candidates?.[word.id] ?? [];
-  const h = health.get(word.id);
-
+  const topic = graph.regions?.find((r) => r.id === word.region)?.name ?? word.theme;
+  const level = word.tier ? graph.params?.tier_names?.[String(word.tier)] : undefined;
   return (
     <div className="panel p-4 text-sm">
-      <div className="mb-2 flex justify-between text-xs uppercase tracking-wider text-slate-400">
-        <span>Inspect</span>
-        <span>
-          {data.states.get(word.id)}
-          {h != null && ` · health ${pct(h)}`}
+      <div className="flex items-center gap-1.5">
+        <span className="headword text-2xl">{word.it}</span>
+        <SpeakButton text={word.it} />
+        <span className="ml-auto text-xs text-slate-400">
+          {STANDING[data.states.get(word.id) ?? 'locked']}
         </span>
       </div>
-      <div className="text-xl font-medium">
-        {word.it} <span className="text-slate-400">= {word.en}</span>
+      <div className="mt-1 text-slate-300">
+        <i className="text-slate-500">{word.pos}</i> {word.en}
       </div>
-      <div className="mb-3 text-xs text-slate-500">
-        {[
-          `tier ${word.tier ?? 1}`,
-          word.pos,
-          word.theme && `theme ${word.theme}`,
-          word.root && `root ${word.root}`,
-          word.cognate && `≈ ${word.cognate}`,
-        ]
-          .filter(Boolean)
-          .join(' · ')}
+      <div className="mt-1 text-xs text-slate-500">
+        {[topic, level].filter(Boolean).join(' · ')}
       </div>
-
-      <div className="-mt-1 mb-3">
+      <div className="mt-2">
         <Etymology word={word} />
       </div>
-      <div className="mb-1 text-xs uppercase tracking-wider text-slate-400">
-        Links ({links.length})
-      </div>
-      <ul className="mb-3 space-y-1">
-        {links.map((e) => {
-          const other = byId.get(e.source === word.id ? e.target : e.source)!;
-          return (
-            <li key={other.id} className="flex items-baseline justify-between gap-2">
-              <button
-                className="shrink-0 text-left hover:underline"
-                onClick={() => onSelect(other.id)}
-              >
-                <span style={{ color: `rgb(${REASON_RGB[e.reason]})` }}>●</span> {other.it}
-              </button>
-              <span className="text-right text-xs text-slate-400">
-                {reasonText(e, word, other)} · {pct(e.weight)}
-                {isWeakBridge(e) ? ' · weak bridge' : e.via === 'bonus' ? ' · top partner' : ''}
-              </span>
-            </li>
-          );
-        })}
-      </ul>
-
-      {cands.length > 0 && (
+      {links.length > 0 && (
         <>
-          <div className="mb-1 text-xs uppercase tracking-wider text-slate-400">
-            Strongest candidates
+          <div className="eyebrow mb-1.5 mt-3">Linked to</div>
+          <div className="flex flex-wrap gap-1.5">
+            {links.map((e) => chip(e.source === word.id ? e.target : e.source, e.reason))}
           </div>
-          <ul className="space-y-1.5">
-            {cands.map((c) => (
-              <li key={c.id}>
-                <div className="flex items-baseline justify-between gap-2">
-                  <button className="text-left hover:underline" onClick={() => onSelect(c.id)}>
-                    <span className="text-slate-500">#{c.rank}</span> {byId.get(c.id)?.it}
-                  </button>
-                  <span className={`text-xs ${c.linked ? 'text-emerald-400' : 'text-slate-500'}`}>
-                    {pct(c.weight)} · {c.linked ? 'linked' : 'not linked'}
-                  </span>
-                </div>
-                <Chips c={c.components} />
-              </li>
-            ))}
-          </ul>
-          <p className="mt-2 text-xs text-slate-500">
-            A candidate stays unlinked when it's outside both words' top {params?.bonus_k ?? 3} and
-            isn't needed to connect the network.
-          </p>
         </>
       )}
     </div>
