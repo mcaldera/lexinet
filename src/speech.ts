@@ -1,16 +1,19 @@
 import { audioSettings } from './audio';
 import { lang } from './core/language';
+import { isNative, nativeSpeak } from './platform';
 
 /**
  * Pronunciation with the browser's speech synthesis: a voice of the language
  * being learned from the operating system (or Chrome's online ones, "Google
  * italiano"). Where speech isn't available, the speaker buttons hide; where no
  * voice of the language is installed, the menu says so and failures are
- * reported through `onSpeechProblem`.
+ * reported through `onSpeechProblem`. In the Android app the phone's own
+ * text-to-speech speaks instead (its WebView has no speech synthesis).
  */
 const synth = typeof window !== 'undefined' ? window.speechSynthesis : undefined;
 
-export const canSpeak = () => !!synth && typeof SpeechSynthesisUtterance !== 'undefined';
+export const canSpeak = () =>
+  isNative() || (!!synth && typeof SpeechSynthesisUtterance !== 'undefined');
 
 const listeners = new Set<() => void>();
 const problems = new Set<(message: string) => void>();
@@ -72,6 +75,12 @@ let current: SpeechSynthesisUtterance | null = null;
 /** Say text in the language being learned now (interrupting anything still being said). */
 export function speak(text: string, rate = 0.9) {
   if (!canSpeak() || !text.trim()) return;
+  if (isNative()) {
+    nativeSpeak(text, lang().locale, rate).catch(() =>
+      problem(`No ${lang().name} voice on this phone (Settings → Text-to-speech)`),
+    );
+    return;
+  }
   const s = synth!;
   const u = new SpeechSynthesisUtterance(text);
   u.lang = lang().locale;

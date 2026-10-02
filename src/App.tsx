@@ -40,6 +40,7 @@ import { expeditionStatus } from './core/expedition';
 import { newRun, switchRun, updateRun, deleteRun, runDbSuffix } from './runs';
 import { deleteDb } from './db';
 import { onStorageProblem } from './db/store';
+import { onBackButton } from './platform';
 import { QuizEdge, QuizMoment, QuizStrip } from './views/Quiz';
 import GraphView, { flowKey, type FlowView } from './views/GraphView';
 import { roundShares } from './views/visuals';
@@ -198,6 +199,9 @@ export default function App() {
   useEffect(() => resumeOnGesture(), []);
   useEffect(() => onSpeechProblem((m) => setNotice(m)), []);
   useEffect(() => onStorageProblem((m) => setNotice(m)), []);
+  // Android's Back closes what's open (set each render, below); with nothing open it leaves.
+  const back = useRef<() => boolean>(() => false);
+  useEffect(() => onBackButton(() => back.current()), []);
   // Keep the run list's summary current (menu → Runs).
   const conqueredCount = data
     ? [...data.states.values()].filter((st) => st === 'conquered').length
@@ -1105,6 +1109,16 @@ export default function App() {
         showEtymology={session?.nodeId !== detailsWord.id && current?.nodeId !== detailsWord.id}
       />
     );
+  back.current = () => {
+    if (showGuide) setShowGuide(false);
+    else if (inspect) {
+      if (inspectId) setInspectId(undefined);
+      else setInspect(false);
+    } else if (!deselected) clearSelection();
+    else return false;
+    return true;
+  };
+
   /** Whether the card on show is about the details word, which then carries its status. */
   const embedded =
     !!detailsWord &&
@@ -1115,10 +1129,12 @@ export default function App() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="relative z-10 flex items-center gap-2.5 border-b border-white/[0.06] bg-slate-950/80 px-4 py-2 shadow-[0_8px_30px_-20px_rgba(0,0,0,0.9)] backdrop-blur">
-        <h1 className="mr-2 flex select-none items-center gap-2">
+      <header className="relative z-10 flex items-center gap-1.5 border-b border-white/[0.06] bg-slate-950/80 px-2 py-2 shadow-[0_8px_30px_-20px_rgba(0,0,0,0.9)] backdrop-blur sm:gap-2.5 sm:px-4">
+        <h1 className="flex select-none items-center gap-2 sm:mr-2">
           <Logo />
-          <span className="text-[15px] font-semibold tracking-[0.2em] text-slate-100">PLEXUS</span>
+          <span className="hidden text-[15px] font-semibold tracking-[0.2em] text-slate-100 sm:inline">
+            PLEXUS
+          </span>
         </h1>
         {progress && (
           <button onClick={() => setShowVerbGoals((v) => !v)} className="chip py-1">
@@ -1150,7 +1166,7 @@ export default function App() {
           className="chip ml-auto py-1 text-slate-300 disabled:opacity-40"
         >
           <Icon name="target" className="text-sky-300" />
-          Focus
+          <span className="hidden sm:inline">Focus</span>
         </button>
         <button
           onClick={() => setShowProgress((v) => !v)}
@@ -1200,8 +1216,9 @@ export default function App() {
         />
       </header>
       {showGuide && <Guide onClose={() => setShowGuide(false)} />}
-      <main className="flex min-h-0 flex-1">
-        <section className="relative min-w-0 flex-1">
+      {/* Phones: the map on top, the panel under it (it rises with the keyboard and takes more of a short screen). */}
+      <main className="flex min-h-0 flex-1 flex-col md:flex-row">
+        <section className="relative min-h-0 min-w-0 flex-1">
           {levelUp && (
             <div className="rise-in absolute left-1/2 top-4 z-10 -translate-x-1/2 rounded-xl border border-amber-300/60 bg-gradient-to-b from-amber-500/25 to-amber-950/50 px-6 py-3 text-center shadow-[0_0_40px_rgba(251,191,36,0.35)] backdrop-blur-md">
               <div className="font-title text-xl font-bold tracking-wider text-amber-200">
@@ -1312,7 +1329,7 @@ export default function App() {
           />
         </section>
         <aside
-          className={`flex w-80 flex-col gap-3 overflow-y-auto border-l border-white/[0.06] bg-gradient-to-b from-slate-950 to-[#050a1a] p-4 ${data.started ? '' : 'invisible'}`}
+          className={`flex max-h-[50%] shrink-0 flex-col [@media(max-height:600px)]:max-h-[72%] gap-3 overflow-y-auto border-t border-white/[0.06] bg-gradient-to-b from-slate-950 to-[#050a1a] p-3 md:max-h-none md:w-80 md:border-l md:border-t-0 md:p-4 ${data.started ? '' : 'max-md:hidden md:invisible'}`}
         >
           {data.raid.active && !inspect && (
             <QuizStrip
@@ -1603,7 +1620,7 @@ function TierBadge({
       </span>
       {p.needed > 0 && (
         <>
-          <span className="flex h-1.5 w-24 overflow-hidden rounded-full bg-white/[0.08]">
+          <span className="flex h-1.5 w-12 overflow-hidden rounded-full bg-white/[0.08] sm:w-24">
             <span
               className="block h-full rounded-full"
               style={{
@@ -1622,7 +1639,7 @@ function TierBadge({
               }}
             />
           </span>
-          <span className="text-xs text-slate-500">
+          <span className="hidden text-xs text-slate-500 sm:inline">
             {p.held}/{p.needed}
             {p.pointsNeed > 0 && ` · ▲${p.verbPoints}/${p.pointsNeed}`}
           </span>

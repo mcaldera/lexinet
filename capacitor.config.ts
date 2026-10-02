@@ -6,6 +6,10 @@ const config: CapacitorConfig = {
   appName: 'Plexus',
   webDir: 'dist',
   backgroundColor: '#030712',
+  plugins: {
+    // Light status bar icons over the dark page.
+    SystemBars: { style: 'DARK' },
+  },
   android: {
     // chrome://inspect on the laptop can debug the WebView of a debug build.
     webContentsDebuggingEnabled: true,

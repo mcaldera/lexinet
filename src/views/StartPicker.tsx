@@ -42,9 +42,10 @@ export default function StartPicker({ regions, nodes, edges, onPick }: Props) {
   }, [region, nodes, edges]);
   const best = candidates[0]?.supplies ?? 1;
   return (
-    <div className="absolute inset-0 z-20 flex items-center justify-center bg-[radial-gradient(ellipse_at_center,rgba(2,6,23,0.7),rgba(2,6,23,0.95))] p-6 backdrop-blur-sm">
+    <div className="absolute inset-0 z-20 flex overflow-y-auto bg-[radial-gradient(ellipse_at_center,rgba(2,6,23,0.7),rgba(2,6,23,0.95))] p-4 backdrop-blur-sm sm:p-6">
+      {/* m-auto centres it, yet a long list still scrolls on a phone. */}
       {region ? (
-        <div className="w-full max-w-md">
+        <div className="m-auto w-full max-w-md">
           <h2 className="mb-2 text-center font-title text-3xl font-bold tracking-[0.08em] text-slate-100">
             {region.name}
           </h2>
@@ -94,7 +95,7 @@ export default function StartPicker({ regions, nodes, edges, onPick }: Props) {
           </div>
         </div>
       ) : (
-        <div className="w-full max-w-2xl">
+        <div className="m-auto w-full max-w-2xl">
           {GRAPH_NAMES.length > 1 && <LanguageSwitch />}
           <h2 className="mb-2 text-center font-title text-3xl font-bold tracking-[0.08em] text-slate-100">
             Where to begin?

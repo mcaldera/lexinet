@@ -166,7 +166,8 @@ export default function ReviewView(props: Props) {
           ) : null}
           {onNext ? (
             <button autoFocus onClick={onNext} className="w-full btn-primary py-2">
-              Next word <span className="text-xs opacity-60">(enter)</span>
+              Next word{' '}
+              <span className="text-xs opacity-60 [@media(pointer:coarse)]:hidden">(enter)</span>
             </button>
           ) : (
             !elsewhere &&
@@ -284,6 +285,7 @@ export default function ReviewView(props: Props) {
               }}
               autoComplete="off"
               autoCapitalize="off"
+              autoCorrect="off"
               spellCheck={false}
               className="field w-full px-3 py-2 text-lg"
             />
@@ -296,8 +298,10 @@ export default function ReviewView(props: Props) {
                   {lang().letters.map((ch) => (
                     <button
                       key={ch}
+                      // Keeps the focus in the field: a phone's keyboard would close and reopen.
+                      onPointerDown={(e) => e.preventDefault()}
                       onClick={() => insert(ch)}
-                      className="rounded px-1.5 text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+                      className="rounded px-1.5 text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200 [@media(pointer:coarse)]:px-2.5 [@media(pointer:coarse)]:py-1 [@media(pointer:coarse)]:text-base"
                     >
                       {ch}
                     </button>

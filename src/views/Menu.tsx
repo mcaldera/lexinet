@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { audioSettings, onAudioSettings, setMusic, setSfx, setSpeech } from '../audio';
 import { listRuns } from '../runs';
+import { isNative } from '../platform';
 import { canSpeak, chosenVoice, languageVoices, onVoices, speak, voiceCount } from '../speech';
 import { lang } from '../core/language';
 import { GRAPH_NAMES, graphLabel, switchGraph } from '../graphs';
@@ -82,7 +83,7 @@ export default function Menu(props: Props) {
         <Icon name="menu" />
       </button>
       {open && (
-        <div className="glass absolute right-0 top-full z-20 mt-2 w-60 rounded-xl bg-slate-900/90 p-1.5 text-sm text-slate-300">
+        <div className="glass absolute right-0 top-full z-20 mt-2 max-h-[80vh] w-60 overflow-y-auto rounded-xl bg-slate-900/90 p-1.5 text-sm text-slate-300">
           {GRAPH_NAMES.length > 1 && (
             <select
               value={props.graphName}
@@ -148,7 +149,7 @@ export default function Menu(props: Props) {
                     props.onDeleteRun(r.id);
                     setDeleted((n) => n + 1);
                   }}
-                  className="invisible px-1.5 text-xs text-slate-500 hover:text-red-300 group-hover:visible"
+                  className="invisible px-1.5 text-xs text-slate-500 hover:text-red-300 group-hover:visible [@media(hover:none)]:visible"
                 >
                   <Icon name="x" />
                 </button>
@@ -175,10 +176,10 @@ function VoicePicker() {
   const current = chosenVoice();
   return (
     <div className="px-2 pb-1.5 text-xs">
-      {voices.length ? (
+      {voices.length || isNative() ? (
         <div className="flex items-center gap-1.5">
           <span className="min-w-0 flex-1 truncate rounded bg-slate-800 px-1.5 py-1" title="Voice">
-            {current?.name}
+            {current?.name ?? 'Phone voice'}
             {current && !current.localService ? ' (online)' : ''}
           </span>
           <button

@@ -18,6 +18,7 @@
     "android:live": "cap run android --live-reload --host $HOST_IP --port 1420"
   },
   "dependencies": {
+    "@capacitor-community/text-to-speech": "^8.0.2",
     "@capacitor/android": "^8.5.2",
     "@capacitor/app": "^8.1.1",
     "@capacitor/core": "^8.5.2",

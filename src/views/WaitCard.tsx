@@ -59,7 +59,8 @@ export default function WaitCard(props: Props) {
       ) : (
         onNext && (
           <button autoFocus onClick={onNext} className="btn-ghost mt-4 w-full py-2 text-sm">
-            Next word <span className="text-xs opacity-60">(enter)</span>
+            Next word{' '}
+            <span className="text-xs opacity-60 [@media(pointer:coarse)]:hidden">(enter)</span>
           </button>
         )
       )}

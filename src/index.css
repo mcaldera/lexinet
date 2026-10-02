@@ -7,6 +7,18 @@ body,
 #root {
   height: 100%;
 }
+/*
+ * Phones: the page runs under the status and navigation bars (viewport-fit=cover)
+ * and keeps clear of them. The Android app sets --safe-area-inset-* (Capacitor's
+ * SystemBars, right whichever WebView); browsers have env().
+ */
+#root {
+  box-sizing: border-box;
+  padding: var(--safe-area-inset-top, env(safe-area-inset-top, 0px))
+    var(--safe-area-inset-right, env(safe-area-inset-right, 0px))
+    var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px))
+    var(--safe-area-inset-left, env(safe-area-inset-left, 0px));
+}
 
 @layer base {
   html {
@@ -17,6 +29,8 @@ body,
   }
   body {
     background: #030712;
+    /* No double-tap zoom on a phone: taps answer at once. */
+    touch-action: manipulation;
   }
   ::selection {
     background: rgba(16, 185, 129, 0.35);
