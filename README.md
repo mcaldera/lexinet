@@ -4,6 +4,8 @@
 
 # Plexus
 
+by **[Michael Caldera](https://github.com/mcaldera)**
+
 **Learn a language by growing a mind map.**
 Every word is a node; every word you learn lights up the ones around it.
 
@@ -196,4 +198,8 @@ Android: `npm run android` builds, syncs and opens Android Studio (needs Node 22
 - **Tunables in one place** ([`src/config.ts`](src/config.ts)). Balance changes were checked by simulating play on the real graph (e.g. 92–95% of known words stay connected at six new words a day without a miss).
 - **Iterated with real use:** about 100 commits in two months, each a self-contained feature, many reworking a mechanic after playing it (the signal network replaced an earlier three-number influence system that felt too opaque).
 
-<div align="center"><sub>Fonts: Inter, Newsreader, Cinzel, Cormorant Garamond · Example sentences: <a href="https://tatoeba.org">Tatoeba</a> (CC-BY 2.0 FR) · Etymology: <a href="https://kaikki.org">Wiktionary via kaikki.org</a></sub></div>
+<div align="center">
+
+Designed and built by **[Michael Caldera](https://github.com/mcaldera)**
+
+<sub>Fonts: Inter, Newsreader, Cinzel, Cormorant Garamond · Example sentences: <a href="https://tatoeba.org">Tatoeba</a> (CC-BY 2.0 FR) · Etymology: <a href="https://kaikki.org">Wiktionary via kaikki.org</a></sub></div>
