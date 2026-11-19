@@ -15,9 +15,9 @@ Every word is a node; every word you learn lights up the ones around it.
 ![Tests](https://img.shields.io/badge/tests-151%20TS%20%2B%2052%20Python-2ea44f)
 ![Platforms](https://img.shields.io/badge/runs%20on-web%20%C2%B7%20Android%20%C2%B7%20desktop-8957e5)
 
-<img src="docs/images/hero.gif" width="860" alt="The map growing from one word into connected territories over a few days of play" />
+<img src="docs/images/hero.webp" width="820" alt="The map growing from one word into connected territories over a few days of play, with a pop quiz along the way" />
 
-<sub>Two hundred answers, a few in-game days: from one word to a lit-up network.</sub>
+<sub>A real play-through, sped up: from one word to a network of topics, with a pop quiz along the way.</sub>
 
 </div>
 
@@ -30,20 +30,25 @@ Flashcard apps treat words as a pile. Plexus treats them as a **network**, which
 - **You can only reach what's next to what you know.** Answering a word starts learning it and reveals its neighbours. The map grows outwards from a core word you pick.
 - **Memory is real.** Each word is scheduled with [FSRS](https://github.com/open-spaced-repetition/fsrs4anki/wiki/The-Algorithm), a modern spaced-repetition model. Words you don't review fade on the map, letter by letter.
 - **Words hold each other up.** Every word you know sends a *signal* along its links: more the better you know it. A word needs enough signal from its neighbours to stay connected. Forget a key word and the ones behind it go dark until you fix it. Reviewing is no longer a chore: it's keeping your map alive.
-- **Real language, not lists.** About 2,600 words per language in 44 topics, with CEFR levels (A1 → C1), example sentences from Tatoeba, Latin and Germanic roots, English cousins (*pflücken* → *pluck*) and conjugation drills for every verb.
+- **Real language, not lists.** About 2,600 words per language in 44 topics, with CEFR levels (A1 → C1), example sentences from Tatoeba, Latin and Germanic roots, English cousins (*pflücken* → *pluck*) and conjugation drills for the verbs.
+
+<p align="center">
+<img src="docs/images/learn.webp" width="820" alt="A new game: the core word is typed in two steps, it lights up, a level opens and its neighbours appear" />
+<br /><sub>The first minute of a new game: learn the core word (meaning first, then the Italian), watch it light up and its neighbours appear.</sub>
+</p>
 
 <table>
 <tr>
-<td width="50%"><img src="docs/images/signal.png" alt="A selected word and where its signal comes from" /></td>
-<td width="50%"><img src="docs/images/review.png" alt="A fill-the-gap review card with an example sentence" /></td>
+<td width="50%"><img src="docs/images/signal.jpg" alt="A selected word and where its signal comes from" /></td>
+<td width="50%"><img src="docs/images/review.jpg" alt="A fill-the-gap review card with an example sentence" /></td>
 </tr>
 <tr>
-<td><b>Where the signal comes from.</b> Select a word: its suppliers light up with their share, and nearby unknown words show what learning them would add.</td>
-<td><b>Typed answers, in context.</b> Reviews into Italian are fill-the-gap sentences. Answers forgive articles, accents and small typos, but say so.</td>
+<td><b>Where the signal comes from.</b> Select a word and the words feeding it light up with their share: <i>la verdura</i> gets 219% of the 50% it needs. A word short of signal shows what learning each nearby word would add.</td>
+<td><b>Typed answers, in context.</b> Reviews into Italian are fill-the-gap sentences. A missing article, a wrong accent or a small typo still counts, with a note.</td>
 </tr>
 <tr>
-<td><img src="docs/images/network.png" alt="The whole vocabulary as a galaxy of 2,663 words" /></td>
-<td><img src="docs/images/levels.png" alt="The level panel: overall level, topics and verbs" /></td>
+<td><img src="docs/images/network.jpg" alt="The whole vocabulary as a galaxy of 2,663 words" /></td>
+<td><img src="docs/images/levels.jpg" alt="The level panel: overall level, topics and verbs" /></td>
 </tr>
 <tr>
 <td><b>The whole network.</b> All 2,663 Italian words and 4,560 links, one star per word, nebulae per topic.</td>
@@ -52,7 +57,7 @@ Flashcard apps treat words as a pile. Plexus treats them as a **network**, which
 </table>
 
 <p align="center">
-<img src="docs/images/phone.png" width="300" alt="Plexus on a phone" />
+<img src="docs/images/phone.jpg" width="280" alt="Plexus on a phone" />
 <br /><sub>The same build runs as an Android app and as a mobile web page.</sub>
 </p>
 
@@ -60,7 +65,7 @@ Flashcard apps treat words as a pile. Plexus treats them as a **network**, which
 
 ## Under the hood
 
-Plexus is about 13,000 lines of TypeScript (plus 2,200 lines of tests) and a 3,700-line Python data pipeline. Some of the parts I'm proudest of:
+Plexus is about 13,000 lines of TypeScript (plus 2,200 lines of tests) and a 3,700-line Python data pipeline (tests included). Some of the parts I'm proudest of:
 
 ### 1 · A signal network that stays fast and explainable
 
@@ -73,7 +78,7 @@ The core mechanic ([`src/core/supply.ts`](src/core/supply.ts)) is a flow problem
 
 ### 2 · A pure, tested game core
 
-Everything in [`src/core/`](src/core/) is pure TypeScript with no React or database imports, and has its own test file: scheduling, answer checking, the three-step learning flow, CEFR levels, verb tenses, the review queue, streaks, achievements. Time comes from one injectable clock ([`clock.ts`](src/core/clock.ts)), never `new Date()`, so a whole week can be simulated in a test, and the in-game time travel and the idle fast-forward work the same way.
+Everything in [`src/core/`](src/core/) is pure TypeScript with no React or database imports, and nearly every module has its own test file: scheduling, answer checking, the three-step learning flow, CEFR levels, verb tenses, the review queue, streaks, achievements. Time comes from one injectable clock ([`clock.ts`](src/core/clock.ts)), never `new Date()`, so a whole week can be simulated in a test, and the in-game time travel and the idle fast-forward work the same way.
 
 ```ts
 // From supply.test.ts: an incremental answer must match a full recount.
@@ -124,11 +129,11 @@ The same Vite build ships as a website (Cloudflare Pages), an **Android app** (C
 ```mermaid
 flowchart LR
   subgraph offline["Offline pipeline (Python)"]
-    Y["data/vocab/&lt;lang&gt;/*.yaml<br/>hand-curated words"] --> B[build_vocab.py]
+    Y["data/vocab/LANG/*.yaml<br/>hand-curated words"] --> B[build_vocab.py]
     NB[(Numberbatch<br/>embeddings)] --> B
     WK[(Wiktionary<br/>kaikki.org)] --> B
     TT[(Tatoeba<br/>sentences)] --> B
-    B --> G["graph_&lt;lang&gt;.json<br/>words · links · roots · verbs"]
+    B --> G["graph_LANG.json<br/>words · links · roots · verbs"]
   end
 
   subgraph app["App (React + TypeScript)"]
@@ -161,6 +166,8 @@ android/       Capacitor project            src-tauri/   Tauri shell
 
 ## Running it
 
+**About the data:** the word lists (`data/vocab/`, `data/graph_*.json`) aren't in this repository, because they were built partly from third-party sources for personal study. The tests run on a small fixture graph; to play the full game, use the [live version](https://plexus-9vf.pages.dev/).
+
 ```bash
 npm install
 npm run dev          # http://localhost:1420
@@ -176,8 +183,6 @@ python -m venv pipeline/.venv && pipeline/.venv/bin/pip install -r pipeline/requ
 pipeline/.venv/bin/pytest -q pipeline/tests                       # 52 tests
 pipeline/.venv/bin/python pipeline/build_vocab.py data/vocab/it -o data/graph_oic.json
 ```
-
-**About the data:** the word lists (`data/vocab/`, `data/graph_*.json`) aren't in this repository, because they were built partly from third-party sources for personal study. The tests run on a small fixture graph. To play the full game, use the [live version](https://plexus-9vf.pages.dev/).
 
 Android: `npm run android` builds, syncs and opens Android Studio (needs Node 22 for the Capacitor CLI).
 

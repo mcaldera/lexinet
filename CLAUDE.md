@@ -183,6 +183,7 @@ data/words*.csv ── pipeline/build_graph.py ─► data/graph*.json ───
 - Commit after each feature with a descriptive message (co-author trailer). The remote `origin` is the author's **personal** GitHub (`mcaldera/lexinet`), never the ProxygenTx org. Ask before pushing.
 - Match the surrounding style; comments explain why, not what. Prettier (single quotes, width 100): run `npx prettier --write src` after edits. It reflows lines, so re-read before making exact-string edits.
 - Keep CLAUDE.md current when rules or architecture change.
+- `README.md` is the public, portfolio-facing page (written for players and potential employers); its images in `docs/images/` (animated WebP for the time-lapse and the first-minute clip, JPEG stills) come from a Playwright play-through of the real game (screencast frames assembled with Pillow). Keep its numbers (tests, words) roughly current.
 
 ## Known issues / ideas not done
 
