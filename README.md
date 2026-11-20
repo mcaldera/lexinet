@@ -200,6 +200,6 @@ Android: `npm run android` builds, syncs and opens Android Studio (needs Node 22
 
 <div align="center">
 
-Designed and built by **[Michael Caldera](https://github.com/mcaldera)**
+Designed and built by **[Michael Caldera](https://github.com/mcaldera) with Claude Code**
 
 <sub>Fonts: Inter, Newsreader, Cinzel, Cormorant Garamond · Example sentences: <a href="https://tatoeba.org">Tatoeba</a> (CC-BY 2.0 FR) · Etymology: <a href="https://kaikki.org">Wiktionary via kaikki.org</a></sub></div>
